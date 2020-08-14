@@ -1,0 +1,58 @@
+body {
+	background-color: black;
+	font-family: Courier;
+	overflow: hidden;
+	margin-left: 0px;
+} 
+
+::selection {
+	color: black;
+	background: white;
+}
+
+h1 {
+	color: white;
+	font-size: 32px;
+	margin-top: 128px;
+	margin-bottom: 0px;
+	margin-left: 160px;
+}
+
+a {
+	color: #dddddd;
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+	color: #ffffff;
+}
+
+p {
+	color: white;
+	font-size: 32px;
+}
+
+ul {
+	list-style-position: none;
+	font-size: 32px;
+	margin-left: 160px;
+	padding-left: 1em;
+}
+
+.canvas {
+	white-space: nowrap pre;
+	float: left;
+}
+
+#ocean {
+	position: fixed;
+	width:100%;
+    bottom:-30px;
+}
+
+#ocean-content {
+	margin-left: -12px;
+	font-size: 32px;
+	text-align: left;
+}
