@@ -19,7 +19,7 @@ h1 {
 }
 
 a {
-	color: #dddddd;
+	color: #bbb;
 	text-decoration: none;
 }
 
@@ -43,16 +43,14 @@ ul {
 .canvas {
 	white-space: nowrap pre;
 	float: left;
-}
-
-#ocean {
-	position: fixed;
+	position: absolute;
 	width:100%;
     bottom:-30px;
+	left: -12px;
+	font-size: 32px;
+	text-align: left;
 }
 
 #ocean-content {
-	margin-left: -12px;
-	font-size: 32px;
-	text-align: left;
+	color: #4b4bff;
 }

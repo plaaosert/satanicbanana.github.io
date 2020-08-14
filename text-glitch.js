@@ -8,9 +8,9 @@ l3.onmouseover = l3.onmouseout = handler;
 
 // "alt strings" as a dict for every id
 aims = {
-	"1":">> This is test text to see if this works.",
-	"2":">> Endless test text in this land.",
-	"3":">> ждаи сек это не английский"
+	"1":">> shows you a picture of a cool cube i found on the internet for this joke",
+	"2":">> it's not that processor intensive, i think",
+	"3":">> maybe your computer is lagging"
 };
 
 // setup original texts too
@@ -20,18 +20,6 @@ origs = {
 	"3":l3.text
 }
 
-// generate alphabet i want to die
-var alphabet = [];
-var start = 65
-var last  = 97
-for (var i = start; i <= last; ++i) {
-	alphabet.push(String.fromCharCode(i));
-}
-
-alphabet.push("▓");
-alphabet.push("▒");
-alphabet.push("░");
-
 
 // "grow/shrink" intervals currently active on each element so that they can be stopped
 // to avoid useless function calls
@@ -39,12 +27,6 @@ evts = {
 	"1":null,
 	"2":null,
 	"3":null
-}
-
-
-// define a replace_at function because strings are immutable
-String.prototype.replace_at = function(index, replacement) {
-    return this.substr(0, index) + replacement + this.substr(index + replacement.length);
 }
 
 

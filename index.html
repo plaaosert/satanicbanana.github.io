@@ -7,11 +7,12 @@
 </head>
 <body>
 	<div id="links">
+		<script src="defs.js"></script>
 		<h1>// test //</h1>
 		<ul>
-			<li><a id="1" href="">## label 1</a></li>
-			<li><a id="2" href="">## label 2</a></li>
-			<li><a id="3" href="">## label 3</a></li>
+			<li><a id="1" href="http://www.cnccookbook.com/img/OthersProjects/JCube3.jpg">## cool cube</a></li>
+			<li><a id="2" href="javascript:void(0)" onclick="start_switch(null, 'ocean');">## enable ocean</a></li>
+			<li><a id="3" href="javascript:void(0)" onclick="start_switch('ocean', null);">## disable ocean</a></li>
 		</ul>
 		
 		<script src="text-glitch.js"></script>
@@ -22,6 +23,13 @@
 		<p id="ocean-content", class="canvas">t</p>
 		
 		<script src="the-sea.js"></script>
+	</div>
+	
+	<div id="switch">
+		<!-- basically just a huge textbox -->
+		<p id="switch-content", class="canvas"></p>
+		
+		<script src="switch.js"></script>
 	</div>
 </body>
 </html>
