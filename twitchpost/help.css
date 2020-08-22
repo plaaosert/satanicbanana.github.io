@@ -1,0 +1,67 @@
+body {
+	background-color: black;
+	font-family: Consolas;
+	margin-left: 0px;
+	color: white;
+} 
+
+::selection {
+	color: black;
+	background: white;
+}
+
+p {
+	font-size: 20px;
+	margin-bottom: 0px;
+}
+
+.header {
+	margin-left: 160px;
+}
+
+.desc { 
+	font-style: italic;
+	color: #ccc;
+}
+
+.huge {
+	font-size: 72px;
+	font-style: bold;
+}
+
+.main {
+	text-align: center;
+	margin-left: 0px;
+}
+
+.big {
+	margin-top: 128px;
+	font-size: 32px;
+}
+
+.classinfo {
+	color: #fff;
+}
+
+a {
+	color: #bbb;
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+	color: #ffffff;
+}
+
+.column {
+  float: left;
+  width: 25%;
+  padding-left: 6.25%;
+}
+
+/* Clear floats after the columns */
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
