@@ -2,8 +2,14 @@ body {
 	background-color: black;
 	font-family: Consolas;
 	margin-left: 0px;
-	color: white;
+	color: #f2f2f2;
 } 
+
+img {
+  border: 2px solid white;
+  margin: 40px;
+  width: 66%;
+}
 
 ::selection {
 	color: black;
@@ -35,22 +41,33 @@ p {
 }
 
 .big {
-	margin-top: 128px;
+	margin-top: 64px;
 	font-size: 32px;
+}
+
+.big-alt {
+	margin-top: 64px;
+	font-size: 32px;
+	color: #f9f1a5;
 }
 
 .classinfo {
 	color: #fff;
 }
 
+.special {
+	color: #f9f1a5;
+}
+
 a {
-	color: #bbb;
+	font-size: 24px;
+	color: #3a96dd;
 	text-decoration: none;
 }
 
 a:hover {
 	text-decoration: underline;
-	color: #ffffff;
+	color: #61d6d6;
 }
 
 .column {
