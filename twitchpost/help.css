@@ -63,6 +63,7 @@ a {
 	font-size: 24px;
 	color: #3a96dd;
 	text-decoration: none;
+	transition: color 0.3s;
 }
 
 a:hover {

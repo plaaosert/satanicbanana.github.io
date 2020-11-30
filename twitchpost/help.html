@@ -7,12 +7,18 @@
 </head>
 <body>
 	<div id="links">
-		<script src="defs.js"></script>
 		<div class="header">
 			<p class="big">// TWITCHPOST //</p>
-			<p><i>I am not a web programmer.</i></p>
+			<p><i>I am not a web programmer.</i></p><br> |
+			<a href="#basic">Basic info</a> | 
+			<a href="#top">Class list</a> | <br>
+			<!--
+			<video width="75%" autoplay muted loop>
+				<source src="movie.mp4" type="video/mp4">
+			</video>
+			-->
 			<br>
-			<p class="big"> # BASIC</p>
+			<p class="big", id="basic"> # BASIC</p>
 			<p>- SEE THE STREAM for class IDs. You MUST use !join &lt;class&gt; before you can play.</p>
 			<br>
 			<p>- Type R, U, L, D (Right, Up, Left, Down) in chat to move. You will move continuously until you provide another order.</p>
@@ -62,21 +68,21 @@
 					<div class="column">
 						<p class="huge">A</p>
 						<p>Hit once directly in front.</p>
-						<p>No cooldown.</p>
+						<p class="desc">No cooldown.</p>
 						<img src="Warrior\A.gif">
 					</div>
 					
 					<div class="column">
 						<p class="huge">B</p>
 						<p>Hit a large area in front.</p>
-						<p>4 turn cooldown.</p>
+						<p class="desc">4 turn cooldown.</p>
 						<img src="Warrior\B.gif">
 					</div>
 					
 					<div class="column">
 						<p class="huge">C</p>
 						<p>Shoot a big fireball.</p>
-						<p>8 turn cooldown.</p>
+						<p class="desc">8 turn cooldown.</p>
 						<img src="Warrior\C.gif">
 					</div>
 				</div>
@@ -93,7 +99,7 @@
 					<div class="column">
 						<p class="huge">A</p>
 						<p>Shoot a projectile that starts three units away.</p>
-						<p>No cooldown.</p>
+						<p class="desc">No cooldown.</p>
 						<img src="Mage\A.gif">
 					</div>
 					
@@ -101,14 +107,14 @@
 						<p class="huge">B</p>
 						<p>Hit in an inverted T-shape.</p>
 						<br>
-						<p>4 turn cooldown.</p>
+						<p class="desc">4 turn cooldown.</p>
 						<img src="Mage\B.gif">
 					</div>
 					
 					<div class="column">
 						<p class="huge">C</p>
 						<p>Fire projectiles in all eight directions at once.</p>
-						<p>8 turn cooldown.</p>
+						<p class="desc">8 turn cooldown.</p>
 						<img src="Mage\C.gif">
 					</div>
 				</div>
@@ -126,21 +132,21 @@
 						<p class="huge">A</p>
 						<p>Shoot a projectile starting two units away.</p>
 						<br>
-						<p>No cooldown.</p>
+						<p class="desc">No cooldown.</p>
 						<img src="Ranger\A.gif">
 					</div>
 					
 					<div class="column">
 						<p class="huge">B</p>
 						<p>Jump back two units, leaving a projectile in the spot jumped away from.</p>
-						<p>4 turn cooldown.</p>
+						<p class="desc">4 turn cooldown.</p>
 						<img src="Ranger\B.gif">
 					</div>
 					
 					<div class="column">
 						<p class="huge">C</p>
 						<p>Jump forwards four units then shoot three projectiles at the new position.</p>
-						<p>8 turn cooldown.</p>
+						<p class="desc">8 turn cooldown.</p>
 						<img src="Ranger\C.gif">
 					</div>
 				</div>
@@ -157,7 +163,7 @@
 					<div class="column">
 						<p class="huge">A</p>
 						<p>Teleport to the right, dropping a projectile that moves in the opposite direction.</p>
-						<p>No cooldown.</p>
+						<p class="desc">No cooldown.</p>
 						<img src="Warlock\A.gif">
 					</div>
 					
@@ -165,7 +171,7 @@
 						<p class="huge">B</p>
 						<p>Attack in every possible location, two units away.</p>
 						<br>
-						<p>4 turn cooldown.</p>
+						<p class="desc">4 turn cooldown.</p>
 						<img src="Warlock\B.gif">
 					</div>
 					
@@ -173,7 +179,7 @@
 						<p class="huge">C</p>
 						<p>Hit every location directly forwards for 12 units.</p>
 						<br>
-						<p>8 turn cooldown.</p>
+						<p class="desc">8 turn cooldown.</p>
 						<img src="Warlock\C.gif">
 					</div>
 				</div>
@@ -190,21 +196,21 @@
 					<div class="column">
 						<p class="huge">A</p>
 						<p>Jump 5 units forwards and attack directly forwards after jumping.</p>
-						<p>No cooldown.</p>
+						<p class="desc">No cooldown.</p>
 						<img src="Ninja\A.gif">
 					</div>
 					
 					<div class="column">
 						<p class="huge">B</p>
 						<p>Jump 1 unit back then attack 2 units backwards and one unit forwards.</p>
-						<p>2 turn cooldown.</p>
+						<p class="desc">2 turn cooldown.</p>
 						<img src="Ninja\B.gif">
 					</div>
 					
 					<div class="column">
 						<p class="huge">C</p>
 						<p>Fire four projectiles that move in all four diagonal directions.</p>
-						<p>4 turn cooldown.</p>
+						<p class="desc">4 turn cooldown.</p>
 						<img src="Ninja\C.gif">
 					</div>
 				</div>
@@ -213,6 +219,7 @@
 			<a href="#top" style="text-align: left;"> | Back to list |</a>
 			<br><br><br>
 			<hr>
+			<br><br><br>
 			<p class="big-alt"> # Classes below only accessible through channel point (Rocks) rewards.</p>
 			<br><br><br><br><br><br>
 			<hr>
@@ -225,21 +232,21 @@
 						<p class="huge">A</p>
 						<p>Hit a 3x1 area directly in front of you.</p>
 						<br>
-						<p>No cooldown.</p>
+						<p class="desc">No cooldown.</p>
 						<img src="Paladin\A.gif">
 					</div>
 					
 					<div class="column">
 						<p class="huge">B</p>
 						<p>Fire a huge ball of holy light, moving backwards one unit.</p>
-						<p>4 turn cooldown.</p>
+						<p class="desc">4 turn cooldown.</p>
 						<img src="Paladin\B.gif">
 					</div>
 					
 					<div class="column">
 						<p class="huge">C</p>
 						<p>Hit three units in a four-pointed star shape.</p>
-						<p>8 turn cooldown.</p>
+						<p class="desc">8 turn cooldown.</p>
 						<img src="Paladin\C.gif">
 					</div>
 				</div>
@@ -256,21 +263,21 @@
 					<div class="column">
 						<p class="huge">A</p>
 						<p>Sweep, hitting in front and to the side - but not directly in front.</p>
-						<p>No cooldown.</p>
+						<p class="desc">No cooldown.</p>
 						<img src="Berserker\A.gif">
 					</div>
 					
 					<div class="column">
 						<p class="huge">B</p>
 						<p>Hit in a star-shaped pattern in all 8 directions at once.</p>
-						<p>4 turn cooldown.</p>
+						<p class="desc">4 turn cooldown.</p>
 						<img src="Berserker\B.gif">
 					</div>
 					
 					<div class="column">
 						<p class="huge">C</p>
 						<p>Rush forwards 5 units, leaving hits along your path, then hit a large area in front.</p>
-						<p>8 turn cooldown.</p>
+						<p class="desc">8 turn cooldown.</p>
 						<img src="Berserker\C.gif">
 					</div>
 				</div>
@@ -287,7 +294,7 @@
 					<div class="column">
 						<p class="huge">A</p>
 						<p>Make a frog-shaped attack that hits in a strange pattern.</p>
-						<p>No cooldown.</p>
+						<p class="desc">No cooldown.</p>
 						<img src="Frogman\A.gif">
 					</div>
 					
@@ -295,7 +302,7 @@
 						<p class="huge">B</p>
 						<p>Fire a frog-like set of projectiles.</p>
 						<br>
-						<p>8 turn cooldown.</p>
+						<p class="desc">8 turn cooldown.</p>
 						<img src="Frogman\B.gif">
 					</div>
 					
@@ -303,7 +310,7 @@
 						<p class="huge">C</p>
 						<p>Fire a huge blast of pure frog energy.</p>
 						<br>
-						<p>16 turn cooldown.</p>
+						<p class="desc">16 turn cooldown.</p>
 						<img src="Frogman\C.gif">
 					</div>
 				</div>
