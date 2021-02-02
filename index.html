@@ -6,17 +6,26 @@
 	<link rel="stylesheet" type="text/css" href="index.css"/>
 </head>
 <body>
+	<script src="music.js"></script>
+	<div class="socials">
+		<a id="social-link" style="color: #42bcf5" href="https://twitter.com/plaaosert">twitter</a>
+		<br><br>
+		<a id="social-link" style="color: #b88cff" href="https://twitch.com/plaaosert">twitch</a>
+	</div>
+
 	<div id="links">
 		<script src="defs.js"></script>
-		<h1>// test //</h1>
+		<h1>// plaaosert //</h1>
 		<ul>
-			<li><a id="1" href="http://www.cnccookbook.com/img/OthersProjects/JCube3.jpg">## cool cube</a></li>
-			<li><a id="2" href="javascript:void(0)" onclick="start_switch(null, 'ocean');">## enable ocean</a></li>
-			<li><a id="3" href="javascript:void(0)" onclick="start_switch('ocean', null);">## disable ocean</a></li>
+			<li><a id="1" href="twitchpost/help.html">## twitchpost</a></li>
+			<li><a id="2" href="javascript:void(0)" onclick="play_music();">## music</a></li>
+			<li><a id="3" href="javascript:void(0)" onclick="start_switch('ocean', null);">## control canvas</a></li>
 		</ul>
 		
 		<script src="text-glitch.js"></script>
 	</div>
+	
+	<h1 id="music-player">00:00 [&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;] 99:99</h1>
 	
 	<div id="ocean">
 		<!-- basically just a huge textbox -->

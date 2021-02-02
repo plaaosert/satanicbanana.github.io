@@ -1,0 +1,88 @@
+img {
+    image-rendering: optimizeSpeed;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: optimize-contrast;
+    image-rendering: pixelated;
+    -ms-interpolation-mode: nearest-neighbor;
+	position:absolute;
+}
+
+body {
+	font-family: "MS Gothic";
+	position:absolute;
+	left: 0px;
+    transform: scale(2);
+    transform-origin: 0 0;
+    -moz-transform: scale(2); 
+    -moz-transform-origin: 0 0;
+}
+
+button {
+	font-family: "MS Gothic";
+	font-size: 8px;
+	font-weight: bold;
+	position:absolute;
+}
+
+.fg {
+	position: absolute;
+	z-index: 2;
+}
+
+.bg {
+	position: absolute;
+	z-index: -2;
+}
+
+.menu {
+	position: absolute;
+	z-index: 3;
+}
+
+.menutab {
+	
+}
+
+.item-bold {
+	font-family: "MS Gothic";
+	font-size: 8px;
+	font-weight: bold;
+	width:90px;
+	color: white;
+	left:40px;
+	top:2px;
+	position:absolute;
+}
+
+.item-sub {
+	font-family: "MS Gothic";
+	font-size: 8px;
+	color: #0ef;
+	left:12px;
+	position:absolute;
+}
+
+.item-misc {
+	font-family: "MS Gothic";
+	font-size: 8px;
+	color: #ccc;
+	left:8px;
+	position:absolute;
+}
+
+.item-tiny {
+	font-family: "MS Gothic";
+	font-size: 6px;
+	color: #bbb;
+	left:8px;
+	position:absolute;
+}
+
+.itembox {
+	position: absolute;
+}
+
+#negative {
+	color:#f44;
+}

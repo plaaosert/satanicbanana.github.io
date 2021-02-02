@@ -1,0 +1,118 @@
+<html>
+	<head>
+		<link rel="stylesheet" href="index.css">
+	</head>
+	<body>
+		<!-- animation and rendering -->
+		<script src="scripts/render.js"></script>
+		
+		<!-- miscellaneous functions -->
+		<script src="scripts/helpers.js"></script>
+		
+		<!-- game controllers -->
+		<script src="scripts/fight-manager.js"></script>
+		
+		<!-- player scripts -->
+		<script src="scripts/character.js"></script>
+		<script src="scripts/player.js"></script>
+		
+		<!-- generators -->
+		<script src="scripts/item-generate.js"></script>
+		<script src="scripts/enemy-generate.js"></script>
+		
+		<!-- defs -->
+		<script src="scripts/defs/anim-defs.js"></script>
+		<script src="scripts/defs/item-defs-weapon.js"></script>
+		<script src="scripts/defs/item-defs-weapon-text.js"></script>
+		<script src="scripts/defs/item-defs-armour.js"></script>
+		<script src="scripts/defs/item-defs-armour-text.js"></script>
+		<script src="scripts/defs/item-defs-accessories.js"></script>
+		<script src="scripts/defs/item-defs-accessories-text.js"></script>
+		<script src="scripts/defs/area-defs.js"></script>
+		
+		<!-- end of scripts -->
+		<!-- everything below here is dynamic html hell -->
+		<img class="bg" src="sprites/t.png"></img>
+		
+		<div class="menutab" id="inventory-screen">
+			<div id="inventory-items"></div>
+			<div id="control-items">
+				<button style="width:80px; top:67px; left:272px" onclick="mod_inventory_page(-1)">Prev page</button>
+				<button style="width:80px; top:99px; left:272px" onclick="mod_inventory_page(1)">Next page</button>
+				<p id="dbg-pageno" style="width:80px; top:77px; left:272px; text-align: center;" class="item-bold">Page 1 / ?</p>
+				<button style="width:80px; top:131px; left:272px" onclick="metaplayer.swap_sort(document.getElementById('sort-input').value); mod_inventory_page(0)">Apply sort</button>
+				<input style="width:80px; top:146px; left:272px; color:#222" class="item-bold" id="sort-input"></input>
+				<button style="width:80px; top:163px; left:272px" onclick="metaplayer.reverse = !metaplayer.reverse; mod_inventory_page(0)">Reverse sort</button>
+				<input style="width:80px; top:209px; left:272px; color:#222" class="item-bold" id="update-stats-input", value="1000" onchange="update_stats_preview()"></input>
+				<p style="color:#ccc; width:68px; height:80px; padding:4px; top:219px; left:272px; background:#222;border:2px solid #000;" id="stats-preview" class="item-sub">
+				<br><br>
+				<br>
+				<br>
+				<br>
+				<br>
+				<br>
+				<br>
+				</p>
+			</div>
+			<div id="equip-items">
+				<div id="equip-weapon" style="position:absolute; top:67px; left:360px; width:136px; height:42px; background:#222;border:2px solid #000;">
+					<img id="equip-weapon-placeholder" style="top:9px; left:10px;" src="sprites/UI/weapon.png"></img>
+					<img id="equip-weapon-border" style="top:7px; left:8px" src="sprites/items/borders/000.png"></img>
+					<img id="equip-weapon-border2" style="top:7px; left:8px" src=""></img>
+					<img id="equip-weapon-box" style="top:9px; left:10px;" src=""></img>
+					<p id="equip-weapon-title" class="item-bold">No item</p><br>
+				</div>
+				<div id="equip-armour" style="position:absolute; top:119px; left:360px; width:136px; height:42px; background:#222;border:2px solid #000;">
+					<img id="equip-weapon-placeholder" style="top:9px; left:10px;" src="sprites/UI/armour.png"></img>
+					<img id="equip-armour-border" style="top:7px; left:8px" src="sprites/items/borders/000.png"></img>
+					<img id="equip-armour-border2" style="top:7px; left:8px" src=""></img>
+					<img id="equip-armour-box" style="top:9px; left:10px;" src=""></img>
+					<p id="equip-armour-title" class="item-bold">No item</p><br>
+				</div>
+				<div id="equip-acc1" style="position:absolute; top:170px; left:360px; width:136px; height:42px; background:#222;border:2px solid #000;">
+					<img id="equip-weapon-placeholder" style="top:9px; left:10px;" src="sprites/UI/accessory.png"></img>
+					<img id="equip-acc1-border" style="top:7px; left:8px" src="sprites/items/borders/000.png"></img>
+					<img id="equip-acc1-border2" style="top:7px; left:8px" src=""></img>
+					<img id="equip-acc1-box" style="top:9px; left:10px;" src=""></img>
+					<p id="equip-acc1-title" class="item-bold">No item</p><br>
+				</div>
+				<div id="equip-acc2" style="position:absolute; top:221px; left:360px; width:136px; height:42px; background:#222;border:2px solid #000;">
+					<img id="equip-weapon-placeholder" style="top:9px; left:10px;" src="sprites/UI/accessory.png"></img>
+					<img id="equip-acc2-border" style="top:7px; left:8px" src="sprites/items/borders/000.png"></img>
+					<img id="equip-acc2-border2" style="top:7px; left:8px" src=""></img>
+					<img id="equip-acc2-box" style="top:9px; left:10px;" src=""></img>
+					<p id="equip-acc2-title" class="item-bold">No item</p><br>
+				</div>
+				<div id="equip-acc3" style="position:absolute; top:273px; left:360px; width:136px; height:42px; background:#222;border:2px solid #000;">
+					<img id="equip-weapon-placeholder" style="top:9px; left:10px;" src="sprites/UI/accessory.png"></img>
+					<img id="equip-acc3-border" style="top:7px; left:8px" src="sprites/items/borders/000.png"></img>
+					<img id="equip-acc3-border2" style="top:7px; left:8px" src=""></img>
+					<img id="equip-acc3-box" style="top:9px; left:10px;" src=""></img>
+					<p id="equip-acc3-title" class="item-bold">No item</p><br>
+				</div>
+			</div>
+		</div>
+		
+		<div class="menutab" id="adventure-screen"></div>
+		
+		<div class="menutab" id="settings-screen"></div>
+		
+		<div class="menu" id="item-dialog" style="left:-1000px; top:-1000px; width:140px;height:160px;background:#222;border:2px solid #000;">
+			<img id="idlg-bord" style="top:8px; left:8px" src="sprites/items/borders/001.png"></img>
+			<img id="idlg-bord2" style="top:8px; left:8px" src=""></img>
+			<img id="idlg-spr" style="top:10px; left:10px;" src="sprites/items/weapons/001.png"></img>
+			<p id="idlg1" class="item-bold">-</p>
+			<p id="idlg-rarity" style="top:36px; left:12px;" class="item-tiny">Rare</p>
+			<p id="idlg-lvl" style="top:46px; left:12px;" class="item-tiny">Item level 1</p>
+			<p id="idlg2" style="top:60px;" class="item-sub">-</p>
+			<p id="idlg3" style="top:76px;" class="item-sub">-</p>
+			<p id="idlg4" style="top:92px;" class="item-sub">-</p>
+			<p style="top:120px;" class="item-misc">
+			(c)ompare    <br>
+			(e)quip/unequip      <br>
+			(s)ell       
+			</p>
+			<p id="idlg-acc-choice" style="visibility:hidden; top:120px; left:70px" class="item-sub">&nbsp;&nbsp;&nbsp;&nbsp;| (1) slot 1<br>----| (2) slot 2<br>&nbsp;&nbsp;&nbsp;&nbsp;| (3) slot 3</p>
+		</div>
+	</body>
+</html>

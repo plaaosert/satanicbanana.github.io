@@ -1,0 +1,10 @@
+006:Hatchet
+001:Axe;008:Axe;028:Pike;012:Chipped Axe
+016:Axe;017:Greataxe;010:Greataxe;026:Curve-Axe;005:Bronze Axe;013:Axe
+007:Blood Hatchet;015:Greataxe;011:Greataxe
+002:Golden Axe;003:Glass Axe;018:Brass Greataxe;029:Golden Pike
+014:Crystal Axe;004:Emerald Axe;027:Golden Curve-Axe;030:Glass Pike
+009:Crystal Axe;019:Golden Greataxe;020:Glass Greataxe
+022:Winged Axe
+021:Mithril Greataxe;023:Winged Axe;025:Demon Axe
+024:Heaven Axe

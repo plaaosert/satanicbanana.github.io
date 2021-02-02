@@ -40,6 +40,17 @@ ul {
 	padding-left: 1em;
 }
 
+.socials {
+	text-align: right;
+	position: absolute;
+	top: 24px;
+	right: 24px;
+}
+
+#social-link {
+	font-size: 24px;
+}
+
 .canvas {
 	white-space: nowrap pre;
 	float: left;

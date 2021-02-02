@@ -1,0 +1,16 @@
+icon-1_2_7-0.png;ID:1
+icon-1_2_7-1.png;ID:1
+icon-1_2_7-10.png;TradingCard:1
+icon-1_2_7-11.png;TradingCard:1
+icon-1_2_7-12.png;TradingCard:1
+icon-1_2_7-13.png;TradingCard:1
+icon-1_2_7-14.png;TradingCard:1
+icon-1_2_7-15.png;TradingCard:1
+icon-1_2_7-2.png;TradingCardBack:1
+icon-1_2_7-3.png;TradingCardBack:1
+icon-1_2_7-4.png;TradingCardBack:1
+icon-1_2_7-5.png;TradingCardBack:1
+icon-1_2_7-6.png;TradingCardBack:1
+icon-1_2_7-7.png;TradingCardBack:1
+icon-1_2_7-8.png;TradingCardBack:1
+icon-1_2_7-9.png;TradingCard:1

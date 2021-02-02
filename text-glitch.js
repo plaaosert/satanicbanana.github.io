@@ -8,9 +8,9 @@ l3.onmouseover = l3.onmouseout = handler;
 
 // "alt strings" as a dict for every id
 aims = {
-	"1":">> shows you a picture of a cool cube i found on the internet for this joke",
-	"2":">> it's not that processor intensive, i think",
-	"3":">> maybe your computer is lagging"
+	"1":">> time to learn about twitchpost!",
+	"2":">> listen to some of my music",
+	"3":">> turn the ocean off or make it look like something else"
 };
 
 // setup original texts too
