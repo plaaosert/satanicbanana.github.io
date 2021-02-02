@@ -16,6 +16,7 @@ body {
     transform-origin: 0 0;
     -moz-transform: scale(2); 
     -moz-transform-origin: 0 0;
+	background-color:#888;
 }
 
 button {

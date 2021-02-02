@@ -271,6 +271,7 @@ class Player {
 }
 
 
+// why does javascript have like 4 distinct methods of declaring classes and wHY DID I USE ALL FOUR
 /*
 var player = {
 	mp: metaplayer,
@@ -451,22 +452,17 @@ function testwp(loc) {
 }
 
 function testrnd() {
-	for (var i=0; i<=5; i+=1) {
-		metaplayer.add_item(generateWeapon(i));
-		metaplayer.add_item(generateWeapon(i));
-		metaplayer.add_item(generateWeapon(i));
-		metaplayer.add_item(generateArmour(i));
-		metaplayer.add_item(generateArmour(i));
-		metaplayer.add_item(generateArmour(i));
-		
+	for (var i=0; i<=99; i+=1) {
 		metaplayer.add_item(generateAccessory(i));
 		metaplayer.add_item(generateAccessory(i));
-	}
-	
-	for (var i=6; i<=99; i+=1) {
+		metaplayer.add_item(generateAccessory(i));
+		metaplayer.add_item(generateAccessory(i));
+		metaplayer.add_item(generateWeapon(i));
 		metaplayer.add_item(generateWeapon(i));
 		metaplayer.add_item(generateArmour(i));
+		metaplayer.add_item(generateArmour(i));
 	}
+
 	metaplayer.sort_all_items();
 
 	initial_inventory_render();

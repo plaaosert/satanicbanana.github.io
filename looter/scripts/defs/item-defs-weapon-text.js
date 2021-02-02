@@ -111,12 +111,12 @@ multiRPrefixes = [
 	["Lucky ",         ["stats.luc", "*", sqrt, 0.15], [4, 9]],
 	["Fortuitous ",    ["bonuses.loot_chance", "*", sqrt, 0.2], [2, 9]],
 	["Serendipitous ", ["bonuses.gold_bonus", "*", linear, 0.085], [2, 9]],
-	["Bloodthirsty ",  ["bonuses.apl", "+", sqrt, 1.2], [4, 9]],
-	["Defensive ",     ["bonuses.dpl", "+", sqrt, 1.05], [4, 9]],
-	["Invigorating ",  ["bonuses.hpl", "+", sqrt, 2.01], [5, 9]],
-	["Arcane ",        ["bonuses.mpl", "+", sqrt, 1.89], [5, 9]],
-	["Rapid ",         ["bonuses.agl", "+", sqrt, 0.52], [3, 7]],
-	["Blessed ",       ["bonuses.lpl", "+", sqrt, 0.46], [3, 7]],
+	["Bloodthirsty ",  ["bonuses.apl", "+", sqrt, 1.05], [4, 9]],
+	["Defensive ",     ["bonuses.dpl", "+", sqrt, 0.85], [4, 9]],
+	["Invigorating ",  ["bonuses.hpl", "+", sqrt, 1.81], [5, 9]],
+	["Arcane ",        ["bonuses.mpl", "+", sqrt, 1.69], [5, 9]],
+	["Rapid ",         ["bonuses.agl", "+", sqrt, 0.42], [3, 7]],
+	["Blessed ",       ["bonuses.lpl", "+", sqrt, 0.36], [3, 7]],
 ]
 
 

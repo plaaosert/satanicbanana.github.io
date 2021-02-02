@@ -17,6 +17,31 @@ inventory_page = 0;
 current_screen = "inventory";
 
 
+function SHOWALLITEMS() {
+	// Destructive. Damaging. Refresh after using. Remove me later.
+	// Uses a similar routine to initial inventory rendering but enumerates every sprite on a normal border2 and border1.
+	offset = 0;
+	["weapons", "armours", "accs"].forEach((typ) => {
+		// For 200 items (50x4)
+		for (i=0; i<4; i++) {
+			inventory_objs.push([]);
+			
+			for (j=0; j<50; j++) {
+				var xpos = j * 32;
+				var ypos = i * 32;
+				var itemid = (i * 50) + j;
+				
+				itemElem = new ItemFrame();
+				itemElem.makeBaseFrame(xpos, ypos + offset, document.body)
+				itemElem.box.src = "sprites/items/" + typ + "/" + itemid.toString().padStart(3, "0") + ".png";
+			}
+		}
+		
+		offset += 160;
+	});
+}
+
+
 class ItemFrame {
 	// frames are initialised either by an item or by nothing
 	constructor() {
@@ -40,11 +65,11 @@ class ItemFrame {
 	}
 	
 	setItem(item) {
+		this.border.src = "sprites/items/borders/000.png";
+		this.border2.src = "";
+		this.box.src = "";
+		
 		if (item == undefined || item == null) {
-			this.border.src = "sprites/items/borders/000.png";
-			this.border2.src = "";
-			this.box.src = "";
-			
 			if (this.title != undefined) {
 				this.title.textContent = "No item";
 			}
@@ -125,6 +150,7 @@ function get_variable_objects() {
 													})(item));
 													
 		bx.addEventListener("mouseleave", kill_item_dialog);
+		bx.addEventListener("click", equip_button_pressed);
 		obj.setItem(metaplayer.items[item]);
 		
 		menu_screens.inventory["equip_" + item] = obj;
@@ -294,10 +320,8 @@ function initial_inventory_render() {
 													})(itemid));
 													
 			itemElem.box.addEventListener("mouseleave", kill_item_dialog);
-			
-			inventory_div.appendChild(itemElem.border);
-			inventory_div.appendChild(itemElem.border2);
-			inventory_div.appendChild(itemElem.box);
+			itemElem.box.addEventListener("click", equip_button_pressed);
+
 			inventory_objs[i].push(itemElem);
 		}
 	}
@@ -373,15 +397,53 @@ function try_equip_item(selectedItem, slot) {
 
 function update_stats_preview() {
 	if (document.getElementById("update-stats-input").value != "") {
-		player.level = parseInt(document.getElementById("update-stats-input").value);
-		player.calculate_all_stats();
-		stats_text = "at LV " + player.level.toLocaleString() + "<br><br>";
-		Object.keys(player.stats).forEach(function (item) {
-			stats_text += item.toUpperCase() + " " + player.stats[item].toLocaleString() + "<br>";
+		previewPlayer = new Player(metaplayer);
+		lvValue = document.getElementById("update-stats-input").value;
+		previewPlayer.level = Math.round(Number(lvValue));
+		
+		previewPlayer.calculate_all_stats();
+		stats_text = "at LV " + format_bonus_number(previewPlayer.level) + "<br><br>";
+		Object.keys(previewPlayer.stats).forEach(function (item) {			
+			stats_text += item.toUpperCase() + " " + format_bonus_number(previewPlayer.stats[item]) + "<br>";
 		});
 		
 		document.getElementById("stats-preview").innerHTML = stats_text;
 	}
+}
+
+
+function equip_button_pressed() {
+	if (selectedItem != null) {
+		if (pickingAccSlot) {
+			// Try to equip in an empty slot. If an empty slot is not available, do nothing.
+			if (metaplayer.items.acc1 == null)
+				try_equip_item(selectedItem, "acc1");
+			else if (metaplayer.items.acc2 == null)
+				try_equip_item(selectedItem, "acc2");
+			else if (metaplayer.items.acc3 == null)
+				try_equip_item(selectedItem, "acc3");
+			
+			return;
+		}
+		else {
+			ref_item = selectedItem.item;
+			ref_pos = selectedItem.pos;
+			ref_typ = ref_item.typ;
+			
+			// accessories need to show the additional pick part
+			if (ref_typ != "acc" || overEquippedItem != undefined) {
+				try_equip_item(selectedItem, overEquippedItem);
+			} else {
+				// Show the choice text and turn on acc picking choice.
+				variableObjects.itemdialog.acc_choice.style.visibility = "visible";
+				pickingAccSlot = true;
+			}
+		}
+		
+		return true;
+	}
+	
+	return false;
 }
 
 
@@ -422,22 +484,9 @@ document.onkeydown = function(e) {
 
         case 69: // e
 			// equip the item in the chosen slot, returning the other item to the inventory if there is one and removing this one from the inventory
-			if (selectedItem != null) {
-				ref_item = selectedItem.item;
-				ref_pos = selectedItem.pos;
-				ref_typ = ref_item.typ;
-				
-				// accessories need to show the additional pick part
-				if (ref_typ != "acc" || overEquippedItem != undefined) {
-					try_equip_item(selectedItem, overEquippedItem);
-				} else {
-					// Show the choice text and turn on acc picking choice.
-					variableObjects.itemdialog.acc_choice.style.visibility = "visible";
-					pickingAccSlot = true;
-				}
-				
+			if (equip_button_pressed())
 				e.preventDefault(); // prevent default action
-			}
+			
 			break;
 
         case 83: // s

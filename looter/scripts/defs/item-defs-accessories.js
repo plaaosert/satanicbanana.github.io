@@ -1,12 +1,12 @@
 accessoryInfo = [
-	[["001", "Broach", "stats.hp"], ],
-	[["002", "Red Broach", "stats.atk"], ["003", "Bracelet", "stats.hp"], ],
-	[["011", "Silver Ring", "stats.mp"], ["014", "Bronze Coin", "stats.def"], ],
-	[["005", "HP Gem", "stats.hp"], ["010", "Golden Ring", "stats.mp"], ["013", "Silver Coin", "stats.def"], ],
-	[["006", "LUC Gem", "stats.luc"], ["007", "ATK Gem", "stats.atk"], ["008", "DEF Gem", "stats.def"], ["012", "Gold Coin", "stats.def"], ],
-	[["009", "MP Gem", "stats.mp"], ],
-	[],
-	[],
-	[],
-	[]
+	[["001", "Broach", "stats.hp"], ["029", "Simple Necklace", "stats.def"], ["036", "Turban", "stats.def"], ["038", "Slippers", "stats.agi"]],
+	[["002", "Red Broach", "stats.atk"], ["003", "Bracelet", "stats.hp"], ["015", "Ring", "stats.def"], ["034", "Worn Gloves", "stats.atk"], ["037", "Comfy Boots", "stats.agi"]],
+	[["011", "Silver Ring", "stats.mp"], ["014", "Bronze Coin", "stats.def"], ["016", "Silver Ring", "stats.hp"], ["020", "Ribbon", "stats.luc"], ["028", "Small Pendant", "stats.def"], ["045", "Strange Shoes", "bonuses.crit_chance"]],
+	[["005", "HP Gem", "stats.hp"], ["010", "Golden Ring", "stats.mp"], ["013", "Silver Coin", "stats.luc"], ["017", "Golden Ring", "stats.hp"], ["021", "Earring", "stats.atk"], ["026", "Magical Glasses", "stats.mp"], ["032", "Hairband", "stats.def"], ["035", "Artificer's Goggles", "bonuses.loot_chance"], ["039", "Elven Boots", "stats.agi"], ["047", "Hardy Gloves", "stats.atk"]],
+	[["006", "LUC Gem", "stats.luc"], ["007", "ATK Gem", "stats.atk"], ["008", "DEF Gem", "stats.def"], ["012", "Gold Coin", "bonuses.gold_bonus"], ["018", "Ornate Necklace", "stats.mp"], ["027", "Mirror", "bonuses.mpl"], ["046", "Comfier Boots", "stats.agi"]],
+	[["009", "MP Gem", "stats.mp"], ["022", "Blood Earring", "stats.atk"], ["023", "Coin Pendant", "bonuses.gold_bonus"], ["030", "Cat Ears", "bonuses.loot_chance"], ["042", "Lead Boots", "bonuses.hpl"], ["048", "Masterful Gloves", "stats.agi"]],
+	[["024", "Cross Necklace", "stats.atk"], ["031", "Bunny Ears", "bonuses.loot_chance"], ["033", "Consecrated Wreath", "bonuses.hpl"], ["053", "Dragonhide Gloves", "stats.atk"], ["051", "Armoured Gloves", "bonuses.dpl"]],
+	[["019", "Angelic Ring", "stats.agi"], ["025", "Dragonscale", "stats.hp"], ["041", "Winged Boots", "bonuses.agl"], ["054", "Plated Dragonhide Gloves", "stats.atk"], ["050", "Knight Gloves", "bonuses.hpl"]],
+	[["040", "Dragonskin Boots", "bonuses.dpl"], ["043", "Adventurer's Boots", "stats.hp"], ["049", "Mithril Gloves", "stats.hp"]],
+	[["044", "Golden Shoes", "bonuses.gold_bonus"], ["056", "\"Bare Knuckle\" Gloves", "bonuses.apl"], ["055", "Gold-Plated Dragonhide Gloves", "stats.atk"], ["052", "Gold Armoured Gloves", "bonuses.dpl"]]
 ];

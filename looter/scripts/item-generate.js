@@ -74,6 +74,24 @@ function threeToPow(exc, weight) {
 	return (3 ** exc) 
 }
 
+function standardItemScaling(exc, weight) {
+	return Math.round((3.7 ** exc) + (30 * (exc - 1))) * weight;
+}
+
+special_scalings = {
+	"bonuses.crit_chance": [sqrt, 0.09, "*"],
+	"bonuses.crit_bonus": [sqrt, 0.10, "*"],
+	"bonuses.gold_bonus": [sqrt, 0.15, "*"],
+	"bonuses.loot_chance": [sqrt, 0.235, "*"],
+	
+	"bonuses.apl": [sqrt, 1.2, "+"],
+	"bonuses.dpl": [sqrt, 1.05, "+"],
+	"bonuses.hpl": [sqrt, 2.01, "+"],
+	"bonuses.mpl": [sqrt, 1.89, "+"],
+	"bonuses.agl": [sqrt, 0.52, "+"],
+	"bonuses.lpl": [sqrt, 0.46, "+"],
+}
+
 
 function Item(typ, level, sprite, name, bonus1, bonus2, bonus3) {
 	this.typ = typ;
@@ -148,19 +166,42 @@ function generateAccessory(baseCoeff) {
 	bonus2Target = accessoryName[1][0];
 	bonus3Target = accessoryName[1][1];
 	
-	bonus2Number = Math.round(bonus2Target[2](adjustedIndex, bonus2Target[3]) * 80) / 100;
+	// Apply variance to both bonus2 and bonus3 (+-15%)
+	bonus2Variance = randInt(85, 115) / 100.0;
+	bonus3Variance = randInt(85, 115) / 100.0;
+	
+	bonus2Number = Math.round(bonus2Target[2](adjustedIndex, bonus2Target[3]) * 80 * bonus2Variance) / 100;
 	if (bonus2Target[1] == "*")
 		bonus2Number += 1; // make sure it generates as an actual multiplier
 	else
 		bonus2Number = Math.round(bonus2Number); // otherwise round to an int
 	
-	bonus3Number = Math.round(bonus3Target[2](adjustedIndex, bonus3Target[3]) * 80) / 100;
+	bonus3Number = Math.round(bonus3Target[2](adjustedIndex, bonus3Target[3]) * 80 * bonus3Variance) / 100;
 	if (bonus3Target[1] == "*")
 		bonus3Number += 1; // make sure it generates as an actual multiplier
 	else
 		bonus3Number = Math.round(bonus3Number); // otherwise round to an int
 	
-	bonus1 = [selectedAccessory[2], "+", Math.round((3.8 ** adjustedIndex) + (30 * (adjustedIndex - 1)))],
+	// Since bonus1 can be abitrary and should follow some equation not necessarily based on the standard ATK/DEF scaling,
+	// check if the bonus is part of stats. If so, simply multiply by base_stats_per_level. Otherwise, use a custom formula defined above.
+	bonus1Type = "+";
+	if (selectedAccessory[2].startsWith("stats.")) {
+		bonus1Number = standardItemScaling(adjustedIndex, 1);
+		bonus1Number *= base_stats_per_level[selectedAccessory[2].split(".")[1]] / 5;
+		bonus1Number = Math.round(bonus1Number);
+	} else {
+		scaling = special_scalings[selectedAccessory[2]];
+		bonus1Number = scaling[0](adjustedIndex, scaling[1]);
+		if (scaling[2] == "*") {
+			bonus1Number += 1
+		} else {
+			bonus1Number = Math.round(bonus1Number);
+		}
+		
+		bonus1Type = scaling[2];
+	}
+	
+	bonus1 = [selectedAccessory[2], bonus1Type, bonus1Number],
 	bonus2 = bonus2Target[0] == "" ? null : [bonus2Target[0], bonus2Target[1], bonus2Number],
 	bonus3 = bonus3Target[0] == "" ? null : [bonus3Target[0], bonus3Target[1], bonus3Number]
 	
@@ -205,19 +246,23 @@ function generateArmour(baseCoeff) {
 	bonus2Target = armourName[1][0];
 	bonus3Target = armourName[1][1];
 	
-	bonus2Number = Math.round(bonus2Target[2](adjustedIndex, bonus2Target[3]) * 100) / 100;
+	// Apply variance to both bonus2 and bonus3 (+-15%)
+	bonus2Variance = randInt(85, 115) / 100.0;
+	bonus3Variance = randInt(85, 115) / 100.0;
+	
+	bonus2Number = Math.round(bonus2Target[2](adjustedIndex, bonus2Target[3]) * 100 * bonus2Variance) / 100;
 	if (bonus2Target[1] == "*")
 		bonus2Number += 1; // make sure it generates as an actual multiplier
 	else
 		bonus2Number = Math.round(bonus2Number); // otherwise round to an int
 	
-	bonus3Number = Math.round(bonus3Target[2](adjustedIndex, bonus3Target[3]) * 100) / 100;
+	bonus3Number = Math.round(bonus3Target[2](adjustedIndex, bonus3Target[3]) * 100 * bonus3Variance) / 100;
 	if (bonus3Target[1] == "*")
 		bonus3Number += 1; // make sure it generates as an actual multiplier
 	else
 		bonus3Number = Math.round(bonus3Number); // otherwise round to an int
 	
-	bonus1 = ["stats.def", "+", Math.round((3.8 ** adjustedIndex) + (30 * (adjustedIndex - 1))) * 3],
+	bonus1 = ["stats.def", "+", standardItemScaling(adjustedIndex, 3)],
 	bonus2 = bonus2Target[0] == "" ? null : [bonus2Target[0], bonus2Target[1], bonus2Number],
 	bonus3 = bonus3Target[0] == "" ? null : [bonus3Target[0], bonus3Target[1], bonus3Number]
 	
@@ -268,21 +313,23 @@ function generateWeapon(baseCoeff) {
 	bonus2Target = weaponName[1][0];
 	bonus3Target = weaponName[1][1];
 	
-	// console.log(empty_bonus);
+	// Apply variance to both bonus2 and bonus3 (+-15%)
+	bonus2Variance = randInt(85, 115) / 100.0;
+	bonus3Variance = randInt(85, 115) / 100.0;
 	
-	bonus2Number = Math.round(bonus2Target[2](adjustedIndex, bonus2Target[3]) * 100) / 100;
+	bonus2Number = Math.round(bonus2Target[2](adjustedIndex, bonus2Target[3]) * 100 * bonus2Variance) / 100;
 	if (bonus2Target[1] == "*")
 		bonus2Number += 1; // make sure it generates as an actual multiplier
 	else
 		bonus2Number = Math.round(bonus2Number); // otherwise round to an int
 	
-	bonus3Number = Math.round(bonus3Target[2](adjustedIndex, bonus3Target[3]) * 100) / 100;
+	bonus3Number = Math.round(bonus3Target[2](adjustedIndex, bonus3Target[3]) * 100 * bonus3Variance) / 100;
 	if (bonus3Target[1] == "*")
 		bonus3Number += 1; // make sure it generates as an actual multiplier
 	else
 		bonus3Number = Math.round(bonus3Number); // otherwise round to an int
 	
-	bonus1 = ["stats.atk", "+", Math.round((3.8 ** adjustedIndex) + (30 * (adjustedIndex - 1))) * 3],
+	bonus1 = ["stats.atk", "+", standardItemScaling(adjustedIndex, 3)],
 	bonus2 = bonus2Target[0] == "" ? null : [bonus2Target[0], bonus2Target[1], bonus2Number],
 	bonus3 = bonus3Target[0] == "" ? null : [bonus3Target[0], bonus3Target[1], bonus3Number]
 	
