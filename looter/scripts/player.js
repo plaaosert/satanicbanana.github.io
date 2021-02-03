@@ -53,24 +53,47 @@ class MetaPlayer {
 		};
 	
 		this.original_inventory = []; // List of all items currently held. Never sorted.
-		this.inventory = []; // List of all items currently held. Affected by sorts.
+		this.sorted_inventory = []; // List of all items currently held. Affected by sorts.
+		this.inventory = []; // List of all items currently held. Affected by sorts and filters.
 		this.sort_mode = "raw_level";
+		this.filter_mode = "";
 		this.reverse = true;
 	}
 	
 	sort_all_items() {
-		this.inventory = this.original_inventory.slice();
+		this.sorted_inventory = this.original_inventory.slice();
 	
-		sortArrayOfObjects(this.inventory, this.sort_mode);
+		sortArrayOfObjects(this.sorted_inventory, this.sort_mode);
+		
+		this.inventory = this.sorted_inventory.slice();
+		
+		if (this.filter_mode != "")
+			this.inventory = this.inventory.filter(a => a.name.toLowerCase().includes(this.filter_mode.toLowerCase()));
+		
+			//filterArrayOfObjects(this.inventory, this.filter_mode, "name");
+	}
+		
+	check_filter(item) {
+		if (this.filter_mode == "")
+			return true;
+		
+		return item.name.toLowerCase().includes(this.filter_mode.toLowerCase());
 	}
 		
 	add_item(item) {
 		item.time_changed = Date.now();
 		this.original_inventory.push(item);
 		
-		var add_location = arbBinaryFit(this.inventory, this.sort_mode, item);
+		var add_location = arbBinaryFit(this.sorted_inventory, this.sort_mode, item);
 		
-		this.inventory.splice(add_location, 0, item);
+		this.sorted_inventory.splice(add_location, 0, item);
+		if (this.check_filter(item)) {
+			var add_filt_location = arbBinaryFit(this.inventory, this.sort_mode, item);
+		
+			this.inventory.splice(add_filt_location, 0, item);
+		} else {
+			// Do not add
+		}
 	}
 	
 	remove_item(item) {
@@ -79,6 +102,12 @@ class MetaPlayer {
 		
 		var index_remove_sorted = this.inventory.indexOf(item);
 		this.inventory.splice(index_remove_sorted, 1);
+	}
+	
+	filter_sort(to) {
+		this.filter_mode = to;
+		
+		this.sort_all_items();
 	}
 	
 	swap_sort(to) {
@@ -467,4 +496,5 @@ function testrnd() {
 
 	initial_inventory_render();
 	render_inventory_page(0);
+	update_stats_preview();
 }

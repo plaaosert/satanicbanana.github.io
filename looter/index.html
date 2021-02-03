@@ -40,9 +40,10 @@
 				<button style="width:80px; top:67px; left:272px" onclick="mod_inventory_page(-1)">Prev page</button>
 				<button style="width:80px; top:99px; left:272px" onclick="mod_inventory_page(1)">Next page</button>
 				<p id="dbg-pageno" style="width:80px; top:77px; left:272px; text-align: center;" class="item-bold">Page 1 / ?</p>
-				<button style="width:80px; top:131px; left:272px" onclick="metaplayer.swap_sort(document.getElementById('sort-input').value); mod_inventory_page(0)">Apply sort</button>
-				<input style="width:80px; top:146px; left:272px; color:#222" class="item-bold" id="sort-input"></input>
-				<button style="width:80px; top:163px; left:272px" onclick="metaplayer.reverse = !metaplayer.reverse; mod_inventory_page(0)">Reverse sort</button>
+				<button style="width:80px; top:131px; left:272px" onclick="metaplayer.filter_sort(document.getElementById('sort-input').value); mod_inventory_page(0)">Apply filter</button>
+				<button style="width:80px; top:147px; left:272px" onclick="metaplayer.swap_sort(document.getElementById('sort-input').value); mod_inventory_page(0)">Apply sort</button>
+				<input style="width:80px; top:163px; left:272px; color:#222" class="item-bold" id="sort-input" placeholder="sort or filter"></input>
+				<button style="width:80px; top:179px; left:272px" onclick="metaplayer.reverse = !metaplayer.reverse; mod_inventory_page(0)">Reverse sort</button>
 				<input style="width:80px; top:209px; left:272px; color:#222" class="item-bold" id="update-stats-input", value="1000" onchange="update_stats_preview()"></input>
 				<p style="color:#ccc; width:68px; height:80px; padding:4px; top:219px; left:272px; background:#222;border:2px solid #000;" id="stats-preview" class="item-sub">
 				<br><br>
@@ -115,6 +116,9 @@
 			<p id="idlg-acc-choice" style="visibility:hidden; top:120px; left:70px" class="item-sub">&nbsp;&nbsp;&nbsp;&nbsp;| (1) slot 1<br>----| (2) slot 2<br>&nbsp;&nbsp;&nbsp;&nbsp;| (3) slot 3</p>
 		</div>
 		
-		<p style="position:absolute; left:410px; z-index:10;" class="item-bold">Version a.1 (since starting count)</p>
+		<div style="position:absolute; left:280px; width:100px; z-index:10;">
+			<p style="width:180px;" class="item-bold">Version a.1.1 (since starting count)</p>
+			<p style="left:40px; width:180px; top:16px" class="item-misc">Added basic name filtering</p>
+		</div>
 	</body>
 </html>

@@ -16,6 +16,12 @@ sortArrayOfObjects = (arr, key) => {
 	});
 };
 
+filterArrayOfObjects = (arr, key, attr) => {
+	return arr.filter(a => {
+		a[attr].toLowerCase().includes(key.toLowerCase());
+	});
+};
+
 // Fits a value in a list using a binary search.
 // Does this by modifying the conditions for finding a spot to be:
 // "Is coll[cur] >= value and is coll[cur - 1] < value?
