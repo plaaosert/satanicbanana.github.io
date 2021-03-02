@@ -17,6 +17,9 @@ body {
     -moz-transform: scale(2); 
     -moz-transform-origin: 0 0;
 	background-color:#888;
+	
+	font-smooth:never;
+	-webkit-font-smoothing:none;
 }
 
 button {
@@ -43,6 +46,18 @@ button {
 
 .menutab {
 	
+}
+
+.area-bold {
+	font-family: "MS Gothic";
+	text-align: center;
+	font-size: 12px;
+	font-weight: bold;
+	width:90px;
+	color: white;
+	left:40px;
+	top:2px;
+	position:absolute;
 }
 
 .item-bold {

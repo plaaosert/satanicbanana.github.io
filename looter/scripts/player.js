@@ -177,6 +177,17 @@ class Player {
 		this.level = 1;
 		this.xp = 0;
 		this.dead = false;
+		
+		// Skills are all included in a single list. They will contain their info and a boolean in a 2-tuple (skill, owned) <= (Skill, bool)
+		// The owned variable will show whether the currently instantiated player owns the skill in question.
+		this.skills = [];
+		this.fetch_all_skills();
+	}
+	
+	fetch_all_skills() {
+		skills_list.forEach((skill) => {
+			this.skills.push([skill, false]);
+		});
 	}
 	
 	calculate_all_stats() {
@@ -494,7 +505,10 @@ function testrnd() {
 
 	metaplayer.sort_all_items();
 
+	player.skills[2][1] = true;
+
 	initial_inventory_render();
+	initial_skills_render();
 	render_inventory_page(0);
 	update_stats_preview();
 }

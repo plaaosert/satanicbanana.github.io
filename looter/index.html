@@ -5,6 +5,7 @@
 	<body>
 		<!-- animation and rendering -->
 		<script src="scripts/render.js"></script>
+		<script src="scripts/render-inventory.js"></script>
 		
 		<!-- miscellaneous functions -->
 		<script src="scripts/helpers.js"></script>
@@ -13,6 +14,7 @@
 		<script src="scripts/fight-manager.js"></script>
 		
 		<!-- player scripts -->
+		<script src="scripts/skills.js"></script>
 		<script src="scripts/character.js"></script>
 		<script src="scripts/player.js"></script>
 		
@@ -34,7 +36,7 @@
 		<!-- everything below here is dynamic html hell -->
 		<img class="bg" src="sprites/t.png"></img>
 		
-		<div class="menutab" id="inventory-screen">
+		<div class="menutab" id="inventory-screen" style="visibility:visible">
 			<div id="inventory-items"></div>
 			<div id="control-items">
 				<button style="width:80px; top:67px; left:272px" onclick="mod_inventory_page(-1)">Prev page</button>
@@ -94,7 +96,89 @@
 			</div>
 		</div>
 		
-		<div class="menutab" id="adventure-screen"></div>
+		<div class="menutab" id="adventure-screen" style="visibility:hidden">
+			<div id="areatab">
+				<div id="areabuttons" style="position:absolute; top:109px; left:89px">
+					<p id="area-name" class="area-bold" style="top:-30px; left:68px; width:184px;">Grasslands</p>
+				
+					<img id="area-arrow-left" style="top:69px; left:70px; height:56px; width:56px;" src="sprites/UI/left.png"></img>
+					
+					<img id="area-1-border" style="top:7px; left:132px; height:56px; width:56px;" src="sprites/items/borders/i999.png"></img>
+					<img id="area-1-plholder" style="top:7px; left:132px" src="sprites/items/borders/b000.png"></img>
+					<img id="area-1-image" style="top:11px; left:136px; height:48px; width:48px;" src="sprites/areas/001.png"></img>
+					
+					<img id="area-2-border" style="top:69px; left:132px; height:56px; width:56px;" src="sprites/items/borders/i999.png"></img>
+					<img id="area-2-plholder" style="top:69px; left:132px" src="sprites/items/borders/b001.png"></img>
+					<img id="area-2-image" style="top:71px; left:136px; height:48px; width:48px;" src="sprites/areas/001.png"></img>
+					
+					<img id="area-3-border" style="top:131px; left:132px; height:56px; width:56px;" src="sprites/items/borders/i999.png"></img>
+					<img id="area-3-plholder" style="top:131px; left:132px" src="sprites/items/borders/b002.png"></img>
+					<img id="area-3-image" style="top:133px; left:136px; height:48px; width:48px;" src="sprites/areas/001.png"></img>
+					
+					<img id="area-arrow-right" style="top:69px; left:194px; height:56px; width:56px;" src="sprites/UI/right.png"></img>
+				</div>
+			</div>
+			<div id="combattab">
+				<div id="combat-sets" style="position:absolute; left:4px; top:58px; height:286px; width:148px; background-color:#222">
+					<div class="fg" id="" style="visibility:hidden; position:absolute; height:286px; width:148px; background-color:rgba(32, 32, 32, 0.7);"></div>
+				
+					<button style="top:253px; left:9px;" onclick="">SET 1</button>
+					<button style="top:253px; left:53px;" onclick="">SET 2</button>
+					<button style="top:253px; left:97px;" onclick="">SET 3</button>
+					<button style="top:269px; left:9px;" onclick="">SET 4</button>
+					<button style="top:269px; left:53px;" onclick="">SET 5</button>
+					<button style="top:269px; left:97px;" onclick="">SET 6</button>
+					
+					<div id="combat-equip-items">
+						<div id="combat-equip-weapon" style="position:absolute; top:4px; left:4px; width:136px; height:42px; background:#222;border:2px solid #000;">
+							<img id="combat-equip-weapon-placeholder" style="top:9px; left:10px;" src="sprites/UI/weapon.png"></img>
+							<img id="combat-equip-weapon-border" style="top:7px; left:8px" src="sprites/items/borders/000.png"></img>
+							<img id="combat-equip-weapon-border2" style="top:7px; left:8px" src=""></img>
+							<img id="combat-equip-weapon-box" style="top:9px; left:10px;" src=""></img>
+							<p id="combat-equip-weapon-title" class="item-bold">No item</p><br>
+						</div>
+						<div id="combat-equip-armour" style="position:absolute; top:54px; left:4px; width:136px; height:42px; background:#222;border:2px solid #000;">
+							<img id="combat-equip-weapon-placeholder" style="top:9px; left:10px;" src="sprites/UI/armour.png"></img>
+							<img id="combat-equip-armour-border" style="top:7px; left:8px" src="sprites/items/borders/000.png"></img>
+							<img id="combat-equip-armour-border2" style="top:7px; left:8px" src=""></img>
+							<img id="combat-equip-armour-box" style="top:9px; left:10px;" src=""></img>
+							<p id="combat-equip-armour-title" class="item-bold">No item</p><br>
+						</div>
+						<div id="combat-equip-acc1" style="position:absolute; top:104px; left:4px; width:136px; height:42px; background:#222;border:2px solid #000;">
+							<img id="combat-equip-weapon-placeholder" style="top:9px; left:10px;" src="sprites/UI/accessory.png"></img>
+							<img id="combat-equip-acc1-border" style="top:7px; left:8px" src="sprites/items/borders/000.png"></img>
+							<img id="combat-equip-acc1-border2" style="top:7px; left:8px" src=""></img>
+							<img id="combat-equip-acc1-box" style="top:9px; left:10px;" src=""></img>
+							<p id="combat-equip-acc1-title" class="item-bold">No item</p><br>
+						</div>
+						<div id="combat-equip-acc2" style="position:absolute; top:154px; left:4px; width:136px; height:42px; background:#222;border:2px solid #000;">
+							<img id="combat-equip-weapon-placeholder" style="top:9px; left:10px;" src="sprites/UI/accessory.png"></img>
+							<img id="combat-equip-acc2-border" style="top:7px; left:8px" src="sprites/items/borders/000.png"></img>
+							<img id="combat-equip-acc2-border2" style="top:7px; left:8px" src=""></img>
+							<img id="combat-equip-acc2-box" style="top:9px; left:10px;" src=""></img>
+							<p id="combat-equip-acc2-title" class="item-bold">No item</p><br>
+						</div>
+						<div id="combat-equip-acc3" style="position:absolute; top:204px; left:4px; width:136px; height:42px; background:#222;border:2px solid #000;">
+							<img id="combat-equip-weapon-placeholder" style="top:9px; left:10px;" src="sprites/UI/accessory.png"></img>
+							<img id="combat-equip-acc3-border" style="top:7px; left:8px" src="sprites/items/borders/000.png"></img>
+							<img id="combat-equip-acc3-border2" style="top:7px; left:8px" src=""></img>
+							<img id="combat-equip-acc3-box" style="top:9px; left:10px;" src=""></img>
+							<p id="combat-equip-acc3-title" class="item-bold">No item</p><br>
+						</div>
+					</div>
+				</div>
+				<div id="combat-display" style="position:absolute; left:152px; top:58px; height:286px; width:194px; background-color:#4440">
+				
+				</div>
+				<div id="combat-skills" style="position:absolute; left:346px; top:58px; height:286px; width:162px; background-color:#222">
+					<div id="skills-items"></div>
+					<p style="text-align:center; left:-66px; top:220px; width:300px" class="item-bold">
+					Current skill points: 
+					<span id="sp-amount" style="color: #0cf">102,201</span>
+					</p>
+				</div>
+			</div>
+		</div>
 		
 		<div class="menutab" id="settings-screen"></div>
 		
@@ -117,8 +201,8 @@
 		</div>
 		
 		<div style="position:absolute; left:280px; width:100px; z-index:10;">
-			<p style="width:180px;" class="item-bold">Version a.1.1 (since starting count)</p>
-			<p style="left:40px; width:180px; top:16px" class="item-misc">Added basic name filtering</p>
+			<p style="width:180px;" class="item-bold">Version a.1.2 (since starting count)</p>
+			<p style="left:40px; width:180px; top:16px" class="item-misc">Added the (mostly nonfunctional) adventure screen</p>
 		</div>
 	</body>
 </html>
