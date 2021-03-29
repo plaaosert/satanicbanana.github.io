@@ -99,6 +99,56 @@ button {
 	position: absolute;
 }
 
+.item-bb {
+	font-family: "MS Gothic";
+	font-size: 8px;
+	font-weight: bold;
+	color: white;
+	margin-left:40px;
+}
+
+.item-ss {
+	font-family: "MS Gothic";
+	font-size: 6px;
+	font-weight: bold;
+	color: #ca0;
+}
+
+.item-tt {
+	font-family: "MS Gothic";
+	font-size: 6px;
+	color: #bbb;
+	margin-left:8px;
+}
+
+.item-ass {
+	font-family: "MS Gothic";
+	font-size: 6px;
+	font-weight: bold;
+	color: #0ce;
+}
+
+.item-dss {
+	font-family: "MS Gothic";
+	font-size: 6px;
+	font-weight: bold;
+	color: #d20;
+}
+
+.item-att {
+	font-family: "MS Gothic";
+	font-size: 6px;
+	color: #0ef;
+	margin-left:8px;
+}
+
+.item-dtt {
+	font-family: "MS Gothic";
+	font-size: 6px;
+	color: #e80;
+	margin-left:8px;
+}
+
 #negative {
 	color:#f44;
 }
