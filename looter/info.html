@@ -1,0 +1,223 @@
+<html>
+	<head>
+		<link rel="stylesheet" href="index.css">
+	</head>
+	<body style="background-color:#222; transform: scale(3); transform-origin: 0 0; -moz-transform: scale(3); -moz-transform-origin: 0 0;">
+		<div style="width:512px">
+			<p class="item-bb">Basic game</p>
+			<p class="item-tt">Gain gold and items from semi-automatically adventuring in areas. Player gains XP by defeating enemies based on their level and gains stats (in a set distribution) by levelling up. XP also grants skill points which are used to learn skills (shown to the right of the battle screen). When the player dies or retires (retirement is simply suicide with a nicer name), the gold and items will be added to the guild's inventory. The player then creates a new character and can equip them with the items gained in previous runs. These items let the new adventurer tackle stronger challenges. As the adventurer has no method of healing aside from potions, which are given at a limited amount at the start of a run, death is an inevitability with the alternative being progressless stagnation. This means that death is the first reset layer.</p>
+			<p class="item-tt">
+			Gold can be used for "guild upgrades", which enhance aspects such as XP gain, power of adventurer abilities, item drop rates and similar. Most guild upgrades work in the form of multistage "buildings", which are essentially just progressively more expensive multi-level upgrades. For example, the coin gain building could be a Coinery <span class="item-ss">(+0-25)</span>, Mint <span class="item-ss">(+25-50)</span>, Bank <span class="item-ss">(+50-75)</span> and Exchange <span class="item-ss">(+75-100)</span> based on its level. Usually, at name change milestones, the upgrade's formula will also improve.
+			</p>
+			
+			<p class="item-bb">Skill tree</p>
+			<p class="item-tt">The skill tree is split into 6 rows of abilities, each with 50 levels that keep the same skill point cost. The costs of the rows are <span class="item-ss">(1 / 5 / 10 / 100 / 1000 / 10000)</span> skill points per level. Each row will usually be structured in the order <span class="item-ss">(basic / damage / defense / magic)</span> where magic refers to using abilities. This is not a rule, however.</p>
+			<p class="item-tt">Skills list (WIP)</p>
+			<table>
+				<tr>
+					<td><p class="item-tt">Swordplay<br>Increase ATK by <span class="item-ss">+7</span> per level.</p></td>
+					<td><p class="item-tt">Embers<br>Increase ATK by <span class="item-ss">+1%</span> per level.</p></td>
+					<td><p class="item-tt">Flow<br>Increase AGI by <span class="item-ss">+3</span> per level.</p></td>
+					<td><p class="item-tt">Magic Essence<br>Increase MP gain on hit by <span class="item-ss">+1</span> per level.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">?<br>ununun</p></td>
+					<td><p class="item-tt">?<br>ununun</p></td>
+					<td><p class="item-tt">?<br>ununun</p></td>
+					<td><p class="item-tt">?<br>ununun</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">?<br>ununun</p></td>
+					<td><p class="item-tt">?<br>ununun</p></td>
+					<td><p class="item-tt">?<br>ununun</p></td>
+					<td><p class="item-tt">?<br>ununun</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">?<br>ununun</p></td>
+					<td><p class="item-tt">?<br>ununun</p></td>
+					<td><p class="item-tt">?<br>ununun</p></td>
+					<td><p class="item-tt">?<br>ununun</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">?<br>ununun</p></td>
+					<td><p class="item-tt">?<br>ununun</p></td>
+					<td><p class="item-tt">?<br>ununun</p></td>
+					<td><p class="item-tt">?<br>ununun</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">?<br>ununun</p></td>
+					<td><p class="item-tt">?<br>ununun</p></td>
+					<td><p class="item-tt">?<br>ununun</p></td>
+					<td><p class="item-tt">?<br>ununun</p></td>
+				</tr>
+			</table>
+			
+			<p class="item-bb">Abilities</p>
+			<p class="item-tt">Adventurers have 4 abilities which are unlocked by Spell Tomes. They are as follows:</p>
+			<table>
+				<tr>
+					<td><p class="item-tt">Slash</p></td>
+					<td><p class="item-ss"><span class="item-ss">25%</span> MP</p></td>
+					<td><p class="item-tt">Deal <span class="item-ss">150%</span> ATK as damage to the enemy.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">Fireball</p></td>
+					<td><p class="item-ss"><span class="item-ss">35%</span> MP</p></td>
+					<td><p class="item-tt">Deal <span class="item-ss">50%</span> of the MP used to cast this spell as damage to the enemy.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">Limit Break</p></td>
+					<td><p class="item-ss"><span class="item-ss">100%</span> MP</p></td>
+					<td><p class="item-tt">Gain a bonus which causes you to gain <span class="item-ss">2x</span> ATK but take <span class="item-ss">33%</span> more damage. Lasts until the battle ends. Does not stack with itself.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">Giga Blast</p></td>
+					<td><p class="item-ss"><span class="item-ss">100%</span> MP</p></td>
+					<td><p class="item-tt">Deal damage to the enemy equal to the sum of <span class="item-ss">750%</span> ATK and <span class="item-ss">200%</span> max MP. Deals up to <span class="item-ss">3x</span> more damage (at <span class="item-ss">10%</span> HP) based on missing HP.</p></td>
+				</tr>
+			</table>
+			
+			<p class="item-bb">Guild upgrades</p>
+			<table>
+				<tr>
+					<td><p class="item-tt">goldgain<br>[0-100]</p></td>
+					<td><p class="item-tt">Coinery 0 / Mint 25 / Bank 50 / Exchange 75</p></td>
+					<td><p class="item-tt">Adventurers gain <span class="item-ss">+(5/7/10/15)%</span> more Gold per upgrade level after ending an adventure.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">itemgain<br>[0-100]</p></td>
+					<td><p class="item-tt">Interns 0 / Salvagers 25 / Salvage Crew 50 / Salvage Corps 75</p></td>
+					<td><p class="item-tt">Increase item drop chance from enemies by <span class="item-ss">+(2/2.5/3/5)%</span> per upgrade level.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">potions<br>[0-6]</p></td>
+					<td><p class="item-tt">Herbalist</p></td>
+					<td><p class="item-tt">Adventurers start with <span class="item-ss">+1</span> more potion per upgrade level.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">itemrare<br>[0-25]</p></td>
+					<td><p class="item-tt">Identifiers 0 / Diviners 25</p></td>
+					<td><p class="item-tt">Increase the level of items dropped by enemies by <span class="item-ss">+(10/20)</span> per upgrade level.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">xpgain<br>[0-100]</p></td>
+					<td><p class="item-tt">Library 0 / School 25 / Academy 50 / Campus 75 / University 100</p></td>
+					<td><p class="item-tt">Adventurers gain <span class="item-ss">+(3/6/10/15/25)%</span> more XP per upgrade level.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">hmpbonus<br>[0-20]</p></td>
+					<td><p class="item-tt">Canteen 0 / Feasting Hall 20</p></td>
+					<td><p class="item-tt">Adventurers gain a bonus <span class="item-ss">+(3/6)%</span> HP and MP per upgrade level.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">adefbonus<br>[0-20]</p></td>
+					<td><p class="item-tt">Training Grounds 0 / Dojo 20</p></td>
+					<td><p class="item-tt">Adventurers gain a bonus <span class="item-ss">+(2/5)%</span> ATK and DEF per upgrade level.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">lckbonus<br>[0-20]</p></td>
+					<td><p class="item-tt">Gambling Parlor 0 / Casino 20</p></td>
+					<td><p class="item-tt">Adventurers gain a bonus <span class="item-ss">+(2/4)%</span> LCK per upgrade level.</p></td>
+				</tr>
+			</table>
+			<br>
+			<table>
+				<tr>
+					<td><p class="item-tt">slashtome<br>[0-10]</p></td>
+					<td><p class="item-tt">Spell Tome/Mastery: Slash</p></td>
+					<td><p class="item-tt">Unlocks Slash. Further levels increase its effectiveness by <span class="item-ss">+10%</span> ATK per upgrade level.<br>Maximum level causes the ability to ignore enemy DEF.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">fireballtome<br>[0-10]</p></td>
+					<td><p class="item-tt">Spell Tome/Mastery: Fireball</p></td>
+					<td><p class="item-tt">Unlocks Fireball. Further levels increase its effectiveness by <span class="item-ss">+7%</span> MP used per upgrade level.<br>Maximum level causes the ability to refund <span class="item-ss">25%</span> of the MP spent to cast it.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">limitbreaktome<br>[0-10]</p></td>
+					<td><p class="item-tt">Spell Tome/Mastery: Limit Break</p></td>
+					<td><p class="item-tt">Unlocks Limit Break. Further levels decrease its MP cost by <span class="item-ss">4%</span> per upgrade level.<br>Maximum level causes the ability to also cast Slash twice when used.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">gigablasttome<br>[0-10]</p></td>
+					<td><p class="item-tt">Spell Tome/Mastery: Giga Blast</p></td>
+					<td><p class="item-tt">Unlocks Giga Blast. Further levels increase its overall damage by <span class="item-ss">+12%</span> per upgrade level.<br>Maximum level causes the ability to always deal a critical hit when below <span class="item-ss">25%</span> HP.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">alltome<br>[0-10]</p></td>
+					<td><p class="item-tt">Spell Tome/Mastery: Adventuring</p></td>
+					<td><p class="item-tt">Adventurers restore MP <span class="item-ss">7%</span> faster, deal <span class="item-ss">5%</span> more damage, take <span class="item-ss">3%</span> less damage and gain XP <span class="item-ss">1%</span> faster per upgrade level.<br>Maximum level causes adventurers to start with 2 more potions and 10 skill points.</p></td>
+				</tr>
+			</table>
+			<br>
+			<table>
+				<tr>
+					<td><p class="item-tt">wealthgain<br>[0-25]</p></td>
+					<td><p class="item-tt">Devil Deal</p></td>
+					<td><p class="item-tt">Adventurers gain <span class="item-ss">+66%</span> more Gold and XP per upgrade level.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">powergain<br>[0-25]</p></td>
+					<td><p class="item-tt">Heaven Mandate</p></td>
+					<td><p class="item-tt">Adventurers gain <span class="item-ss">+7%</span> all stats per upgrade level.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-tt">ascension</p></td>
+					<td><p class="item-tt">Ascension</p></td>
+					<td><p class="item-tt">Unlock the ability to ascend to a higher (but mostly identical) plane and establish a new guild there, gaining favour from Heaven and Hell to spend on powerful new bonuses.</p></td>
+				</tr>
+			</table>
+			<br>
+			<p class="item-bb">Ascension</p>
+			<p class="item-tt">Ascend to gain Heaven Favour and Hell Favour based on gold gained this ascension. These currencies are used to upgrade Angelic and Demonic buildings respectively, all of which are mutually exclusive with their opposite counterparts. The two currencies are used to level their respective buildings, but only one of the two can be enabled at once. The selected buildings to enable can be modified at any time but all changes will only take effect upon the creation of a new adventurer.</p>
+			<!--
+				<span class="item-ss"></span>
+			-->
+			<table>
+				<tr>
+					<td><p class="item-att">survive_angel<br>[0-20]</p></td>
+					<td><p class="item-tt">Apothecary 0 / Alchemist 10 / Divine Potion Seller 20</p></td>
+					<td><p class="item-tt">Adventurers start with <span class="item-ass">+(2/3/4)</span> potions and gain <span class="item-ass">+(25/40/60)%</span> HP and MP bonus per upgrade level.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-dtt">survive_devil<br>[0-20]</p></td>
+					<td><p class="item-tt">Brewery 0 / Coven 10 / Hell Siphon 20</p></td>
+					<td><p class="item-tt">Potions provide a buff that doubles damage until the end of the current battle when used. At level 10, potions also fully restore MP. Adventurers also gain a bonus <span class="item-dss">+(22/35/50)%</span> ATK and DEF per upgrade level.</p></td>
+				</tr>
+				
+				<tr>
+					<td><p class="item-att">loot_angel<br>[0-25]</p></td>
+					<td><p class="item-tt">ununun 0 / ununun 25</p></td>
+					<td><p class="item-tt">make loot more likely (+200%) and make it sell for more gold (+300%). force item drop from bosses at lv25</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-dtt">loot_devil<br>[0-25]</p></td>
+					<td><p class="item-tt">ununun 0 / ununun 25</p></td>
+					<td><p class="item-tt">make loot higher level (+150%) and gain more gold from enemies (+200%). double gold gain from bosses at lv25</p></td>
+				</tr>
+				
+				<tr>
+					<td><p class="item-att">damage_angel<br>[0-50]</p></td>
+					<td><p class="item-tt">ununun 0 / ununun 25 / ununun 50</p></td>
+					<td><p class="item-tt">increase hero DEF, MP, AGI (+1500%) and reduce damage taken by 33%. all skills cast twice at lv50</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-dtt">damage_devil<br>[0-50]</p></td>
+					<td><p class="item-tt">ununun 0 / ununun 25 / ununun 50</p></td>
+					<td><p class="item-tt">increase hero ATK, HP, LCK (+1500%). deal bonus damage on hit equal to 6% of the enemy's max HP at lv25 and gain 2.6x crit damage at lv50</p></td>
+				</tr>
+				
+				<tr>
+					<td><p class="item-att">all_angel<br>[0-1]</p></td>
+					<td><p class="item-tt">The Glorious Covenant</p></td>
+					<td><p class="item-tt">Adventurers start with <span class="item-ass">+3</span> potions, gain <span class="item-ass">+5,000%</span> all stats and <span class="item-ass">+10,000%</span> XP gain. Items will always drop at level <span class="item-ass">5000</span> or above from enemies. Doubles damage output from Fireball and Giga Blast. Unlocks level 2 combat areas.</p></td>
+				</tr>
+				<tr>
+					<td><p class="item-dtt">all_devil<br>[0-1]</p></td>
+					<td><p class="item-tt">The Infernal Covenant</p></td>
+					<td><p class="item-tt">Adventurers start with a random set of <span class="item-dss">6</span> items from level <span class="item-dss">6</span> to <span class="item-dss">6666</span>, gain a <span class="item-dss">+8,500%</span> ATK, AGI bonus and <span class="item-dss">+9</span> all stats per level. Limit break now multiplies ATK by <span class="item-dss">5x</span>. Unlocks level 2 combat areas.</p></td>
+				</tr>
+			</table>
+		</div>
+		<br>
+	</body>
+</html>
