@@ -16,4 +16,5 @@ String.prototype.replace_at = function(index, replacement) {
     return this.substr(0, index) + replacement + this.substr(index + replacement.length);
 }
 
+main_intervals = {};
 start_funcs = {};
