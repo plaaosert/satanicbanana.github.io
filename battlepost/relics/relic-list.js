@@ -1,4 +1,5 @@
 relic_divs = []
+imp_types = ("", "-good", "-neutral")
 
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -14,7 +15,11 @@ document.addEventListener('DOMContentLoaded', function() {
 		div.id = relics[i].name;
 	 
 		var header = document.createElement("h2");
-		header.textContent = relics[i].name + " >> ";
+		header.textContent = relics[i].name;
+		
+		div.appendChild(header);
+		
+		var header2 = document.createElement("h3");
 		
 		var info_span = document.createElement("span");
 		info_span.className = "";
@@ -31,14 +36,12 @@ document.addEventListener('DOMContentLoaded', function() {
 		name_span.className = "name";
 		name_span.textContent = relics[i].relic_get_sub;
 	 
-	 	header.appendChild(info_span);
-		header.appendChild(imp_span);
-		header.appendChild(colon);
-		
-		header.appendChild(document.createElement("br"));
-		header.appendChild(name_span);
+	 	header2.appendChild(info_span);
+		header2.appendChild(imp_span);
+		header2.appendChild(colon);
+		header2.appendChild(name_span);
 	 
-		div.appendChild(header);
+		div.appendChild(header2);
 		
 		var info_p = document.createElement("p");
 		info_p.className = "relic-info";
@@ -46,7 +49,14 @@ document.addEventListener('DOMContentLoaded', function() {
 		imp = false;
 		for (var seg=0; seg<relic_segs.length; seg++) {
 			subspan = document.createElement("span");
-			subspan.className = imp ? "important" : "";
+			append = "-neutral";
+			if (relic_segs[seg].charAt(0) == "+") {
+				append = "-good";
+			} else if (relic_segs[seg].charAt(0) == "-") {
+				append = "";
+			}
+			
+			subspan.className = imp ? "important" + append : "";
 			
 			subspan.textContent = relic_segs[seg];
 			

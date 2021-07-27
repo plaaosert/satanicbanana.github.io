@@ -20,6 +20,14 @@ h2 {
 	font-weight: bold;
 }
 
+h3 {
+	margin-top: -24px;
+	color: white;
+	padding-left: 1px;
+	font-size: 20px;
+	font-weight: bold;
+}
+
 p.relic-info {
 	font-size: 20px;
 }
@@ -31,9 +39,9 @@ p.relic-flavour {
 }
 
 .relic-entry {
-	padding-left: 12px;
+	padding-left: 24px;
 	padding-bottom: 6px;
-	padding-top: 2px;
+	padding-top: 6px;
 	
 	margin-top: 12px;
 	
@@ -60,8 +68,17 @@ p.relic-flavour {
 	font-weight: bold;
 }
 
+.important-good {
+	color: greenyellow;
+	font-weight: bold;
+}
+
+.important-neutral {
+	color: yellow;
+	font-weight: bold;
+}
+
 .name {
 	color: #7ef;
 	font-style: italic;
-	font-size: 24px;
 }

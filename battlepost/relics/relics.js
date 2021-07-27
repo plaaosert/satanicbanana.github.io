@@ -4,7 +4,7 @@ relics = [
 		"effect_text": "Every turn you remain alive, gain **+2** all primary stats. When you die, lose **-7** all primary stats.",
 		"flavour_text": "It works great until you leave it unattended, at which point it inexplicably explodes just out of sight.",
 		"relic_get_type": "Achievement",
-		"relic_get_sub": "[Unimplmented]"
+		"relic_get_sub": "[Unimplemented]"
 	},
 
 	{
@@ -12,15 +12,15 @@ relics = [
 		"effect_text": "Passively have **10** VIT. Base BLS and ATF is reset to **0** at the end of every turn.",
 		"flavour_text": "The designer of this shield forgot one important detail; it's too big and heavy for actual use. We're pretty sure this thing is filled with lead.",
 		"relic_get_type": "Achievement",
-		"relic_get_sub": "[Unimplmented]"
+		"relic_get_sub": "[Unimplemented]"
 	},
 
 	{
 		"name": "Conjured Blade",
-		"effect_text": "-20% PATK. Replace Attack with Magic Strike.",
+		"effect_text": "**-20%** PATK. Replace Attack with Magic Strike.",
 		"flavour_text": "Designed by a team of wizards who considered themselves \"too cool\" for traditional spells.",
 		"relic_get_type": "Achievement",
-		"relic_get_sub": "[Unimplmented]"
+		"relic_get_sub": "[Unimplemented]"
 	},
 
 	{
@@ -28,7 +28,7 @@ relics = [
 		"effect_text": "An attack that would kill you from above **40%** max HP leaves you at 1HP if you have more than **5** BLS. Take **1.3x** more damage.",
 		"flavour_text": "A small glass bead that imparts a power known to some as the ability to become \"too angry to die\".",
 		"relic_get_type": "Achievement",
-		"relic_get_sub": "[Unimplmented]"
+		"relic_get_sub": "[Unimplemented]"
 	},
 
 	{
@@ -36,7 +36,7 @@ relics = [
 		"effect_text": "Metronome now selects three skills at random, casting the median cost skill.",
 		"flavour_text": "A D20 stolen from a board game. Only works through self restraint and belief in the theory of continued fortune.",
 		"relic_get_type": "Achievement",
-		"relic_get_sub": "[Unimplmented]"
+		"relic_get_sub": "[Unimplemented]"
 	},
 
 	{
@@ -44,7 +44,7 @@ relics = [
 		"effect_text": "Immunity to Silenced and Snared. **-33%** MP regen, **-33%** PATK, MATK.",
 		"flavour_text": "A picture of a fat orange cat. Underneath is the caption \"gwa gwa\". It's... confusing, to say the least.",
 		"relic_get_type": "Achievement",
-		"relic_get_sub": "[Unimplmented]"
+		"relic_get_sub": "[Unimplemented]"
 	},
 
 	{
@@ -52,7 +52,7 @@ relics = [
 		"effect_text": "Your summons are levelled up twice immediately upon being summoned. All summoning spells now cost **75%** max MP or their mana cost, whichever is higher.",
 		"flavour_text": "A favoured tool of the old golemancers, who would once compete to see who could build the strongest golem. They unfortunately fell out of use after the creation and subsequent rampage of an incredibly powerful golem who refused to follow orders.",
 		"relic_get_type": "Achievement",
-		"relic_get_sub": "[Unimplmented]"
+		"relic_get_sub": "[Unimplemented]"
 	},
 
 	{
@@ -60,7 +60,7 @@ relics = [
 		"effect_text": "Revive **1** turn faster. Passively have **-10** VIT and **-30%** PATK, MATK.",
 		"flavour_text": "Acts as a form of underworld credentials to skip the queue. To be quite frank, we don't get it either.",
 		"relic_get_type": "Achievement",
-		"relic_get_sub": "[Unimplmented]"
+		"relic_get_sub": "[Unimplemented]"
 	},
 
 	{
@@ -68,7 +68,7 @@ relics = [
 		"effect_text": "**-75%** HP, **+150%** PATK, MATK. Lose **20%** current HP every turn and recieve no XP from dying.",
 		"flavour_text": "So sharp that it's able to cut through individual atoms! ...Including your own.",
 		"relic_get_type": "Achievement",
-		"relic_get_sub": "[Unimplmented]"
+		"relic_get_sub": "[Unimplemented]"
 	},
 
 	{
@@ -76,7 +76,7 @@ relics = [
 		"effect_text": "**+50%** WIS, **+25%** INT, **-100%** LCK",
 		"flavour_text": "We don't need luck where we're going. Nothing will be left down to chance.",
 		"relic_get_type": "Achievement",
-		"relic_get_sub": "[Unimplmented]"
+		"relic_get_sub": "[Unimplemented]"
 	},
 
 	{
@@ -89,7 +89,7 @@ relics = [
 
 	{
 		"name": "Blood Contract",
-		"effect_text": "Summons permanently have an effect that gives them **10** BLS and **-10** VIT.",
+		"effect_text": "Summons permanently have an effect that gives them **+10** BLS and **-10** VIT.",
 		"flavour_text": "Comes with a free knife to sign with! How generous!",
 		"relic_get_type": "Shop",
 		"relic_get_sub": "b!relic shop Valuable, 1500 Rocks"
