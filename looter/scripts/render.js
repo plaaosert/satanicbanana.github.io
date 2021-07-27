@@ -275,7 +275,12 @@ function switch_screen(screen) {
 	menu_screens.screens["adventure"].style.visibility = "hidden";
 	// menu_screens.screens["settings"].style.visibility = "hidden";
 	
+	menu_screens.screens["inventory"].style.display = "none";
+	menu_screens.screens["adventure"].style.display = "none";
+	// menu_screens.screens["settings"].style.display = "none";
+	
 	menu_screens.screens[screen].style.visibility = "visible";
+	menu_screens.screens[screen].style.display = "block";
 }
 
 function initial_skills_render() {

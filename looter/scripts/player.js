@@ -14,6 +14,8 @@ bonus_var_to_words = {
 	"stats.def":"DEF",
 	"stats.agi":"AGI",
 	"stats.luc":"LUC",
+	"bonuses.crit_chance":"crit chance",
+	"bonuses.crit_damage":"crit damage",
 	"bonuses.loot_chance":"loot chance",
 	"bonuses.gold_bonus":"gold bonus",
 	"bonuses.xp_bonus":"XP bonus",
@@ -29,7 +31,7 @@ base_stats_per_level = {
 	// atk def hp mp agi luc
 	atk:5,
 	def:5,
-	hp:10,
+	hp:100,
 	mp:10,
 	agi:2,
 	luc:2,
@@ -48,7 +50,7 @@ class MetaPlayer {
 			innate:{
 				bonus1: ["stats.atk", "+", 5],
 				bonus2: null,
-				bonus3: ["stats.hp", "+", 5],
+				bonus3: ["stats.hp", "+", 50],
 			}
 		};
 	
@@ -148,7 +150,7 @@ class Player {
 		this.mp = metaplayer;
 		this.name = metaplayer.name;
 		
-		// Player gets +5ATK, +5HP just for existing. This is applied using a hidden item (which could be modified or removed wink wink)
+		// Player gets +5ATK, +50HP just for existing. This is applied using a hidden item (which could be modified or removed wink wink)
 		this.stats = {
 			atk:0,
 			def:0,
@@ -161,6 +163,7 @@ class Player {
 		this.bonuses = {
 			loot_chance:1,
 			gold_bonus:1,
+			xp_bonus:1,
 			crit_chance:0,
 			crit_damage:0,
 			
@@ -175,6 +178,7 @@ class Player {
 		this.current_hp = 0;
 		this.current_mp = 0;
 		this.level = 1;
+		this.xp_required = 0;
 		this.xp = 0;
 		this.dead = false;
 		
@@ -182,6 +186,24 @@ class Player {
 		// The owned variable will show whether the currently instantiated player owns the skill in question.
 		this.skills = [];
 		this.fetch_all_skills();
+	}
+	
+	try_level_up() {
+		while (this.xp >= this.xp_required) {
+			this.level += 1;
+			this.xp -= this.xp_required;
+		}
+	}
+	
+	gain_xp(xp) {
+		var xp_mod = Math.round(xp * this.bonuses.xp_bonus);
+		
+		this.xp += xp_mod;
+		if (this.xp >= this.xp_required) {
+			this.try_level_up();
+			
+			this.calculate_all_stats();
+		}
 	}
 	
 	fetch_all_skills() {
@@ -204,6 +226,8 @@ class Player {
 		this.apply_late_item_stats();
 		this.round_all_stats();
 		this.apply_crit_info();
+		
+		this.xp_required = calc_xp_required(this.level);
 	}
 	
 	apply_item_stats() {
@@ -277,6 +301,7 @@ class Player {
 		this.bonuses = {
 			loot_chance:1,
 			gold_bonus:1,
+			xp_bonus:1,
 			crit_chance:0,
 			crit_damage:0,
 			
@@ -468,6 +493,14 @@ var player = {
 }
 */
 
+
+function calc_xp_required(level) {
+	// we need some sort of nice calculation for xp here.
+	// given that XP from a monster is equal to their level usually:
+	return Math.round(Math.pow(level, 1.6) * 10);
+}
+
+
 metaplayer = new MetaPlayer("plaaosert");
 player = new Player(metaplayer);
 
@@ -506,9 +539,12 @@ function testrnd() {
 	metaplayer.sort_all_items();
 
 	player.skills[2][1] = true;
+	player.reset_all();
 
 	initial_inventory_render();
 	initial_skills_render();
 	render_inventory_page(0);
 	update_stats_preview();
+	switch_screen("adventure");
+	setup_static_bars();
 }

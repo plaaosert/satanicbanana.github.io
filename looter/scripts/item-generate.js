@@ -82,11 +82,12 @@ special_scalings = {
 	"bonuses.crit_chance": [sqrt, 0.09, "*"],
 	"bonuses.crit_bonus": [sqrt, 0.10, "*"],
 	"bonuses.gold_bonus": [sqrt, 0.15, "*"],
+	"bonuses.xp_bonus": [sqrt, 0.12, "*"],
 	"bonuses.loot_chance": [sqrt, 0.235, "*"],
 	
 	"bonuses.apl": [sqrt, 1.2, "+"],
 	"bonuses.dpl": [sqrt, 1.05, "+"],
-	"bonuses.hpl": [sqrt, 2.01, "+"],
+	"bonuses.hpl": [sqrt, 20.01, "+"],
 	"bonuses.mpl": [sqrt, 1.89, "+"],
 	"bonuses.agl": [sqrt, 0.52, "+"],
 	"bonuses.lpl": [sqrt, 0.46, "+"],

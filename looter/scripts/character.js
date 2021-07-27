@@ -16,6 +16,7 @@ function doAttack(actor, target) {
 }
 
 function dealDamage(target, damage) {
+	/*
 	reduction = target.stats.def;
 	threshold = target.stats.hp * 0.4;
 	if (reduction > threshold) {
@@ -23,6 +24,9 @@ function dealDamage(target, damage) {
 	}
 	
 	damageAmount = Math.round(Math.max(1, damage - reduction));
+	*/
+	
+	damageAmount = Math.round(Math.max(0, (damage * damage) / (damage + target.stats.def)));
 	
 	target.current_hp -= damageAmount;
 	target.dead = target.current_hp <= 0; // idiot proofing

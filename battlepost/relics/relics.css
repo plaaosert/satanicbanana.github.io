@@ -1,0 +1,58 @@
+body {
+	overflow-y: scroll;
+}
+
+input {
+	color: white;
+	background-color: black;
+	font-size: 32px;
+	font-family: Courier;
+	
+	border-style: none;
+	outline: none;
+	font-weight: bold;
+	width: 70%;
+}
+
+h2 {
+	color: white;
+	font-size: 32px;
+	font-weight: bold;
+}
+
+p.relic-info {
+	font-size: 20px;
+}
+
+p.relic-flavour {
+	font-size: 16px;
+	font-style: italic;
+	color: #bbb;
+}
+
+.relic-entry {
+	padding-left: 12px;
+	padding-bottom: 6px;
+	padding-top: 2px;
+	
+	margin-top: 12px;
+	
+	margin-left: 160px;
+	background-color: #333;
+	
+	width: 70%;
+}
+
+.info {
+	color: #cf0;
+}
+
+.important {
+	color: #d44;
+	font-weight: bold;
+}
+
+.name {
+	color: #7ef;
+	font-style: italic;
+}

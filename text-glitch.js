@@ -5,19 +5,23 @@ let l2 = document.getElementById('2');
 l2.onmouseover = l2.onmouseout = handler;
 let l3 = document.getElementById('3');
 l3.onmouseover = l3.onmouseout = handler;
+let l4 = document.getElementById('4');
+l4.onmouseover = l4.onmouseout = handler;
 
 // "alt strings" as a dict for every id
 aims = {
 	"1":">> time to learn about twitchpost!",
-	"2":">> listen to some of my music",
-	"3":">> turn the ocean off or make it look like something else"
+	"2":">> the battlepost information repository",
+	"3":">> listen to some of my music",
+	"4":">> turn the ocean off or make it look like something else"
 };
 
 // setup original texts too
 origs = {
 	"1":l1.text,
 	"2":l2.text,
-	"3":l3.text
+	"3":l3.text,
+	"4":l4.text
 }
 
 
@@ -26,7 +30,8 @@ origs = {
 evts = {
 	"1":null,
 	"2":null,
-	"3":null
+	"3":null,
+	"4":null
 }
 
 
