@@ -34,6 +34,8 @@ document.addEventListener('DOMContentLoaded', function() {
 	 	header.appendChild(info_span);
 		header.appendChild(imp_span);
 		header.appendChild(colon);
+		
+		header.appendChild(document.createElement("br"));
 		header.appendChild(name_span);
 	 
 		div.appendChild(header);
@@ -76,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			// Get name, effect and wildcard tokens.
 			prev_token = ""
 			for (i=0; i<query_tokens.length; i++) {
-				clean_token = query_tokens[i].replace("\"", "");
+				clean_token = query_tokens[i].replace("\"", "").toLowerCase();
 				
 				if (clean_token != "name:" && clean_token != "effect:") {
 					if (prev_token == "name:") {
