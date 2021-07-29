@@ -83,3 +83,20 @@ a:hover {
   display: table;
   clear: both;
 }
+
+h1 {
+	color: white;
+	font-size: 32px;
+	font-family: Courier;
+	
+	border-style: none;
+	outline: none;
+	font-weight: bold;
+	
+	margin-top: 128px;
+	margin-bottom: 0px;
+}
+
+a.big-link {
+	font-size: 32px;
+}

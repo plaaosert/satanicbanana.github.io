@@ -7,13 +7,16 @@ let l3 = document.getElementById('3');
 l3.onmouseover = l3.onmouseout = handler;
 let l4 = document.getElementById('4');
 l4.onmouseover = l4.onmouseout = handler;
+let l5 = document.getElementById('5');
+l5.onmouseover = l5.onmouseout = handler;
 
 // "alt strings" as a dict for every id
 aims = {
 	"1":">> a directory of all relics in the game",
 	"2":">> not implemented",
 	"3":">> not implemented",
-	"4":">> not implemented"
+	"4":">> all changelogs for recent updates",
+	"5":">> not implemented"
 };
 
 // setup original texts too
@@ -21,7 +24,8 @@ origs = {
 	"1":l1.text,
 	"2":l2.text,
 	"3":l3.text,
-	"4":l4.text
+	"4":l4.text,
+	"5":l5.text
 }
 
 
@@ -31,7 +35,8 @@ evts = {
 	"1":null,
 	"2":null,
 	"3":null,
-	"4":null
+	"4":null,
+	"5":null
 }
 
 

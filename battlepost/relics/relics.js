@@ -1,7 +1,7 @@
 relics = [
 	{
 		"name": "Charge Battery",
-		"effect_text": "Every turn you remain alive, gain **+2** all primary stats. When you die, lose **-7** all primary stats.",
+		"effect_text": "At the end of every turn you remain alive, gain **+2** all primary stats. When you die, lose **-7** all primary stats.",
 		"flavour_text": "It works great until you leave it unattended, at which point it inexplicably explodes just out of sight.",
 		"relic_get_type": "Achievement",
 		"relic_get_sub": "[Unimplemented]"
@@ -9,7 +9,7 @@ relics = [
 
 	{
 		"name": "Colossal Shield",
-		"effect_text": "Passively have **10** VIT. Base BLS and ATF is reset to **0** at the end of every turn.",
+		"effect_text": "Passively have **6** VIT. Base BLS and ATF is reset to **0** at the end of every turn. Summons are affected by Summoning Sickness.",
 		"flavour_text": "The designer of this shield forgot one important detail; it's too big and heavy for actual use. We're pretty sure this thing is filled with lead.",
 		"relic_get_type": "Achievement",
 		"relic_get_sub": "[Unimplemented]"
@@ -65,7 +65,7 @@ relics = [
 
 	{
 		"name": "Sharpened Glass",
-		"effect_text": "**-75%** HP, **+150%** PATK, MATK. Lose **20%** current HP every turn and recieve no XP from dying.",
+		"effect_text": "**-75%** HP, **+150%** PATK, MATK. Lose **20%** current HP at the end of every turn and recieve no XP from dying.",
 		"flavour_text": "So sharp that it's able to cut through individual atoms! ...Including your own.",
 		"relic_get_type": "Achievement",
 		"relic_get_sub": "[Unimplemented]"
@@ -73,7 +73,7 @@ relics = [
 
 	{
 		"name": "Tome of Wisdom",
-		"effect_text": "**+50%** WIS, **+25%** INT, **-100%** LCK",
+		"effect_text": "**+25%** WIS, **+10%** INT, **-100%** LCK. Summons are affected by Summoning Sickness.",
 		"flavour_text": "We don't need luck where we're going. Nothing will be left down to chance.",
 		"relic_get_type": "Achievement",
 		"relic_get_sub": "[Unimplemented]"
@@ -89,7 +89,7 @@ relics = [
 
 	{
 		"name": "Blood Contract",
-		"effect_text": "Summons permanently have an effect that gives them **+10** BLS and **-10** VIT.",
+		"effect_text": "Summons permanently have an effect that gives them **+7** BLS and **-10** VIT.",
 		"flavour_text": "Comes with a free knife to sign with! How generous!",
 		"relic_get_type": "Shop",
 		"relic_get_sub": "b!relic shop Valuable, 1500 Rocks"
@@ -169,7 +169,7 @@ relics = [
 
 	{
 		"name": "Petrifying Totem",
-		"effect_text": "**+125%** CNS, **-75%** PATK, **-75%** MATK",
+		"effect_text": "**+125%** CNS, **-75%** PATK, **-75%** MATK, **0.7x** MP regen. Summons are affected by Summoning Sickness.",
 		"flavour_text": "Turning yourself to stone in a blood sport is certainly a brave tactic, but you are welcome to try.",
 		"relic_get_type": "Shop",
 		"relic_get_sub": "b!relic shop Exotic, 2500 Rocks"
@@ -177,7 +177,7 @@ relics = [
 
 	{
 		"name": "Reactive Nanites Injection",
-		"effect_text": "On getting hit, gain **+2** VIT. All healing effects are halved.",
+		"effect_text": "On getting hit, gain **+2** VIT. All healing effects are halved. -25% HP.",
 		"flavour_text": "\"They harden in response to physical trauma. You can't hurt me, Dave.\"",
 		"relic_get_type": "Shop",
 		"relic_get_sub": "b!relic shop Starter, 150 Rocks"
@@ -193,7 +193,7 @@ relics = [
 
 	{
 		"name": "Regenerative Serum",
-		"effect_text": "Restore **10%** max HP each turn. ALL other healing will instead directly remove the same amount of health.",
+		"effect_text": "Restore **10%** max HP at the end of each turn. ALL other healing will instead directly remove the same amount of health.",
 		"flavour_text": "Healing done by this serum must not mix with any other form of healing, unless you want a third arm, cancerous growth or both at once.",
 		"relic_get_type": "Shop",
 		"relic_get_sub": "b!relic shop Valuable, 1500 Rocks"
@@ -225,7 +225,7 @@ relics = [
 
 	{
 		"name": "Spiked Boots",
-		"effect_text": "Attacks cannot deal critical hits to you. You can no longer deal critical hits. You also have **0.75x** MP regen and permanently have **-4** VIT.",
+		"effect_text": "Attacks cannot deal critical hits to you. You can no longer deal critical hits. You also have **0.75x** MP regen and permanently have **-7** VIT.",
 		"flavour_text": "Rather unwieldy - but you'll never be caught in an unstable position again.",
 		"relic_get_type": "Shop",
 		"relic_get_sub": "b!relic shop Regular, 1000 Rocks"
@@ -233,7 +233,7 @@ relics = [
 
 	{
 		"name": "Unstable Power Source",
-		"effect_text": "Permanently have **+4** BLS and **+4** ATF. Lose **10%** max HP (non-lethal) every turn.",
+		"effect_text": "Permanently have **+4** BLS and **+4** ATF. Lose **10%** max HP (non-lethal) at the end of every turn.",
 		"flavour_text": "Initially produced as an energy drink; this was quickly halted after they found out most consumers would short circuit any electronics they touched after drinking it.",
 		"relic_get_type": "Shop",
 		"relic_get_sub": "b!relic shop Valuable, 2000 Rocks"
@@ -273,7 +273,7 @@ relics = [
 
 	{
 		"name": "Outside Benefactor's Contract",
-		"effect_text": "Every turn, gain a random consumable item as long as you are holding less than **2**. You cannot obtain items from regular item drops.",
+		"effect_text": "At the end of every turn, gain a random consumable item as long as you are holding less than **2**. You cannot obtain items from regular item drops.",
 		"flavour_text": "A contract for a brand deal. All of your goods will be handled by a third party for advertising and brand awareness.",
 		"relic_get_type": "Item",
 		"relic_get_sub": "Merchant Contact"
@@ -313,7 +313,7 @@ relics = [
 
 	{
 		"name": "Toy Boat",
-		"effect_text": "Passively gain the Trance effect every turn. Base BLS and ATF is reset to **0** at the end of every turn.",
+		"effect_text": "Passively gain the Trance effect at the end of every turn. Base BLS and ATF is reset to **0** at the end of every turn.",
 		"flavour_text": "Dare you to say that several times fast.",
 		"relic_get_type": "Item",
 		"relic_get_sub": "Mystery Box"
