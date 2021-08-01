@@ -93,7 +93,7 @@ function parse_effect_string_to_container(str, container) {
 }
 
 
-function navigate_div_create(update, div, vnames, cnames) {
+function navigate_div_create(update, div, vnames, cnames, orig_update) {
 	// We rely on cnames and vnames being the same size, all the time. 
 	// surround_nested allows us to ignore nesting levels of classes when we need to surround things in a class.
 	// console.log("func begin", update, div, vnames, cnames);	
@@ -115,7 +115,7 @@ function navigate_div_create(update, div, vnames, cnames) {
 					// console.log("placing", elem, "in", div, "(nested", j, ")");
 					div.appendChild(elem);
 					
-					navigate_div_create(update[j], elem, vnames, cname.nested);
+					navigate_div_create(update[j], elem, vnames, cname.nested, orig_update);
 				}
 			}
 			else {
@@ -125,7 +125,7 @@ function navigate_div_create(update, div, vnames, cnames) {
 				// console.log("placing", elem, "in", div, "(nested)");
 				div.appendChild(elem);
 				
-				navigate_div_create(update, elem, vnames, cname.nested);
+				navigate_div_create(update, elem, vnames, cname.nested, orig_update);
 			}
 		}
 		else {
@@ -135,6 +135,7 @@ function navigate_div_create(update, div, vnames, cnames) {
 				
 				var hide_list = {};
 				if (hide_link && cname.go_hide_next) {
+					hide_list.related_id = orig_update.id;
 					hide_list.root = hide_link;
 					hide_list.status = true;
 					hide_list.elems = [];
@@ -160,7 +161,7 @@ function navigate_div_create(update, div, vnames, cnames) {
 				
 					div.appendChild(elem);
 					// console.log("placing", elem, "in", div, "(arr", j, ")");
-					navigate_div_create(ref_update_part, elem, vname.nested, cname.nested);
+					navigate_div_create(ref_update_part, elem, vname.nested, cname.nested, orig_update);
 				}
 				
 				
@@ -188,7 +189,7 @@ function navigate_div_create(update, div, vnames, cnames) {
 				if (Array.isArray(vname_fetch)) {
 					// console.log("placing", elem, "in", div, "(arr)");
 					div.appendChild(elem);
-					navigate_div_create(update[vname.name], elem, vname.nested, cname.nested);
+					navigate_div_create(update[vname.name], elem, vname.nested, cname.nested, orig_update);
 				} else {
 					if (cname.target == null) {
 						parse_effect_string_to_container(vname_fetch, elem);
@@ -338,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		var div_base = document.createElement("div");
 		div_base.className = "update-content";
 		
-		navigate_div_create(updates[i], div_base, var_names, class_names);
+		navigate_div_create(updates[i], div_base, var_names, class_names, updates[i]);
 		
 		document.getElementById("update-list").appendChild(div_base);
 		
@@ -351,9 +352,27 @@ document.addEventListener('DOMContentLoaded', function() {
 	
 	var url = new URL(window.location.href);
 	var search = url.searchParams.get("search");
-	console.log("search");
 	if (search) {
 		do_search_term(search);
 		document.getElementById("search-box").value = search;
 	}
+	
+	// make the highest update unroll automatically
+	/*
+	for (update_id=updates.length - 1; update_id>=0; update_id--) {
+		if (update_divs[update_id].style.display == "block") {
+			var found = false;
+			for (hlist=hide_lists.length - 1; hlist>=0; hlist--) {
+				if (hlist.related_id == updates[update_id].id) {
+					found = true;
+					toggle_hiding(hide_lists[hlist])
+				} else {
+					if (!found) {
+						break;
+					}
+				}
+			}
+		}
+	}
+	*/
 }, false);
