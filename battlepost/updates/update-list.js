@@ -220,6 +220,70 @@ function navigate_div_create(update, div, vnames, cnames) {
 }
 
 
+function do_search_term(e) {
+	// For now, filter by name or effect. If "name:()" or "effect:()", only look at that.
+	var val = typeof e == "string" ? e : e.target.value;
+	
+	var query_tokens = val.match(/(\w|\.)+:?|\"(\w| \.)+\"/gm);
+	var valid_updates = Array.from(Array(updates.length).keys());
+	
+	if (query_tokens != null) {
+		name_tokens = []
+		id_tokens = []
+		wildcard_tokens = []
+		
+		// Get name, effect and wildcard tokens.
+		prev_token = ""
+		for (i=0; i<query_tokens.length; i++) {
+			clean_token = query_tokens[i].replace("\"", "").toLowerCase();
+			
+			if (clean_token != "name:" && clean_token != "id:") {
+				if (prev_token == "name:") {
+					name_tokens.push(clean_token);
+				} else if (prev_token == "id:") {
+					id_tokens.push(clean_token);
+				} else {
+					wildcard_tokens.push(clean_token);
+				}
+			}
+			
+			prev_token = clean_token
+		}
+		
+		for (i=0; i<name_tokens.length; i++) {
+			for (uid=valid_updates.length - 1; uid >= 0; uid--) {
+				if (!update_names[uid].toLowerCase().includes(name_tokens[i])) {
+					valid_updates.splice(uid, 1);
+				}
+			}
+		}
+		
+		for (i=0; i<id_tokens.length; i++) {
+			for (uid=valid_updates.length - 1; uid >= 0; uid--) {
+				if (!update_ids[uid].toLowerCase().includes(id_tokens[i])) {
+					valid_updates.splice(uid, 1);
+				}
+			}
+		}
+		
+		for (i=0; i<wildcard_tokens.length; i++) {
+			for (uid=valid_updates.length - 1; uid >= 0; uid--) {
+				if (!update_names[uid].toLowerCase().includes(wildcard_tokens[i]) && !update_ids[uid].toLowerCase().includes(wildcard_tokens[i])) {
+					valid_updates.splice(uid, 1);
+				}
+			}
+		}
+	}
+	
+	for (update_id=0; update_id<updates.length; update_id++) {
+		if (valid_updates.includes(update_id)) {
+			update_divs[update_id].style.display = "block";
+		} else {
+			update_divs[update_id].style.display = "none";
+		}
+	}
+};
+
 
 document.addEventListener('DOMContentLoaded', function() {
 	/*
@@ -283,65 +347,13 @@ document.addEventListener('DOMContentLoaded', function() {
 		update_ids.push(updates[i].id);
 	}
 	
-	document.getElementById("search-box").oninput = function(e) {
-		// For now, filter by name or effect. If "name:()" or "effect:()", only look at that.
-		var query_tokens = e.target.value.match(/(\w)+:?|\"(\w| )+\"/gm);
-		var valid_updates = Array.from(Array(updates.length).keys());
-		
-		if (query_tokens != null) {
-			name_tokens = []
-			id_tokens = []
-			wildcard_tokens = []
-			
-			// Get name, effect and wildcard tokens.
-			prev_token = ""
-			for (i=0; i<query_tokens.length; i++) {
-				clean_token = query_tokens[i].replace("\"", "").toLowerCase();
-				
-				if (clean_token != "name:" && clean_token != "id:") {
-					if (prev_token == "name:") {
-						name_tokens.push(clean_token);
-					} else if (prev_token == "id:") {
-						id_tokens.push(clean_token);
-					} else {
-						wildcard_tokens.push(clean_token);
-					}
-				}
-				
-				prev_token = clean_token
-			}
-			
-			for (i=0; i<name_tokens.length; i++) {
-				for (uid=valid_updates.length - 1; uid >= 0; uid--) {
-					if (!update_names[uid].toLowerCase().includes(name_tokens[i])) {
-						valid_updates.splice(uid, 1);
-					}
-				}
-			}
-			
-			for (i=0; i<id_tokens.length; i++) {
-				for (uid=valid_updates.length - 1; uid >= 0; uid--) {
-					if (!update_ids[uid].toLowerCase().includes(id_tokens[i])) {
-						valid_updates.splice(uid, 1);
-					}
-				}
-			}
-			
-			for (i=0; i<wildcard_tokens.length; i++) {
-				for (uid=valid_updates.length - 1; uid >= 0; uid--) {
-					if (!update_names[uid].toLowerCase().includes(wildcard_tokens[i]) && !update_ids[uid].toLowerCase().includes(wildcard_tokens[i])) {
-						valid_updates.splice(uid, 1);
-					}
-				}
-			}
-		}
-		
-		for (update_id=0; update_id<updates.length; update_id++) {
-			if (valid_updates.includes(update_id)) {
-				update_divs[update_id].style.display = "block";
-			} else {
-				update_divs[update_id].style.display = "none";
-			}
-		}
-	};
+	document.getElementById("search-box").oninput = do_search_term;
+	
+	var url = new URL(window.location.href);
+	var search = url.searchParams.get("search");
+	console.log("search");
+	if (search) {
+		do_search_term(search);
+		document.getElementById("search-box").value = search;
+	}
 }, false);

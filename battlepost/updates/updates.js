@@ -2880,5 +2880,59 @@ updates = [
         ]
       }
     ]
-  }
+  },
+    {
+    "name": "Relics",
+    "id": "0.6.0",
+    "date": "01/08/2021",
+    "flavour": "Finally. More things to balance.",
+    "categories": [
+      {
+        "name": "General",
+        "changes": [
+			{
+            "type": "0",
+            "text": "RELICS ARE IN THE GAME NOW!!!! `b!relic`. Use `b!relic select` in a game before it starts to select a relic."
+          },
+          {
+            "type": "3",
+            "text": "Summon XP gain to owner changed from **50%** to **35%**. Puppetmaster go in bin"
+          },
+          {
+            "type": "2",
+            "text": "Kills by summons should now add to the killcount of the owner. This does not activate \"on-kill\" effects for the summoner."
+          },
+          {
+            "type": "1",
+            "text": "New events added to Silly Mode."
+          },
+        ]
+      },
+      {
+        "name": "Classes",
+        "changes": [
+          {
+            "type": "3",
+            "text": "\"Should've Gone For The Head\" and Apotheosis target count reduced from **8** to **6**."
+          },
+          {
+            "type": "3",
+            "text": "\"Should've Gone For The Head\" and Apotheosis damage reduced from **150%** MATK to **120%** MATK."
+          },
+          {
+            "type": "2",
+            "text": "Puppetmaster left-side LV10 talent changed from `Replace A Friend with A Companion` to `Replace A Friend with Animated Arms`"
+          },
+          {
+            "type": "3",
+            "text": "Puppetmaster is now subject to a spell cost increase of 5% per level (same mechanics as Mage, Wizard, Battlemage, Artificer)"
+          },
+          {
+            "type": "3",
+            "text": "Puppetmaster CNS gain per level reduced from **3** to **2**"
+          },
+        ]
+      },
+    ]
+  },
 ]
