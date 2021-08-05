@@ -96,29 +96,27 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 			
 			anim_obj.start_img.remove();
 			anim_obj.end_img.remove();
+			
+			setTimeout(function() {
+				animation_stack.pop();
+				
+				if (!do_not_backtrack || just_check_matches) {
+					var matches = check_for_matches(anim_obj.id1, anim_obj.id2);
+					
+					if (matches.length < 3) {
+						if (!just_check_matches) {
+							show_swap_anim(anim_obj.end, anim_obj.start, anim_obj.id2, anim_obj.id1, true)
+						}
+					} else {
+						// clear all matches and id1, id2
+						for (var i=0; i<matches.length; i++) {
+							change_board_id(matches[i], 0);
+						}
+					}
+				}
+			}, 10);
 		}
 	}, 20 / mul);
-	
-	setTimeout(function() {
-		animation_stack.pop();
-		
-		if (!do_not_backtrack || just_check_matches) {
-			var matches = check_for_matches(anim_obj.id1, anim_obj.id2);
-			
-			if (matches.length < 3) {
-				if (!just_check_matches) {
-					show_swap_anim(anim_obj.end, anim_obj.start, anim_obj.id2, anim_obj.id1, true)
-				}
-			} else {
-				// clear all matches and id1, id2
-				for (var i=0; i<matches.length; i++) {
-					change_board_id(matches[i], 0);
-				}
-				
-				fall_timer = 250;
-			}
-		}
-	}, 250 / mul);
 	
 	document.body.appendChild(start_img);
 	document.body.appendChild(end_img);
@@ -240,32 +238,36 @@ function cause_falling_bejs(locations) {
 		}
 	}
 	*/
-	var spawned = 0;
-	for (var i=0; i<board_length; i++) {
-		// For each column, activate a swap if necessary (empty below non-empty)
-		for (var loc=bejs_vertical - 1; loc>0; loc--) {
-			var loc_resolved = i + (board_length * loc);
+	if (fall_timer <= 0) {
+		var spawned = 0;
+		for (var i=0; i<board_length; i++) {
+			// For each column, activate a swap if necessary (empty below non-empty)
+			for (var loc=bejs_vertical - 1; loc>0; loc--) {
+				var loc_resolved = i + (board_length * loc);
+				
+				if (get_board(loc_resolved) == 0 && get_board(loc_resolved - board_length) > 0) {
+					show_swap_anim(bejs[loc_resolved - board_length], bejs[loc_resolved], loc_resolved - board_length, loc_resolved, false, 2, true);
+				}
+			}
 			
-			if (get_board(loc_resolved) == 0 && get_board(loc_resolved - board_length) > 0) {
-				show_swap_anim(bejs[loc_resolved - board_length], bejs[loc_resolved], loc_resolved - board_length, loc_resolved, false, 2, true);
+			if (get_board(i) == 0 && spawned_last < 0) {
+				change_board_id(i, Math.floor(Math.random() * 7) + 1);
+				spawned++;
 			}
 		}
 		
-		if (get_board(i) == 0 && spawned_last < 0) {
-			change_board_id(i, Math.floor(Math.random() * 7) + 1);
-			spawned++;
+		if (spawned) {
+			spawned_last = 0 + Math.floor(spawned / 6);
+		} else {
+			spawned_last--;
 		}
-	}
-	
-	if (spawned) {
-		spawned_last = 0 + Math.floor(spawned / 6);
 	} else {
-		spawned_last--;
+		fall_timer -= 25;
 	}
 	
 	setTimeout(function() {
 		cause_falling_bejs(locations);
-	}, 125);
+	}, 25);
 }
 
 
