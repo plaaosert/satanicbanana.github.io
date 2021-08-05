@@ -253,19 +253,19 @@ function cause_falling_bejs(locations) {
 		
 		if (get_board(i) == 0 && spawned_last < 0) {
 			change_board_id(i, Math.floor(Math.random() * 7) + 1);
-			spawned_here = 1;
+			spawned_here = true;
 		}
 	}
 	
 	if (spawned_here) {
-		spawned_last = 1;
+		spawned_last = 3;
 	} else {
 		spawned_last--;
 	}
 	
 	setTimeout(function() {
 		cause_falling_bejs(locations);
-	}, 62.5);
+	}, 70);
 }
 
 
