@@ -59,9 +59,9 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 	var end_rect = end.getBoundingClientRect();
 	
 	start_img.style.top = start_rect.top + 8 + "px";
-	start_img.style.left = start_rect.left + 16 + "px";
+	start_img.style.left = start_rect.left + 8 + "px";
 	end_img.style.top = end_rect.top + 8 + "px";
-	end_img.style.left = end_rect.left + 16 + "px";
+	end_img.style.left = end_rect.left + 8 + "px";
 	
 	var left_diff = end_rect.left - start_rect.left;
 	var up_diff = end_rect.top - start_rect.top;
