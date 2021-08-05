@@ -59,9 +59,9 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 	var end_rect = end.getBoundingClientRect();
 	
 	start_img.style.top = start_rect.top + 8 + "px";
-	start_img.style.left = start_rect.left + 8 + "px";
+	start_img.style.left = start_rect.left + 16 + "px";
 	end_img.style.top = end_rect.top + 8 + "px";
-	end_img.style.left = end_rect.left + 8 + "px";
+	end_img.style.left = end_rect.left + 16 + "px";
 	
 	var left_diff = end_rect.left - start_rect.left;
 	var up_diff = end_rect.top - start_rect.top;
@@ -271,6 +271,20 @@ function cause_falling_bejs(locations) {
 }
 
 
+function fill_with_jewels() {
+	// Randomly select a jewel for the location. If it would create matches, re-randomise.
+	for (var id=bejs.length - 1; id>=0; id--) {
+		var gemId = Math.floor(Math.random() * 7) + 1;
+		change_board_id(id, gemId);
+		
+		while (check_for_matches(id).length >= 3) {
+			var gemRst = Math.floor(Math.random() * 7) + 1;
+			change_board_id(id, gemRst);
+		}
+	}
+}
+
+
 document.addEventListener('DOMContentLoaded', function() {
 	const width  = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
 	const height = window.innerHeight|| document.documentElement.clientHeight|| document.body.clientHeight;
@@ -310,5 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	// end = document.getElementsByClassName("bej-object")[51];
 	
 	// show_anim(start, end, 35, 51);
+	fill_with_jewels();
+	
 	cause_falling_bejs();
 }, false);
