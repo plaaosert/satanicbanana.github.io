@@ -1,0 +1,107 @@
+img {
+    image-rendering: optimizeSpeed;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: optimize-contrast;
+    image-rendering: pixelated;
+    -ms-interpolation-mode: nearest-neighbor;
+}
+
+body {
+	overflow: hidden;
+	width:100%;
+	font-family: "MS Gothic";
+	background-color:#000;
+	
+	font-smooth:never;
+	-webkit-font-smoothing:none;
+}
+
+.bej {
+	left:0px;
+	width: 100%;
+	
+	display: flex;
+	flex-wrap: wrap;
+    justify-content: center;
+}
+
+.bej-object {
+	width: 48px;
+	height: 48px;
+	padding: 8px 8px 8px 8px;
+}
+
+.bej-object-selected {
+	width: 48px;
+	height: 48px;
+	padding: 8px 8px 8px 8px;
+	
+	filter: saturate(400%) contrast(200%) drop-shadow(0px 0px 12px white);
+}
+
+.bottombar {
+    position: fixed;
+    bottom: 0px;
+	left:0px;
+    display:block;
+    height: 96px;
+    width: 100%;
+
+	z-index: 1;
+
+    background: rgb(0,0,0);
+	background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 66%, rgba(0,0,0,0) 100%);
+}
+
+.topbar {
+    position: fixed;
+    top: 0px;
+	left:0px;
+    display:block;
+    height: 96px;
+    width: 100%;
+	
+	z-index: 1;
+
+    background: rgb(0,0,0);
+	background: linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 66%, rgba(0,0,0,0) 100%);
+}
+
+a {
+	position: fixed;
+	bottom: 24px;
+	left: 24px;
+	font-size: 16px;
+	
+	text-decoration: none;
+	font-weight: bold;
+	transition: color 0.3s;
+}
+
+a.reft {
+	color: #5daf8d;
+}
+
+a.rev {
+	color: #4200eb;
+}
+
+a:hover {
+	text-decoration: underline;
+	color: #fff;
+}
+
+.floating-particle {
+	position: absolute;
+	filter: none;
+}
+
+.right-text {
+	color: #0cf;
+	position: absolute;
+	font-size: 24px;
+	bottom: 12px;
+	right: 16px;
+	text-align: right;
+}
