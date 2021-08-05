@@ -195,12 +195,12 @@ function check_match_line(center, offset) {
 function check_for_matches(center1, center2) {
 	var total_matches = []
 	
-	if (get_board(center1 + board_length) != -1) {
+	if (get_board(center1 + board_length) != 0) {
 		total_matches = total_matches.concat(check_match_line(center1, 1));
 		total_matches = total_matches.concat(check_match_line(center1, board_length));
 	}
 	
-	if (center2 && get_board(center2 + board_length) != -1) {
+	if (center2 && get_board(center2 + board_length) != 0) {
 		total_matches = total_matches.concat(check_match_line(center2, 1));
 		total_matches = total_matches.concat(check_match_line(center2, board_length));
 	}
@@ -262,12 +262,12 @@ function cause_falling_bejs(locations) {
 			spawned_last--;
 		}
 	} else {
-		fall_timer -= 25;
+		fall_timer -= 125;
 	}
 	
 	setTimeout(function() {
 		cause_falling_bejs(locations);
-	}, 25);
+	}, 125);
 }
 
 
