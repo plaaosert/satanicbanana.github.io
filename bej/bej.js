@@ -354,7 +354,7 @@ function cause_falling_bejs(locations) {
 			ready_next = total_matches == 0;
 			tried_drops = true;
 			check_next_fall = false;
-			console.log("checked and ready", total_matches);
+			// console.log("checked and ready", total_matches);
 		}
 		
 		if (!tried_drops && !ready_next) {
