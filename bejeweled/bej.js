@@ -16,10 +16,27 @@ animation_stack = []
 
 fall_timer = 250;
 spawned_last = 2;
-board_length = 0
-board_state = []
-bejs = []
+board_length = 0;
+board_state = [];
+bejs = [];
+ready_next = false;
+check_next_fall = false;
 selected_bej = null;
+score = 0
+combo = 0;
+
+
+// https://stackoverflow.com/questions/442404/retrieve-the-position-x-y-of-an-html-element-relative-to-the-browser-window
+function get_element_position(el) {
+	var _x = 0;
+    var _y = 0;
+    while( el && !isNaN( el.offsetLeft ) && !isNaN( el.offsetTop ) ) {
+        _x += el.offsetLeft - el.scrollLeft;
+        _y += el.offsetTop - el.scrollTop;
+        el = el.offsetParent;
+    }
+    return {top: _y, left: _x};
+}
 
 
 function get_icon(id) {
@@ -31,6 +48,19 @@ function update_icons() {
 	for (var i=0; i<bejs.length; i++) {
 		bejs[i].src = get_icon(board_state[i]);
 	}
+}
+
+
+function gain_match(cleared) {
+	if (cleared > 0) {
+		combo++;
+		score += cleared * combo * 100;
+	} else {
+		combo = 1;
+	}
+	
+	document.getElementById("score-num").textContent = score.toLocaleString();
+	document.getElementById("combo-num").textContent = combo + "x";
 }
 
 
@@ -55,8 +85,8 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 	start_img.src = start.src;
 	end_img.src = end.src;
 	
-	var start_rect = start.getBoundingClientRect();
-	var end_rect = end.getBoundingClientRect();
+	var start_rect = get_element_position(start);
+	var end_rect = get_element_position(end);
 	
 	start_img.style.top = start_rect.top + 8 + "px";
 	start_img.style.left = start_rect.left + 8 + "px";
@@ -77,6 +107,8 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 	animations.push(anim_obj);
 	animation_stack.push(1);
 	
+	swap_board_ids(anim_obj.id1, anim_obj.id2);
+	
 	anim_obj.fn = setInterval(function() {
 		anim_obj.start_img.style.left = parseFloat(anim_obj.start_img.style.left.replace("px", "")) + anim_obj.steps_left + "px";
 		anim_obj.end_img.style.left = parseFloat(anim_obj.end_img.style.left.replace("px", "")) - anim_obj.steps_left + "px";
@@ -92,8 +124,6 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 			anim_obj.start.style.visibility = "visible";
 			anim_obj.end.style.visibility = "visible";
 			
-			swap_board_ids(anim_obj.id1, anim_obj.id2);
-			
 			anim_obj.start_img.remove();
 			anim_obj.end_img.remove();
 			
@@ -105,6 +135,7 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 					
 					if (matches.length < 3) {
 						if (!just_check_matches) {
+							fall_timer = 125;
 							show_swap_anim(anim_obj.end, anim_obj.start, anim_obj.id2, anim_obj.id1, true)
 						}
 					} else {
@@ -114,6 +145,7 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 							change_board_id(matches[i], 0);
 						}
 						
+						gain_match(matches.length);
 						fall_timer = 500;
 					}
 				}
@@ -134,7 +166,7 @@ function show_disappearing_obj(start) {
 	start_img.className = "disappearing-particle";
 	start_img.src = start.src;
 	
-	var start_rect = start.getBoundingClientRect();
+	var start_rect = get_element_position(start);
 	start_img.style.top = start_rect.top + 8 + "px";
 	start_img.style.left = start_rect.left + 8 + "px";
 	
@@ -165,7 +197,7 @@ function change_board_id(id, to) {
 function is_adjacent(a, b) {
 	// a and b are adjacent if their difference is 1 or board_length
 	var diff = Math.abs(a - b);
-	return diff == board_length || diff == 1;
+	return diff == board_length || (diff == 1 && Math.floor(a / board_length) == Math.floor(b / board_length));
 }
 
 
@@ -183,25 +215,27 @@ function check_match_line(center, offset) {
 	var type_check = get_board(center)
 	
 	var count = center + offset;
-	var anti_wrap = offset == 1;
-	var original_row = Math.floor(count / 16);
+	var last = center;
 	
 	while (get_board(count) == type_check && get_board(count) != 0) {
-		connected.push(count);
-		if (Math.floor((count + offset) / 16) != original_row && anti_wrap) {
+		if (!is_adjacent(last, count) || count < board_length) {
 			break;
 		}
 		
+		last = count;
+		connected.push(count);
 		count += offset;
 	}
 	
-	var count = center - offset;
+	count = center - offset;
+	last = center;
 	while (get_board(count) == type_check && get_board(count) != 0) {
-		connected.push(count);
-		if (Math.floor((count - offset) / 16) != original_row && anti_wrap) {
+		if (!is_adjacent(last, count) || count < board_length) {
 			break;
 		}
 		
+		last = count;
+		connected.push(count);
 		count -= offset;
 	}
 	
@@ -234,9 +268,12 @@ function check_for_matches(center1, center2) {
 
 
 function select_bej(bej) {
-	if (get_board(bej.id) != 0 && animation_stack.length == 0) {
+	if (get_board(bej.id) != 0 && animation_stack.length == 0 && ready_next) {
 		if (selected_bej != null) {
 			if (selected_bej.id != bej.id && is_adjacent(selected_bej.id, bej.id)) {
+				ready_next = false;
+				fall_timer = -1;
+				combo = 0;
 				show_swap_anim(selected_bej, bej, parseInt(selected_bej.id), parseInt(bej.id));
 			}
 				
@@ -262,8 +299,8 @@ function cause_falling_bejs(locations) {
 		}
 	}
 	*/
-	console.log(fall_timer);
-	if (fall_timer <= 0) {
+	if (fall_timer <= 0 && fall_timer != -1) {
+		var tried_drops = false;
 		var spawned = 0;
 		for (var i=0; i<board_length; i++) {
 			// For each column, activate a swap if necessary (empty below non-empty)
@@ -271,13 +308,22 @@ function cause_falling_bejs(locations) {
 				var loc_resolved = i + (board_length * loc);
 				
 				if (get_board(loc_resolved) == 0 && get_board(loc_resolved - board_length) > 0) {
-					show_swap_anim(bejs[loc_resolved - board_length], bejs[loc_resolved], loc_resolved - board_length, loc_resolved, false, 2, true);
+					tried_drops = true;
+					show_swap_anim(bejs[loc_resolved - board_length], bejs[loc_resolved], loc_resolved - board_length, loc_resolved, true, 2);
+				}
+				
+				if (get_board(loc_resolved + board_length) > 0 && get_board(loc_resolved - board_length) != 0) {
+					// fall_checks.push(loc_resolved);
 				}
 			}
 			
-			if (get_board(i) == 0 && spawned_last < 0) {
-				change_board_id(i, Math.floor(Math.random() * 7) + 1);
-				spawned++;
+			if (get_board(i) == 0) {
+				tried_drops = true;
+				
+				if (spawned_last < 0) {
+					change_board_id(i, Math.floor(Math.random() * 7) + 1);
+					spawned++;
+				}
 			}
 		}
 		
@@ -286,7 +332,36 @@ function cause_falling_bejs(locations) {
 		} else {
 			spawned_last--;
 		}
-	} else {
+		
+		if (check_next_fall) {
+			// Check all locations in fall checks
+			total_matches = 0;
+			for (var loc_id=0; loc_id<board_state.length; loc_id++) {
+				var matches = check_for_matches(loc_id);
+							
+				if (matches.length >= 3) {
+					for (var i=0; i<matches.length; i++) {
+						total_matches++;
+						show_disappearing_obj(bejs[matches[i]]);
+						change_board_id(matches[i], 0);
+					}
+					
+					fall_timer = 500;
+				}
+			}
+			
+			gain_match(total_matches);
+			ready_next = total_matches == 0;
+			tried_drops = true;
+			check_next_fall = false;
+			console.log("checked and ready", total_matches);
+		}
+		
+		if (!tried_drops && !ready_next) {
+			check_next_fall = true;
+			fall_timer = 125;
+		}
+	} else if (fall_timer != -1) {
 		fall_timer -= 125;
 	}
 	
@@ -299,6 +374,11 @@ function cause_falling_bejs(locations) {
 function fill_with_jewels() {
 	// Randomly select a jewel for the location. If it would create matches, re-randomise.
 	for (var id=bejs.length - 1; id>=0; id--) {
+		var gemId = id % 2 + 1;
+		change_board_id(id, gemId);
+	}
+	/*
+	for (var id=bejs.length - 1; id>=0; id--) {
 		var gemId = Math.floor(Math.random() * 7) + 1;
 		change_board_id(id, gemId);
 		
@@ -307,6 +387,7 @@ function fill_with_jewels() {
 			change_board_id(id, gemRst);
 		}
 	}
+	*/
 }
 
 
