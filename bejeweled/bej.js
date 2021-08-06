@@ -110,8 +110,11 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 					} else {
 						// clear all matches and id1, id2
 						for (var i=0; i<matches.length; i++) {
+							show_disappearing_obj(bejs[matches[i]]);
 							change_board_id(matches[i], 0);
 						}
+						
+						fall_timer = 500;
 					}
 				}
 			}, 10);
@@ -122,6 +125,23 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 	document.body.appendChild(end_img);
 	start.style.visibility = "hidden";
 	end.style.visibility = "hidden";
+}
+
+
+function show_disappearing_obj(start) {
+	var start_img = document.createElement("img");
+	
+	start_img.className = "disappearing-particle";
+	start_img.src = start.src;
+	
+	var start_rect = start.getBoundingClientRect();
+	start_img.style.top = start_rect.top + 8 + "px";
+	start_img.style.left = start_rect.left + 8 + "px";
+	
+	document.body.appendChild(start_img);
+	setTimeout(function() {
+		start_img.remove();
+	}, 500);
 }
 
 
@@ -163,9 +183,12 @@ function check_match_line(center, offset) {
 	var type_check = get_board(center)
 	
 	var count = center + offset;
-	while (get_board(count) == type_check) {
+	var anti_wrap = offset == 1;
+	var original_row = Math.floor(count / 16);
+	
+	while (get_board(count) == type_check && get_board(count) != 0) {
 		connected.push(count);
-		if (count % board_length == board_length - 1 && ((count + offset) % board_length == 0)) {
+		if (Math.floor((count + offset) / 16) != original_row && anti_wrap) {
 			break;
 		}
 		
@@ -173,9 +196,9 @@ function check_match_line(center, offset) {
 	}
 	
 	var count = center - offset;
-	while (get_board(count) == type_check) {
+	while (get_board(count) == type_check && get_board(count) != 0) {
 		connected.push(count);
-		if (count % board_length == 0 && ((count - offset) % board_length == board_length - 1)) {
+		if (Math.floor((count - offset) / 16) != original_row && anti_wrap) {
 			break;
 		}
 		
@@ -192,6 +215,7 @@ function check_match_line(center, offset) {
 }
 
 
+// Wraps for some reason. Why
 function check_for_matches(center1, center2) {
 	var total_matches = []
 	
@@ -238,6 +262,7 @@ function cause_falling_bejs(locations) {
 		}
 	}
 	*/
+	console.log(fall_timer);
 	if (fall_timer <= 0) {
 		var spawned = 0;
 		for (var i=0; i<board_length; i++) {

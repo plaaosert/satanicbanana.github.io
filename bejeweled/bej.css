@@ -105,3 +105,34 @@ a:hover {
 	right: 16px;
 	text-align: right;
 }
+
+.top-text {
+	color: #0cf;
+	position: absolute;
+	font-size: 24px;
+}
+
+.disappearing-particle {
+	position: absolute;
+	animation-duration: 0.5s;
+	animation-name: disappear;
+}
+
+.important {
+	font-weight: bold;
+	color: #8df;
+}
+
+@keyframes disappear {
+  from {
+    filter: saturate(100%) brightness(100%) opacity(100%);
+  }
+
+  33% {
+	filter: saturate(100%) brightness(400%) opacity(100%)
+  }
+
+  to {
+    filter: saturate(100%) brightness(100%) opacity(0%);
+  }
+}
