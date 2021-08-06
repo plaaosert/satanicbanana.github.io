@@ -121,11 +121,11 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 		if (anim_obj.steps >= 10) {
 			clearInterval(anim_obj.fn);
 			
-			anim_obj.start.style.visibility = "visible";
-			anim_obj.end.style.visibility = "visible";
-			
 			anim_obj.start_img.remove();
 			anim_obj.end_img.remove();
+			
+			anim_obj.start.style.visibility = "visible";
+			anim_obj.end.style.visibility = "visible";
 			
 			setTimeout(function() {
 				animation_stack.pop();
