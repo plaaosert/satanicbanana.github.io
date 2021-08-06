@@ -373,11 +373,12 @@ function cause_falling_bejs(locations) {
 
 function fill_with_jewels() {
 	// Randomly select a jewel for the location. If it would create matches, re-randomise.
+	/*
 	for (var id=bejs.length - 1; id>=0; id--) {
 		var gemId = id % 2 + 1;
 		change_board_id(id, gemId);
 	}
-	/*
+	*/
 	for (var id=bejs.length - 1; id>=0; id--) {
 		var gemId = Math.floor(Math.random() * 7) + 1;
 		change_board_id(id, gemId);
@@ -387,7 +388,6 @@ function fill_with_jewels() {
 			change_board_id(id, gemRst);
 		}
 	}
-	*/
 }
 
 
