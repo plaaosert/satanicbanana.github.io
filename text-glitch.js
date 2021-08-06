@@ -14,7 +14,7 @@ l5.onmouseover = l5.onmouseout = handler;
 aims = {
 	"1":">> time to learn about twitchpost!",
 	"2":">> the battlepost information repository",
-	"3":">> infinite bejeweled",
+	"3":">> infinite match-3 game",
 	"4":">> listen to some of my music",
 	"5":">> turn the ocean off or make it look like something else"
 };
