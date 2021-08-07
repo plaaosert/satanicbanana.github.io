@@ -99,8 +99,8 @@ function gain_match(cleared) {
 	}
 	
 	if (score > highscore) {
-		localStorage.setItem("highscore", highscore);
 		highscore = score;
+		localStorage.setItem("highscore", highscore);
 		document.getElementById("highscore-num").textContent = highscore.toLocaleString();
 	}
 	
