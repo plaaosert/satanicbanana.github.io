@@ -106,6 +106,14 @@ a:hover {
 	text-align: right;
 }
 
+.top-r-text {
+	color: #0cf;
+	position: absolute;
+	font-size: 24px;
+	right: 16px;
+	text-align: right;
+}
+
 .top-text {
 	color: #0cf;
 	position: absolute;

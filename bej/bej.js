@@ -1,3 +1,31 @@
+// https://stackoverflow.com/questions/6312993/javascript-seconds-to-time-string-with-format-hhmmss
+String.prototype.toHHMMSS = function () {
+    var sec_num = parseInt(this, 10); // don't forget the second param
+    var hours   = Math.floor(sec_num / 3600);
+    var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+    var seconds = sec_num - (hours * 3600) - (minutes * 60);
+
+    if (hours   < 10) {hours   = "0"+hours;}
+    if (minutes < 10) {minutes = "0"+minutes;}
+    if (seconds < 10) {seconds = "0"+seconds;}
+    return hours+':'+minutes+':'+seconds;
+}
+
+String.prototype.toDDHHMMSS = function () {
+    var sec_num = parseInt(this, 10); // don't forget the second param
+	var days    = Math.floor(sec_num / 86400);
+    var hours   = Math.floor((sec_num - (days * 86400)) / 3600);
+    var minutes = Math.floor((sec_num - (days * 86400) - (hours * 3600)) / 60);
+    var seconds = Math.floor(sec_num - (days * 86400) - (hours * 3600) - (minutes * 60));
+
+	if (days    < 10) {days    = "0"+days;}
+    if (hours   < 10) {hours   = "0"+hours;}
+    if (minutes < 10) {minutes = "0"+minutes;}
+    if (seconds < 10) {seconds = "0"+seconds;}
+    return days+":"+hours+':'+minutes+':'+seconds;
+}
+
+
 cols = [
 	"empty", "blue", "green", "orange", "purple", "red", "white", "yellow"
 ]
@@ -22,7 +50,18 @@ bejs = [];
 ready_next = false;
 check_next_fall = false;
 selected_bej = null;
-score = 0
+score = 0;
+highscore = parseInt(localStorage.getItem("highscore"));
+if (!highscore) {
+	highscore = 0;
+}
+
+time = parseInt(localStorage.getItem("time"));
+localtime = 0;
+if (!time) {
+	time = 0;
+}
+
 combo = 0;
 
 
@@ -57,6 +96,12 @@ function gain_match(cleared) {
 		score += cleared * combo * 100;
 	} else {
 		combo = 1;
+	}
+	
+	if (score > highscore) {
+		localStorage.setItem("highscore", highscore);
+		highscore = score;
+		document.getElementById("highscore-num").textContent = highscore.toLocaleString();
 	}
 	
 	document.getElementById("score-num").textContent = score.toLocaleString();
@@ -391,6 +436,17 @@ function fill_with_jewels() {
 }
 
 
+function update_time() {
+	time += 1;
+	localtime += 1;
+	
+	localStorage.setItem("time", time);
+	
+	document.getElementById("session-time").textContent = localtime.toString().toHHMMSS();
+	document.getElementById("all-time").textContent = time.toString().toDDHHMMSS();
+}
+
+
 document.addEventListener('DOMContentLoaded', function() {
 	const width  = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
 	const height = window.innerHeight|| document.documentElement.clientHeight|| document.body.clientHeight;
@@ -424,6 +480,8 @@ document.addEventListener('DOMContentLoaded', function() {
 		}
 	}
 	
+	document.getElementById("highscore-num").textContent = highscore.toLocaleString();
+	
 	// Need to make sure that every single img icon has an onclick corresponding to their ID (to select it)
 	
 	// start = document.getElementsByClassName("bej-object")[35];
@@ -433,4 +491,5 @@ document.addEventListener('DOMContentLoaded', function() {
 	fill_with_jewels();
 	
 	cause_falling_bejs();
+	setInterval(update_time, 1000);
 }, false);
