@@ -486,6 +486,11 @@ document.addEventListener('DOMContentLoaded', function() {
 			img.onmouseover = function() {
 				select_bej(this, true);
 			};
+			
+			// mobile compat
+			img.onclick = function() {
+				select_bej(this);
+			}
 		}
 	}
 	
