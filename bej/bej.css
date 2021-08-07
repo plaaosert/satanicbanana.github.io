@@ -144,3 +144,7 @@ a:hover {
     filter: saturate(100%) brightness(100%) opacity(0%);
   }
 }
+
+.ignore-mouse {
+	pointer-events: none;
+}

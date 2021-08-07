@@ -50,6 +50,7 @@ bejs = [];
 ready_next = false;
 check_next_fall = false;
 selected_bej = null;
+dragging = false;
 score = 0;
 highscore = parseInt(localStorage.getItem("highscore"));
 if (!highscore) {
@@ -477,19 +478,25 @@ document.addEventListener('DOMContentLoaded', function() {
 			
 			img.onmousedown = function() {
 				select_bej(this);
+				dragging = true;
 			};
 			
 			img.onmouseup = function() {
-				select_bej(this);
+				setTimeout(function() { dragging = false; }, 10);
 			};
 			
 			img.onmouseover = function() {
-				select_bej(this, true);
+				if (dragging) {
+					select_bej(this, true);
+					setTimeout(function() { dragging = false; }, 10);
+				}
 			};
 			
 			// mobile compat
 			img.onclick = function() {
-				select_bej(this);
+				if (!dragging) {
+					select_bej(this);
+				}
 			}
 		}
 	}
