@@ -479,6 +479,10 @@ document.addEventListener('DOMContentLoaded', function() {
 				select_bej(this);
 			};
 			
+			img.onmouseup = function() {
+				select_bej(this);
+			};
+			
 			img.onmouseover = function() {
 				select_bej(this, true);
 			};
