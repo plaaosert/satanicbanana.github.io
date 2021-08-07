@@ -180,7 +180,7 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 					
 					if (matches.length < 3) {
 						if (!just_check_matches) {
-							fall_timer = 100;
+							fall_timer = 125;
 							show_swap_anim(anim_obj.end, anim_obj.start, anim_obj.id2, anim_obj.id1, true)
 						}
 					} else {
@@ -191,7 +191,7 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 						}
 						
 						gain_match(matches.length);
-						fall_timer = 250;
+						fall_timer = 375;
 					}
 				}
 			}, 10);
@@ -391,7 +391,7 @@ function cause_falling_bejs(locations) {
 						change_board_id(matches[i], 0);
 					}
 					
-					fall_timer = 250;
+					fall_timer = 375;
 				}
 			}
 			
@@ -404,15 +404,15 @@ function cause_falling_bejs(locations) {
 		
 		if (!tried_drops && !ready_next) {
 			check_next_fall = true;
-			fall_timer = 100;
+			fall_timer = 125;
 		}
 	} else if (fall_timer != -1) {
-		fall_timer -= 100;
+		fall_timer -= 125;
 	}
 	
 	setTimeout(function() {
 		cause_falling_bejs(locations);
-	}, 100);
+	}, 125);
 }
 
 
