@@ -488,11 +488,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			};
 			
 			// mobile compat
-			img.touchstart = function() {
-				select_bej(this);
-			}
-			
-			img.touchend = function() {
+			img.onclick = function() {
 				select_bej(this);
 			}
 		}
