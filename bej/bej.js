@@ -27,7 +27,11 @@ String.prototype.toDDHHMMSS = function () {
 
 
 cols = [
-	"empty", "blue", "green", "orange", "purple", "red", "white", "yellow"
+	"empty", "blue", "green", "orange", "purple", "red", "white", "yellow", "4-in-a-row", "5-in-a-row"
+]
+
+add_classes = [
+	"normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "four-row", "five-row"
 ]
 
 sprites = [
@@ -66,6 +70,43 @@ if (!time) {
 combo = 0;
 
 
+// https://stackoverflow.com/questions/6229197/how-to-know-if-two-arrays-have-the-same-values/55614659#55614659
+function arrays_contain_same(a1, a2) {
+  const super_set = {};
+  for (const i of a1) {
+    const e = i + typeof i;
+    super_set[e] = 1;
+  }
+
+  for (const i of a2) {
+    const e = i + typeof i;
+    if (!super_set[e]) {
+      return false;
+    }
+    super_set[e] = 2;
+  }
+
+  for (let e in super_set) {
+    if (super_set[e] === 1) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+function array_contains_same_children(a, child) {
+	for (var i=0; i<a.length; i++) {
+		if (arrays_contain_same(a[i], child)) {
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+
 // https://stackoverflow.com/questions/442404/retrieve-the-position-x-y-of-an-html-element-relative-to-the-browser-window
 function get_element_position(el) {
 	var _x = 0;
@@ -80,7 +121,7 @@ function get_element_position(el) {
 
 
 function get_icon(id) {
-	return cols[typeof(id) == "String" ? parseInt(id) : id] + sprites[sel_sprite] + ".png";
+	return cols[typeof(id) == "String" ? parseInt(id) : id] + sprites[sel_sprite] + (id >= 8 ? ".gif" : ".png");
 }
 
 
@@ -177,21 +218,51 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 				animation_stack.pop();
 				
 				if (!do_not_backtrack || just_check_matches) {
-					var matches = check_for_matches(anim_obj.id1, anim_obj.id2);
+					var matches = check_for_matches(anim_obj.id1, anim_obj.id2, true);
 					
-					if (matches.length < 3) {
+					if (matches.length <= 0) {
 						if (!just_check_matches) {
 							fall_timer = 125;
 							show_swap_anim(anim_obj.end, anim_obj.start, anim_obj.id2, anim_obj.id1, true)
 						}
 					} else {
 						// clear all matches and id1, id2
+						var total_tiles = 0;
+						var total_matches = []
+						var supergem_locs = [];
+						
 						for (var i=0; i<matches.length; i++) {
-							show_disappearing_obj(bejs[matches[i]]);
-							change_board_id(matches[i], 0);
+							var matches_arr = matches[i].matches;
+							if (!array_contains_same_children(total_matches, matches_arr)) {
+								total_matches.push(matches_arr);
+								total_tiles += matches_arr.length;
+								// also add supergem here
+								if (matches[i].normal) {
+									if (matches_arr.length == 4) {
+										supergem_locs.push([matches_arr[matches_arr.length - 1], 8]);
+									} else if (matches_arr.length >= 5) {
+										supergem_locs.push([matches_arr[matches_arr.length - 1], 9]);
+									}
+								}
+							}
 						}
 						
-						gain_match(matches.length);
+						for (var i=0; i<total_matches.length; i++) {
+							for (var j=0; j<total_matches[i].length; j++) {
+								var bej_id = total_matches[i][j];
+								
+								if (!supergem_locs.includes(bej_id)) {
+									show_disappearing_obj(bejs[bej_id]);
+									change_board_id(bej_id, 0);
+								}
+							}
+						}
+						
+						for (var i=0; i<supergem_locs.length; i++) {
+							change_board_id(supergem_locs[i][0], supergem_locs[i][1]);
+						}
+						
+						gain_match(total_tiles);
 						fall_timer = 375;
 					}
 				}
@@ -226,17 +297,16 @@ function show_disappearing_obj(start) {
 function swap_board_ids(id1, id2) {
 	buffer = board_state[id1];
 	
-	board_state[id1] = board_state[id2];
-	board_state[id2] = buffer;
-	
-	bejs[id1].src = get_icon(board_state[id1]);
-	bejs[id2].src = get_icon(board_state[id2]);
+	change_board_id(id1, board_state[id2]);
+	change_board_id(id2, buffer);
 }
 
 
 function change_board_id(id, to) {
 	board_state[id] = to;
 	bejs[id].src = get_icon(board_state[id]);
+	bejs[id].className = "bej-object";
+	bejs[id].classList.add(add_classes[to]);
 }
 
 
@@ -244,6 +314,20 @@ function is_adjacent(a, b) {
 	// a and b are adjacent if their difference is 1 or board_length
 	var diff = Math.abs(a - b);
 	return diff == board_length || (diff == 1 && Math.floor(a / board_length) == Math.floor(b / board_length));
+}
+
+
+function is_indirectly_adjacent(a, b) {
+	var diff = Math.abs(a - b);
+	var row_diff = Math.abs(Math.floor(a / board_length) - Math.floor(b / board_length));
+	
+	if (diff == 1 && row_diff == 0) {
+		return true;
+	} else if (Math.abs(board_length - diff) <= 1 && row_diff == 1) {
+		return true;
+	}
+	
+	return false;
 }
 
 
@@ -256,58 +340,112 @@ function get_board(index) {
 }
 
 
+function is_matchable_gem(typ) {
+	return typ > 0 && typ < 8;
+}
+
+
 function check_match_line(center, offset) {
-	var connected = []
+	var connected = {normal: true, matches: []};
 	var type_check = get_board(center)
 	
 	var count = center + offset;
 	var last = center;
 	
-	while (get_board(count) == type_check && get_board(count) != 0) {
+	while (get_board(count) == type_check && is_matchable_gem(get_board(count))) {
 		if (!is_adjacent(last, count) || count < board_length) {
 			break;
 		}
 		
 		last = count;
-		connected.push(count);
+		connected.matches.push(count);
 		count += offset;
 	}
 	
 	count = center - offset;
 	last = center;
-	while (get_board(count) == type_check && get_board(count) != 0) {
+	while (get_board(count) == type_check && is_matchable_gem(get_board(count))) {
 		if (!is_adjacent(last, count) || count < board_length) {
 			break;
 		}
 		
 		last = count;
-		connected.push(count);
+		connected.matches.push(count);
 		count -= offset;
 	}
 	
-	if (connected.length < 2) {
-		connected = [];
+	if (connected.matches.length < 2) {
+		return null;
 	} else {
-		connected.push(center);
+		connected.matches.push(center);
 	}
 	
 	return connected;
 }
 
 
-// Wraps for some reason. Why
-function check_for_matches(center1, center2) {
+function check_special_behaviour(center, other) {
+	var type_check = get_board(center);
+	var t = {normal: false, matches: []};
+	
+	if (type_check == 8) {
+		// match all adjacent
+		for (var x=-1; x<=1; x++) {
+			for (var y=-1; y<=1; y++) {
+				var loc = center + x + (y * board_length);
+				if (get_board(loc) > 0 && is_indirectly_adjacent(center, loc)) {
+					t.matches.push(loc);
+				}
+			}
+		}
+		
+		t.matches.push(center);
+	} else if (type_check == 9) {
+		var type_check_other = get_board(other);
+		
+		for (var loc_id=0; loc_id<board_state.length; loc_id++) {
+			if (type_check_other == get_board(loc_id)) {
+				t.matches.push(loc_id);
+			}
+		}
+		
+		t.matches.push(center);
+	} else {
+		return null;
+	}
+	
+	return t;
+}
+
+
+// does not wrap anymore :)
+function check_for_matches(center1, center2, include_special) {
 	var total_matches = []
 	
-	if (get_board(center1 + board_length) != 0) {
-		total_matches = total_matches.concat(check_match_line(center1, 1));
-		total_matches = total_matches.concat(check_match_line(center1, board_length));
-	}
-	
-	if (center2 && get_board(center2 + board_length) != 0) {
-		total_matches = total_matches.concat(check_match_line(center2, 1));
-		total_matches = total_matches.concat(check_match_line(center2, board_length));
-	}
+	var arr = [center1, center2];
+	for (var i=0; i<2; i++) {
+		var a = arr[i];
+		var b = arr[1 - i];
+		
+		if (get_board(a + board_length) != 0) {
+			var match = check_match_line(a, 1);
+			if (match) {
+				total_matches.push(match);
+			}
+			
+			var match = check_match_line(a, board_length);
+			if (match) {
+				total_matches.push(match);
+			}
+			
+			if (include_special) {
+				var match = check_special_behaviour(a, b);
+				if (match) {
+					total_matches.push(match);
+				}
+			}
+		}
+	};
 	
 	return total_matches
 }
@@ -323,10 +461,10 @@ function select_bej(bej, over) {
 				show_swap_anim(selected_bej, bej, parseInt(selected_bej.id), parseInt(bej.id));
 			}
 				
-			selected_bej.className = "bej-object";
+			selected_bej.classList.remove("bej-object-selected");
 			selected_bej = null;
 		} else if (!over) {
-			bej.className = "bej-object-selected";
+			bej.classList.add("bej-object-selected");
 			selected_bej = bej;
 		}
 	}
@@ -381,23 +519,50 @@ function cause_falling_bejs(locations) {
 		
 		if (check_next_fall) {
 			// Check all locations in fall checks
-			total_matches = 0;
+			var total_matches = [];
+			var total_tiles = 0;
+			var supergem_locs = [];
+			
 			for (var loc_id=0; loc_id<board_state.length; loc_id++) {
 				var matches = check_for_matches(loc_id);
 							
-				if (matches.length >= 3) {
+				if (matches.length > 0) {
 					for (var i=0; i<matches.length; i++) {
-						total_matches++;
-						show_disappearing_obj(bejs[matches[i]]);
-						change_board_id(matches[i], 0);
+						var matches_arr = matches[i].matches;
+						if (!array_contains_same_children(total_matches, matches_arr)) {
+							total_matches.push(matches_arr);
+							total_tiles += matches_arr.length;
+							
+							// also add supergem here
+							if (matches[i].normal) {
+								if (matches_arr.length == 4) {
+									supergem_locs.push([matches_arr[matches_arr.length - 1], 8]);
+								} else if (matches_arr.length >= 5) {
+									supergem_locs.push([matches_arr[matches_arr.length - 1], 9]);
+								}
+							}
+						}
 					}
+				}
+			}
+						
+			for (var i=0; i<total_matches.length; i++) {
+				for (var j=0; j<total_matches[i].length; j++) {
+					var bej_id = total_matches[i][j];
 					
-					fall_timer = 375;
+					if (!supergem_locs.includes(bej_id)) {
+						show_disappearing_obj(bejs[bej_id]);
+						change_board_id(bej_id, 0);
+					}
 				}
 			}
 			
-			gain_match(total_matches);
-			ready_next = total_matches == 0;
+			for (var i=0; i<supergem_locs.length; i++) {
+				change_board_id(supergem_locs[i][0], supergem_locs[i][1]);
+			}
+
+			gain_match(total_tiles);
+			ready_next = total_tiles == 0;
 			tried_drops = true;
 			check_next_fall = false;
 			// console.log("checked and ready", total_matches);
@@ -421,15 +586,18 @@ function fill_with_jewels() {
 	// Randomly select a jewel for the location. If it would create matches, re-randomise.
 	/*
 	for (var id=bejs.length - 1; id>=0; id--) {
-		var gemId = id % 2 + 1;
+		var gemId = id % 3 + 1;
 		change_board_id(id, gemId);
 	}
+	
+	return;
 	*/
+	
 	for (var id=bejs.length - 1; id>=0; id--) {
 		var gemId = Math.floor(Math.random() * 7) + 1;
 		change_board_id(id, gemId);
 		
-		while (check_for_matches(id).length >= 3) {
+		while (check_for_matches(id).length > 0) {
 			var gemRst = Math.floor(Math.random() * 7) + 1;
 			change_board_id(id, gemRst);
 		}
@@ -458,6 +626,8 @@ document.addEventListener('DOMContentLoaded', function() {
 	console.log(width, height, bejs_horizontal, bejs_vertical, width / 64, height / 64);
 	
 	bej_grid = document.getElementById("bej");
+	bej_grid.draggable = false;
+	
 	for (var y=0; y<bejs_vertical; y++) {
 		for (var x=0; x<bejs_horizontal; x++) {
 			var img = document.createElement("img");
