@@ -180,7 +180,7 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 					
 					if (matches.length < 3) {
 						if (!just_check_matches) {
-							fall_timer = 125;
+							fall_timer = 100;
 							show_swap_anim(anim_obj.end, anim_obj.start, anim_obj.id2, anim_obj.id1, true)
 						}
 					} else {
@@ -191,7 +191,7 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 						}
 						
 						gain_match(matches.length);
-						fall_timer = 500;
+						fall_timer = 250;
 					}
 				}
 			}, 10);
@@ -312,7 +312,7 @@ function check_for_matches(center1, center2) {
 }
 
 
-function select_bej(bej) {
+function select_bej(bej, over) {
 	if (get_board(bej.id) != 0 && animation_stack.length == 0 && ready_next) {
 		if (selected_bej != null) {
 			if (selected_bej.id != bej.id && is_adjacent(selected_bej.id, bej.id)) {
@@ -324,7 +324,7 @@ function select_bej(bej) {
 				
 			selected_bej.className = "bej-object";
 			selected_bej = null;
-		} else {
+		} else if (!over) {
 			bej.className = "bej-object-selected";
 			selected_bej = bej;
 		}
@@ -391,7 +391,7 @@ function cause_falling_bejs(locations) {
 						change_board_id(matches[i], 0);
 					}
 					
-					fall_timer = 500;
+					fall_timer = 250;
 				}
 			}
 			
@@ -404,15 +404,15 @@ function cause_falling_bejs(locations) {
 		
 		if (!tried_drops && !ready_next) {
 			check_next_fall = true;
-			fall_timer = 125;
+			fall_timer = 100;
 		}
 	} else if (fall_timer != -1) {
-		fall_timer -= 125;
+		fall_timer -= 100;
 	}
 	
 	setTimeout(function() {
 		cause_falling_bejs(locations);
-	}, 125);
+	}, 100);
 }
 
 
@@ -467,6 +467,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			img.src = get_icon(gemId);
 			img.className = "bej-object";
 			img.id = bejs.length;
+			img.setAttribute('draggable', false);
 			
 			bej_grid.appendChild(img);
 			
@@ -474,8 +475,12 @@ document.addEventListener('DOMContentLoaded', function() {
 			// board_state.push((y + (x % 2)) % 7 + 1);
 			board_state.push(gemId);
 			
-			img.onclick = function() {
+			img.onmousedown = function() {
 				select_bej(this);
+			};
+			
+			img.onmouseover = function() {
+				select_bej(this, true);
 			};
 		}
 	}
@@ -491,5 +496,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	fill_with_jewels();
 	
 	cause_falling_bejs();
+	document.getElementById("session-time").textContent = localtime.toString().toHHMMSS();
+	document.getElementById("all-time").textContent = time.toString().toDDHHMMSS();
 	setInterval(update_time, 1000);
 }, false);
