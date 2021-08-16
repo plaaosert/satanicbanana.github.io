@@ -206,6 +206,7 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 		anim_obj.steps += 1;
 		
 		if (anim_obj.steps >= 10) {
+			fall_timer = 0;
 			clearInterval(anim_obj.fn);
 			
 			anim_obj.start_img.remove();
@@ -263,7 +264,7 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 						}
 						
 						gain_match(total_tiles);
-						fall_timer = 375;
+						fall_timer = 250;
 					}
 				}
 			}, 10);
@@ -313,6 +314,10 @@ function change_board_id(id, to) {
 function is_adjacent(a, b) {
 	// a and b are adjacent if their difference is 1 or board_length
 	var diff = Math.abs(a - b);
+	if (a < board_length || b < board_length) {
+		return false;
+	}
+	
 	return diff == board_length || (diff == 1 && Math.floor(a / board_length) == Math.floor(b / board_length));
 }
 
@@ -320,6 +325,10 @@ function is_adjacent(a, b) {
 function is_indirectly_adjacent(a, b) {
 	var diff = Math.abs(a - b);
 	var row_diff = Math.abs(Math.floor(a / board_length) - Math.floor(b / board_length));
+	
+	if (a < board_length || b < board_length) {
+		return false;
+	}
 	
 	if (diff == 1 && row_diff == 0) {
 		return true;
@@ -384,7 +393,7 @@ function check_match_line(center, offset) {
 }
 
 
-function check_special_behaviour(center, other) {
+function check_special_behaviour(center, other, ignore) {
 	var type_check = get_board(center);
 	var t = {normal: false, matches: []};
 	
@@ -394,6 +403,18 @@ function check_special_behaviour(center, other) {
 			for (var y=-1; y<=1; y++) {
 				var loc = center + x + (y * board_length);
 				if (get_board(loc) > 0 && is_indirectly_adjacent(center, loc)) {
+					if (get_board(loc) == 8) {
+						var ignore_new = ignore;
+						if (!ignore) {
+							ignore_new = {};
+						}
+
+						if (!ignore_new[loc]) {
+							ignore_new[loc] = true;
+							t.matches = t.matches.concat(check_special_behaviour(loc, undefined, ignore_new).matches);
+						}
+					}						
+
 					t.matches.push(loc);
 				}
 			}
@@ -402,10 +423,26 @@ function check_special_behaviour(center, other) {
 		t.matches.push(center);
 	} else if (type_check == 9) {
 		var type_check_other = get_board(other);
+		var random_bej = 1;
+		console.log(random_bej);
 		
 		for (var loc_id=0; loc_id<board_state.length; loc_id++) {
-			if (type_check_other == get_board(loc_id)) {
-				t.matches.push(loc_id);
+			if (type_check_other == 8) {
+				if (Math.random() < 0.05) {
+					show_disappearing_obj(bejs[loc_id]);
+					change_board_id(loc_id, type_check_other);
+				}
+			}
+			else if (type_check_other == 9) {
+				if (Math.random() < 0.22) {
+					show_disappearing_obj(bejs[loc_id]);
+					change_board_id(loc_id, random_bej);
+				}
+			}
+			else {
+				if (type_check_other == get_board(loc_id)) {
+					t.matches.push(loc_id);
+				}
 			}
 		}
 		
@@ -685,4 +722,22 @@ document.addEventListener('DOMContentLoaded', function() {
 	document.getElementById("session-time").textContent = localtime.toString().toHHMMSS();
 	document.getElementById("all-time").textContent = time.toString().toDDHHMMSS();
 	setInterval(update_time, 1000);
+	
+	document.onkeydown = function(e) {
+		switch(e.which) {
+			case 219: // [
+				// set to 4-row
+				change_board_id(selected_bej.id, 8);
+				selected_bej = null;
+				break;
+				
+			case 221: // ]
+				// set to 5-row
+				change_board_id(selected_bej.id, 9);
+				selected_bej = null;
+				break;
+
+			default: return; // exit handler
+		}
+	};
 }, false);
