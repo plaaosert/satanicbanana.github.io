@@ -723,6 +723,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	document.getElementById("all-time").textContent = time.toString().toDDHHMMSS();
 	setInterval(update_time, 1000);
 	
+	/*
 	document.onkeydown = function(e) {
 		switch(e.which) {
 			case 219: // [
@@ -740,4 +741,5 @@ document.addEventListener('DOMContentLoaded', function() {
 			default: return; // exit handler
 		}
 	};
+	*/
 }, false);
