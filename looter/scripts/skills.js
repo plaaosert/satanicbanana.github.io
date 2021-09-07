@@ -1,7 +1,7 @@
 class Skill {
 	static id_inc = 0;
 	
-	constructor(name, fname, bonus, desc, cost) {
+	constructor(name, bonus, desc, cost) {
 		this.id = Skill.id_inc;
 		Skill.id_inc += 1;
 		
@@ -15,22 +15,38 @@ class Skill {
 
 skills_list = [
 	new Skill(
-		"Test Skill 1", null, "This skill does nothing and is a test.", 1
+		"Swordplay", "Increase ATK by **+7** per level.", 1
 	),
 	
 	new Skill(
-		"Test Skill 2", null, "No matter what you think, this skill does NOTHING AT ALL.", 1
+		"Embers", "Increase ATK by **+1%** per level.", 1
 	),
 	
 	new Skill(
-		"Test Skill 3", null, "I've been told by my informant that this skill is of no value. No use, no purpose. Don't investigate further.", 1
+		"Flow", "Increase AGI by **+3** per level.", 1
 	),
 	
 	new Skill(
-		"Test Skill 4", null, "No", 1
+		"Magic Essence", "Increase MP gain on hit by **+1** per level.", 1
 	),
 	
 	new Skill(
-		"UNSET", null, "UNSET", 5
+		"Discipline", "Increase ATK by **+15** and AGI by **+10** per level.", 5
+	),
+	
+	new Skill(
+		"Essence of Fire", "Gain **+2** MP every time you take damage.", 5
+	),
+	
+	new Skill(
+		"Patience", "Increase DEF by **+2%** per level. Giga Blast deals **+1%** more damage per level.", 5
+	),
+	
+	new Skill(
+		"Arcane Bestowal", "When you kill a monster, restore **+0.5%** max MP.", 5
+	),
+	
+	new Skill(
+		"UNSET", "UNSET", 10
 	),
 ]

@@ -297,8 +297,8 @@ function initial_skills_render() {
 		for (j=0; j<4; j++) {
 			var xpos = j * 40;
 			var ypos = i * 36;
-			var skillid = (i * 8) + j;
-			skillid = Math.min(skillid, 4);
+			var skillid = (i * 4) + j;
+			skillid = Math.min(skillid, skills_list.length - 1);
 			
 			skillElem = new SkillFrame(skills_list[skillid]);
 			skillElem.makeBaseFrame(xpos, ypos, skills_div);

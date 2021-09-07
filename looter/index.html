@@ -98,28 +98,7 @@
 		</div>
 		
 		<div class="menutab" id="adventure-screen" style="visibility:hidden">
-			<div id="areatab" style="visibility:hidden">
-				<div id="areabuttons" style="position:absolute; top:109px; left:89px">
-					<p id="area-name" class="area-bold" style="top:-30px; left:68px; width:184px;">Grasslands</p>
-				
-					<img id="area-arrow-left" style="top:69px; left:70px; height:56px; width:56px;" src="sprites/UI/left.png"></img>
-					
-					<img id="area-1-border" style="top:7px; left:132px; height:56px; width:56px;" src="sprites/items/borders/i999.png"></img>
-					<img id="area-1-plholder" style="top:7px; left:132px" src="sprites/items/borders/b000.png"></img>
-					<img id="area-1-image" style="top:11px; left:136px; height:48px; width:48px;" src="sprites/areas/001.png"></img>
-					
-					<img id="area-2-border" style="top:69px; left:132px; height:56px; width:56px;" src="sprites/items/borders/i999.png"></img>
-					<img id="area-2-plholder" style="top:69px; left:132px" src="sprites/items/borders/b001.png"></img>
-					<img id="area-2-image" style="top:71px; left:136px; height:48px; width:48px;" src="sprites/areas/001.png"></img>
-					
-					<img id="area-3-border" style="top:131px; left:132px; height:56px; width:56px;" src="sprites/items/borders/i999.png"></img>
-					<img id="area-3-plholder" style="top:131px; left:132px" src="sprites/items/borders/b002.png"></img>
-					<img id="area-3-image" style="top:133px; left:136px; height:48px; width:48px;" src="sprites/areas/001.png"></img>
-					
-					<img id="area-arrow-right" style="top:69px; left:194px; height:56px; width:56px;" src="sprites/UI/right.png"></img>
-				</div>
-			</div>
-			<div id="combattab">
+			<div id="combattab" style="display:block">
 				<div id="combat-sets" style="position:absolute; left:4px; top:58px; height:286px; width:148px; background-color:#222">
 					<div class="fg" id="" style="visibility:hidden; position:absolute; height:286px; width:148px; background-color:rgba(32, 32, 32, 0.7);"></div>
 					
@@ -168,11 +147,44 @@
 					</div>
 				</div>
 				<div id="combat-display" style="position:absolute; left:150px; top:56px; height:286px; width:192px; background-color:#111; border:2px solid #000;">
-					<div style="visibility:visible;" id="combat-waiting-info">
-						<p style="text-align:center; left:-54px; top:24px; width:300px" class="item-bold">
-						Time until next encounter:<br><br>
-						<span id="combat-battle-wait-amount" style="color: #0cf">1h 32m 3s</span>
-						</p>
+					<div id="combat-active-info" style="display:none">
+						<div style="visibility:visible;" id="combat-waiting-info">
+							<p style="text-align:center; left:-54px; top:24px; width:300px" class="item-bold">
+							Time until next encounter:<br><br>
+							<span id="combat-battle-wait-amount" style="color: #0cf">1h 32m 3s</span>
+							</p>
+						</div>
+					</div>
+					
+					<div id="areatab" class="menu" style="display:block">
+						<div id="areabuttons" style="position:absolute; top:32px; left:48px">
+							<p id="area-name" class="area-bold" style="top:-30px; left:-32px; width:160px;">Grasslands</p>
+						
+							<img id="area-arrow-left" class="faded-img" style="top:0px; left:-32px; height:28px; width:28px;" src="sprites/UI/left.png"></img>
+							
+							<img id="area-1-border" style="top:0px; left:0px;" src="sprites/items/borders/i999.png"></img>
+							<img id="area-1-plholder" style="top:0px; left:0px;" src="sprites/items/borders/000.png"></img>
+							<img id="area-1-image" style="top:2px; left:2px;" src="sprites/areas/001.png"></img>
+							
+							<img id="area-2-border" style="top:0px; left:32px;" src="sprites/items/borders/i999.png"></img>
+							<img id="area-2-plholder" style="top:0px; left:32px;" src="sprites/items/borders/001.png"></img>
+							<img id="area-2-image" style="top:2px; left:34px;" src="sprites/areas/001.png"></img>
+							
+							<img id="area-3-border" style="top:0px; left:64px;" src="sprites/items/borders/i999.png"></img>
+							<img id="area-3-plholder" style="top:0px; left:64px;" src="sprites/items/borders/002.png"></img>
+							<img id="area-3-image" style="top:2px; left:66px;" src="sprites/areas/001.png"></img>
+							
+							<img id="area-arrow-right" class="full-img" style="top:0px; left:96px; height:28px; width:28px;" src="sprites/UI/right.png"></img>
+							
+							<div style="top:48px; left:-16px; position:absolute;">
+								<img id="area-selected-border" style="top:0px; left:0px;" src="sprites/items/borders/i999.png"></img>
+								<img id="area-selected-plholder" style="top:0px; left:0px;" src="sprites/items/borders/000.png"></img>
+								<img id="area-selected-image" style="top:2px; left:2px;" src="sprites/UI/unselected.png"></img>
+								
+								<p id="area-selected-name" class="area-bold" style="top:-4px; left:32px; width:96px;">Unselected</p>
+								<p id="area-selected-flavour" class="area-sub" style="top:24px; left:0px; width:128px;">Click an area or press 1/2/3 to select it.</p>
+							</div>
+						</div>
 					</div>
 					
 					<div style="visibility:hidden;" id="combat-enemy-info">
@@ -260,11 +272,33 @@
 			<p id="idlg-acc-choice" style="visibility:hidden; top:120px; left:70px" class="item-sub">&nbsp;&nbsp;&nbsp;&nbsp;| (1) slot 1<br>----| (2) slot 2<br>&nbsp;&nbsp;&nbsp;&nbsp;| (3) slot 3</p>
 		</div>
 		
-		<div class="menu" id="skill-dialog" style="left:-1000px; top:-1000px; width:140px; height:72px; background:#222;border:2px solid #000;">
+		<div class="menu" id="item-dialog" style="left:200px; top:1000px; width:140px;height:160px;background:#222;border:2px solid #000;">
+			<img id="adlg-bord" style="top:8px; left:8px" src="sprites/items/borders/001.png"></img>
+			<img id="adlg-bord2" style="top:8px; left:8px" src=""></img>
+			<img id="adlg-spr" style="top:10px; left:10px;" src="sprites/areas/001.png"></img>
+			<p id="adlg1" class="item-bold">-</p>
+			<p id="idlg-rarity" style="top:36px; left:12px;" class="item-tiny">Rare</p>
+			<p id="idlg-lvl" style="top:46px; left:12px;" class="item-tiny">Item level 1</p>
+			<p id="idlg2" style="top:60px;" class="item-sub">-</p>
+			<p id="idlg3" style="top:76px;" class="item-sub">-</p>
+			<p id="idlg4" style="top:92px;" class="item-sub">-</p>
+			<p style="top:120px;" class="item-misc">
+			(c)ompare    <br>
+			(e)quip/unequip      <br>
+			(s)ell       
+			</p>
+		</div>
+		
+		<div class="menu" id="skill-dialog" style="left:10px; top:1000px; width:140px; height:132px; background:#222;border:2px solid #000;">
 			<img id="sdlg-bord" style="top:8px; left:8px" src="sprites/items/borders/009.png"></img>
 			<img id="sdlg-spr" style="top:10px; left:10px;" src="sprites/skills/ingame/001.png"></img>
-			<p id="sdlg1" style="top:10px; left:50px" class="item-bold">Fireball</p>
-			<p id="sdlg2" style="top:36px;" class="item-misc">Deal 150% ATK <span style="color:#ce0">(40)</span> as damage to the enemy. Ignores enemy DEF.</p>
+			<p id="sdlg1" style="top:10px; left:40px; text-align: center;" class="item-bold">Fireball</p>
+			<p id="sdlg2" style="top:36px;" class="item-misc">Deal 150% ATK as damage to the enemy. Ignores enemy DEF.</p>
+			<div id="sdl33-block" style="top:74px; width:100px; position:absolute;">
+				<p id="sdlg3" style="position:relative;" class="item-misc">Damage: <span id="sdlg3-2" style="color:#ce0;">40</span></p>
+				<p id="sdlg4" style="position:relative;" class="item-misc">Glubby: <span id="sdlg4-2" style="color:#ce0;">--</span></p>
+				<p id="sdlg5" style="position:relative;" class="item-misc">MP: <span id="sdlg5-2" style="color:#ce0;">780</span><span id="sdlg5-2" style="color:#6f0;"> (Castable)</span></p>
+			</div>
 		</div>
 		
 		<div style="position:absolute; left:280px; width:100px; z-index:10;">

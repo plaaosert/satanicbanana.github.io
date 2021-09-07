@@ -48,6 +48,10 @@ button {
 	
 }
 
+.faded-img {
+	filter: brightness(30%);
+}
+
 .area-bold {
 	font-family: "MS Gothic";
 	text-align: center;
@@ -55,6 +59,18 @@ button {
 	font-weight: bold;
 	width:90px;
 	color: white;
+	left:40px;
+	top:2px;
+	position:absolute;
+}
+
+.area-sub {
+	font-family: "MS Gothic";
+	text-align: left;
+	font-size: 8px;
+	font-weight: normal;
+	width: 90px;
+	color: #aaa;
 	left:40px;
 	top:2px;
 	position:absolute;

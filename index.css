@@ -71,6 +71,7 @@ ul {
 
 .canvas {
 	white-space: nowrap pre;
+	pointer-events: none;
 	float: left;
 	position: absolute;
 	width:100%;
