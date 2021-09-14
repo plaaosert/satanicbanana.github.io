@@ -2,7 +2,7 @@ update_divs = [];
 update_names = [];
 update_ids = [];
 imp_types = [
-	"icons/HUGE.png", "icons/tick.png", "icons/neutral.png", "icons/cross.png", "icons/question.png"
+	"icons/HUGE.png", "icons/tick.png", "icons/neutral.png", "icons/cross.png", "icons/question.png", "icons/cat.png"
 ];
 
 

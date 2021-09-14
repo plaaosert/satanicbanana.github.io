@@ -2935,4 +2935,139 @@ updates = [
       },
     ]
   },
+    {
+    "name": "Talentless (?)",
+    "id": "0.6.1",
+    "date": "14/09/2021",
+    "flavour": "Bosses need some love, too...",
+    "categories": [
+      {
+		"name": "General",
+		"changes": [
+		  {
+			"type": "0",
+			"text": "Bosses can now earn XP and level up, still starting at LV 50. Each level milestone (`LV 60 -> LV 75 -> LV 90 -> LV 100`) grants the boss a talent selection like a normal player. This is highly likely to be incorrectly tuned and will be refined as boss games are played. Boss win conditions have been changed from `Gain 200 kills.` to `Reach level 125.`"
+		  },
+		  {
+			"type": "0",
+			"text": "Command handler completely reworked. It's much faster and easier to maintain but will be riddled with bugs. Report them at will."
+		  },
+		  {
+			"type": "1",
+			"text": "WIS now contributes to MATK as much as STR contributes to PATK (previously contributed 50% less)"
+		  },
+		  {
+			"type": "1",
+			"text": "Base XP gained on kill increased by **2**. This means all kills grant 2 more XP than they would before."
+		  },
+		  {
+			"type": "1",
+			"text": "Base XP gained on death increased by **1**. Same as above."
+		  },
+		]
+	  },
+	  {
+		"name": "Classes",
+		"changes": [
+		  {
+			"type": "5",
+			"text": "**Berserker**"
+		  },
+		  {
+			"type": "3",
+			"text": "Battle Trance no longer grants any constant BLS (still triples BLS as before)."
+		  },
+		  {
+			"type": "2",
+			"text": "Battle Fervor upgrade changed from `BLS bonus increased to 9.` to `Deals 10% more PATK damage. Also grants +4 BLS.`"
+		  },
+		  {
+			"type": "5",
+			"text": "**Gladiator**"
+		  },
+		  {
+			"type": "3",
+			"text": "Right-side LV5 talent PATK bonus reduced from **+10%** to **+8%**"
+		  },
+		  {
+			"type": "3",
+			"text": "Right-side LV15 talent PATK increase reduced from **+20%** to **+12%**"
+		  },
+		  {
+			"type": "3",
+			"text": "Arena of Blood VIT gain reduced from **14** to **10**"
+		  },
+		  {
+			"type": "3",
+			"text": "Arena of Glory VIT gain reduced from **28** to **16**"
+		  },
+		  {
+			"type": "3",
+			"text": "Arena of Death PATK damage on cast reduced from **90%** to **80%**"
+		  },
+		  {
+			"type": "5",
+			"text": "**Paladin**"
+		  },
+		  {
+			"type": "3",
+			"text": "Passive VIT changed from `7 + level` to `level`"
+		  },
+		  {
+			"type": "3",
+			"text": "Righteous Command heal changed from 100% HP to 400% MATK"
+		  },
+		  {
+			"type": "2",
+			"text": "Righteous Judgement modifier changed from `Targeting changed from 1 chosen target to 2 random targets.` to `Replaces heal with 50% life leech. Targeting changed from 1 chosen to 3 random.`"
+		  },
+		  {
+			"type": "1",
+			"text": "AGI growth changed from **3** to **4**"
+		  },
+		  {
+			"type": "5",
+			"text": "**Pirate**"
+		  },
+		  {
+			"type": "1",
+			"text": "Explorer's Trick/Gambit [Pirate] MP cost reduced from **40% max MP** to **30% max MP**"
+		  },
+		  {
+			"type": "5",
+			"text": "**Juggernaut**"
+		  },
+		  {
+			"type": "3",
+			"text": "Omnislash damage reduced from **275%** PATK to **225%** PATK"
+		  },
+		  {
+			"type": "3",
+			"text": "Omnislash MP cost increased from **1000** to **1500**."
+		  },
+		]
+	  },
+	  {
+		"name": "Bosses",
+		"changes": [
+		  {
+			"type": "1",
+			"text": "Fierce Mentor passive changed from `Can only be damaged by critical hits.` to `Takes 50% damage from non-critical hits.`"
+		  },
+		  {
+			"type": "1",
+			"text": "Fierce Mentor HP increased from **80,000** to **120,000**"
+		  },
+		  {
+			"type": "1",
+			"text": "Rigorous Training target count increased from **3** to **6**"
+		  },
+		  {
+			"type": "1",
+			"text": "Fierce Mentor now also learns Warcry."
+		  },
+		]
+	  },
+	]
+  },
 ]
