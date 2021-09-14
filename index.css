@@ -51,6 +51,11 @@ p {
 	font-size: 32px;
 }
 
+.margin-smaller {
+	margin-left: 160px;
+	font-size: 24px;
+}
+
 ul {
 	list-style-position: none;
 	font-size: 32px;
