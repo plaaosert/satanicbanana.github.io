@@ -3070,4 +3070,92 @@ updates = [
 	  },
 	]
   },
+    {
+    "name": "Immediate Surgery",
+    "id": "0.6.2",
+    "date": "22/09/2021",
+    "flavour": "We kind of knew this was going to happen.",
+    "categories": [
+      {
+            "name": "General",
+            "changes": [
+			  {
+                "type": "0",
+                "text": "Effects can now provide talent-like effects. This doesn't mean anything on its own but will provide a wealth of new design space! This was also used to enable the **Juggernaut** rework."
+              },
+              {
+                "type": "1",
+                "text": "Bosses now gain **8x** XP. Maybe they'll actually reach their talents now."
+              },
+            ]
+          },
+          {
+            "name": "Relics",
+            "changes": [
+              {
+                "type": "3",
+                "text": "Heavy Blade PATK multiplier reduced from **1.75x** to **1.5x**"
+              },
+              {
+                "type": "3",
+                "text": "Shaped Glass P/MATK multiplier reduced from **2x** to **1.75x**"
+              },
+              {
+                "type": "3",
+                "text": "Sharpened Glass P/MATK multiplier reduced from **2.5x** to **2.25x**"
+              },
+              {
+                "type": "1",
+                "text": "Mentor's Weapon P/MATK reduction changed from **-50%** to **-40%**"
+              },
+              {
+                "type": "1",
+                "text": "Colossal Shield VIT gain increased from **+6** to **+10**"
+              },
+              {
+                "type": "3",
+                "text": "Recalled ManaBoost Syringe now randomises mana by selecting two random values and picking the lower one - like Metronome"
+              },
+            ]
+          },
+          {
+            "name": "Bosses",
+            "changes": [
+              {
+                "type": "1",
+                "text": "Soul of Cinder HP increased from **100,000** to **125,000**"
+              },
+              {
+                "type": "1",
+                "text": "The Holy Grail HP increased from **40,000** to **50,000**"
+              },
+              {
+                "type": "1",
+                "text": "The Dancer HP increased from **75,000** to **100,000**"
+              },
+              {
+                "type": "3",
+                "text": "Fierce Mentor HP reduced from **120,000** to **100,000**"
+              },
+              {
+                "type": "3",
+                "text": "Rigorous Training target count reduced from **6** to **5**"
+              },
+            ]
+          },
+          {
+            "name": "Juggernaut",
+            "changes": [
+              {
+                "type": "2",
+                "text": "Flowing Slash has been entirely reworked. It is now a **6**-stage combo move (`Ascending Carp`) which is designed to be very difficult to be executed in its entirety. It still uses the `does not end turn` gimmick, but the final move **does** end your turn."
+              },
+              {
+                "type": "4",
+                "text": "Combo, in order, is: `Ascending Carp`, `Descending Carp`, `Waterfall Cross`, `Crashing River`, `Vital Force`, `Perfected Crushing Strike: Final Attack`."
+              },
+            ]
+          },
+	]
+  }
 ]
