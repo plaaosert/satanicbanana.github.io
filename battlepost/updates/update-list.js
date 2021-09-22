@@ -283,6 +283,10 @@ function do_search_term(e) {
 			update_divs[update_id].style.display = "none";
 		}
 	}
+	
+	if (window.performance) {
+		window.history.replaceState({}, "", "?search=" + val);
+	}
 };
 
 
@@ -352,6 +356,14 @@ document.addEventListener('DOMContentLoaded', function() {
 	
 	var url = new URL(window.location.href);
 	var search = url.searchParams.get("search");
+	
+	if (window.performance) {
+		if (window.performance.navigation.type == performance.navigation.TYPE_RELOAD) {
+			window.history.replaceState(null, null, window.location.pathname);
+			search = null;
+		}
+	}
+	
 	if (search) {
 		do_search_term(search);
 		document.getElementById("search-box").value = search;
