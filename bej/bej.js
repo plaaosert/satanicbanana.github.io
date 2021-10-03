@@ -68,6 +68,7 @@ if (!time) {
 }
 
 combo = 0;
+autoplay_interval = null;
 
 
 // https://stackoverflow.com/questions/6229197/how-to-know-if-two-arrays-have-the-same-values/55614659#55614659
@@ -354,9 +355,11 @@ function is_matchable_gem(typ) {
 }
 
 
-function check_match_line(center, offset) {
+function check_match_line(center, offset, col_override) {
 	var connected = {normal: true, matches: []};
 	var type_check = get_board(center)
+	if (col_override != undefined)
+		type_check = col_override;
 	
 	var count = center + offset;
 	var last = center;
@@ -423,8 +426,7 @@ function check_special_behaviour(center, other, ignore) {
 		t.matches.push(center);
 	} else if (type_check == 9) {
 		var type_check_other = get_board(other);
-		var random_bej = 1;
-		console.log(random_bej);
+		var random_bej = Math.floor(Math.random() * 7) + 1;
 		
 		for (var loc_id=0; loc_id<board_state.length; loc_id++) {
 			if (type_check_other == 8) {
@@ -434,7 +436,7 @@ function check_special_behaviour(center, other, ignore) {
 				}
 			}
 			else if (type_check_other == 9) {
-				if (Math.random() < 0.22) {
+				if (Math.random() < 0.20) {
 					show_disappearing_obj(bejs[loc_id]);
 					change_board_id(loc_id, random_bej);
 				}
@@ -488,6 +490,46 @@ function check_for_matches(center1, center2, include_special) {
 }
 
 
+function check_potential_match(center1, center2, include_special) {
+	var total_matches = []
+	
+	var arr = [center1, center2];
+	fall_timer += 100000;
+	console.log(center1, center2);
+	swap_board_ids(center1, center2);
+	
+	for (var i=0; i<2; i++) {
+		var a = arr[i];
+		var b = arr[1 - i];
+		
+		if (get_board(a + board_length) != 0) {
+			var match = check_match_line(a, 1);
+			if (match) {
+				total_matches.push(match);
+			}
+			
+			var match = check_match_line(a, board_length);
+			if (match) {
+				total_matches.push(match);
+			}
+			
+			if (include_special) {
+				var match = check_special_behaviour(a, b);
+				if (match) {
+					total_matches.push(match);
+				}
+			}
+
+		}
+	};
+	
+	swap_board_ids(center1, center2);
+	fall_timer -= 100000;
+			
+	return total_matches
+}
+
+
 function select_bej(bej, over) {
 	if (get_board(bej.id) != 0 && animation_stack.length == 0 && ready_next) {
 		if (selected_bej != null) {
@@ -505,6 +547,8 @@ function select_bej(bej, over) {
 			selected_bej = bej;
 		}
 	}
+	
+	clearInterval(autoplay_interval);
 }
 
 
@@ -623,7 +667,7 @@ function fill_with_jewels() {
 	// Randomly select a jewel for the location. If it would create matches, re-randomise.
 	/*
 	for (var id=bejs.length - 1; id>=0; id--) {
-		var gemId = id % 3 + 1;
+		var gemId = id % 2 + 1;
 		change_board_id(id, gemId);
 	}
 	
@@ -650,6 +694,59 @@ function update_time() {
 	
 	document.getElementById("session-time").textContent = localtime.toString().toHHMMSS();
 	document.getElementById("all-time").textContent = time.toString().toDDHHMMSS();
+}
+
+
+function check_match_valid(a, b) {
+	if (!is_adjacent(a, b)) {
+		return false;
+	}
+	
+	if (a < 0 || a >= bejs.length || b < 0 || b >= bejs.length) {
+		return false;
+	}
+	
+	matches = check_potential_match(a, b, true);
+	
+	if (matches.length == 0)
+		return false;
+	
+	return matches;
+}
+
+
+function look_for_move() {
+	if (animation_stack.length == 0 && ready_next) {
+		best_move = null;
+		best_move_matches = -1;
+		
+		for (var i=0; i<100; i++) {
+			var a_pos = Math.floor(Math.random() * bejs.length);
+			var b_pos = a_pos;
+			if (Math.random() < 0.5) {
+				b_pos += 1 * (Math.random() < 0.5 ? -1 : 1);
+			} else {
+				b_pos += board_length * (Math.random() < 0.5 ? -1 : 1);
+			}
+			
+			matches = check_match_valid(a_pos, b_pos);
+			if (matches) {
+				if (matches.length > best_move_matches) {
+					best_move = [a_pos, b_pos];
+					best_move_matches = matches.length;
+				}
+			}
+		}
+		
+		try {
+			ready_next = false;
+			fall_timer = -1;
+			combo = 0;
+			show_swap_anim(bejs[best_move[0]], bejs[best_move[1]], parseInt(bejs[best_move[0]].id), parseInt(bejs[best_move[1]].id));
+		} catch (e) {
+			location.reload();
+		}
+	}
 }
 
 
@@ -722,6 +819,26 @@ document.addEventListener('DOMContentLoaded', function() {
 	document.getElementById("session-time").textContent = localtime.toString().toHHMMSS();
 	document.getElementById("all-time").textContent = time.toString().toDDHHMMSS();
 	setInterval(update_time, 1000);
+	
+	document.onkeydown = function(e) {
+		var done_anything = false;
+		
+		switch(e.which) {
+			case 81:
+				autoplay_interval = setInterval(look_for_move, 250);
+				done_anything = true;
+		}
+		
+		if (!done_anything) {
+			clearInterval(autoplay_interval);
+		}
+	}
+	
+	// only on "kiosk" mode
+	params = new URLSearchParams(window.location.search);
+	if (params.has("demo") && params.get("demo") == "true") {
+		autoplay_interval = setInterval(look_for_move, 250);
+	}
 	
 	/*
 	document.onkeydown = function(e) {
