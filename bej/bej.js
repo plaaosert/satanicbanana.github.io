@@ -282,6 +282,8 @@ function show_swap_anim(start, end, id1, id2, do_not_backtrack, anim_mul, just_c
 function show_disappearing_obj(start) {
 	var start_img = document.createElement("img");
 	
+	fall_timer = 250;
+	
 	start_img.className = "disappearing-particle";
 	start_img.src = start.src;
 	
@@ -495,7 +497,6 @@ function check_potential_match(center1, center2, include_special) {
 	
 	var arr = [center1, center2];
 	fall_timer += 100000;
-	console.log(center1, center2);
 	swap_board_ids(center1, center2);
 	
 	for (var i=0; i<2; i++) {
