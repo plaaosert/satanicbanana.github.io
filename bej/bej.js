@@ -342,6 +342,37 @@ function is_indirectly_adjacent(a, b) {
 	return false;
 }
 
+function is_double_indirectly_adjacent(a, b) {
+	// Double indirectly adjacent if any indirectly adjacent element of a is indirectly adjacent to b
+	for (var x=-1; x<=1; x++) {
+		for (var y=-1; y<=1; y++) {
+			var loc = a + x + (y * board_length);
+			
+			if (is_indirectly_adjacent(loc, b)) {
+				return true;
+			}
+		}
+	}
+	
+	return false;
+}
+
+
+function is_triple_indirectly_adjacent(a, b) {
+	// fucking god damn it
+	for (var x=-1; x<=1; x++) {
+		for (var y=-1; y<=1; y++) {
+			var loc = a + x + (y * board_length);
+			
+			if (is_double_indirectly_adjacent(loc, b)) {
+				return true;
+			}
+		}
+	}
+	
+	return false;
+}
+
 
 function get_board(index) {
 	if (index >= 0 && index < board_state.length) {
@@ -398,27 +429,27 @@ function check_match_line(center, offset, col_override) {
 }
 
 
-function check_special_behaviour(center, other, ignore) {
+function check_special_behaviour(center, other, ignore, cause) {
 	var type_check = get_board(center);
 	var t = {normal: false, matches: []};
 	
-	if (type_check == 8) {
+	if (type_check == 8 || cause == 80) {
 		// match all adjacent
 		for (var x=-1; x<=1; x++) {
 			for (var y=-1; y<=1; y++) {
 				var loc = center + x + (y * board_length);
 				if (get_board(loc) > 0 && is_indirectly_adjacent(center, loc)) {
-					if (get_board(loc) == 8) {
+					if (get_board(loc) == 8 || get_board(loc) == 9) {
 						var ignore_new = ignore;
 						if (!ignore) {
 							ignore_new = {};
 						}
-
+						
 						if (!ignore_new[loc]) {
 							ignore_new[loc] = true;
-							t.matches = t.matches.concat(check_special_behaviour(loc, undefined, ignore_new).matches);
+							t.matches = t.matches.concat(check_special_behaviour(loc, undefined, ignore_new, 8).matches);
 						}
-					}						
+					}				
 
 					t.matches.push(loc);
 				}
@@ -427,25 +458,71 @@ function check_special_behaviour(center, other, ignore) {
 		
 		t.matches.push(center);
 	} else if (type_check == 9) {
-		var type_check_other = get_board(other);
-		var random_bej = Math.floor(Math.random() * 7) + 1;
-		
-		for (var loc_id=0; loc_id<board_state.length; loc_id++) {
-			if (type_check_other == 8) {
-				if (Math.random() < 0.05) {
-					show_disappearing_obj(bejs[loc_id]);
-					change_board_id(loc_id, type_check_other);
+		if (cause == 8 || cause == 80) {
+			// alt behaviour if the cause is a grenade (big grenade!)
+			for (var x=-2; x<=2; x += 1) {
+				for (var y=-2; y<=2; y += 1) {
+					var loc = center + x + (y * board_length);
+					
+					if (get_board(loc) > 0 && is_double_indirectly_adjacent(center, loc)) {
+						if (get_board(loc) == 8 || get_board(loc) == 9) {
+							var ignore_new = ignore;
+							if (!ignore) {
+								ignore_new = {};
+							}
+							
+							if (!ignore_new[loc]) {
+								ignore_new[loc] = true;
+								t.matches = t.matches.concat(check_special_behaviour(loc, undefined, ignore_new, 80).matches);
+							}
+						}				
+
+						t.matches.push(loc);
+					}
 				}
 			}
-			else if (type_check_other == 9) {
-				if (Math.random() < 0.20) {
-					show_disappearing_obj(bejs[loc_id]);
-					change_board_id(loc_id, random_bej);
+			
+			var offset_list = [[0,3], [3,0], [-3,0], [0,-3]];
+			for (var a_ind in offset_list) {
+				var loc = center + (offset_list[a_ind][0]) + ((offset_list[a_ind][1]) * board_length)
+				
+				if (get_board(loc) > 0 && is_triple_indirectly_adjacent(center, loc)) {
+					if (get_board(loc) == 8 || get_board(loc) == 9) {
+						var ignore_new = ignore;
+						if (!ignore) {
+							ignore_new = {};
+						}
+						
+						if (!ignore_new[loc]) {
+							ignore_new[loc] = true;
+							t.matches = t.matches.concat(check_special_behaviour(loc, undefined, ignore_new, 80).matches);
+						}
+					}				
+
+					t.matches.push(loc);
 				}
 			}
-			else {
-				if (type_check_other == get_board(loc_id)) {
-					t.matches.push(loc_id);
+		} else {
+			var type_check_other = get_board(other);
+			var random_bej = Math.floor(Math.random() * 7) + 1;
+			
+			for (var loc_id=0; loc_id<board_state.length; loc_id++) {
+				if (type_check_other == 8) {
+					if (Math.random() < 0.04) {
+						show_disappearing_obj(bejs[loc_id]);
+						change_board_id(loc_id, type_check_other);
+					}
+				}
+				else if (type_check_other == 9) {
+					if (Math.random() < 0.25) {
+						show_disappearing_obj(bejs[loc_id]);
+						change_board_id(loc_id, random_bej);
+					}
+				}
+				else {
+					if (type_check_other == get_board(loc_id)) {
+						t.matches.push(loc_id);
+					}
 				}
 			}
 		}
