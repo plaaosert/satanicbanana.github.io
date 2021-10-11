@@ -671,7 +671,7 @@ function cause_falling_bejs(locations) {
 		}
 		
 		if (spawned) {
-			spawned_last = 0 + Math.floor(spawned / 6);
+			spawned_last = 0 + Math.floor(spawned / 3);
 		} else {
 			spawned_last--;
 		}
