@@ -3157,5 +3157,47 @@ updates = [
             ]
           },
 	]
-  }
+  },
+    {
+    "name": "just a tiny little update nothing major",
+    "id": "0.6.3",
+    "date": "13/10/2021",
+    "flavour": "probably not even worth reading",
+    "categories": [
+      {
+            "name": "General",
+            "changes": [
+              {
+                "type": "0",
+                "text": "CATEGORY SUPPORT ADDED. This means our max games is not only now quantifiable but also increased from 10 to 106! We also have alternative server support coming. If we really need it."
+              },
+              {
+                "type": "1",
+                "text": "`b$sim` now has a new mode: `de`, which is a variable viewer. Check it out with `b$sim`."
+              },
+              {
+                "type": "1",
+                "text": "Game channels slimmed down. Divider channel removed and news messages are now posted in the -xx-chat channel. This brings channel count per server down from **5** to **3**. I need feedback on this change, so please do so once we try it out."
+              },
+            ]
+          },
+          {
+            "name": "Relics",
+            "changes": [
+              {
+                "type": "3",
+                "text": "Heavy Blade now also reduces max MP by **25%**"
+              },
+              {
+                "type": "1",
+                "text": "Reactive Nanites Injection HP reduction changed from **-25%** to **-12%**"
+              },
+              {
+                "type": "1",
+                "text": "Reactive Nanites Injection VIT gain on hit increased from **+2** to **+3**"
+              },
+            ]
+          },
+		]
+      },
 ]

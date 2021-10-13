@@ -83,8 +83,10 @@ p.relic-flavour {
 	font-weight: bold;
 	
 	padding: 2px;
+	line-height: 150%;
 	padding-top: 3px;
 	padding-left:6px;
+	padding-right:6px;
 	
 	border: 1px solid black;
 	

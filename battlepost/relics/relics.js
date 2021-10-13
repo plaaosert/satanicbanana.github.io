@@ -145,7 +145,7 @@ relics = [
 
         {
                 "name": "Heavy Blade",
-                "effect_text": "**+50%** PATK, **0.5x** mana regen",
+                "effect_text": "**+50%** PATK, **0.5x** mana regen, **-25%** max MP",
                 "flavour_text": "This blade is... really heavy. Takes most people twice the time to even swing it.",
                 "relic_get_type": "Shop",
                 "relic_get_sub": "b!relic shop Starter, 150 Rocks"
@@ -177,7 +177,7 @@ relics = [
 
         {
                 "name": "Reactive Nanites Injection",
-                "effect_text": "On getting hit, gain **+2** VIT. All healing effects are halved. -25% HP.",
+                "effect_text": "On getting hit, gain **+3** VIT. All healing effects are halved. **-12%** HP.",
                 "flavour_text": "\"They harden in response to physical trauma. You can't hurt me, Dave.\"",
                 "relic_get_type": "Shop",
                 "relic_get_sub": "b!relic shop Starter, 150 Rocks"
