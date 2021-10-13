@@ -144,9 +144,9 @@ relics = [
         },
 
         {
-                "name": "Heavy Blade",
-                "effect_text": "**+50%** PATK, **0.5x** mana regen, **-25%** max MP",
-                "flavour_text": "This blade is... really heavy. Takes most people twice the time to even swing it.",
+                "name": "Gigantic Blade",
+                "effect_text": "**+33%** PATK, **0.5x** mana regen, **-25%** max MP",
+                "flavour_text": "This thing is too big to be called a sword. Too big, too thick, too heavy and too rough. It's more like a large hunk of iron.",
                 "relic_get_type": "Shop",
                 "relic_get_sub": "b!relic shop Starter, 150 Rocks"
         },

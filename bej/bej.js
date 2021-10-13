@@ -326,6 +326,7 @@ function is_adjacent(a, b) {
 
 
 function is_indirectly_adjacent(a, b) {
+	// includes diagonals
 	var diff = Math.abs(a - b);
 	var row_diff = Math.abs(Math.floor(a / board_length) - Math.floor(b / board_length));
 	

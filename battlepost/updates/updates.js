@@ -3184,9 +3184,17 @@ updates = [
           {
             "name": "Relics",
             "changes": [
+				{
+                "type": "2",
+                "text": "Heavy Blade renamed to `Gigantic Blade`."
+              },
               {
                 "type": "3",
-                "text": "Heavy Blade now also reduces max MP by **25%**"
+                "text": "Gigantic Blade now also reduces max MP by **-25%**"
+              },
+			  {
+                "type": "3",
+                "text": "Gigantic Blade PATK multiplier reduced from **+50%** to **+33%**"
               },
               {
                 "type": "1",
