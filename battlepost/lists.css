@@ -95,6 +95,11 @@ p.relic-flavour {
 	white-space:nowrap;
 }
 
+.important-underline {
+	color: #0cf;
+	font-weight: bold;
+}
+
 .name {
 	color: #7ef;
 	font-style: italic;

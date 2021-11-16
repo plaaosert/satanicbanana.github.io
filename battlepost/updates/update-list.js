@@ -60,13 +60,14 @@ function toggle_hiding(hide_list) {
 
 
 function parse_effect_string_to_container(str, container) {
-	var segs = str.split(/(\*\*|`)/);
+	var segs = str.split(/(\*\*|`|\_\_)/);
 	var imp = false;
+	var underline = false;
 	var last_seg = "";
 	for (var seg=0; seg<segs.length; seg++) {
 		var cur_seg = segs[seg];
 		
-		if (cur_seg == "**" || cur_seg == "`") {
+		if (cur_seg == "**" || cur_seg == "`" || cur_seg == "__") {
 			imp = !imp;
 		}
 		else {
@@ -82,7 +83,12 @@ function parse_effect_string_to_container(str, container) {
 				append = "-codeblock";
 			} 
 			
-			subspan.className = imp ? "important" + append : "";
+			if (last_seg == "__") {
+				cur_seg = "- " + cur_seg + " "
+				subspan.className = "important-underline";
+			} else {
+				subspan.className = imp ? "important" + append : "";
+			}
 			
 			subspan.textContent = cur_seg;
 			

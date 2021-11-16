@@ -3208,4 +3208,88 @@ updates = [
           },
 		]
       },
+	    {
+    "name": "Preparation",
+    "id": "0.6.4",
+    "date": "16/11/2021",
+    "flavour": "when will university stop torturing me",
+    "categories": [
+      {
+            "name": "General",
+            "changes": [
+              {
+                "type": "0",
+                "text": "Chat and news are now no longer combined! Thank you for your feedback. (This will only take effect for newly made games.)"
+              },
+              {
+                "type": "1",
+                "text": "Error reporting system changed, which should mean that bugs are much more visible to me as and when they happen."
+              },
+            ]
+          },
+          {
+            "name": "Items",
+            "changes": [
+              {
+                "type": "3",
+                "text": "POWER OF DAVE (from Sliver of Dave) now removes Greevil's Blessing when active; the two can never coexist."
+              },
+            ]
+          },
+          {
+            "name": "Relics",
+            "changes": [
+              {
+                "type": "3",
+                "text": "Outside Benefactor's Contract now only gives items at a **30%** chance each turn (rather than every turn)"
+              },
+              {
+                "type": "3",
+                "text": "Express Delivery mana cost increased from **70%** max MP to **100%** max MP"
+              },
+              {
+                "type": "3",
+                "text": "Gigantic Blade now also reduces AGI by **-15%** PLEASE STOP USING IT"
+              },
+            ]
+          },
+          {
+            "name": "Classes",
+            "changes": [
+              {
+                "type": "5",
+                "text": "__Gladiator__"
+              },
+              {
+                "type": "2",
+                "text": "Left-side LV10 talent changed from `If base VIT is higher than 10, gain 6 VIT` to `If base VIT is lower than 10, gain 4 VIT`"
+              },
+              {
+                "type": "2",
+                "text": "Right-side LV10 talent changed from `If base BLS is lower than 10, gain 6 BLS` to `If base BLS is higher than 10, gain 4 BLS`"
+              },
+              {
+                "type": "3",
+                "text": "Right-side LV15 talent max PATK bonus reduced from **12%** to **10%**"
+              },
+              {
+                "type": "3",
+                "text": "CNS gain per level reduced from **8** to **7**"
+              },
+              {
+                "type": "3",
+                "text": "Arena of Blood and all upgrades VIT gain reduced by **2** (10 -> 8, 16 -> 14)"
+              },
+              {
+                "type": "5",
+                "text": "__Frogman__"
+              },
+              {
+                "type": "3",
+                "text": "Frogman AGI from FTN reduced from **10%** to **5%**. (BLS remains the same)"
+              },
+            ]
+          },
+        ]
+      },
 ]
