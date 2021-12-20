@@ -16,7 +16,7 @@ aims = {
 	"2":">> the battlepost information repository",
 	"3":">> infinite match-3 game",
 	"4":">> listen to some of my music",
-	"5":">> turn the ocean off or make it look like something else"
+	"5":">> select another style for the ocean"
 };
 
 // setup original texts too

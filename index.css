@@ -89,3 +89,19 @@ ul {
 #ocean-content {
 	color: #4b4bff;
 }
+
+#ocean-content-alt {
+	color: #009a2b;
+}
+
+.ocean-ind {
+	color: #ababff;
+}
+
+.ocean-alt-ind {
+	color: #80ca6b;
+}
+
+.null-ind {
+	color: #ddd;
+}

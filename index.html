@@ -27,7 +27,7 @@
 			<li><a id="2" href="battlepost/index.html">## battlepost</a></li>
 			<li><a id="3" href="bej/bej.html">## bej</a></li>
 			<li><a id="4" href="javascript:void(0)" onclick="play_music();">## music</a></li>
-			<li><a id="5" href="javascript:void(0)" onclick="start_switch('ocean', null);">## control canvas</a></li>
+			<li><a id="5" href="javascript:void(0)" onclick="switch_to_next();">## control canvas</a></li>
 		</ul>
 		
 		<script src="text-glitch.js"></script>
@@ -35,18 +35,25 @@
 	
 	<h1 id="music-player">00:00 [&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;] 99:99</h1>
 	
-	<div id="ocean">
+	<div id="ocean" style="display: none">
 		<!-- basically just a huge textbox -->
 		<p id="ocean-content", class="canvas">t</p>
 		
-		<script src="the-sea.js"></script>
+		<script src="the-sea.js?v=01"></script>
+	</div>
+	
+	<div id="ocean-alt" style="display: none">
+		<!-- basically just a huge textbox -->
+		<p id="ocean-content-alt", class="canvas">t</p>
+		
+		<script src="the-sea-alt.js?v=01"></script>
 	</div>
 	
 	<div id="switch">
 		<!-- basically just a huge textbox -->
 		<p id="switch-content", class="canvas"></p>
 		
-		<script src="switch.js"></script>
+		<script src="switch.js?v=01"></script>
 	</div>
 </body>
 </html>

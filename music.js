@@ -3,13 +3,19 @@ player = document.getElementById("music-player");
 subsecs_chars = " -=%"
 
 function play_music() {
-	player = document.getElementById("music-player");
-	playing_audio = new Audio('ocean.mp3');
-	playing_audio.play();
-	playing_audio.loop = true;
-	playing_audio.volume = 0.27;
-	setInterval(update_timer, 0.25);
-	update_timer();
+	if (playing_audio != null) {
+		playing_audio.pause();
+		playing_audio.currentTime = 0;
+		playing_audio = null;
+	} else {
+		player = document.getElementById("music-player");
+		playing_audio = new Audio('ocean.mp3');
+		playing_audio.play();
+		playing_audio.loop = true;
+		playing_audio.volume = 0.27;
+		setInterval(update_timer, 0.25);
+		update_timer();
+	}
 }
 
 function pad_two_zeroes(text) {
