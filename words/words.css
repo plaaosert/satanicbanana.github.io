@@ -16,7 +16,7 @@ img {
 body {
 	overflow: hidden;
 	width:100%;
-	font-family: "MS Gothic";
+	font-family: "MS Gothic", "Courier";
 	background-color:#000;
 	
 	font-smooth:never;
@@ -199,7 +199,7 @@ a:hover {
 
 h1 {
 	font-size: 72px;
-	font-family: "MS Gothic";
+	font-family: "MS Gothic", "Courier";
 }
 
 input {
@@ -207,22 +207,21 @@ input {
 	color: white;
 	background-color: black;
 	font-size: 72px;
-	font-family: "MS Gothic";
-	letter-spacing: 56px;
+	font-family: "MS Gothic", "Courier";
+	letter-spacing: 54px;
 	
 	border-style: none;
 	outline: none;
 	font-weight: bold;
-	width: 70%;
 }
 
 .hints {
 	color: white;
 	font-size: 18px;
-	font-family: "MS Gothic";
+	font-family: "MS Gothic", "Courier";
 	
 	position: absolute;
-	top: 256px;
+	top: 108px;
 	text-align: right;
 	right: 64px;
 }
