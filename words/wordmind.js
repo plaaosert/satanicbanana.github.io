@@ -185,14 +185,14 @@ function add_new_guessed_word(word) {
 	if (word == target_word) {
 		document.getElementById("input-box").disabled = true;
 		
-		for (var i=0; i<2; i++) {
+		for (var i=0; i<4; i++) {
 			setTimeout(function() {
 				div_container.classList.add("invert");
-			}, 500 * i);
+			}, 300 * i);
 			
 			setTimeout(function() {
 				div_container.classList.remove("invert");
-			}, (500 * i) + 250);
+			}, (300 * i) + 150);
 		}
 		
 		setTimeout(solve_word, 1500);
