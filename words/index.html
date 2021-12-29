@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang = "en-US">
+<head>
+	<meta charset = "UTF-8">
+	<title>words</title>
+	<meta content="plaao.net >> words" property="og:title" />
+    <meta content="Mastermind with words ... basically" property="og:description" />
+    <meta content="https://plaao.net" property="og:url" />
+    <meta content="https://plaao.net/bej/green_funny.png" property="og:image" />
+    <meta content="#cccccc" data-react-helmet="true" name="theme-color" />
+	
+	<link rel="stylesheet" type="text/css" href="words.css?v=9"/>
+</head>
+<body>
+	<div class="topbar">
+		<p class="top-text" style="top: -16px; left: 32px">Solved: <span id="solved-num" class="important">0</span></p>
+		<p class="top-text" style="top: 16px; left: 32px">Score: <span id="score-num" class="important">0</span></p>
+		
+		<p class="top-text" style="left: 360px">Streak: <span id="streak-num" class="important">0x</span></p>
+		<p class="right-text" style="font-size: 16px; top:-8px; color:#ccc;">you have been actively playing for <span class="important" id="session-time">00:00:00</span> in this session, <span class="important" id="all-time">00:00:00:00</span> total and <span class="important" id="global-time">00:00:00:00</span> across all plaao.net games</p>
+	</div>
+	
+	<div class="words" id="words">
+		
+	</div>
+	
+	<p class="hints">
+	you can type <span class="important">"l:[NUMBER]"</span> (for example, <span class="important">"l:5"</span>) then hit <span class="important">enter</span><br>
+	to change word length and reset (this will count as a <span class="important red">loss!</span>)
+	<br><br>
+	longer words give exponentially more points when solved!
+	<br><br><br><br>
+	if a letter is already in the correct position,<br>
+	it is ignored for <span class="important yellow">yellow</span> letters.<br>
+	for example (target word <span class="important">error</span>):<br>
+	| <span class="important green">e</span><span class="important green">r</span><span class="important green">r</span><span class="important grey">r</span><span class="important green">r</span> |<br>
+	| <span class="important yellow">o</span><span class="important green">r</span><span class="important green">r</span><span class="important yellow">e</span><span class="important yellow">o</span> |<br>
+	| <span class="important green">e</span><span class="important green">r</span><span class="important green">r</span><span class="important grey">e</span><span class="important green">r</span> |<br>
+	</p>
+	
+	<div class="words-input">
+		<h1> > <input type="text" id="input-box" autofocus="true" placeholder="guess............."></input></h1>
+		<p id="guessed-so-far" style="letter-spacing: 76px; font-size:32px; text-align:left; position:absolute; left: 208px; bottom: 100px;"><span class="important grey">?</span><span class="important grey">?</span><span class="important grey">?</span><span class="important grey">?</span><span class="important grey">?</span></p>
+	</div>
+	
+	<div class="bottombar">
+		<p class="right-text" style="bottom: 36px">words v1.0 | type a word in the input box.
+			<span class="yellow-letter">yellow</span> letters mean "right letter, wrong position", <span class="green-letter">green</span> letters mean "correct" and <span class="grey-letter">grey</span> letters mean "wrong".
+		</p>
+		<p class="right-text" style="font-size: 16px; color:#ccc;">written in pure JS/HTML</p>
+		<a href="../index.html" style="left: 256px; color:#0cf"> << go back >> </a>
+	</div>
+	
+	<script src="words.js"></script>
+	<script src="wordmind.js"></script>
+</body>
+</html>

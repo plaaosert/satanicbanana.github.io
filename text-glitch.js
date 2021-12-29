@@ -15,7 +15,7 @@ aims = {
 	"1":">> time to learn about twitchpost!",
 	"2":">> the battlepost information repository",
 	"3":">> infinite match-3 game",
-	"4":">> listen to some of my music",
+	"4":">> a \"unique\" word-guessing game",
 	"5":">> select another style for the ocean"
 };
 

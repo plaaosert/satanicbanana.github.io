@@ -61,6 +61,11 @@ if (!highscore) {
 	highscore = 0;
 }
 
+gametime = parseInt(localStorage.getItem("bej-time"));
+if (!gametime) {
+	gametime = 0;
+}
+
 time = parseInt(localStorage.getItem("time"));
 localtime = 0;
 if (!time) {
@@ -767,12 +772,15 @@ function fill_with_jewels() {
 
 function update_time() {
 	time += 1;
+	gametime += 1;
 	localtime += 1;
 	
+	localStorage.setItem("bej-time", gametime);
 	localStorage.setItem("time", time);
 	
 	document.getElementById("session-time").textContent = localtime.toString().toHHMMSS();
-	document.getElementById("all-time").textContent = time.toString().toDDHHMMSS();
+	document.getElementById("all-time").textContent = gametime.toString().toDDHHMMSS();
+	document.getElementById("global-time").textContent = time.toString().toDDHHMMSS();
 }
 
 
@@ -896,7 +904,8 @@ document.addEventListener('DOMContentLoaded', function() {
 	
 	cause_falling_bejs();
 	document.getElementById("session-time").textContent = localtime.toString().toHHMMSS();
-	document.getElementById("all-time").textContent = time.toString().toDDHHMMSS();
+	document.getElementById("all-time").textContent = gametime.toString().toDDHHMMSS();
+	document.getElementById("global-time").textContent = time.toString().toDDHHMMSS();
 	setInterval(update_time, 1000);
 	
 	document.onkeydown = function(e) {
