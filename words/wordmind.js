@@ -28,6 +28,7 @@ String.prototype.toDDHHMMSS = function () {
 words_guessed = []
 words_objects = []
 locked_chars = []
+dropped_chars = []
 target_word = "unset"
 target_length = target_word.length;
 
@@ -73,6 +74,28 @@ for (var i=0; i<30; i++) {
 for (var i=0; i<words.length; i++) {
 	var word = words[i];
 	cat_words[word.length].push(word);
+}
+
+
+function update_input_view(view, word) {
+	while (view.firstChild) {
+		view.firstChild.remove()
+	}
+	
+	for (var i=0; i<word.length; i++) {
+		var span = document.createElement("span");
+		span.textContent = word.charAt(i);
+		
+		var c_t = target_word.charAt(i);
+		var c_w = word.charAt(i);
+		if (c_t == c_w && locked_chars[i]) {
+			span.classList.add("green");
+		} else if (!word_chars.includes(c_w) && dropped_chars.includes(c_w)) {
+			span.classList.add("grey");
+		}
+		
+		view.appendChild(span);
+	}
 }
 
 
@@ -162,6 +185,9 @@ function add_new_guessed_word(word) {
 		} else if (word_chars.includes(c_w)) {
 			span.classList.add("yellow-letter");
 		} else {
+			if (!dropped_chars.includes(c_w)) {
+				dropped_chars.push(c_w);
+			}
 			span.classList.add("grey-letter");
 		}
 		
@@ -212,41 +238,48 @@ document.addEventListener("DOMContentLoaded", function() {
 	
 	// Get the input field
 	var input = document.getElementById("input-box");
+	var input_view = document.getElementById("input-view");
 
 	// Execute a function when the user releases a key on the keyboard
-	input.addEventListener("keyup", function(event) {
+	input.addEventListener("input", function() {
 	  // Number 13 is the "Enter" key on the keyboard
-	  if (event.keyCode === 13) {
-		// Cancel the default action, if needed
-		event.preventDefault();
-		
-		if (input.value.startsWith("l:")) {
-			pick_new_word(parseInt(input.value.charAt(2)));
-			input.value = "";
-			streak = 0
-			document.getElementById("streak-num").textContent = "0x";
+	  if (input.value.length > target_length && !input.value.startsWith("l:")) {
+		  input.value = input.value.substring(0, target_length);
+	  }
+	  
+	  update_input_view(input_view, input.value);
+	});
+	
+	input.addEventListener("keyup", function(event) {
+		if (event.keyCode === 13) {
+			// Cancel the default action, if needed
+			event.preventDefault();
 			
-		} else if (input.value.length == target_length) {
-			if (cat_words[target_length].includes(input.value)) {
-				add_new_guessed_word(input.value);
+			if (input.value.startsWith("l:")) {
+				pick_new_word(parseInt(input.value.charAt(2)));
 				input.value = "";
+				streak = 0
+				document.getElementById("streak-num").textContent = "0x";
+				
+			} else if (input.value.length == target_length) {
+				if (cat_words[target_length].includes(input.value)) {
+					add_new_guessed_word(input.value);
+					input.value = "";
+				} else {
+					input_view.classList.add("red");
+					
+					setTimeout(function(){
+						input_view.classList.remove("red");
+					}, 500);
+				}
 			} else {
-				input.classList.add("red");
+				input_view.classList.add("red");
 				setTimeout(function(){
-					input.classList.remove("red");
+					input_view.classList.remove("red");
 				}, 500);
 			}
-		} else {
-			input.classList.add("red");
-			setTimeout(function(){
-				input.classList.remove("red");
-			}, 500);
 		}
-	  } else {
-		  if (input.value.length > target_length && !input.value.startsWith("l:")) {
-			  input.value = input.value.substring(0, target_length);
-		  }
-	  }
+		update_input_view(input_view, input.value);
 	});
 
 	pick_new_word(6);

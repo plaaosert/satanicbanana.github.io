@@ -116,6 +116,22 @@ a:hover {
 	font-size: 24px;
 }
 
+.input-view {
+	pointer-events: none;
+	white-space: nowrap;
+	text-align: left;
+	
+	padding-left: 32px;
+	color: white;
+	font-size: 72px;
+	font-family: "MS Gothic", "Courier";
+	letter-spacing: 54px;
+	
+	border-style: none;
+	outline: none;
+	font-weight: bold;
+}
+
 .yellow-letter {
 	text-shadow: 2px 2px #000;
 	
@@ -142,10 +158,6 @@ a:hover {
 	color: #8df;
 }
 
-.red {
-	color: #f44;
-}
-
 .yellow {
 	color: #dd4;
 }
@@ -156,6 +168,14 @@ a:hover {
 
 .grey {
 	color: #444;
+}
+
+.red {
+	color: #f44;
+}
+
+.red > span {
+	color: #f44;
 }
 
 .invert {
@@ -197,6 +217,11 @@ a:hover {
 	text-align: center;
 }
 
+.mini {
+	font-size: 24px;
+	font-family: "MS Gothic", "Courier";
+}
+
 h1 {
 	font-size: 72px;
 	font-family: "MS Gothic", "Courier";
@@ -204,7 +229,8 @@ h1 {
 
 input {
 	padding-left: 32px;
-	color: white;
+	color: black;
+	caret-color: white;
 	background-color: black;
 	font-size: 72px;
 	font-family: "MS Gothic", "Courier";
