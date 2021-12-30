@@ -166,6 +166,10 @@ a:hover {
 	color: #4d4;
 }
 
+.white {
+	color: #888;
+}
+
 .grey {
 	color: #444;
 }
@@ -180,6 +184,10 @@ a:hover {
 
 .invert {
 	filter: invert();
+}
+
+.hidden {
+	visibility:hidden;
 }
 
 .letter {
@@ -217,8 +225,23 @@ a:hover {
 	text-align: center;
 }
 
+.mouse-active {
+	transition: filter 0.3s;
+}
+
+.mouse-active:hover {
+	filter: brightness(200%);
+	transition: filter 0.1s;
+}
+
 .mini {
 	font-size: 24px;
+	
+	padding-left: 10.705px;
+	padding-right: 10.705px;
+	
+	padding-top: 2.705px;
+	padding-bottom: 2.705px;
 	font-family: "MS Gothic", "Courier";
 }
 

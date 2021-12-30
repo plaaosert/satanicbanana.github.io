@@ -25,9 +25,16 @@ String.prototype.toDDHHMMSS = function () {
     return days+":"+hours+':'+minutes+':'+seconds;
 }
 
+keyboard = [
+	"qwertyuiop",
+	"asdfghjkl",
+	"zxcvbnm"
+]
+
 words_guessed = []
 words_objects = []
 locked_chars = []
+yellowed_chars = []
 dropped_chars = []
 target_word = "unset"
 target_length = target_word.length;
@@ -99,6 +106,73 @@ function update_input_view(view, word) {
 }
 
 
+function update_keyboard_view() {
+	for (var kb_row=0; kb_row<3; kb_row++) {
+		var kb = keyboard[kb_row];
+		var kb_obj = document.getElementById("words-available-" + (kb_row + 1));
+		
+		while (kb_obj.firstChild) {
+			kb_obj.firstChild.remove()
+		}
+		
+		for (var c=0; c<kb.length; c++) {
+			var ch = kb.charAt(c);
+			var span = document.createElement("span");
+			
+			span.addEventListener("click", function() {
+				document.getElementById("input-box").value += this.textContent;
+				input_box_updated();
+				document.getElementById("input-box").focus();
+			});
+			
+			span.textContent = ch;
+			span.classList.add("mouse-active");
+			span.classList.add("mini");
+			span.classList.add("letter");
+			
+			if (locked_chars.includes(ch)) {
+				span.classList.add("green");
+			} else if (yellowed_chars.includes(ch)) {
+				span.classList.add("yellow");
+			} else if (dropped_chars.includes(ch)) {
+				span.classList.add("grey");
+			} else {
+				span.classList.add("white");
+			}
+			
+			kb_obj.appendChild(span);
+		}
+		
+		var bksp_span = document.createElement("span");
+		bksp_span.classList.add("mouse-active");
+		bksp_span.classList.add("mini");
+		bksp_span.classList.add("letter");
+		bksp_span.classList.add("white");
+		
+		bksp_span.textContent += "<--";
+		
+		if (kb_row == 0) {
+			bksp_span.addEventListener("click", function() {
+				document.getElementById("input-box").value = document.getElementById("input-box").value.slice(0, -1);
+				input_box_updated();
+				document.getElementById("input-box").focus();
+			});
+		} else if (kb_row == 1) {
+			bksp_span.textContent = "ENT";
+			bksp_span.classList.remove("white");
+			bksp_span.classList.add("green");
+			bksp_span.addEventListener("click", function() {
+				input_box_enter();
+			});
+		} else {
+			bksp_span.classList.add("hidden");
+		}
+		
+		kb_obj.appendChild(bksp_span);
+	}
+}
+
+
 function pick_new_word(length) {
 	if (length < 2)
 		return;
@@ -117,6 +191,7 @@ function set_new_word(word) {
 	words_objects = [];
 	
 	locked_chars = [];
+	yellowed_chars = [];
 	dropped_chars = [];
 	
 	for (var i=0; i<target_length; i++) {
@@ -188,6 +263,9 @@ function add_new_guessed_word(word) {
 			span.classList.add("green-letter");
 			locked_chars[i] = c_t;
 		} else if (word_chars.includes(c_w)) {
+			if (!yellowed_chars.includes(c_w)) {
+				yellowed_chars.push(c_w);
+			}
 			span.classList.add("yellow-letter");
 		} else {
 			if (!dropped_chars.includes(c_w)) {
@@ -232,7 +310,52 @@ function add_new_guessed_word(word) {
 	words_guessed.push(word);
 	words_objects.push(div_container);
 	
+	update_keyboard_view();
+	
 	document.getElementById("words").appendChild(div_container);
+}
+
+function input_box_updated() {
+	// Number 13 is the "Enter" key on the keyboard
+	var input = document.getElementById("input-box");
+	var input_view = document.getElementById("input-view");
+	if (input.value.length > target_length && !input.value.startsWith("l:")) {
+		input.value = input.value.substring(0, target_length);
+	}
+
+	update_input_view(input_view, input.value);
+}
+
+function input_box_enter() {
+	// Cancel the default action, if needed
+	var input = document.getElementById("input-box");
+	var input_view = document.getElementById("input-view");
+	
+	if (input.value.startsWith("l:")) {
+		pick_new_word(parseInt(input.value.charAt(2)));
+		input.value = "";
+		streak = 0
+		document.getElementById("streak-num").textContent = "0x";
+		
+	} else if (input.value.length == target_length) {
+		if (cat_words[target_length].includes(input.value)) {
+			add_new_guessed_word(input.value);
+			input.value = "";
+		} else {
+			input_view.classList.add("red");
+			
+			setTimeout(function(){
+				input_view.classList.remove("red");
+			}, 500);
+		}
+	} else {
+		input_view.classList.add("red");
+		setTimeout(function(){
+			input_view.classList.remove("red");
+		}, 500);
+	}
+	
+	update_input_view(input_view, input.value);
 }
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -247,45 +370,17 @@ document.addEventListener("DOMContentLoaded", function() {
 
 	// Execute a function when the user releases a key on the keyboard
 	input.addEventListener("input", function() {
-	  // Number 13 is the "Enter" key on the keyboard
-	  if (input.value.length > target_length && !input.value.startsWith("l:")) {
-		  input.value = input.value.substring(0, target_length);
-	  }
-	  
-	  update_input_view(input_view, input.value);
+		input_box_updated();
 	});
 	
 	input.addEventListener("keyup", function(event) {
+		event.preventDefault();
 		if (event.keyCode === 13) {
-			// Cancel the default action, if needed
-			event.preventDefault();
-			
-			if (input.value.startsWith("l:")) {
-				pick_new_word(parseInt(input.value.charAt(2)));
-				input.value = "";
-				streak = 0
-				document.getElementById("streak-num").textContent = "0x";
-				
-			} else if (input.value.length == target_length) {
-				if (cat_words[target_length].includes(input.value)) {
-					add_new_guessed_word(input.value);
-					input.value = "";
-				} else {
-					input_view.classList.add("red");
-					
-					setTimeout(function(){
-						input_view.classList.remove("red");
-					}, 500);
-				}
-			} else {
-				input_view.classList.add("red");
-				setTimeout(function(){
-					input_view.classList.remove("red");
-				}, 500);
-			}
+			input_box_enter();
 		}
 		update_input_view(input_view, input.value);
 	});
 
 	pick_new_word(6);
+	update_keyboard_view();
 });
