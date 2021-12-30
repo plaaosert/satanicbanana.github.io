@@ -129,6 +129,9 @@ function set_new_word(word) {
 	}
 
 	add_new_guessed_word("?".repeat(target_length));
+	
+	var input = document.getElementById("input-box");
+	input.focus();
 }
 
 
