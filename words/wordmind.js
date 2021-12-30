@@ -117,6 +117,8 @@ function set_new_word(word) {
 	words_objects = [];
 	
 	locked_chars = [];
+	dropped_chars = [];
+	
 	for (var i=0; i<target_length; i++) {
 		locked_chars.push(null);
 	}
