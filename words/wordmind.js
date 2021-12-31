@@ -372,7 +372,7 @@ function position_elements() {
 		keyboard.style.removeProperty("right");
 		keyboard.style.left = "0px";
 		keyboard.style.right = "0px";
-		keyboard.style.bottom = "-360px";
+		keyboard.style.bottom = "-180px";
 		
 		// If width less than clearance with half keyboard, dim the hints too
 		if (vw < (clearance - (809 / 2))) {
