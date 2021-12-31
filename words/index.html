@@ -9,7 +9,7 @@
     <meta content="https://plaao.net/bej/green_funny.png" property="og:image" />
     <meta content="#cccccc" data-react-helmet="true" name="theme-color" />
 	
-	<link rel="stylesheet" type="text/css" href="words.css?v=12"/>
+	<link rel="stylesheet" type="text/css" href="words.css?v=13"/>
 </head>
 <body>
 	<div class="topbar">
@@ -24,13 +24,13 @@
 		
 	</div>
 	
-	<div class="words-available" id="words-available" style="position:absolute; right:192px; text-align: center; bottom: 312px;">
+	<div class="words-available" id="words-available" style="position:absolute; right:64px; text-align: center; bottom: 312px;">
 		<div id="words-available-1"></div><br>
 		<div id="words-available-2"></div><br>
 		<div id="words-available-3"></div>
 	</div>
 	
-	<p class="hints">
+	<p class="hints" id="hints">
 	you can type <span class="important">"l:[NUMBER]"</span> (for example, <span class="important">"l:5"</span>) then hit <span class="important">enter</span><br>
 	to change word length and reset (this will count as a <span class="important red">loss!</span>)
 	<br><br>
@@ -51,6 +51,15 @@
 				<p id="input-view" style="position:absolute; left:96px; bottom:-74px; width:256px" class="input-view"></p>
 			</input>
 		</h1>
+		
+		<!--
+		<h1 class="green" style="position:absolute; left:72px; bottom:0px; display:none;">
+			#
+			<span style="position:absolute; left:128px; bottom:-10px; width:1000px; text-align: left;">
+			8 guesses total
+			</span>
+		</h1>
+		!-->
 		<p id="guessed-so-far" style="letter-spacing: 76px; font-size:32px; text-align:left; position:absolute; left: 208px; bottom: 100px; width: 5000px;"><span class="important grey">?</span><span class="important grey">?</span><span class="important grey">?</span><span class="important grey">?</span><span class="important grey">?</span></p>
 	</div>
 	
@@ -63,6 +72,6 @@
 	</div>
 	
 	<script src="words.js?v=01"></script>
-	<script src="wordmind.js?v=04"></script>
+	<script src="wordmind.js?v=05"></script>
 </body>
 </html>

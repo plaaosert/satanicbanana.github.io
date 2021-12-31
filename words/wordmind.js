@@ -358,11 +358,42 @@ function input_box_enter() {
 	update_input_view(input_view, input.value);
 }
 
+
+function position_elements() {
+	var vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+	// Clearance is (83.41 * word_length) + 64 + 809 (width of keyboard)
+	var clearance = (83.41 * target_length) + 873;
+	
+	if (vw < clearance) {
+		// Move the keyboard
+		var keyboard = document.getElementById("words-available");
+		keyboard.style.removeProperty("right");
+		keyboard.style.left = "0px";
+		keyboard.style.right = "0px";
+		keyboard.style.bottom = "0px";
+		
+		// If width less than clearance with half keyboard, dim the hints too
+		if (vw < (clearance - (809 / 2))) {
+			document.getElementById("hints").classList.add("dimmed");
+		} else {
+			document.getElementById("hints").classList.remove("dimmed");
+		}
+	} else {
+		var keyboard = document.getElementById("words-available");
+		keyboard.style.right = "64px";
+		keyboard.style.removeProperty("left");
+		keyboard.style.bottom = "312px";
+		document.getElementById("hints").classList.remove("dimmed");
+	}
+}
+
+
 document.addEventListener("DOMContentLoaded", function() {
 	document.getElementById("session-time").textContent = localtime.toString().toHHMMSS();
 	document.getElementById("all-time").textContent = gametime.toString().toDDHHMMSS();
 	document.getElementById("global-time").textContent = time.toString().toDDHHMMSS();
 	setInterval(update_time, 1000);
+	setInterval(position_elements, 250);
 	
 	// Get the input field
 	var input = document.getElementById("input-box");
@@ -383,4 +414,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
 	pick_new_word(6);
 	update_keyboard_view();
+	
+	position_elements();
 });

@@ -186,6 +186,10 @@ a:hover {
 	filter: invert();
 }
 
+.dimmed {
+	opacity: 0.5;
+}
+
 .hidden {
 	visibility:hidden;
 }
