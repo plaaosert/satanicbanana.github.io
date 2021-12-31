@@ -205,6 +205,16 @@ a:hover {
 	border-style: solid;
 }
 
+.copy-button {
+	font-weight: bold;
+	position: absolute;
+	padding-top: 14.7px;
+	padding-bottom: 14.7px;
+	
+	left:44px;
+	bottom:303px;
+}
+
 .words {
 	bottom: 312px;
 	left: 180px;

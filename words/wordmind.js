@@ -31,6 +31,11 @@ keyboard = [
 	"zxcvbnm"
 ]
 
+preset_word = false;
+
+last_game_str = ""
+guess_history = ""
+
 words_guessed = []
 words_objects = []
 locked_chars = []
@@ -180,33 +185,44 @@ function pick_new_word(length) {
 	var wordlist = cat_words[length]
 	
 	set_new_word(wordlist[Math.floor(Math.random() * wordlist.length)]);
+	preset_word = false;
 }
 
 
 function set_new_word(word) {
-	target_word = word;
-	target_length = target_word.length;
+	last_game_str = "Words | " + words_guessed.length + " guesses\n\n" + guess_history;
+	if (!preset_word) {
+		last_game_str += "\nWord was \"" + target_word + "\"";
+		
+		guess_history = "";
 	
-	words_guessed = [];
-	words_objects = [];
-	
-	locked_chars = [];
-	yellowed_chars = [];
-	dropped_chars = [];
-	
-	for (var i=0; i<target_length; i++) {
-		locked_chars.push(null);
-	}
-	
-	var cont = document.getElementById("words");
-	while (cont.firstChild) {
-		cont.firstChild.remove()
-	}
+		target_word = word;
+		target_length = target_word.length;
+		
+		words_guessed = [];
+		words_objects = [];
+		
+		locked_chars = [];
+		yellowed_chars = [];
+		dropped_chars = [];
+		
+		for (var i=0; i<target_length; i++) {
+			locked_chars.push(null);
+		}
+		
+		var cont = document.getElementById("words");
+		while (cont.firstChild) {
+			cont.firstChild.remove()
+		}
 
-	add_new_guessed_word("?".repeat(target_length));
-	
-	var input = document.getElementById("input-box");
-	input.focus();
+		add_new_guessed_word("?".repeat(target_length));
+		
+		var input = document.getElementById("input-box");
+		input.focus();
+	} else {
+		last_game_str += "\nPlay this scenario:\n" + document.location.href;
+		document.getElementById("input-box").disabled = true;
+	}
 }
 
 
@@ -220,6 +236,8 @@ function solve_word() {
 	document.getElementById("score-num").textContent = score.toLocaleString();
 	document.getElementById("streak-num").textContent = streak + "x";
 	document.getElementById("input-box").disabled = false;
+	
+	document.getElementById("copy-button").style.display = "block";
 	
 	pick_new_word(target_length)
 }
@@ -242,6 +260,8 @@ function add_new_guessed_word(word) {
 	div_container.style.bottom = "0px";
 	div_container.className = "words-row";
 	
+	guess_str = ""
+	
 	word_chars = []
 	for (var i=0; i<target_length; i++) {
 		if (word.charAt(i) == target_word.charAt(i)) {
@@ -261,16 +281,19 @@ function add_new_guessed_word(word) {
 		var c_w = word.charAt(i);
 		if (c_t == c_w) {
 			span.classList.add("green-letter");
+			guess_str += "🟩"
 			locked_chars[i] = c_t;
 		} else if (word_chars.includes(c_w)) {
 			if (!yellowed_chars.includes(c_w)) {
 				yellowed_chars.push(c_w);
 			}
+			guess_str += "🟨"
 			span.classList.add("yellow-letter");
 		} else {
 			if (!dropped_chars.includes(c_w)) {
 				dropped_chars.push(c_w);
 			}
+			guess_str += "⬛"
 			span.classList.add("grey-letter");
 		}
 		
@@ -309,6 +332,7 @@ function add_new_guessed_word(word) {
 	
 	words_guessed.push(word);
 	words_objects.push(div_container);
+	guess_history += guess_str + "\n"
 	
 	update_keyboard_view();
 	
@@ -390,6 +414,15 @@ function position_elements() {
 }
 
 
+function copy_last_game() {
+	navigator.clipboard.writeText(last_game_str).then(function() {
+		console.log('Async: Copying to clipboard was successful!');
+	}, function(err) {
+		console.error('Async: Could not copy text: ', err);
+	});
+}
+
+
 document.addEventListener("DOMContentLoaded", function() {
 	document.getElementById("session-time").textContent = localtime.toString().toHHMMSS();
 	document.getElementById("all-time").textContent = gametime.toString().toDDHHMMSS();
@@ -414,7 +447,15 @@ document.addEventListener("DOMContentLoaded", function() {
 		update_input_view(input_view, input.value);
 	});
 
-	pick_new_word(6);
+	// scenario
+	params = new URLSearchParams(window.location.search);
+	if (params.has("word")) {
+		set_new_word(atob(params.get("word")));
+		preset_word = true;
+	} else {
+		pick_new_word(6);
+	}
+	
 	update_keyboard_view();
 	
 	position_elements();

@@ -9,7 +9,7 @@
     <meta content="https://plaao.net/bej/green_funny.png" property="og:image" />
     <meta content="#cccccc" data-react-helmet="true" name="theme-color" />
 	
-	<link rel="stylesheet" type="text/css" href="words.css?v=14"/>
+	<link rel="stylesheet" type="text/css" href="words.css?v=15"/>
 </head>
 <body>
 	<div class="topbar">
@@ -23,6 +23,8 @@
 	<div class="words" id="words">
 		
 	</div>
+	
+	<span id="copy-button" style="display:none" class="copy-button letter green mouse-active" onclick="copy_last_game()">Copy last<br>game to<br>clipboard</span>
 	
 	<div class="words-available" id="words-available" style="position:absolute; right:64px; text-align: center; bottom: 312px;">
 		<div id="words-available-1"></div><br>
@@ -51,15 +53,6 @@
 				<p id="input-view" style="position:absolute; left:96px; bottom:-74px; width:256px" class="input-view"></p>
 			</input>
 		</h1>
-		
-		<!--
-		<h1 class="green" style="position:absolute; left:72px; bottom:0px; display:none;">
-			#
-			<span style="position:absolute; left:128px; bottom:-10px; width:1000px; text-align: left;">
-			8 guesses total
-			</span>
-		</h1>
-		!-->
 		<p id="guessed-so-far" style="letter-spacing: 76px; font-size:32px; text-align:left; position:absolute; left: 208px; bottom: 100px; width: 5000px;"><span class="important grey">?</span><span class="important grey">?</span><span class="important grey">?</span><span class="important grey">?</span><span class="important grey">?</span></p>
 	</div>
 	
@@ -72,6 +65,6 @@
 	</div>
 	
 	<script src="words.js?v=01"></script>
-	<script src="wordmind.js?v=08"></script>
+	<script src="wordmind.js?v=09"></script>
 </body>
 </html>
