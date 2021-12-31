@@ -364,7 +364,7 @@ function position_elements() {
 	// Clearance is (83.41 * word_length) + 64 + 809 (width of keyboard)
 	var clearance = (83.41 * target_length) + 873;
 	
-	if (vw < clearance) {
+	if (vw < clearance || ('ontouchstart' in document.documentElement)) {
 		// Move the keyboard
 		var keyboard = document.getElementById("words-available");
 		keyboard.style.removeProperty("right");
