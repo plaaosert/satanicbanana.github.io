@@ -319,6 +319,8 @@ function input_box_updated() {
 	// Number 13 is the "Enter" key on the keyboard
 	var input = document.getElementById("input-box");
 	var input_view = document.getElementById("input-view");
+	input.value = input.value.toLowerCase();
+	
 	if (input.value.length > target_length && !input.value.startsWith("l:")) {
 		input.value = input.value.substring(0, target_length);
 	}
