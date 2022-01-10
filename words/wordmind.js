@@ -239,6 +239,10 @@ function solve_word() {
 	
 	document.getElementById("copy-button").style.display = "block";
 	
+	if (preset_word) {
+		document.getElementById("continue-button").style.display = "block";
+	}
+	
 	pick_new_word(target_length)
 }
 
@@ -317,7 +321,7 @@ function add_new_guessed_word(word) {
 	if (word == target_word) {
 		document.getElementById("input-box").disabled = true;
 		
-		for (var i=0; i<4; i++) {
+		for (var i=0; i<6; i++) {
 			setTimeout(function() {
 				div_container.classList.add("invert");
 			}, 300 * i);
@@ -327,7 +331,7 @@ function add_new_guessed_word(word) {
 			}, (300 * i) + 150);
 		}
 		
-		setTimeout(solve_word, 1500);
+		setTimeout(solve_word, 2500);
 	}
 	
 	words_guessed.push(word);
@@ -352,13 +356,48 @@ function input_box_updated() {
 	update_input_view(input_view, input.value);
 }
 
+function set_new_word_length(length) {
+	if (length > 9 || length < 2)
+		return
+	
+	window.history.replaceState(null, null, "?l=" + length);
+	
+	pick_new_word(length)
+	
+	document.getElementById("wl").textContent = "[" + length + "]"
+	
+	if (length == 9) {
+		document.getElementById("word-length-up").textContent = "up (MAX)"
+		document.getElementById("word-length-up").classList.remove("red")
+		document.getElementById("word-length-up").classList.remove("mouse-active")
+		document.getElementById("word-length-up").classList.add("grey")
+	} else {
+		document.getElementById("word-length-up").textContent = "up (" + (length + 1) + ")"
+		document.getElementById("word-length-up").classList.add("red")
+		document.getElementById("word-length-up").classList.add("mouse-active")
+		document.getElementById("word-length-up").classList.remove("grey")
+	}
+
+	if (length == 2) {
+		document.getElementById("word-length-down").textContent = "down (MIN)"
+		document.getElementById("word-length-down").classList.remove("red")
+		document.getElementById("word-length-down").classList.remove("mouse-active")
+		document.getElementById("word-length-down").classList.add("grey")
+	} else {
+		document.getElementById("word-length-down").textContent = "down (" + (length - 1) + ")"
+		document.getElementById("word-length-down").classList.add("red")
+		document.getElementById("word-length-down").classList.add("mouse-active")
+		document.getElementById("word-length-down").classList.remove("grey")
+	}
+}
+
 function input_box_enter() {
 	// Cancel the default action, if needed
 	var input = document.getElementById("input-box");
 	var input_view = document.getElementById("input-view");
 	
 	if (input.value.startsWith("l:")) {
-		pick_new_word(parseInt(input.value.charAt(2)));
+		set_new_word_length(parseInt(input.value.charAt(2)));
 		input.value = "";
 		streak = 0
 		document.getElementById("streak-num").textContent = "0x";
@@ -408,7 +447,7 @@ function position_elements() {
 		var keyboard = document.getElementById("words-available");
 		keyboard.style.right = "64px";
 		keyboard.style.removeProperty("left");
-		keyboard.style.bottom = "312px";
+		keyboard.style.bottom = "400px";
 		document.getElementById("hints").classList.remove("dimmed");
 	}
 }
@@ -435,6 +474,65 @@ function copy_last_game() {
 }
 
 
+function copy_scenario() {
+	var box = document.getElementById("scenario-input-box")
+	var button = document.getElementById("scenario-copy-button")
+	var label = document.getElementById("scenario-word")
+	
+	if (box.value.length >= 2 && box.value.length <= 9 && cat_words[box.value.length].includes(box.value.toLowerCase())) {
+		val = document.location.href.split("?")[0] + "?word=" + btoa(box.value).replaceAll("=", "")
+		box.value = ""
+		
+		navigator.clipboard.writeText(val).then(function() {
+			console.log('Copied');
+			box.disabled = true;
+			
+			document.getElementById("scenario-text").innerHTML = "Copied!<br>"
+			button.classList.remove("green");
+			button.classList.remove("mouse-active");
+			button.classList.add("yellow");
+			
+			setTimeout(function() {
+				box.disabled = false;
+				
+				document.getElementById("scenario-text").innerHTML = "Copy link to game with word"
+				label.textContent = "above! ^"
+				button.classList.add("green");
+				button.classList.add("mouse-active");
+				button.classList.remove("yellow");
+			}, 2500);
+		}, function(err) {
+			console.error('Failed due to error: ', err);
+		});
+	}
+}
+
+
+function scenario_box_updated() {
+	var box = document.getElementById("scenario-input-box")
+	var button = document.getElementById("scenario-copy-button")
+	var label = document.getElementById("scenario-word")
+	
+	if (box.value.length >= 2 && box.value.length <= 9 && cat_words[box.value.length].includes(box.value.toLowerCase())) {
+		label.textContent = box.value
+		box.classList.remove("red");
+		
+		button.classList.remove("white");
+		button.classList.add("green");
+		button.disabled = false;
+		button.classList.add("mouse-active");
+	} else {
+		label.textContent = "above! ^"
+		button.disabled = true;
+		box.classList.add("red");
+		
+		button.classList.add("white");
+		button.classList.remove("green");
+		button.classList.remove("mouse-active");
+	}
+}
+
+
 document.addEventListener("DOMContentLoaded", function() {
 	document.getElementById("session-time").textContent = localtime.toString().toHHMMSS();
 	document.getElementById("all-time").textContent = gametime.toString().toDDHHMMSS();
@@ -445,6 +543,13 @@ document.addEventListener("DOMContentLoaded", function() {
 	// Get the input field
 	var input = document.getElementById("input-box");
 	var input_view = document.getElementById("input-view");
+
+	scenario_box_updated();
+
+	document.getElementById("scenario-input-box").addEventListener("input", function() {
+		console.log("test")
+		scenario_box_updated();
+	});
 
 	// Execute a function when the user releases a key on the keyboard
 	input.addEventListener("input", function() {
@@ -463,9 +568,40 @@ document.addEventListener("DOMContentLoaded", function() {
 	params = new URLSearchParams(window.location.search);
 	if (params.has("word")) {
 		set_new_word(atob(params.get("word")));
+		document.getElementById("lengths").style.display = "none";
 		preset_word = true;
 	} else {
-		pick_new_word(6);
+		if (params.has("l")) {
+			pick_new_word(parseInt(params.get("l")));
+		} else {
+			pick_new_word(6);
+		}
+	}
+	
+	document.getElementById("wl").textContent = "[" + target_length + "]"
+	
+	if (target_length == 9) {
+		document.getElementById("word-length-up").textContent = "up (MAX)"
+		document.getElementById("word-length-up").classList.remove("red")
+		document.getElementById("word-length-up").classList.remove("mouse-active")
+		document.getElementById("word-length-up").classList.add("grey")
+	} else {
+		document.getElementById("word-length-up").textContent = "up (" + (target_length + 1) + ")"
+		document.getElementById("word-length-up").classList.add("red")
+		document.getElementById("word-length-up").classList.add("mouse-active")
+		document.getElementById("word-length-up").classList.remove("grey")
+	}
+
+	if (target_length == 2) {
+		document.getElementById("word-length-down").textContent = "down (MIN)"
+		document.getElementById("word-length-down").classList.remove("red")
+		document.getElementById("word-length-down").classList.remove("mouse-active")
+		document.getElementById("word-length-down").classList.add("grey")
+	} else {
+		document.getElementById("word-length-down").textContent = "down (" + (target_length - 1) + ")"
+		document.getElementById("word-length-down").classList.add("red")
+		document.getElementById("word-length-down").classList.add("mouse-active")
+		document.getElementById("word-length-down").classList.remove("grey")
 	}
 	
 	update_keyboard_view();

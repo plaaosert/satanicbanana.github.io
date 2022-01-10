@@ -9,7 +9,7 @@
     <meta content="https://plaao.net/bej/green_funny.png" property="og:image" />
     <meta content="#cccccc" data-react-helmet="true" name="theme-color" />
 	
-	<link rel="stylesheet" type="text/css" href="words.css?v=16"/>
+	<link rel="stylesheet" type="text/css" href="words.css?v=17"/>
 </head>
 <body>
 	<div class="topbar">
@@ -25,16 +25,26 @@
 	</div>
 	
 	<span id="copy-button" style="display:none" class="copy-button letter green mouse-active" onclick="copy_last_game()">Copy last<br>game to<br>clipboard</span>
+	<span id="continue-button" style="display:none" class="continue-button letter yellow mouse-active" onclick="document.location = document.location.href.split('?')[0] + '?l=' + target_length">Continue with random words</span>
 	
-	<div class="words-available" id="words-available" style="	user-select: none; position:absolute; right:64px; text-align: center; bottom: 312px;">
+	<div class="words-available" id="words-available" style="user-select: none; position:absolute; right:64px; text-align: center; bottom: 312px;">
 		<div id="words-available-1"></div><br>
 		<div id="words-available-2"></div><br>
 		<div id="words-available-3"></div>
+		
+		<div class="commands-input" style="position:absolute; text-align: right; right: 32px; bottom: -80px;">
+			<div id="lengths">
+			<span id="word-length-label" style="position:absolute; width: 96px; line-height: 24px; bottom: -72px; right:400px;" class="letter white">word length:<br><b id="wl">[6]</b></span>
+			<span id="word-length-up" style="position:absolute; width: 96px; bottom: -40px; right:252px;" class="letter red mouse-active" onclick="set_new_word_length(target_length + 1)">up (7)</span>
+			<span id="word-length-down" style="position:absolute; width: 96px; bottom:-72px; right:252px;" class="letter red mouse-active" onclick="set_new_word_length(target_length - 1)">down (5)</span>
+			</div>
+			<span id="scenario-copy-button" disabled style="position:absolute; width: 128px; bottom:-72px; right:48px;"  class="letter white" onclick="copy_scenario()"><span id="scenario-text">Copy link to game with word</span><br><b><span id="scenario-word" class="yellow">above! ^</span></b></span>
+			<input type="text" id="scenario-input-box" class="green" autofocus="true" maxlength=9 placeholder="set word;" style="position:absolute; right:24px; bottom: 6px; font-size: 24px; width:200px; letter-spacing:8px;">
+		</div>
 	</div>
 	
 	<p class="hints" id="hints">
-	you can type <span class="important">"l:[NUMBER]"</span> (for example, <span class="important">"l:5"</span>) then hit <span class="important">enter</span><br>
-	to change word length and reset (this will count as a <span class="important red">loss!</span>)
+	you can change the word length with the <span class="important red">buttons</span> below (this will count as a <span class="important red">loss!</span>)
 	<br><br>
 	longer words give exponentially more points when solved!
 	<br><br><br><br>
@@ -53,7 +63,7 @@
 				<p id="input-view" style="position:absolute; left:96px; bottom:-74px; width:256px" class="input-view"></p>
 			</input>
 		</h1>
-		<p id="guessed-so-far" style="letter-spacing: 76px; font-size:32px; text-align:left; position:absolute; left: 208px; bottom: 100px; width: 5000px;"><span class="important grey">?</span><span class="important grey">?</span><span class="important grey">?</span><span class="important grey">?</span><span class="important grey">?</span></p>
+		<p id="guessed-so-far" style="white-space: nowrap; letter-spacing: 76px; font-size:32px; text-align:left; position:absolute; left: 208px; bottom: 100px;"><span class="important grey">?</span><span class="important grey">?</span><span class="important grey">?</span><span class="important grey">?</span><span class="important grey">?</span></p>
 	</div>
 	
 	<div class="bottombar">
@@ -65,6 +75,6 @@
 	</div>
 	
 	<script src="words.js?v=01"></script>
-	<script src="wordmind.js?v=10"></script>
+	<script src="wordmind.js?v=11"></script>
 </body>
 </html>
