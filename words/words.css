@@ -209,10 +209,14 @@ a:hover {
 	font-weight: bold;
 	position: absolute;
 	padding-top: 14.7px;
-	padding-bottom: 14.7px;
+	padding-bottom: 15px;
+	
+	width: 81px;
 	
 	left:44px;
 	bottom:303px;
+	
+	transition: color 0.3s;
 }
 
 .words {

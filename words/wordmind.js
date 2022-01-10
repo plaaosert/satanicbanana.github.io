@@ -190,7 +190,7 @@ function pick_new_word(length) {
 
 
 function set_new_word(word) {
-	last_game_str = "Words | " + words_guessed.length + " guesses\n\n" + guess_history;
+	last_game_str = "Words | " + (words_guessed.length - 1) + " guess" + (words_guessed.length != 2 ? "es" : "") + "\n\n" + guess_history;
 	if (!preset_word) {
 		last_game_str += "\nWord was \"" + target_word + "\"";
 		
@@ -416,9 +416,21 @@ function position_elements() {
 
 function copy_last_game() {
 	navigator.clipboard.writeText(last_game_str).then(function() {
-		console.log('Async: Copying to clipboard was successful!');
+		console.log('Copied');
+		
+		document.getElementById("copy-button").innerHTML = "<br>Copied!<br><br>"
+		document.getElementById("copy-button").classList.remove("green");
+		document.getElementById("copy-button").classList.remove("mouse-active");
+		document.getElementById("copy-button").classList.add("yellow");
+		
+		setTimeout(function() {
+			document.getElementById("copy-button").innerHTML = "Copy last<br>game to<br>clipboard"
+			document.getElementById("copy-button").classList.add("green");
+			document.getElementById("copy-button").classList.add("mouse-active");
+			document.getElementById("copy-button").classList.remove("yellow");
+		}, 2500);
 	}, function(err) {
-		console.error('Async: Could not copy text: ', err);
+		console.error('Failed due to error: ', err);
 	});
 }
 
