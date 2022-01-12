@@ -547,7 +547,7 @@ document.addEventListener("DOMContentLoaded", function() {
 	scenario_box_updated();
 
 	document.getElementById("scenario-input-box").addEventListener("input", function() {
-		console.log("test")
+		document.getElementById("scenario-input-box").value = document.getElementById("scenario-input-box").value.toLowerCase();
 		scenario_box_updated();
 	});
 
