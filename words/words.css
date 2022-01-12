@@ -284,6 +284,16 @@ h1 {
 
 #input-box {
 	color: black;
+	opacity: 1;
+}
+
+#input-box:-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+   color:    #666;
+   opacity:  1;
+}
+#input-box::-moz-placeholder { /* Mozilla Firefox 19+ */
+   color:    #666;
+   opacity:  1;
 }
 
 input {

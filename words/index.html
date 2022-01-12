@@ -9,7 +9,7 @@
     <meta content="https://plaao.net/bej/green_funny.png" property="og:image" />
     <meta content="#cccccc" data-react-helmet="true" name="theme-color" />
 	
-	<link rel="stylesheet" type="text/css" href="words.css?v=17"/>
+	<link rel="stylesheet" type="text/css" href="words.css?v=18"/>
 </head>
 <body>
 	<div class="topbar">
@@ -27,7 +27,7 @@
 	<span id="copy-button" style="display:none" class="copy-button letter green mouse-active" onclick="copy_last_game()">Copy last<br>game to<br>clipboard</span>
 	<span id="continue-button" style="display:none" class="continue-button letter yellow mouse-active" onclick="document.location = document.location.href.split('?')[0] + '?l=' + target_length">Continue with random words</span>
 	
-	<div class="words-available" id="words-available" style="user-select: none; position:absolute; right:64px; text-align: center; bottom: 440px;">
+	<div class="words-available" id="words-available" style="user-select: none; position:absolute; right:64px; text-align: center; bottom: 420px;">
 		<div id="words-available-1"></div><br>
 		<div id="words-available-2"></div><br>
 		<div id="words-available-3"></div>
@@ -59,7 +59,7 @@
 	<div class="words-input">
 		<h1 style="position:absolute; left:72px; bottom:0px;">
 			>
-			<input type="text" id="input-box" autofocus="true" placeholder="guess............." style="position:absolute; left:96px;">
+			<input type="text" id="input-box" autofocus="true" placeholder="guess............." style="position:absolute; width:887px; left:96px;">
 				<p id="input-view" style="position:absolute; left:96px; bottom:-74px; width:256px" class="input-view"></p>
 			</input>
 		</h1>
@@ -75,6 +75,6 @@
 	</div>
 	
 	<script src="words.js?v=01"></script>
-	<script src="wordmind.js?v=11"></script>
+	<script src="wordmind.js?v=12"></script>
 </body>
 </html>
