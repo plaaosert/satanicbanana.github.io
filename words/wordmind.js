@@ -447,7 +447,7 @@ function position_elements() {
 		var keyboard = document.getElementById("words-available");
 		keyboard.style.right = "64px";
 		keyboard.style.removeProperty("left");
-		keyboard.style.bottom = "400px";
+		keyboard.style.bottom = "420px";
 		document.getElementById("hints").classList.remove("dimmed");
 	}
 }
