@@ -6,6 +6,8 @@ mousex = 0;
 mousey = 0;
 itemDialog = null;
 itemDialogInterval = null;
+skillDialog = null;
+skillDialogInterval = null;
 selectedItem = null;
 overEquippedItem = undefined;
 comparisonMode = false;
@@ -116,34 +118,6 @@ class ItemFrame {
 	}
 }
 
-class SkillFrame {
-	// frames are always initialised with a skill
-	constructor(skill) {
-		this.skill = skill;
-		this.box = null;
-	}
-	
-	setSkill(skill) {
-		// We pick either the skill on its own or "o".
-		this.box.src = "sprites/skills/skilltree/" + (player.skills[skill.id][1] ? "o" : "") + skill.fname + ".png";
-	}
-	
-	makeBaseFrame(xpos, ypos, target) {
-		let itembox = document.createElement("img");
-		itembox.class = "fg";
-		itembox.src = "";
-		itembox.style.border = "1px solid #555";
-		itembox.style.position = "absolute";
-		itembox.style.top = (ypos + 2) + "px";
-		itembox.style.left = (xpos + 2) + "px";
-		
-		target.appendChild(itembox);
-		
-		this.box = itembox;
-		this.setSkill(this.skill);
-	}
-}
-
 
 function init() {
 	if (window.Event) {
@@ -153,6 +127,7 @@ function init() {
 	
 	// get the item dialog
 	itemDialog = document.getElementById("item-dialog");
+	skillDialog = document.getElementById("skill-dialog");
 	
 	get_variable_objects();
 	
@@ -223,9 +198,9 @@ function get_variable_objects() {
 	menu_screens.adventure = document.getElementById("adventure-screen");
 	menu_screens.settings = document.getElementById("settings-screen");
 	
-	menu_screens.area_box1 = document.getElementById("area-1-image");
-	menu_screens.area_box2 = document.getElementById("area-2-image");
-	menu_screens.area_box3 = document.getElementById("area-3-image");
+	menu_screens.area_box1 = document.getElementById("area-1-box");
+	menu_screens.area_box2 = document.getElementById("area-2-box");
+	menu_screens.area_box3 = document.getElementById("area-3-box");
 	
 	variableObjects.itemdialog = {};
 	variableObjects.itemdialog.border = document.getElementById("idlg-bord");
@@ -238,6 +213,13 @@ function get_variable_objects() {
 	variableObjects.itemdialog.bonus2 = document.getElementById("idlg3");
 	variableObjects.itemdialog.bonus3 = document.getElementById("idlg4");
 	variableObjects.itemdialog.acc_choice = document.getElementById("idlg-acc-choice");
+	
+	variableObjects.skilldialog = {};
+	variableObjects.skilldialog.sprite = document.getElementById("sdlg-spr");
+	variableObjects.skilldialog.name = document.getElementById("sdlg1");
+	variableObjects.skilldialog.desc = document.getElementById("sdlg2");
+	variableObjects.skilldialog.level = document.getElementById("sdlg3");
+	variableObjects.skilldialog.cost = document.getElementById("sdlg4-2");
 }
 
 
@@ -281,40 +263,6 @@ function switch_screen(screen) {
 	
 	menu_screens.screens[screen].style.visibility = "visible";
 	menu_screens.screens[screen].style.display = "block";
-}
-
-function initial_skills_render() {
-	skills_div = document.getElementById("skills-items");
-	skills_div.style.position = "absolute";
-	skills_div.style.left = "8px";
-    skills_div.style.top = "4px";
-	skills_div.style.width = "128px";
-    skills_div.style.height = "256px";
-	
-	for (i=0; i<6; i++) {
-		inventory_objs.push([]);
-		
-		for (j=0; j<4; j++) {
-			var xpos = j * 40;
-			var ypos = i * 36;
-			var skillid = (i * 4) + j;
-			skillid = Math.min(skillid, skills_list.length - 1);
-			
-			skillElem = new SkillFrame(skills_list[skillid]);
-			skillElem.makeBaseFrame(xpos, ypos, skills_div);
-			
-			skillElem.box.addEventListener("mouseenter", (function (skillid) { 
-														return function() {
-															console.log("set skill " + skillid + " mouseenter action here")
-														} 
-													})(skillid));
-													
-			skillElem.box.addEventListener("mouseleave", _ => console.log("set skill mouseout action here"));
-			skillElem.box.addEventListener("click", equip_button_pressed);
-
-			inventory_objs[i].push(skillElem);
-		}
-	}
 }
 
 // Set up keypress events

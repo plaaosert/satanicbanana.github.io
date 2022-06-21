@@ -47,6 +47,12 @@ function areaTick() {
 			
 			// enemy and player templates share the same attributes required for fighting. hooray for polymorphism
 			dmg_result = doAttack(char_in_context, target);
+			// attacking always provides a base amount of MP plus any bonuses
+			char_in_context.mp += 5;
+			if (char_in_context.current_mp > char_in_context.stats.max_mp) {
+				char_in_context.current_mp = char_in_context.stats.max_mp;
+			}
+			
 			console.log(char_in_context.name + " dealt " + dmg_result.damage + " damage to " + target.name + " (" + target.current_hp + " / " + target.stats.hp + ")");
 			
 			if (dmg_result.dead) { // if someone dies

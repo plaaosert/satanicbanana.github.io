@@ -208,7 +208,7 @@ class Player {
 	
 	fetch_all_skills() {
 		skills_list.forEach((skill) => {
-			this.skills.push([skill, false]);
+			this.skills.push([skill, 0]);
 		});
 	}
 	
@@ -538,7 +538,7 @@ function testrnd() {
 
 	metaplayer.sort_all_items();
 
-	player.skills[2][1] = true;
+	player.skills[2][1] = 50;
 	player.reset_all();
 
 	initial_inventory_render();

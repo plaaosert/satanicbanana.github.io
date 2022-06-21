@@ -1,7 +1,7 @@
 class Skill {
 	static id_inc = 0;
 	
-	constructor(name, bonus, desc, cost) {
+	constructor(name, bonus, cost, desc) {
 		this.id = Skill.id_inc;
 		Skill.id_inc += 1;
 		
@@ -15,19 +15,19 @@ class Skill {
 
 skills_list = [
 	new Skill(
-		"Swordplay", "Increase ATK by **+7** per level.", 1
+		"Swordplay", "Increase ATK by **+7** per level.", 2, "Remember all those lessons back in hero school? You'd better."
 	),
 	
 	new Skill(
-		"Embers", "Increase ATK by **+1%** per level.", 1
+		"Embers", "Increase ATK by **+1%** per level.", 2
 	),
 	
 	new Skill(
-		"Flow", "Increase AGI by **+3** per level.", 1
+		"Flow", "Increase AGI by **+3** per level.", 2
 	),
 	
 	new Skill(
-		"Magic Essence", "Increase MP gain on hit by **+1** per level.", 1
+		"Magic Essence", "Increase MP gain on hit by **+1** per level.", 2
 	),
 	
 	new Skill(
@@ -43,7 +43,7 @@ skills_list = [
 	),
 	
 	new Skill(
-		"Arcane Bestowal", "When you kill a monster, restore **+0.5%** max MP.", 5
+		"Arcane Bestowal", "When you kill a monster, restore **+0.25%** max MP.", 5
 	),
 	
 	new Skill(

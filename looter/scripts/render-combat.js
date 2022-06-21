@@ -86,6 +86,47 @@ class StatLabel {
 }
 
 
+class SkillFrame {
+	// frames are always initialised with a skill
+	constructor(skill) {
+		this.skill = skill;
+		this.box = null;
+	}
+	
+	setSkill(skill) {
+		// We pick either the skill on its own or "o".
+		this.box.src = "sprites/skills/skilltree/" + (player.skills[skill.id][1] >= 50 ? "o" : "") + skill.fname + ".png";
+	}
+	
+	makeBaseFrame(xpos, ypos, target) {
+		let itembox = document.createElement("img");
+		itembox.className = "fg";
+		itembox.src = "";
+		itembox.style.border = "1px solid #555";
+		itembox.style.position = "absolute";
+		itembox.style.top = (ypos + 2) + "px";
+		itembox.style.left = (xpos + 2) + "px";
+		
+		target.appendChild(itembox);
+		
+		this.box = itembox;
+		this.setSkill(this.skill);
+	}
+}
+
+
+class AreaFrame {
+	constructor(area, box) {
+		this.area = area;
+		this.box = box;
+	}
+	
+	setSkill(skill) {
+		// We pick either the skill on its own or "o".
+		this.box.src = "sprites/areas/" + area.id + ".png";
+	}
+}
+
 
 static_bars = []
 
@@ -129,6 +170,84 @@ function setup_static_bars() {
 	static_bars.push(player_lvl_label);
 	
 	static_bars.push(player_xpbar);
+	
+	area_location_1 = new AreaFrame(area_defs[0], menu_screens.area_box1);
+	area_location_2 = new AreaFrame(area_defs[0], menu_screens.area_box2);
+	area_location_3 = new AreaFrame(area_defs[0], menu_screens.area_box3);
+}
+
+
+function initial_skills_render() {
+	skills_div = document.getElementById("skills-items");
+	skills_div.style.position = "absolute";
+	skills_div.style.left = "8px";
+    skills_div.style.top = "4px";
+	skills_div.style.width = "128px";
+    skills_div.style.height = "256px";
+	
+	for (i=0; i<6; i++) {
+		inventory_objs.push([]);
+		
+		for (j=0; j<4; j++) {
+			var xpos = j * 40;
+			var ypos = i * 36;
+			var skillid = (i * 4) + j;
+			skillid = Math.min(skillid, skills_list.length - 1);
+			
+			skillElem = new SkillFrame(skills_list[skillid]);
+			skillElem.makeBaseFrame(xpos, ypos, skills_div);
+			
+			console.log(skillid);
+			skillElem.box.addEventListener("mouseenter", (function (skillid) { 
+														return function() {
+															make_skill_dialog(skillid);
+														} 
+													})(skillid));
+													
+			skillElem.box.addEventListener("mouseleave", kill_skill_dialog);
+			skillElem.box.addEventListener("click", equip_button_pressed);
+
+			inventory_objs[i].push(skillElem);
+		}
+	}
+}
+
+
+function make_skill_dialog(skill_id) {
+	// We don't actually make the skill dialog. We just update it with the skill info and move it to the cursor position +1
+	if (skillDialogInterval == null) {
+		// Get the skill in question. We need both the player's skill level and the skill info itself
+		skill_obj = skills_list[skill_id];
+		player_skill_level = player.skills[skill_obj.id][1];
+		
+		variableObjects.skilldialog.sprite.src = "sprites/skills/skilltree/" + (player_skill_level >= 50 ? "o" : "") + skill_obj.fname + ".png";
+		variableObjects.skilldialog.name.textContent = skill_obj.name;
+		variableObjects.skilldialog.desc.textContent = skill_obj.bonus;
+		variableObjects.skilldialog.level.textContent = "LV " + player_skill_level + "/50";
+		variableObjects.skilldialog.cost.textContent = skill_obj.cost;
+		
+		skillDialogInterval = setInterval(move_skill_dialog, 1/144);
+	}
+}
+
+
+function move_skill_dialog() {
+	// Set position of skill dialog to the cursor position
+	skillDialog.style.left = Math.ceil((mousex / 2) + 1);
+	skillDialog.style.top = Math.ceil((mousey / 2) + 1);
+}
+
+
+function kill_skill_dialog() {
+	// We don't actually kill the skill dialog. We just set its position to -1000,-1000
+	if (skillDialogInterval != null) {
+		selectedSkill = null;
+
+		skillDialog.style.left = -1000;
+		skillDialog.style.top = -1000;
+		clearInterval(skillDialogInterval);
+		skillDialogInterval = null;
+	}
 }
 
 

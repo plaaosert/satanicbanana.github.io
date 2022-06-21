@@ -3,7 +3,7 @@ area_defs = [
 		id: "001",
 		name: "Grasslands",
 		desc: "A peaceful place with no real dangers to speak of. Probably.",
-		avg_level: 0,
+		avg_level: 1,
 		
 		min_encounter: 5, // in seconds
 		max_encounter: 15,

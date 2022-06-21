@@ -162,17 +162,23 @@
 						
 							<img id="area-arrow-left" class="faded-img" style="top:0px; left:-32px; height:28px; width:28px;" src="sprites/UI/left.png"></img>
 							
-							<img id="area-1-border" style="top:0px; left:0px;" src="sprites/items/borders/i999.png"></img>
-							<img id="area-1-plholder" style="top:0px; left:0px;" src="sprites/items/borders/000.png"></img>
-							<img id="area-1-image" style="top:2px; left:2px;" src="sprites/areas/001.png"></img>
+							<div id="area-1-box">
+								<img id="area-1-border" style="top:0px; left:0px;" src="sprites/items/borders/i999.png"></img>
+								<img id="area-1-plholder" style="top:0px; left:0px;" src="sprites/items/borders/000.png"></img>
+								<img id="area-1-image" style="top:2px; left:2px;" src="sprites/areas/001.png"></img>
+							</div>
 							
-							<img id="area-2-border" style="top:0px; left:32px;" src="sprites/items/borders/i999.png"></img>
-							<img id="area-2-plholder" style="top:0px; left:32px;" src="sprites/items/borders/001.png"></img>
-							<img id="area-2-image" style="top:2px; left:34px;" src="sprites/areas/001.png"></img>
+							<div id="area-2-box">
+								<img id="area-2-border" style="top:0px; left:32px;" src="sprites/items/borders/i999.png"></img>
+								<img id="area-2-plholder" style="top:0px; left:32px;" src="sprites/items/borders/001.png"></img>
+								<img id="area-2-image" style="top:2px; left:34px;" src="sprites/areas/001.png"></img>
+							</div>
 							
-							<img id="area-3-border" style="top:0px; left:64px;" src="sprites/items/borders/i999.png"></img>
-							<img id="area-3-plholder" style="top:0px; left:64px;" src="sprites/items/borders/002.png"></img>
-							<img id="area-3-image" style="top:2px; left:66px;" src="sprites/areas/001.png"></img>
+							<div id="area-3-box">
+								<img id="area-3-border" style="top:0px; left:64px;" src="sprites/items/borders/i999.png"></img>
+								<img id="area-3-plholder" style="top:0px; left:64px;" src="sprites/items/borders/002.png"></img>
+								<img id="area-3-image" style="top:2px; left:66px;" src="sprites/areas/001.png"></img>
+							</div>
 							
 							<img id="area-arrow-right" class="full-img" style="top:0px; left:96px; height:28px; width:28px;" src="sprites/UI/right.png"></img>
 							
@@ -272,32 +278,24 @@
 			<p id="idlg-acc-choice" style="visibility:hidden; top:120px; left:70px" class="item-sub">&nbsp;&nbsp;&nbsp;&nbsp;| (1) slot 1<br>----| (2) slot 2<br>&nbsp;&nbsp;&nbsp;&nbsp;| (3) slot 3</p>
 		</div>
 		
-		<div class="menu" id="item-dialog" style="left:200px; top:1000px; width:140px;height:160px;background:#222;border:2px solid #000;">
-			<img id="adlg-bord" style="top:8px; left:8px" src="sprites/items/borders/001.png"></img>
-			<img id="adlg-bord2" style="top:8px; left:8px" src=""></img>
-			<img id="adlg-spr" style="top:10px; left:10px;" src="sprites/areas/001.png"></img>
-			<p id="adlg1" class="item-bold">-</p>
-			<p id="idlg-rarity" style="top:36px; left:12px;" class="item-tiny">Rare</p>
-			<p id="idlg-lvl" style="top:46px; left:12px;" class="item-tiny">Item level 1</p>
-			<p id="idlg2" style="top:60px;" class="item-sub">-</p>
-			<p id="idlg3" style="top:76px;" class="item-sub">-</p>
-			<p id="idlg4" style="top:92px;" class="item-sub">-</p>
-			<p style="top:120px;" class="item-misc">
-			(c)ompare    <br>
-			(e)quip/unequip      <br>
-			(s)ell       
-			</p>
+		<div class="menu" id="skill-dialog" style="left:-2000px; top:-2000px; width:140px;height:70px;background:#222;border:2px solid #000;">
+			<img id="sdlg-spr" style="top:10px; left:10px; border:1px solid #555" src="sprites/skills/skilltree/000.png"></img>
+			<p id="sdlg1" style="left:44px;" class="item-bold">Skill name</p>
+			<p id="sdlg2" style="top:16px; left:44px;" class="item-tiny">Skill description ahbsajhsb ajshas jhabs ajhb ajhsbajhs abjshabsjhabsajhs ajhb sa</p>
+			
+			<p id="sdlg3" style="top:32px; left:7px; color: fff" class="item-sub">LV 0/50</p>
+			<p id="sdlg4" style="top:48px;" class="item-tiny">Costs <span id="sdlg4-2" style="color:#0ce; font-weight:bold">1</span> skill points per level</p>
 		</div>
 		
-		<div class="menu" id="skill-dialog" style="left:10px; top:1000px; width:140px; height:132px; background:#222;border:2px solid #000;">
-			<img id="sdlg-bord" style="top:8px; left:8px" src="sprites/items/borders/009.png"></img>
-			<img id="sdlg-spr" style="top:10px; left:10px;" src="sprites/skills/ingame/001.png"></img>
-			<p id="sdlg1" style="top:10px; left:40px; text-align: center;" class="item-bold">Fireball</p>
-			<p id="sdlg2" style="top:36px;" class="item-misc">Deal 150% ATK as damage to the enemy. Ignores enemy DEF.</p>
-			<div id="sdl33-block" style="top:74px; width:100px; position:absolute;">
-				<p id="sdlg3" style="position:relative;" class="item-misc">Damage: <span id="sdlg3-2" style="color:#ce0;">40</span></p>
-				<p id="sdlg4" style="position:relative;" class="item-misc">Glubby: <span id="sdlg4-2" style="color:#ce0;">--</span></p>
-				<p id="sdlg5" style="position:relative;" class="item-misc">MP: <span id="sdlg5-2" style="color:#ce0;">780</span><span id="sdlg5-2" style="color:#6f0;"> (Castable)</span></p>
+		<div class="menu" id="ability-dialog" style="left:10px; top:1000px; width:140px; height:132px; background:#222;border:2px solid #000;">
+			<img id="adlg-bord" style="top:8px; left:8px" src="sprites/items/borders/009.png"></img>
+			<img id="adlg-spr" style="top:10px; left:10px;" src="sprites/skills/ingame/001.png"></img>
+			<p id="adlg1" style="top:10px; left:40px; text-align: center;" class="item-bold">Fireball</p>
+			<p id="adlg2" style="top:36px;" class="item-misc">Deal 150% ATK as damage to the enemy. Ignores enemy DEF.</p>
+			<div id="adl33-block" style="top:74px; width:100px; position:absolute;">
+				<p id="adlg3" style="position:relative;" class="item-misc">Damage: <span id="sdlg3-2" style="color:#ce0;">40</span></p>
+				<p id="adlg4" style="position:relative;" class="item-misc">Glubby: <span id="sdlg4-2" style="color:#ce0;">--</span></p>
+				<p id="adlg5" style="position:relative;" class="item-misc">MP: <span id="sdlg5-2" style="color:#ce0;">780</span><span id="sdlg5-2" style="color:#6f0;"> (Castable)</span></p>
 			</div>
 		</div>
 		

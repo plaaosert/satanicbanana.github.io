@@ -3292,4 +3292,76 @@ updates = [
           },
         ]
       },
+	  
+	  {
+    "name": "Slash Commands",
+    "id": "0.6.5",
+    "date": "21/06/2022",
+    "flavour": "I'm back... mostly",
+    "categories": [
+      {
+            "name": "General",
+            "changes": [
+              {
+                "type": "1",
+                "text": "Most commands now include Discord view components. All commands have a slash command equivalent. This functionality is highly experimental and is very very likely to cause bugs, so sorry in advance."
+              },
+              {
+                "type": "2",
+                "text": "P/MATK scaling formula reworked. Old: `(80(20 + STR/WIS) + 105(20 + AGI/INT))^0.55` New: `(7(20 + STR/WIS) + 15(20 + AGI/INT))^0.66`. This is an overall **reduction in all damage by around 15%**, with the most reduction happening in the midgame. Damage will also scale quicker in the lategame (LV20+), making \"glass cannon\" builds less effective early but better in effectiveness later."
+              },
+              {
+                "type": "1",
+                "text": "All XP from damage and healing increased by **+100%**."
+              },
+              {
+                "type": "1",
+                "text": "XP scaling from kill increased from `level^1.1` to `level^1.15`."
+              },
+              {
+                "type": "3",
+                "text": "XP gained from death can now no longer cause a levelup (is capped at one below the XP needed to level up)"
+              },
+              {
+                "type": "3",
+                "text": "Levelling up HP/MP restore reduced from **100%** to **50%**."
+              },
+              {
+                "type": "2",
+                "text": "Death and revival no longer affect MP. Instead, MP is recovered at a **50%** rate while dead."
+              },
+              {
+                "type": "1",
+                "text": "Command `b!view players` has been reworked for consistency to `b!view player [player name/list]` The player list now also shows every player's class and damage multiplier. <https://i.imgur.com/4b7aEnm.png>"
+              },
+            ]
+          },
+          {
+            "name": "Gladiator",
+            "changes": [
+              {
+                "type": "1",
+                "text": "Gladiator reworked. Signature `Arena of Blood` changed into `Channel Anger` (talent upgrades `Channel Glory`, `Channel Fury`). This move grants a unique and permanent \"Rage\" effect which increases whenever the player takes damage up to a maximum of 6, granting numerous bonuses and adding the skills `Arena of Blood` (2), `Consolidate Rage` (4), `Overwhelm` (5) and `Blaze of Fury` (6)."
+              },
+              {
+                "type": "3",
+                "text": "`Arena of Blood` changed to only taunt enemies, not retaliate."
+              },
+            ]
+          },
+          {
+            "name": "Juggernaut",
+            "changes": [
+              {
+                "type": "2",
+                "text": "Left-side LV20 talent was outdated since Flowing Slash no longer exists. New effect: `0.85x spell costs`"
+              },
+              {
+                "type": "2",
+                "text": "Right-side LV20 talent was outdated since Flowing Slash no longer exists. New effect: `+22% PATK`"
+              },
+			]
+		  }
+        ]
+      },
 ]

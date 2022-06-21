@@ -1,5 +1,5 @@
 accessoryInfo = [
-	[["001", "Broach", "stats.hp"], ["029", "Simple Necklace", "stats.def"], ["036", "Turban", "stats.def"], ["038", "Slippers", "stats.agi"]],
+	[["001", "Brooch", "stats.hp"], ["029", "Simple Necklace", "stats.def"], ["036", "Turban", "stats.def"], ["038", "Slippers", "stats.agi"]],
 	[["002", "Red Broach", "stats.atk"], ["003", "Bracelet", "stats.hp"], ["015", "Ring", "stats.def"], ["034", "Worn Gloves", "stats.atk"], ["037", "Comfy Boots", "stats.agi"]],
 	[["011", "Silver Ring", "stats.mp"], ["014", "Bronze Coin", "stats.def"], ["016", "Silver Bracelet", "stats.hp"], ["020", "Ribbon", "stats.luc"], ["028", "Small Pendant", "stats.def"], ["045", "Strange Shoes", "bonuses.crit_chance"]],
 	[["005", "HP Gem", "stats.hp"], ["010", "Golden Ring", "stats.mp"], ["013", "Silver Coin", "stats.luc"], ["017", "Golden Bracelet", "stats.hp"], ["021", "Earring", "stats.atk"], ["026", "Magical Glasses", "bonuses.xp_bonus"], ["032", "Hairband", "stats.def"], ["035", "Artificer's Goggles", "bonuses.loot_chance"], ["039", "Elven Boots", "stats.agi"], ["047", "Hardy Gloves", "stats.atk"]],
