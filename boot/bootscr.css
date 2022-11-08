@@ -1,0 +1,33 @@
+* {
+    margin: 0px;
+    padding: 0px;
+    vertical-align: top;
+ }
+
+body {
+    color: white;
+    background-color: black;
+    font-family: "Courier New", Courier, monospace;
+    overflow: hidden;
+}
+
+.console {
+    position:absolute;
+    background-color: #000000;
+    color: #FFFFFF;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 12pt;
+    font-weight: normal;
+    top:0px;
+    left:0px;
+    text-align: left;
+    text-decoration: none;
+    white-space: pre;
+    vertical-align: top;
+}
+
+.console_text {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+}

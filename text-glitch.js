@@ -1,4 +1,4 @@
-// hardcoding to get the needed elements - this could be achieved using some sort of json data too
+/*
 let l1 = document.getElementById('1');
 l1.onmouseover = l1.onmouseout = handler;
 let l2 = document.getElementById('2');
@@ -9,6 +9,7 @@ let l4 = document.getElementById('4');
 l4.onmouseover = l4.onmouseout = handler;
 let l5 = document.getElementById('5');
 l5.onmouseover = l5.onmouseout = handler;
+*/
 
 // "alt strings" as a dict for every id
 aims = {
@@ -16,21 +17,23 @@ aims = {
 	"2":">> the battlepost information repository",
 	"3":">> infinite match-3 game",
 	"4":">> a \"unique\" word-guessing game",
-	"5":">> select another style for the ocean"
+	"5":">> select another style for the ocean",
+	"6":">> drwxr-xr-x 8 plaao plaao 4096 Nov 06 03:40 ..",
+	"7":"plaaosert#6386"
 };
 
-// setup original texts too
-origs = {
-	"1":l1.text,
-	"2":l2.text,
-	"3":l3.text,
-	"4":l4.text,
-	"5":l5.text
-}
+num_glitch_elements = Object.keys(aims).length;
 
+// select elements using format "#" where # is i
+// then set their onmouseover and onmouseout to handler (defined below)
+for (var i = 1; i <= num_glitch_elements; i++) {
+	var l = document.getElementById(i);
+	l.onmouseover = l.onmouseout = handler;
+}
 
 // "grow/shrink" intervals currently active on each element so that they can be stopped
 // to avoid useless function calls
+/*
 evts = {
 	"1":null,
 	"2":null,
@@ -38,6 +41,26 @@ evts = {
 	"4":null,
 	"5":null
 }
+*/
+evts = {};
+
+// setup original texts too
+origs = {}
+for (var i = 1; i <= num_glitch_elements; i++) {
+	var l = document.getElementById(i);
+	origs[i.toString()] = l.text;
+	evts[i.toString()] = null;
+}
+
+/*
+origs = {
+	"1":l1.text,
+	"2":l2.text,
+	"3":l3.text,
+	"4":l4.text,
+	"5":l5.text
+}
+*/
 
 
 // event handler for both events needed

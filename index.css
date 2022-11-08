@@ -70,7 +70,7 @@ ul {
 	right: 24px;
 }
 
-#social-link {
+.social-link {
 	font-size: 24px;
 }
 
@@ -78,7 +78,7 @@ ul {
 	white-space: nowrap pre;
 	pointer-events: none;
 	float: left;
-	position: absolute;
+	position: fixed;
 	width:100%;
     bottom:-30px;
 	left: -12px;

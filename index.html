@@ -3,7 +3,7 @@
 <head>
 	<meta charset = "UTF-8">
 	<title>pl</title>
-	<link rel="stylesheet" type="text/css" href="index.css?v=1"/>
+	<link rel="stylesheet" type="text/css" href="index.css?v=02"/>
 	
 	<meta content="plaao.net" property="og:title" />
     <meta content="plaaosert website" property="og:description" />
@@ -14,46 +14,53 @@
 <body>
 	<script src="music.js"></script>
 	<div class="socials">
-		<a id="social-link" style="color: #42bcf5" href="https://twitter.com/plaaosert">twitter</a>
+		<a class="destructible social-link" style="color: #42bcf5" href="https://twitter.com/plaaosert">twitter</a>
 		<br><br>
-		<a id="social-link" style="color: #b88cff" href="https://twitch.com/plaaosert">twitch</a>
+		<a class="destructible social-link" style="color: #b88cff" href="https://twitch.com/plaaosert">twitch</a>
+		<br><br>
+		<a class="destructible social-link" style="color: #cccccc" href="https://github.com/plaaosert">github</a>
+		<br><br>
+		<a class="destructible social-link" id="7" style="color: #7289da" href="javascript:void(0)">discord</a>
 	</div>
 
 	<div id="links">
-		<script src="defs.js?v=01"></script>
-		<h1>// plaaosert //</h1>
+		<script src="defs.js?v=02"></script>
+		<h1 id="banner">// plaaosert //</h1>
 		<ul>
-			<li><a id="1" href="twitchpost/help.html">## twitchpost</a></li>
-			<li><a id="2" href="battlepost/index.html">## battlepost</a></li>
-			<li><a id="3" href="bej/bej.html">## bej</a></li>
-			<li><a id="4" href="words/index.html">## words</a></li>
-			<li><a id="5" href="javascript:void(0)" onclick="switch_to_next();">## control canvas</a></li>
+			<li><a class="destructible" id="1" href="twitchpost/help.html">## twitchpost</a></li>
+			<li><a class="destructible" id="2" href="battlepost/index.html">## battlepost</a></li>
+			<li><a class="destructible" id="3" href="bej/bej.html">## bej</a></li>
+			<li><a class="destructible" id="4" href="words/index.html">## words</a></li>
+			<li><a class="destructible" id="5" href="javascript:void(0)" onclick="switch_to_next();">## control canvas</a></li>
+			<li><a style="display: none" class="destructible" id="6" onclick="engage();">## ..</a></li>
 		</ul>
 		
-		<script src="text-glitch.js?v=01"></script>
+		<script src="text-glitch.js?v=02"></script>
 	</div>
 	
-	<h1 id="music-player">00:00 [&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;] 99:99</h1>
+	<h1 style="display:none" class="destructible" id="music-player">00:00 [&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;] 99:99</h1>
 	
 	<div id="ocean" style="display: none">
 		<!-- basically just a huge textbox -->
 		<p id="ocean-content", class="canvas">t</p>
 		
-		<script src="the-sea.js?v=01"></script>
+		<script src="the-sea.js?v=02"></script>
 	</div>
 	
 	<div id="ocean-alt" style="display: none">
 		<!-- basically just a huge textbox -->
 		<p id="ocean-content-alt", class="canvas">t</p>
 		
-		<script src="the-sea-alt.js?v=01"></script>
+		<script src="the-sea-alt.js?v=02"></script>
 	</div>
 	
 	<div id="switch">
 		<!-- basically just a huge textbox -->
 		<p id="switch-content", class="canvas"></p>
 		
-		<script src="switch.js?v=01"></script>
+		<script src="switch.js?v=02"></script>
 	</div>
+
+	<script src="reboot.js?v=00"></script>
 </body>
 </html>
