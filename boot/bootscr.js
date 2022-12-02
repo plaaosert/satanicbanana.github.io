@@ -168,9 +168,32 @@ messages = [
     ["(c) SNTL Corporation. All rights reserved.", "#ffffff", 1, 5],
     ["Welcome.", "#ffffff", 1, 20],
     ["", "#ffffff", 1, 5],
-    [">> ", "#ffffff", 1, 1600],
+    [">> ", "#ffffff", 1, 1200],
     ["Hello?", "#ffff00", 3, 50],
+    [">> ", "#ffffff", 1, 800],
+    ["Huh. ", "#ffff00", 3, 200],
+    ["Input service not working again?", "#ffff00", 3, 50],
     [">> ", "#ffffff", 1, 400],
+    ["Let me sort that out for you.", "#ffff00", 3, 50],
+    [">> ", "#ffffff", 1, 400],
+    ["[   OK   ] Started InputHandler", "#ffffff", 1, 200],
+    ["[   OK   ] Stopped InputHandler", "#ff0000", 1, 100],
+    ["[   OK   ] Stopped InputHandler", "#ffffff", 0, 600],
+    ["That's weird.", "#ffff00", 4, 50],
+    [">> ", "#ffffff", 1, 400],
+    ["[   OK   ] Started InputHandler", "#ffffff", 1, 200],
+    ["[   OK   ] Stopped InputHandler", "#ff0000", 1, 100],
+    ["[   OK   ] Stopped InputHandler", "#ffffff", 0, 600],
+    ["Asshole system.", "#ffff00", 4, 50],
+    [">> ", "#ffffff", 1, 400],
+    ["Whatever. ", "#ffff00", 3, 200],
+    ["I'm uploading a script to make this work. ", "#ffff00", 3, 200],
+    ["One second.", "#ffff00", 3, 50],
+    [">> ", "#ffffff", 1, 400],
+    ["Okay, click the [ETERNA] button below.", "#ffff00", 3, 100],
+]
+
+/*
     ["Okay, either you're choosing not to type anything, you're dead or something's gone wrong with the input service. ", "#ffff00", 3, 250],
     ["Again.", "#ffff00", 3, 50],
     [">> ", "#ffffff", 1, 400],
@@ -247,6 +270,7 @@ messages = [
     [">> ", "#ffffff", 1, 400],
     ["Click this button I'm summoning below and we can get started.", "#ffff00", 3, 400],
 ]
+*/
 
 /*
 Hello?
@@ -281,5 +305,75 @@ I really do hope you're one of my coworkers. That'll make this so much simpler.
 Hm. Seems to work this time.
 Click this button I'm summoning below and we can get started.
 */
+
+function switch_to_second_set() {
+    // Set messages array to a new set of messages
+    messages = [
+        ["chusr: changed context to <paul.w>", "#ffffff", 1, 50],
+        ["[                          ] patch.xdr", "#ffffff", 1, 10],
+        ["[>                         ] patch.xdr", "#ffffff", 0, 40],
+        ["[=>                        ] patch.xdr", "#ffffff", 0, 40],
+        ["[==>                       ] patch.xdr", "#ffffff", 0, 40],
+        ["[===>                      ] patch.xdr", "#ffffff", 0, 40],
+        ["[====>                     ] patch.xdr", "#ffffff", 0, 30],
+        ["[=====>                    ] patch.xdr", "#ffffff", 0, 20],
+        ["[======>                   ] patch.xdr", "#ffffff", 0, 10],
+        ["[=======>                  ] patch.xdr", "#ffffff", 0, 10],
+        ["[========>                 ] patch.xdr", "#ffffff", 0, 10],
+        ["[=========>                ] patch.xdr", "#ffffff", 0, 10],
+        ["[==========>               ] patch.xdr", "#ffffff", 0, 10],
+        ["[===========>              ] patch.xdr", "#ffffff", 0, 10],
+        ["[============>             ] patch.xdr", "#ffffff", 0, 10],
+        ["[=============>            ] patch.xdr", "#ffffff", 0, 30],
+        ["[==============>           ] patch.xdr", "#ffffff", 0, 40],
+        ["[===============>          ] patch.xdr", "#ffffff", 0, 60],
+        ["[================>         ] patch.xdr", "#ffffff", 0, 60],
+        ["[=================>        ] patch.xdr", "#ffffff", 0, 60],
+        ["[==================>       ] patch.xdr", "#ffffff", 0, 40],
+        ["[===================>      ] patch.xdr", "#ffffff", 0, 40],
+        ["[====================>     ] patch.xdr", "#ffffff", 0, 10],
+        ["[=====================>    ] patch.xdr", "#ffffff", 0, 10],
+        ["[======================>   ] patch.xdr", "#ffffff", 0, 20],
+        ["[=======================>  ] patch.xdr", "#ffffff", 0, 10],
+        ["[========================> ] patch.xdr", "#ffffff", 0, 20],
+        ["[=========================>] patch.xdr", "#ffffff", 0, 120],
+        ["[==========================] patch.xdr", "#ffffff", 0, 10],
+        ["patch.xdr", "#ffffff", 1, 100],
+        ["./patch.xdr", "#ffffff", 1, 150],
+        ["Binding to interface n8", "#ffffff", 1, 200],
+        ["Opening ETERNA connection", "#ffffff", 1, 200],
+    ];
+
+    // Delete the stickyLink element
+    stickyLink.remove();
+
+    // Overwrite printFinish with a function to change the page to eterna_boot.html
+    printFinish = function() {
+        window.location.href = "eterna_boot.html";
+    };
+
+    // Reset message index
+    message_index = 0;
+
+    // Start print message again
+    printMessage();
+}
+
+stickyLink = null;
+
+function printFinish() {
+    if (lines.length > 0) {
+        lines[lines.length - 1].textContent += "\n";
+    }
+
+    var new_line = document.createElement("a");
+    stickyLink = new_line;
+    new_line.onclick = switch_to_second_set;
+    new_line.textContent = " [ETERNA] ";
+    new_line.style.color = "#00ffff";
+    document.getElementById("boot-text").appendChild(new_line);
+
+    window.scrollTo(0, document.body.scrollHeight || document.documentElement.scrollHeight);
+}
 
 printMessage();

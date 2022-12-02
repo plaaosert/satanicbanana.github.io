@@ -17,25 +17,12 @@ message_index = 0;
 
 lines = [];
 
-function printFinish() {
-    if (lines.length > 0) {
-        lines[lines.length - 1].textContent += "\n";
-    }
-
-    var new_line = document.createElement("a");
-    new_line.href = "eterna_boot.html";
-    new_line.textContent = " [ETERNA] ";
-    new_line.style.color = "#00ffff";
-    document.getElementById("boot-text").appendChild(new_line);
-
-    window.scrollTo(0, document.body.scrollHeight || document.documentElement.scrollHeight);
-}
-
 // set a timeout to print the current message, then increment the message index and wait for the next interval
 // message prints are done by appending another span to the p element with id "boot-text"
 function printMessage() {
     if (message_index >= messages.length) {
         printFinish();
+        return;
     }
 
     var current_message = messages[message_index];

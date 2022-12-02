@@ -4,6 +4,7 @@
 	<meta charset = "UTF-8">
 	<title>ETERNA</title>
 	<link rel="stylesheet" type="text/css" href="bootscr.css?v=1"/>
+	<link rel="stylesheet" type="text/css" href="eterna/style.css?v=1"/>
 	
 	<meta content="plaao.net" property="og:title" />
     <meta content="plaaosert website" property="og:description" />
@@ -12,8 +13,61 @@
     <meta content="#cccccc" data-react-helmet="true" name="theme-color" />
 </head>
 <body>
-	<p>block game goes here</p>
-	<p>if you're here early, congrats! here's a few gifs from the game prototype.</p>
-	<img src="cool_ass_animation.gif"><img src="cool_ass_animation_2.gif">
+	<script src="eterna/eterna_opening.js"></script>
+
+	<div id="loginform" class="loginform" style="visibility:hidden">
+		<p class="loginform-title">Enter Credentials</p>
+		<div class="loginform-row">
+			<div class="loginform-img">
+				<img src="eterna/sprites/ui/icons/aseprite.png" alt="logo" class="loginform-img-logo">
+			</div>
+			<div class="loginform-content">
+				<p>Please enter your credentials to access this system.</p>
+		
+				<input type="text" disabled	id="username" value="paul.w"/>
+				<input type="password" disabled	id="password" value="you're not meant to be looking here :-)"/>
+				<button id="loginform-button" onclick="load_icons()">Log in</button>
+			</div>
+		</div>
+		<br>
+		<p class="warning">Be aware that this is an SNTL <span style="color:#b00">internal</span> system. It is a crime to access any internal SNTL system without explicit permission.</p>
+	</div>
+
+	<div class="left-bar">
+		<div class="icon" id="icon-0" style="visibility:hidden">
+			<img src="eterna/sprites/ui/icons/briefcase.png">
+			<p class="icon_text">Thing</p>
+		</div>
+		<div class="icon" id="icon-1" style="visibility:hidden">
+			<img src="eterna/sprites/ui/icons/briefcase.png">
+			<p class="icon_text">Thing</p>
+		</div>
+		<div class="icon" id="icon-2" style="visibility:hidden">
+			<img src="eterna/sprites/ui/icons/briefcase.png">
+			<p class="icon_text">Thing</p>
+		</div>
+		<div class="icon" id="icon-3" style="visibility:hidden">
+			<img src="eterna/sprites/ui/icons/briefcase.png">
+			<p class="icon_text">Thing</p>
+		</div>
+		<div class="icon" id="icon-4" style="visibility:hidden">
+			<img src="eterna/sprites/ui/icons/briefcase.png">
+			<p class="icon_text">Thing</p>
+		</div>
+		<div class="icon" id="icon-5" style="visibility:hidden">
+			<img src="eterna/sprites/ui/icons/briefcase.png">
+			<p class="icon_text">Thing</p>
+		</div>
+		<div class="icon" id="icon-6" style="visibility:hidden">
+			<img src="eterna/sprites/ui/icons/briefcase.png">
+			<p class="icon_text">Thing</p>
+		</div>
+		<div class="icon" id="icon-7" style="visibility:hidden">
+			<img src="eterna/sprites/ui/icons/briefcase.png">
+			<p class="icon_text">Thing</p>
+		</div>
+	</div>
+	
+	<p onclick="load_eterna()">🔴</p>
 </body>
 </html>
