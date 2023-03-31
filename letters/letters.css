@@ -23,6 +23,24 @@ body {
 	-webkit-font-smoothing:none;
 }
 
+.overlay{
+    opacity:1;
+    background-color:#000;
+    position:fixed;
+    width:100%;
+    height:100%;
+    top:0px;
+    left:0px;
+    z-index:1000;
+}
+
+.dead-center {
+	color: #fff;
+	text-align: center;
+	vertical-align: middle;
+	font-size: 2vmin;
+}
+
 .bottombar {
     position: fixed;
     bottom: 0px;

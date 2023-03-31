@@ -12,11 +12,14 @@
 	<link rel="stylesheet" type="text/css" href="letters.css?v=0"/>
 </head>
 <body>
+	<div class="overlay" id="loading-overlay">
+		<p class="dead-center">my solver isn't very good so please wait while it finds a puzzle which can be solved</p>
+	</div>
+
 	<div class="topbar">
 		<p class="top-text" style="top: -16px; left: 32px">Solved: <span id="solved-num" class="important">0</span></p>
 		<p class="top-text" style="top: 16px; left: 32px">Score: <span id="score-num" class="important">0</span></p>
 		
-		<p class="top-text" style="left: 360px">Streak: <span id="streak-num" class="important">0x</span></p>
 		<p class="right-text" style="font-size: 16px; top:-8px; color:#ccc;">you have been actively playing for <span class="important" id="session-time">00:00:00</span> in this session, <span class="important" id="all-time">00:00:00:00</span> total and <span class="important" id="global-time">00:00:00:00</span> across all plaao.net games</p>
 	</div>
 	

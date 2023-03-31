@@ -42,11 +42,22 @@ if (!time) {
 }
 
 letters = [
-	"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"
+	"S", "F", "C", "E", "A", "T", "B", "I", "W", "L", "M", "N"
 ];
 building_word = "";
 current_selected_letter = null;
 words_used = [];
+filtered_words = [];
+generating = false;
+
+var url_string = window.location.href; 
+var url = new URL(url_string);
+var demo_val = url.searchParams.get("demo");
+
+demo = false;
+if (demo_val) {
+	demo = true;
+}
 
 function update_time() {
 	time += 1;
@@ -65,13 +76,26 @@ letter_elems = [];
 letter_buttons = [];
 word_history_elems = [];
 
+score = 0;
+solved = 0;
+
+function update_scores() {
+	document.getElementById("score-num").textContent = score.toString();
+	document.getElementById("solved-num").textContent = solved.toString();
+}
+
 function setup_elements() {
+	letter_elems = [];
+	letter_buttons = [];
+	word_history_elems = [];
+
 	element_id_nums = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 	element_id_nums.forEach(element => {
 		let letter_elem = document.getElementById("letter-" + element);
 		let letter_button_elem = document.getElementById("letter-button-" + element);
 
 		let cur_val = element;
+		letter_elem.textContent = letters[cur_val];
 		letter_button_elem.addEventListener("click", function() {
 			select_letter(cur_val);
 		})
@@ -82,8 +106,37 @@ function setup_elements() {
 
 	for (var i=0; i<9; i++) {
 		word_history_elems.push(document.getElementById("word-result-" + i));
-		word_history_elems[i].textContent = "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0";
+		word_history_elems[i].textContent = "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0";
 	}
+
+	filtered_words = [];
+	words.forEach(word => {
+		if (word.split("").every(c => letters.includes(c.toUpperCase())) && word.length > 1) {
+			filtered_words.push(word);
+		}
+	});
+
+	var new_filtered_words = []
+	filtered_words.forEach(word => {
+		var last_pos = null;
+		var success = true;
+		for (var i=0; i<word.length; i++) {
+			var new_pos = letter_to_id(word.charAt(i));
+
+			if (!valid_to_select(last_pos, new_pos)) {
+				success = false;
+				break;
+			}
+
+			last_pos = new_pos;
+		}
+
+		if (success) {
+			new_filtered_words.push(word.toUpperCase());
+		}
+	});
+
+	filtered_words = new_filtered_words;
 }
 
 function letter_in_used_words(letter) {
@@ -151,7 +204,7 @@ function update_word_history() {
 			}
 		}
 
-		word_history_elems[i].textContent = st.padEnd(10, "#").replaceAll("#", "\u00A0");
+		word_history_elems[i].textContent = st.padEnd(14, "#").replaceAll("#", "\u00A0");
 	}
 }
 
@@ -189,7 +242,11 @@ function get_current_word() {
 	return building_word + letters[current_selected_letter];
 }
 
-function select_letter(letter_id) {
+function select_letter(letter_id, ignore_generating) {
+	if (generating && !ignore_generating) {
+		return;
+	}
+
 	letter_elem = letter_elems[letter_id];
 	letter_button = letter_buttons[letter_id];
 
@@ -201,6 +258,10 @@ function select_letter(letter_id) {
 }
 
 function undo() {
+	if (generating) {
+		return;
+	}
+
 	if (building_word.length == 0) {
 		// pop the previous word off from the used words
 		if (words_used.length == 0) {
@@ -227,19 +288,182 @@ function undo() {
 	update_word_history();
 }
 
-function complete_word(ignore_checks) {
+function complete_word(ignore_checks, ignore_generating) {
+	if (generating && !ignore_generating) {
+		return;
+	}
+
 	if (!get_current_word()) {
 		return;
 	}
 
-	final_word = get_current_word().toLowerCase();
+	final_word = get_current_word();
 
-	if (words.includes(final_word) || ignore_checks) {
+	if (filtered_words.includes(final_word) || ignore_checks) {
 		words_used.push(final_word.toUpperCase());
 		building_word = "";
+
+		if (letters.every(c => {return words_used.some(word => word.includes(c))})) {
+			win();
+			return;
+		}
 	
 		update_letter_elems();
 		update_word_history();
+	}
+}
+
+function regenerate_random_puzzle() {
+	current_selected_letter = null;
+	building_word = ""
+	words_used = [];
+	letters = [];
+
+	var choices = "ABCDEFGHIJKLMNPQRSTUVWXYZ";
+	for (var i=0; i<12; i++) {
+		letters.push(choices.charAt(Math.floor(Math.random() * choices.length)));
+		choices = choices.replace(letters[i], "");
+	}
+
+	setup_elements();
+	update_letter_elems();
+	update_word_history();
+}
+
+function solve_current_puzzle_2(selected, picked_words, depth, max_depth) {
+	if (depth > max_depth) {
+		return null;
+	}
+
+	if (letters.every(c => {return picked_words.some(word => word.includes(c))})) {
+		return picked_words;
+	};
+
+	// find all words which may follow from the current
+	var candidates = [];
+	if (selected == null) {
+		candidates = filtered_words.slice();
+	} else {
+		candidates = filtered_words.filter(word => word.startsWith(selected) && !picked_words.includes(word));
+	}
+
+	var letters_remaining = [];
+	letters.forEach(c => {
+		if (!picked_words.some(word => word.includes(c))) {
+			letters_remaining.push(c);
+		}
+	});
+
+	var candidate_scores = {};
+	candidates.forEach(candidate => {
+		// rank each candidate by how many new letters it covers
+		let score = 0;
+		let new_chars = [];
+		candidate.split("").forEach(c => {
+			if (letters_remaining.includes(c) && !new_chars.includes(c)) {
+				new_chars.push(c);
+				score++;
+			}
+		})
+
+		candidate_scores[candidate] = -score;
+	});
+
+	candidates.sort(function(a, b){  
+		return candidate_scores[a] - candidate_scores[b];
+	});
+
+	// run function on all of them
+	for (var i=0; i<candidates.length; i++) {
+		let candidate = candidates[i];
+
+		let new_picked_words = picked_words.slice();
+		new_picked_words.push(candidate);
+		
+		let result = solve_current_puzzle_2(candidate.charAt(candidate.length - 1), new_picked_words, depth + 1, max_depth);
+		if (result != null) {
+			return result;
+		}
+	}
+}
+
+function automatically_win() {
+	current_selected_letter = null;
+	building_word = ""
+	words_used = [];
+
+	let solution = solve_current_puzzle_2(null, [], 0, 4);
+	let timer = 125;
+
+	solution.forEach(word => {
+		word.split("").forEach(c => {
+			setTimeout(function() {select_letter(letter_to_id(c), true)}, timer);
+			timer += 125;
+		})
+
+		setTimeout(function() {complete_word(false, true)}, timer);
+		timer += 125;
+	})
+}
+
+function win() {
+	function flash_up() {
+		letter_elems.forEach(elem => {
+			elem.classList.add("important");
+		})
+	}
+
+	function flash_down() {
+		letter_elems.forEach(elem => {
+			elem.classList.remove("important");
+		})
+	}
+
+	for (var i=0; i<2000; i+=400) {
+		setTimeout(flash_up, i);
+	}
+
+	for (var i=200; i<2000; i+=400) {
+		setTimeout(flash_down, i);
+	}
+
+	if (!demo) {
+		score += Math.max(1, 8 - words_used.length);
+		solved++;
+		update_scores();
+	}
+
+	setTimeout(function () {
+		if (!demo) {
+			document.getElementById("loading-overlay").style.display = "block";
+		}
+
+		setTimeout(function() {
+			generate_until_solvable();
+			
+			document.getElementById("loading-overlay").style.display = "none";
+
+			if (demo) {
+				setTimeout(function() {
+					automatically_win();
+				}, 100);
+			}
+		}, 100);
+	}, 2600);
+}
+
+function generate_until_solvable() {
+	generating = true;
+	while (true) {
+		regenerate_random_puzzle();
+		let solution = solve_current_puzzle_2(null, [], 0, 3);
+
+		if (solution != null) {
+			if (!demo) {
+				generating = false;
+			}
+			return;
+		}
 	}
 }
 
@@ -251,6 +475,15 @@ document.addEventListener("DOMContentLoaded", function() {
 
 	setup_elements();
 	update_letter_elems();
+
+	if (demo) {
+		generate_until_solvable(true);
+		document.getElementById("loading-overlay").style.display = "none";
+		automatically_win();
+	} else {
+		generate_until_solvable(true);
+		document.getElementById("loading-overlay").style.display = "none";
+	}
 
 	document.addEventListener('keydown', (event) => {
 		var name = event.key;
