@@ -330,8 +330,13 @@ function regenerate_random_puzzle() {
 	update_word_history();
 }
 
-function solve_current_puzzle_2(selected, picked_words, depth, max_depth) {
-	if (depth > max_depth) {
+function solve_current_puzzle(max_depth, timeout) {
+	solve_attempt_time = Date.now();
+	return solve_current_puzzle_2(null, [], 0, max_depth, timeout);
+}
+
+function solve_current_puzzle_2(selected, picked_words, depth, max_depth, timeout) {
+	if (depth > max_depth || Date.now() - timeout > solve_attempt_time) {
 		return null;
 	}
 
@@ -362,9 +367,12 @@ function solve_current_puzzle_2(selected, picked_words, depth, max_depth) {
 		candidate.split("").forEach(c => {
 			if (letters_remaining.includes(c) && !new_chars.includes(c)) {
 				new_chars.push(c);
-				score++;
+				score += 1000;
 			}
 		})
+
+		// reward longer words (only within classes of new letters) (this is purely for showing off)
+		score += candidate.length;
 
 		candidate_scores[candidate] = -score;
 	});
@@ -380,7 +388,7 @@ function solve_current_puzzle_2(selected, picked_words, depth, max_depth) {
 		let new_picked_words = picked_words.slice();
 		new_picked_words.push(candidate);
 		
-		let result = solve_current_puzzle_2(candidate.charAt(candidate.length - 1), new_picked_words, depth + 1, max_depth);
+		let result = solve_current_puzzle_2(candidate.charAt(candidate.length - 1), new_picked_words, depth + 1, max_depth, timeout);
 		if (result != null) {
 			return result;
 		}
@@ -392,7 +400,7 @@ function automatically_win() {
 	building_word = ""
 	words_used = [];
 
-	let solution = solve_current_puzzle_2(null, [], 0, 4);
+	let solution = solve_current_puzzle(5, 500);
 	let timer = 125;
 
 	solution.forEach(word => {
@@ -439,29 +447,37 @@ function win() {
 		}
 
 		setTimeout(function() {
-			generate_until_solvable();
-			
-			document.getElementById("loading-overlay").style.display = "none";
+			generate_until_solvable(function() {
+				document.getElementById("loading-overlay").style.display = "none";
 
-			if (demo) {
-				setTimeout(function() {
-					automatically_win();
-				}, 100);
-			}
+				if (demo) {
+					setTimeout(function() {
+						automatically_win();
+					}, 100);
+				}
+			}, 250);
 		}, 100);
 	}, 2600);
 }
 
-function generate_until_solvable() {
+solve_attempt_time = 0;
+gens = 0;
+function generate_until_solvable(callback, timeout) {
 	generating = true;
+	gens = 0;
 	while (true) {
+		console.log("attempt " + (gens+1));
 		regenerate_random_puzzle();
-		let solution = solve_current_puzzle_2(null, [], 0, 3);
+
+		let solution = solve_current_puzzle(4, timeout);
+		gens++;
 
 		if (solution != null) {
 			if (!demo) {
 				generating = false;
 			}
+
+			callback();
 			return;
 		}
 	}
@@ -477,12 +493,14 @@ document.addEventListener("DOMContentLoaded", function() {
 	update_letter_elems();
 
 	if (demo) {
-		generate_until_solvable(true);
-		document.getElementById("loading-overlay").style.display = "none";
-		automatically_win();
+		generate_until_solvable(function() {
+			document.getElementById("loading-overlay").style.display = "none";
+			automatically_win();
+		}, 250);
 	} else {
-		generate_until_solvable(true);
-		document.getElementById("loading-overlay").style.display = "none";
+		generate_until_solvable(function() {
+			document.getElementById("loading-overlay").style.display = "none";
+		}, 250);
 	}
 
 	document.addEventListener('keydown', (event) => {
