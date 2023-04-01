@@ -1,3 +1,10 @@
+@font-face {
+    font-family: "NEC_APC3";
+    src: url("Web437_NEC_APC3_8x16.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
 html {
     touch-action: manipulation;
 }
@@ -20,7 +27,7 @@ img {
 body {
 	overflow: hidden;
 	width:100%;
-	font-family: "MS Gothic", "Droid Sans Mono", "Courier";
+	font-family: "MS Gothic", "NEC_APC3", "Tahoma";
 	background-color:#000;
 	
 	font-smooth:never;
@@ -93,6 +100,10 @@ body {
 .gameline {
 	line-height: 0px;
 	letter-spacing: -2px;
+}
+
+.word-result {
+	letter-spacing: 0px;
 }
 
 .gametop {
