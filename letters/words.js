@@ -37536,6 +37536,7 @@ words = [
     "tuberous",
     "tubful",
     "tubing",
+    "tubs",
     "tubular",
     "tubule",
     "tuck",
