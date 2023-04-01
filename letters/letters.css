@@ -1,3 +1,7 @@
+html {
+    touch-action: manipulation;
+}
+
 img {
     image-rendering: optimizeSpeed;
     image-rendering: -moz-crisp-edges;
