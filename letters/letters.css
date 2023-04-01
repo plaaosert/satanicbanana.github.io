@@ -106,6 +106,10 @@ body {
 	letter-spacing: 0px;
 }
 
+.normalspaced {
+	letter-spacing: 0px;
+}
+
 .gametop {
 	padding-bottom: 12px;
 }

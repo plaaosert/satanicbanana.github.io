@@ -466,7 +466,6 @@ function generate_until_solvable(callback, timeout) {
 	generating = true;
 	gens = 0;
 	while (true) {
-		console.log("attempt " + (gens+1));
 		regenerate_random_puzzle();
 
 		let solution = solve_current_puzzle(4, timeout);
