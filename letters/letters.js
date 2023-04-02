@@ -159,6 +159,47 @@ function letter_to_id(letter) {
 	return -1;
 }
 
+function update_letter_lines() {
+	var old_lines = [];
+	var new_lines = [];
+
+	for (var i=0; i<words_used.length; i++) {
+		// populate old lines
+		var word = words_used[i];
+		for (var j=0; j<word.length-1; j++) {
+			old_lines.push(
+				[letter_to_id(word.charAt(j)), letter_to_id(word.charAt(j+1))]
+			);
+		}
+	}
+
+	for (var j=0; j<building_word.length-1; j++) {
+		new_lines.push(
+			[letter_to_id(building_word.charAt(j)), letter_to_id(building_word.charAt(j+1))]
+		);
+	}
+
+	if (current_selected_letter != null && building_word.length > 0) {
+		new_lines.push(
+			[letter_to_id(building_word.charAt(building_word.length - 1)), current_selected_letter]
+		);
+	}
+
+	var new_lines_split = draw_lines(new_lines, "#+-.\u00A0").split("\n");
+	for (var i=0; i<7; i++) {
+		let line = document.getElementById("gamecenter-" + i);
+
+		var text_line = new_lines_split[i];
+		if (i % 2 != 0) {
+			text_line = text_line.slice(1, -1);
+
+			// need to add white spans to the letter button so we can edit it correctly. should be possible
+		}
+
+		line.textContent = text_line;
+	}
+}
+
 function update_letter_elems() {
 	for (var i=0; i<12; i++) {
 		let letter = letters[i];
@@ -188,6 +229,8 @@ function update_letter_elems() {
 			letter_buttons[i].classList.remove("superwhite");
 		}
 	}
+
+	update_letter_lines();
 }
 
 function update_word_history() {
@@ -336,6 +379,10 @@ function solve_current_puzzle(max_depth, timeout) {
 }
 
 function solve_current_puzzle_2(selected, picked_words, depth, max_depth, timeout) {
+	// this is not a comprehensive solver. it will take the lowest hanging fruit and get sent to hell if it can't find anything,
+	// until it gets stopped by the timeout.
+	// this is made with the purpose of encouraging the random generator to make puzzles which are both possible and also not horribly difficult.
+
 	if (depth > max_depth || Date.now() - timeout > solve_attempt_time) {
 		return null;
 	}
@@ -367,12 +414,19 @@ function solve_current_puzzle_2(selected, picked_words, depth, max_depth, timeou
 		candidate.split("").forEach(c => {
 			if (letters_remaining.includes(c) && !new_chars.includes(c)) {
 				new_chars.push(c);
-				score += 1000;
+				score += 1;  // this is to make sure it mostly outranks the most common word. by reducing this, we make puzzles easier.
+				// by increasing it, puzzles become harder.
+				// lowering this also increases generation time
 			}
 		})
 
-		// reward longer words (only within classes of new letters) (this is purely for showing off)
-		score += candidate.length;
+		// reward more common words - should make auto-solutions make more sense
+		score += freqs[candidate] / 183212978.0;
+
+		// if the word is super uncommon, just reject [do last and hope the timeout kicks us out first]
+		if (freqs[candidate] / 183212978.0 < 0.00001) {
+			score += 0;
+		}
 
 		candidate_scores[candidate] = -score;
 	});
@@ -395,22 +449,23 @@ function solve_current_puzzle_2(selected, picked_words, depth, max_depth, timeou
 	}
 }
 
+win_speed = 50;
 function automatically_win() {
 	current_selected_letter = null;
 	building_word = ""
 	words_used = [];
 
-	let solution = solve_current_puzzle(5, 500);
-	let timer = 125;
+	let solution = solve_current_puzzle(5, 2000);
+	let timer = win_speed;
 
 	solution.forEach(word => {
 		word.split("").forEach(c => {
 			setTimeout(function() {select_letter(letter_to_id(c), true)}, timer);
-			timer += 125;
+			timer += win_speed;
 		})
 
 		setTimeout(function() {complete_word(false, true)}, timer);
-		timer += 125;
+		timer += win_speed;
 	})
 }
 
@@ -494,11 +549,13 @@ document.addEventListener("DOMContentLoaded", function() {
 	if (demo) {
 		generate_until_solvable(function() {
 			document.getElementById("loading-overlay").style.display = "none";
+			console.log("here's an answer for this puzzle, you cheater...", solve_current_puzzle(5, 1000));
 			automatically_win();
 		}, 250);
 	} else {
 		generate_until_solvable(function() {
 			document.getElementById("loading-overlay").style.display = "none";
+			console.log("here's an answer for this puzzle, you cheater...", solve_current_puzzle(5, 1000));
 		}, 250);
 	}
 
