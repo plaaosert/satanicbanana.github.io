@@ -41,6 +41,8 @@ if (!time) {
 	time = 0;
 }
 
+tutorial_complete = localStorage.getItem("letters-tutorial-complete");
+
 letters = [
 	"S", "F", "C", "E", "A", "T", "B", "I", "W", "L", "M", "N"
 ];
@@ -64,7 +66,7 @@ function update_time() {
 	gametime += 1;
 	localtime += 1;
 	
-	localStorage.setItem("words-time", gametime);
+	localStorage.setItem("letters-time", gametime);
 	localStorage.setItem("time", time);
 	
 	document.getElementById("session-time").textContent = localtime.toString().toHHMMSS();
@@ -300,8 +302,8 @@ function select_letter(letter_id, ignore_generating) {
 	update_word_history();
 }
 
-function undo() {
-	if (generating) {
+function undo(ignore_checks) {
+	if (generating && !ignore_checks) {
 		return;
 	}
 
@@ -356,15 +358,40 @@ function complete_word(ignore_checks, ignore_generating) {
 	}
 }
 
-function regenerate_random_puzzle() {
+function clear_current_word() {
+	building_word = "";
+	current_selected_letter = null;
+	if (words_used.length > 0) {
+		current_selected_letter = letter_to_id(words_used[words_used.length - 1].slice(-1));
+	}
+
+	update_letter_elems();
+	update_word_history();
+}
+
+function regenerate_random_puzzle(locked_letters) {
 	current_selected_letter = null;
 	building_word = ""
 	words_used = [];
 	letters = [];
 
 	var choices = "ABCDEFGHIJKLMNPQRSTUVWXYZ";
+
+	if (locked_letters) {
+		locked_letters.forEach(c => {
+			if (c) {
+				choices = choices.replace(c, "");
+			}
+		});
+	}
+
 	for (var i=0; i<12; i++) {
-		letters.push(choices.charAt(Math.floor(Math.random() * choices.length)));
+		if (locked_letters && locked_letters[i]) {
+			letters.push(locked_letters[i]);
+		} else {
+			letters.push(choices.charAt(Math.floor(Math.random() * choices.length)));
+		}
+
 		choices = choices.replace(letters[i], "");
 	}
 
@@ -449,13 +476,19 @@ function solve_current_puzzle_2(selected, picked_words, depth, max_depth, timeou
 	}
 }
 
-win_speed = 50;
-function automatically_win() {
-	current_selected_letter = null;
-	building_word = ""
-	words_used = [];
+win_speed = 200;
+function automatically_win(solution, dont_clear) {
+	if (!dont_clear) {
+		current_selected_letter = null;
+		building_word = ""
+		words_used = [];
+	}
 
-	let solution = solve_current_puzzle(5, 2000);
+	let solution_found = solution
+	if (!solution) {
+		solution_found = solve_current_puzzle(5, 2000);
+	}
+
 	let timer = win_speed;
 
 	solution.forEach(word => {
@@ -465,7 +498,7 @@ function automatically_win() {
 		})
 
 		setTimeout(function() {complete_word(false, true)}, timer);
-		timer += win_speed;
+		timer += win_speed * 2;
 	})
 }
 
@@ -490,13 +523,18 @@ function win() {
 		setTimeout(flash_down, i);
 	}
 
-	if (!demo) {
+	if (!demo && tutorial_complete) {
 		score += Math.max(1, 8 - words_used.length);
 		solved++;
 		update_scores();
 	}
 
 	setTimeout(function () {
+		if (!tutorial_complete) {
+			end_tutorial();
+			return;
+		}
+
 		if (!demo) {
 			document.getElementById("loading-overlay").style.display = "block";
 		}
@@ -517,11 +555,11 @@ function win() {
 
 solve_attempt_time = 0;
 gens = 0;
-function generate_until_solvable(callback, timeout) {
+function generate_until_solvable(callback, timeout, locked_letters) {
 	generating = true;
 	gens = 0;
 	while (true) {
-		regenerate_random_puzzle();
+		regenerate_random_puzzle(locked_letters);
 
 		let solution = solve_current_puzzle(4, timeout);
 		gens++;
@@ -537,49 +575,162 @@ function generate_until_solvable(callback, timeout) {
 	}
 }
 
+function typewrite_onto_element(element, string, initial_delay, letter_delay, delete_previous) {
+	if (delete_previous) {
+		setTimeout(function() {
+			element.textContent = "";
+		})
+	}
+
+	for (let i=1; i<string.length+1; i++) {
+		setTimeout(function() {
+			element.textContent = string.slice(0, i);
+		}, initial_delay + (letter_delay * (i - 1)))
+	}
+}
+
+function end_tutorial() {
+	localStorage.setItem("letters-tutorial-complete", "true");
+	location.reload();
+}
+
+function redo_tutorial() {
+	localStorage.removeItem("letters-tutorial-complete");
+	location.reload();
+}
+
 document.addEventListener("DOMContentLoaded", function() {
+	generating = true;
 	document.getElementById("session-time").textContent = localtime.toString().toHHMMSS();
 	document.getElementById("all-time").textContent = gametime.toString().toDDHHMMSS();
 	document.getElementById("global-time").textContent = time.toString().toDDHHMMSS();
 	setInterval(update_time, 1000);
 
 	setup_elements();
-	update_letter_elems();
 
-	if (demo) {
+	if (!tutorial_complete) {
+		var tutorial_big = document.getElementById("tutorial-big");
+		var tutorial_small = document.getElementById("tutorial-small");
+
+		document.getElementById("normal-bottombar").style.display = "none";
+		document.getElementById("tutorial-overlay").style.display = "block";
+		var letter_template = [
+			"H", "E", "Y", "A", "M", "B", "P", "U", "S", "R", "T", "L"
+		];
+		var solution = [
+			"ELMS",
+			"STYLER",
+			"RUB"
+		];
+
+		update_letter_elems();
 		generate_until_solvable(function() {
+			generating = true;
 			document.getElementById("loading-overlay").style.display = "none";
-			console.log("here's an answer for this puzzle, you cheater...", solve_current_puzzle(5, 1000));
-			automatically_win();
-		}, 250);
+			anim_speed = 4;
+			var title_strings = [
+				["you don't seem to have played before.", 50],
+				["in this game, you make words by drawing lines between letters, across this box.", 1000],
+				["your goal is to use all of the letters.", 2400],
+				["when you submit a word,​​​​​​​​​​​​​​​​​​​​ you start a new one, starting with the letter your last word ended with.", 3000],
+				["you can use letters more than once.", 7000],
+				["the fewer words you use in your final solution, the more points you get. undo whenever you want.", 9000],
+				["good luck!", 12000]
+			]
+
+			var subtitle_strings = [
+				["let's teach you how to play.", 500],
+				["you can also type these letters on your keyboard!", 1600],
+				["you can also hit ENTER to submit and BACKSPACE to undo. there is no penalty for undoing and it is unlimited.", 5200],
+				["yes, even in the same word!", 8200],
+				["undo can fully undo word submission and there is no penalty for doing this.", 10000],
+				[" ", 12000]
+			]
+
+			var function_timings = [
+				[function() {select_letter(letter_to_id("S"), true)}, 800 + 1200],
+				[function() {select_letter(letter_to_id("M"), true)}, 800 + 1275],
+				[function() {select_letter(letter_to_id("E"), true)}, 800 + 1350],
+				[function() {select_letter(letter_to_id("A"), true)}, 800 + 1425],
+				[function() {select_letter(letter_to_id("R"), true)}, 800 + 1500],
+				[function() {select_letter(letter_to_id("S"), true)}, 800 + 1575],
+				[function() {complete_word(true, true)}, 800 + 3200],
+				[function() {select_letter(letter_to_id("H"), true)}, 800 + 3575],
+				[function() {select_letter(letter_to_id("A"), true)}, 800 + 3650],
+				[function() {select_letter(letter_to_id("P"), true)}, 800 + 3725],
+				[function() {select_letter(letter_to_id("E"), true)}, 800 + 3800],
+				[function() {complete_word(true, true)}, 800 + 3950],
+				[function() {select_letter(letter_to_id("U"), true)}, 2200 + 5200],
+				[function() {select_letter(letter_to_id("R"), true)}, 2200 + 5250],
+				[function() {select_letter(letter_to_id("E"), true)}, 2200 + 5300],
+				[function() {select_letter(letter_to_id("U"), true)}, 2200 + 5350],
+				[function() {select_letter(letter_to_id("R"), true)}, 2200 + 5400],
+				[function() {select_letter(letter_to_id("E"), true)}, 2200 + 5450],
+				[function() {select_letter(letter_to_id("U"), true)}, 2200 + 5500],
+				[function() {select_letter(letter_to_id("R"), true)}, 2200 + 5550],
+				[function() {clear_current_word()}, 2200 + 5600],
+
+				[function() {undo(true)}, 10800],
+				[function() {undo(true)}, 10900],
+				[function() {undo(true)}, 11000],
+				[function() {select_letter(letter_to_id("P"), true)}, 11400],
+				[function() {select_letter(letter_to_id("E"), true)}, 11475],
+				[function() {complete_word(true, true)}, 11550],
+
+
+				[function() {automatically_win(solution, true)}, 13000]
+			]
+
+			title_strings.forEach(st => {
+				typewrite_onto_element(tutorial_big, st[0], st[1] * anim_speed, 7 * anim_speed, true);
+			});
+
+			subtitle_strings.forEach(st => {
+				typewrite_onto_element(tutorial_small, st[0], st[1] * anim_speed, 7 * anim_speed, true);
+			});
+
+			function_timings.forEach(st => {
+				setTimeout(st[0], st[1] * anim_speed);
+			});
+		}, 250, letter_template);
 	} else {
-		generate_until_solvable(function() {
-			document.getElementById("loading-overlay").style.display = "none";
-			console.log("here's an answer for this puzzle, you cheater...", solve_current_puzzle(5, 1000));
-		}, 250);
+		update_letter_elems();
+
+		if (demo) {
+			generate_until_solvable(function() {
+				document.getElementById("loading-overlay").style.display = "none";
+				console.log("here's an answer for this puzzle, you cheater...", solve_current_puzzle(5, 1000));
+				automatically_win();
+			}, 250);
+		} else {
+			generate_until_solvable(function() {
+				document.getElementById("loading-overlay").style.display = "none";
+				console.log("here's an answer for this puzzle, you cheater...", solve_current_puzzle(5, 1000));
+			}, 250);
+		}
+	
+		document.addEventListener('keydown', (event) => {
+			var name = event.key;
+			var code = event.code;
+	
+			// is the key present in the list of letters?
+			if (letters.includes(name.toUpperCase())) {
+				// simulate a click of this
+				var ind = letters.indexOf(name.toUpperCase());
+				select_letter(ind);
+				return;
+			}
+	
+			// is the key ENTER or BACKSPACE?
+			switch (code) {
+				case "Enter":
+					complete_word();
+					break;
+	
+				case "Backspace":
+					undo();
+					break;
+			}
+		}, false);
 	}
-
-	document.addEventListener('keydown', (event) => {
-		var name = event.key;
-		var code = event.code;
-
-		// is the key present in the list of letters?
-		if (letters.includes(name.toUpperCase())) {
-			// simulate a click of this
-			var ind = letters.indexOf(name.toUpperCase());
-			select_letter(ind);
-			return;
-		}
-
-		// is the key ENTER or BACKSPACE?
-		switch (code) {
-			case "Enter":
-				complete_word();
-				break;
-
-			case "Backspace":
-				undo();
-				break;
-		}
-	}, false);
 });

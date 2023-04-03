@@ -10,7 +10,7 @@
     <meta content="#cccccc" data-react-helmet="true" name="theme-color" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 
-	<link rel="stylesheet" type="text/css" href="letters.css?v=05"/>
+	<link rel="stylesheet" type="text/css" href="letters.css?v=07"/>
 </head>
 <body>
 	<div class="overlay" id="loading-overlay">
@@ -45,18 +45,24 @@
 		</b></p>
 	</div>
 	
-	<div class="bottombar">
+	<div class="bottombar tutorial-overlay" style="display: none" id="tutorial-overlay">
+		<p id="tutorial-big" class="left-text important" style="bottom: 24px; font-size: 3vmin;">...</p>
+		<p id="tutorial-small" class="left-text grey" style="bottom: 12px; font-size: 2vmin; color:#ccc;">...</p>
+		<a class="right-text" href="javascript:end_tutorial()" style="font-size: 2vmin; color:#f20"> << click me to skip the tutorial >> </a>
+	</div>
+
+	<div class="bottombar" id="normal-bottombar">
 		<p class="left-text" style="font-size: 3vmin; bottom: 36px">letters v1.0 | click or type letters to spell words.
 			use all the letters at least once, <br>
 			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;but try to do it in as few words and letters as possible.
 		</p>
 		<p class="right-text" style="font-size: 2vmin; color:#ccc;">written in pure JS/HTML</p>
-		<a href="../index.html" style="left: 256px; font-size: 2vmin; color:#f20"> << go back >> </a>
+		<span style="left: 256px; font-size: 2vmin"><a style="color:#f20; font-size: 2vmin" href="../index.html" > << go back >> </a>&nbsp;&nbsp;&nbsp;&nbsp;<a style="color:#f20; font-size: 2vmin; left: 10%;" href="javascript:redo_tutorial()" > << see tutorial again >> </a></span>
 	</div>
 	
 	<script src="lines.js?v=00"></script>
 	<script src="freqs.js?v=00"></script>
 	<script src="words.js?v=04"></script>
-	<script src="letters.js?v=04"></script>
+	<script src="letters.js?v=07"></script>
 </body>
 </html>
