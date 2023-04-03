@@ -287,6 +287,11 @@ function get_current_word() {
 	return building_word + letters[current_selected_letter];
 }
 
+function clear_uibuttons() {
+	document.getElementById("submit-button").classList.remove("superwhite");
+	document.getElementById("undo-button").classList.remove("superwhite");
+}
+
 function select_letter(letter_id, ignore_generating) {
 	if (generating && !ignore_generating) {
 		return;
@@ -300,6 +305,7 @@ function select_letter(letter_id, ignore_generating) {
 	}
 
 	update_word_history();
+	clear_uibuttons();
 }
 
 function undo(ignore_checks) {
@@ -316,6 +322,9 @@ function undo(ignore_checks) {
 				current_selected_letter = null;
 				update_letter_elems();
 				update_word_history();
+				document.getElementById("submit-button").classList.remove("superwhite");
+				document.getElementById("undo-button").classList.add("superwhite");
+				setTimeout(clear_uibuttons, 200);
 				return;
 			}
 		}
@@ -331,6 +340,9 @@ function undo(ignore_checks) {
 
 	update_letter_elems();
 	update_word_history();
+	document.getElementById("submit-button").classList.remove("superwhite");
+	document.getElementById("undo-button").classList.add("superwhite");
+	setTimeout(clear_uibuttons, 200);
 }
 
 function complete_word(ignore_checks, ignore_generating) {
@@ -349,12 +361,18 @@ function complete_word(ignore_checks, ignore_generating) {
 		building_word = "";
 
 		if (letters.every(c => {return words_used.some(word => word.includes(c))})) {
+			current_selected_letter = null;
+			update_letter_elems();
+			update_word_history();
 			win();
 			return;
 		}
 	
 		update_letter_elems();
 		update_word_history();
+		document.getElementById("submit-button").classList.add("superwhite");
+		document.getElementById("undo-button").classList.remove("superwhite");
+		setTimeout(clear_uibuttons, 400);
 	}
 }
 
@@ -491,7 +509,7 @@ function automatically_win(solution, dont_clear) {
 
 	let timer = win_speed;
 
-	solution.forEach(word => {
+	solution_found.forEach(word => {
 		word.split("").forEach(c => {
 			setTimeout(function() {select_letter(letter_to_id(c), true)}, timer);
 			timer += win_speed;
