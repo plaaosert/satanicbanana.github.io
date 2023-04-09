@@ -98,7 +98,15 @@ body {
 }
 
 .gamelines {
-	white-space: pre;
+	white-space: nowrap;
+}
+
+.check-dark {
+	background-color: #000;
+}
+
+.check-light {
+	background-color: #222;
 }
 
 a {
