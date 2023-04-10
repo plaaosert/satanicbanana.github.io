@@ -70,8 +70,8 @@ function position_triangles(player) {
 // debug code
 // this seems to be all working fine. finally, we need to work out setting up a battle from the beginning, then trying a simple fight in full.
 // this should include battle logs which the *skills* manage mostly.
-skill = new Skill("scrimblo skill", "it kills you", SkillTargeting.OneEnemy, (user, targets, battle) => null);
-skill2 = new Skill("scrimblo skill 2", "it kills you more", SkillTargeting.Everyone, (user, targets, battle) => null);
+//skill = new Skill("scrimblo skill", "it kills you", SkillTargeting.OneEnemy, (user, targets, battle) => null);
+//skill2 = new Skill("scrimblo skill 2", "it kills you more", SkillTargeting.Everyone, (user, targets, battle) => null);
 
 template = new UnitTemplate("person", "i am small", "hello description", {
     hp: 1,
@@ -86,15 +86,15 @@ template = new UnitTemplate("person", "i am small", "hello description", {
     spd: 1,
     grow_speed: 1
 }, [
-    skill, skill2
+    skills_list[0], skills_list[1]
 ], []);
 
-unit = new Unit(template, 1, "scrimblo individual 1", [skill, skill2]);
-unit2 = new Unit(template, 1, "scrimblo individual 2", [skill, skill2]);
-unit3 = new Unit(template, 1, "scrimblo individual 3", [skill, skill2]);
-unit4 = new Unit(template, 2, "scrimblo individual 4", [skill, skill2]);
-unit5 = new Unit(template, 2, "scrimblo individual 5", [skill, skill2]);
-unit6 = new Unit(template, 2, "scrimblo individual 6", [skill, skill2]);
+unit = new Unit(template, 1, "scrimblo individual 1", [skills_list[0], skills_list[1]]);
+unit2 = new Unit(template, 1, "scrimblo individual 2", [skills_list[0], skills_list[1]]);
+unit3 = new Unit(template, 1, "scrimblo individual 3", [skills_list[0], skills_list[1]]);
+unit4 = new Unit(template, 2, "scrimblo individual 4", [skills_list[0], skills_list[1]]);
+unit5 = new Unit(template, 2, "scrimblo individual 5", [skills_list[0], skills_list[1]]);
+unit6 = new Unit(template, 2, "scrimblo individual 6", [skills_list[0], skills_list[1]]);
 
 battle = {
     all_combatants: () => [
@@ -104,7 +104,11 @@ battle = {
         unit4,
         unit5,
         unit6
-    ]
+    ],
+
+    log: function(level, msg) {
+        console.log("(" + level + ") | " + msg);
+    }
 }
 
 unit.battle = battle;

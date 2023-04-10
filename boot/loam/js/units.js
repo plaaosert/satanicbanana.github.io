@@ -1,16 +1,3 @@
-const stat_names = [
-    "hp", "atk", "def", "spd", "grow_speed"
-];
-
-const Effect = {
-    Erosion: 'Erosion',
-    Compaction: 'Compaction',
-    Degradation: 'Degradation',
-    Salinisation: 'Salinisation',
-    Contamination: 'Contamination',
-    Desertification: 'Desertification'
-}
-
 class UnitTemplate {
 	constructor(name, short_desc, desc, stats, growth, skills, specials) {
 		this.name = name;
