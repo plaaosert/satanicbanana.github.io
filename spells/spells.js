@@ -280,7 +280,7 @@ class Renderer {
             // try to move towards the tile - use line again.
             let path = pathfind(game.player_ent.position, game_pos);
 
-            if (path && path.length > 0) {
+            if (path && path.length > 1) {
                 game.move_entity(game.player_ent, path[1], false);
             }
         }
@@ -440,9 +440,9 @@ class Renderer {
                             this.set_back_pair(screen_pos, range_indicator_col);
 
                             if (this.selected_tile && new Vector2(Math.floor(this.selected_tile.x / 2) * 2, this.selected_tile.y).equals(screen_pos)) {
-                                console.log("changed");
+                                //console.log("changed");
                                 selected_col = "#0a0";
-                                console.log(selected_col);
+                                //console.log(selected_col);
                             }
                         } else {
                             this.set_back_pair(screen_pos, null);
@@ -1007,7 +1007,7 @@ function propagate_diamond(origin, radius, los) {
     let positions = [origin];
 
     let updated_points = [];
-    while (points.length > 0) {
+    while (points.length > 0 && radius > 1) {
         points.forEach(point => {
             let pos = point[0];
             let radius_left = point[1];
@@ -1078,6 +1078,8 @@ const Shape = {
         if (origin == "whoami") {
             return "Line";
         }
+
+        //console.log(origin, target);
 
         return make_line(origin, target, radius, los);
     }],
@@ -1510,15 +1512,20 @@ class Game {
         }, this.spell_speed);
     }
 
-    cast_primed_spell(primed_spell, position_target) {
+    cast_primed_spell(primed_spell, position_target, insert_at_bottom) {
         //console.log("enqueued", primed_spell, "at", position_target);
-        this.casting_stack.push({spell: primed_spell, target: position_target});
+        if (insert_at_bottom) {
+            this.casting_stack.unshift({spell: primed_spell, target: position_target});
+        } else {
+            this.casting_stack.push({spell: primed_spell, target: position_target});
+        }
     }
 
     check_spell_stack() {
         // primed spells go on the spell stack so they can be cast instantly
         // they are given as a collection of {spell, target}
         //console.log("checking spell stack");
+        //console.log("casting stack:", this.casting_stack, "waiting:", this.waiting_for_spell);
         if (this.casting_stack.length > 0) {
             var spell_to_cast = this.casting_stack.pop();
             //console.log("casting spell", spell_to_cast, "for",  this.entities[this.turn_index]);
@@ -1533,11 +1540,17 @@ class Game {
             if (!this.waiting_for_spell) {
                 //console.log("ending turn for", this.entities[this.turn_index]);
                 this.end_turn();
+            } else {
+                var me = this;
+                this.checker_interval = setTimeout(function() {
+                    me.check_spell_stack();
+                }, this.spell_speed);
             }
         }
     }
 
     end_turn() {
+        //console.log("ending turn for", this.entities[this.turn_index].name)
         this.turn_index = (this.turn_index + 1) % this.entities.length;
         clearTimeout(this.checker_interval);
         this.checker_interval = null;
@@ -1583,6 +1596,23 @@ class Game {
         } else {
             return false;
         }
+    }
+
+    find_random_space_in_los(caster, pos, radius, shape) {
+        let points = shape(
+            caster.position, pos, radius, false
+        );
+
+        points.sort(() => Math.random() - 0.5);
+
+        for (let i=0; i<points.length; i++) {
+            let point = points[i];
+            if (this.has_los(caster, point)) {
+                return point;
+            }
+        }
+
+        return null;
     }
 
     move_entity(ent, new_pos, overwrite) {
@@ -1647,15 +1677,21 @@ class Game {
             }
         }
 
-        var updated_turn_index = null;
-        for (var i=0; i<new_entity_list.length; i++) {
-            if (this.entities[i].id != current_turn_entity.id) {
-                updated_turn_index = i;
+        if (current_turn_entity.id == ent.id) {
+            var updated_turn_index = null;
+            for (var i=0; i<new_entity_list.length; i++) {
+                if (this.entities[i].id != current_turn_entity.id) {
+                    updated_turn_index = i;
+                }
             }
+            
+            this.turn_index = updated_turn_index;
+        } else {
+            this.turn_index += 1
         }
 
-        this.turn_index = updated_turn_index;
         this.entities = new_entity_list;
+        this.turn_index = this.turn_index % this.entities.length;
     }
 }
 
@@ -1823,8 +1859,8 @@ spells_list = [
     modifier(
         "Multicast x4", "Casts a copy of the spell four times.", 300,
         no_stats, function(user, spell, stats, location) {
-            if (!stats.mutable_info["multicast"] || stats.mutable_info["multicast"] < 4) {
-                stats.mutable_info["multicast"] = stats.mutable_info["multicast"] ? stats.mutable_info["multicast"] + 1 : 1;
+            if (!stats.mutable_info["multicastx4"] || stats.mutable_info["multicastx4"] < 4) {
+                stats.mutable_info["multicastx4"] = stats.mutable_info["multicastx4"] ? stats.mutable_info["multicastx4"] + 1 : 1;
                 
                 let new_pos = location;
                 game.cast_primed_spell(stats.primed_spell, new_pos);
@@ -1837,7 +1873,93 @@ spells_list = [
         function(user, spell, stats) {
             stats.los = false;
         }
-    )
+    ),
+
+    core_spell(
+        "Gun", "", 50, DmgType.Physical, 30, 1, Shape.Line, 50
+    ).augment("at_target", function(user, spell, stats, location) {
+        user.cast_spell([
+            core_spell(
+                "gun explosion", "", 25, DmgType.Fire, 1, 1, Shape.Diamond, 0
+            )
+        ], location);
+    }),
+
+    modifier(
+        "Uncontrolled Multicast x16", "Casts a copy of the spell sixteen times, moving the target by a random number of tiles up to the spell's radius + 1 each time.", 200,
+        no_stats, function(user, spell, stats, location) {
+            if (!stats.mutable_info["unc_multicastx16"] || stats.mutable_info["unc_multicastx16"] < 16) {
+                stats.mutable_info["unc_multicastx16"] = stats.mutable_info["unc_multicastx16"] ? stats.mutable_info["unc_multicastx16"] + 1 : 1;
+                
+                let new_pos = game.find_random_space_in_los(user, location, stats.radius + 1, Shape.Diamond[1]);
+                if (new_pos) {
+                    game.cast_primed_spell(stats.primed_spell, new_pos, true);
+                }
+            }
+        }
+    ),
+
+    core_spell(
+        "All Elements", "all at once. testing", 1, DmgType.Physical, 20, 1, Shape.Diamond, 0
+    ).augment("at_target", function(user, spell, stats, location) {
+        let dmgtypes = [
+            "Fire",
+            "Ice",
+            "Lightning",
+            "Arcane",
+            "Physical",
+            "Dark",
+            "Chaos",
+            "Holy",
+            "Psychic"
+        ].reverse();
+
+        dmgtypes.forEach(t => {
+            game.spell_speed = 1000;
+    
+            user.cast_spell([
+                core_spell(
+                    t, "", 100, DmgType[t], 1, 3, Shape.Diamond, 0
+                ).augment("to_stats", function(_, _, s) { s.los = false; })
+            ], location.add(new Vector2(0, -8)));
+
+            user.cast_spell([
+                core_spell(
+                    t, "", 100, DmgType[t], 1, 3, Shape.Diamond, 0
+                ).augment("to_stats", function(_, _, s) { s.los = true; })
+            ], location.add(new Vector2(-8, 0)));
+
+            user.cast_spell([
+                core_spell(
+                    t, "", 100, DmgType[t], 1, 3, Shape.Line, 0
+                ).augment("to_stats", function(_, _, s) { s.los = false; })
+            ], location.add(new Vector2(8, 0)));
+
+            user.cast_spell([
+                core_spell(
+                    t, "", 100, DmgType[t], 1, 3, Shape.Line, 0
+                ).augment("to_stats", function(_, _, s) { s.los = true; }).augment("at_target", function(_, _, _, _) { 
+                    console.log(t);
+                    document.getElementById("dmg-type-display").textContent = t;
+                    document.getElementById("dmg-type-display").style.color = damage_type_cols[t];
+                })
+            ], location.add(new Vector2(0, 8)));
+        })
+
+        if (!stats.mutable_info["aa"] || stats.mutable_info["aa"] < 1) {
+            stats.mutable_info["aa"] = stats.mutable_info["aa"] ? stats.mutable_info["aa"] + 1 : 1;
+
+            let new_spell = user.parse_spell([
+                core_spell(
+                    "t", "", 1, DmgType.Physical, 1, 3, Shape.Line, 0
+                ).augment("at_target", function(_, _, _, _) { 
+                    game.spell_speed = 100
+                })
+            ], location);
+
+            game.cast_primed_spell(new_spell, location, true);
+        }
+    })
 ]
 
 
@@ -1863,14 +1985,14 @@ entity_templates = [
 
 var dmg_type_particles = {
     "Fire": new ParticleTemplate(["@@", "##", "++", "\"\"", "''"], damage_type_cols["Fire"], 1),
-    "Ice": new ParticleTemplate(["##", "<>", "''", "--", ".."], damage_type_cols["Ice"], 1),
+    "Ice": new ParticleTemplate(["##", "<>", "''", "::", ".."], damage_type_cols["Ice"], 1),
     "Lightning": new ParticleTemplate(["&&", "];", "!-", ".'", " ."], damage_type_cols["Lightning"], 1),
-    "Arcane": new ParticleTemplate(["@@", "##", "++", "--", ".."], damage_type_cols["Arcane"], 1),
-    "Physical": new ParticleTemplate(["@@", "##", "++", "--", ".."], damage_type_cols["Physical"], 1),
-    "Dark": new ParticleTemplate(["@@", "##", "++", "--", ".."], damage_type_cols["Dark"], 1),
-    "Chaos": new ParticleTemplate(["@@", "##", "++", "--", ".."], damage_type_cols["Chaos"], 1),
-    "Holy": new ParticleTemplate(["@@", "##", "++", "--", ".."], damage_type_cols["Holy"], 1),
-    "Psychic": new ParticleTemplate(["@@", "##", "++", "--", ".."], damage_type_cols["Psychic"], 1),
+    "Arcane": new ParticleTemplate(["@@", "OO", "{}", "::", ".."], damage_type_cols["Arcane"], 1),
+    "Physical": new ParticleTemplate(["%%", "XX", "**", "++", ".."], damage_type_cols["Physical"], 1),
+    "Dark": new ParticleTemplate(["##", "][", "}{", ";;", "::"], damage_type_cols["Dark"], 1),
+    "Chaos": new ParticleTemplate(["@#", "%#", "$]", "X<", "/;"], damage_type_cols["Chaos"], 1),
+    "Holy": new ParticleTemplate(["@@", "##", ";;", "**", "''"], damage_type_cols["Holy"], 1),
+    "Psychic": new ParticleTemplate(["@@", "[]", "{}", "||", "::"], damage_type_cols["Psychic"], 1),
 }
 
 var board = new Board(new Vector2(64, 64));
@@ -1885,7 +2007,7 @@ moving_ent.name = "moving guy";
 
 for (let xt=0; xt<game.board.dimensions.x; xt++) {
     for (let yt=0; yt<game.board.dimensions.y; yt++) {
-        if (Math.random() < 0.1) {
+        if (Math.random() < 0.01) {
             game.spawn_entity(entity_templates[2], Teams.UNTARGETABLE_NO_LOS, new Vector2(xt, yt), false);
         }
     }
@@ -1930,6 +2052,13 @@ var behind_back = [
     spells_list[9], spells_list[7]
 ]
 
+let gun = [
+    spells_list[12]
+]
+
+let machine_gun = [
+    spells_list[13], spells_list[12]
+]
 
 game.begin_turn();
 //game.player_ent.cast_spell(spell_simple, target);
@@ -1977,7 +2106,7 @@ function game_loop() {
     ppos = ppos.add(new Vector2(2, 1));
     ppos = ppos.wrap(new Vector2(48, 24));
 
-    if (ppos.x % 4 == 0) {
+    if (ppos.x % 16 == 0) {
         if (Math.random() < 0.1) {
             mov_dir = new Vector2(
                 Math.floor(Math.random() * 2) - 1,
@@ -2021,6 +2150,18 @@ document.addEventListener("DOMContentLoaded", function() {
 
             case "4":
                 test(spell_all);
+                break;
+
+            case "5":
+                test(gun);
+                break;
+
+            case "6":
+                test(machine_gun);
+                break;
+
+            case "q":
+                test([spells_list[14]]);
                 break;
 
             case "ArrowUp":
