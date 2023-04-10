@@ -305,8 +305,11 @@ class Renderer {
             let path = pathfind(game.player_ent.position, game_pos);
 
             if (path && path.length > 1) {
-                game.move_entity(game.player_ent, path[1], false);
-                this.move_particles(path[1].sub(game.player_ent.position).neg());
+                let result = game.move_entity(game.player_ent, path[1], false);
+                
+                if (result) {
+                    this.move_particles(path[1].sub(game.player_ent.position).neg());
+                }
             }
         }
     }
@@ -2211,13 +2214,15 @@ document.addEventListener("DOMContentLoaded", function() {
         }
 
         if (mov_pos) {
-            game.move_entity(
+            let result = game.move_entity(
                 game.player_ent,
                 game.player_ent.position.add(mov_pos),
                 false
             );
 
-            renderer.move_particles(mov_pos.neg());
+            if (result) {
+                renderer.move_particles(mov_pos.neg());
+            }
         }
     });
 
