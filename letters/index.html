@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang = "en-US">
+<head>
+	<meta charset = "UTF-8">
+	<title>letters</title>
+	<meta content="plaao.net >> letters" property="og:title" />
+    <meta content="Letters in a box" property="og:description" />
+    <meta content="https://plaao.net" property="og:url" />
+    <meta content="https://plaao.net/bej/red_funny.png" property="og:image" />
+    <meta content="#cccccc" data-react-helmet="true" name="theme-color" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+
+	<link rel="stylesheet" type="text/css" href="letters.css?v=07"/>
+</head>
+<body>
+	<div class="overlay" id="loading-overlay">
+		<p class="dead-center" id="loading-text">my solver isn't very good so please wait while it finds a puzzle which can be solved</p>
+	</div>
+
+	<div class="topbar">
+		<p class="top-text" style="font-size: 3vmin; top: -16px; left: 32px">Solved: <span id="solved-num" class="important">0</span></p>
+		<p class="top-text" style="font-size: 3vmin; top: 16px; left: 32px">Score: <span id="score-num" class="important">0</span></p>
+		
+		<p class="right-text" style="font-size: 2vmin; top:-8px; color:#ccc;">you have been actively playing for <span class="important" id="session-time">00:00:00</span> in this session, <span class="important" id="all-time">00:00:00:00</span> total and <span class="important" id="global-time">00:00:00:00</span> across all plaao.net games</p>
+	</div>
+	
+	<div class="game" id="game">
+		<p class="gameline gametop">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="letter" id="letter-11">L</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="letter" id="letter-10">K</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="letter" id="letter-9">J</span>&nbsp;&nbsp;&nbsp;&nbsp;</p>
+		<p class="gameline">&nbsp;&nbsp;&nbsp;+--<span class="letter-button" id="letter-button-11"><span class="white">-</span>O<span class="white">-</span></span>--<span class="letter-button" id="letter-button-10"><span class="white">-</span>O<span class="white">-</span></span>--<span class="letter-button" id="letter-button-9"><span class="white">-</span>O<span class="white">-</span></span>---+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="word-result" id="word-result-0">##########</span></p>
+		<p class="gameline">&nbsp;&nbsp;&nbsp;|<span id="gamecenter-0">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="word-result" id="word-result-1">##########</span></p>
+		<p class="gameline"><span class="letter" id="letter-0">A</span>&nbsp;<span class="letter-button" id="letter-button-0">&nbsp;O&nbsp;</span><span id="gamecenter-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="letter-button" id="letter-button-8">&nbsp;O&nbsp;</span>&nbsp;<span class="letter" id="letter-8">I</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="word-result" id="word-result-2">##########</span></p>
+		<p class="gameline">&nbsp;&nbsp;&nbsp;|<span id="gamecenter-2">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="word-result" id="word-result-3">##########</span></p>
+		<p class="gameline"><span class="letter" id="letter-1">B</span>&nbsp;<span class="letter-button" id="letter-button-1">&nbsp;O&nbsp;</span><span id="gamecenter-3">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="letter-button" id="letter-button-7">&nbsp;O&nbsp;</span>&nbsp;<span class="letter" id="letter-7">H</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="word-result" id="word-result-4">##########</span></p>
+		<p class="gameline">&nbsp;&nbsp;&nbsp;|<span id="gamecenter-4">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="word-result" id="word-result-5">##########</span></p>
+		<p class="gameline"><span class="letter" id="letter-2">C</span>&nbsp;<span class="letter-button" id="letter-button-2">&nbsp;O&nbsp;</span><span id="gamecenter-5">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="letter-button" id="letter-button-6">&nbsp;O&nbsp;</span>&nbsp;<span class="letter" id="letter-6">G</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="word-result" id="word-result-6">##########</span></p>
+		<p class="gameline">&nbsp;&nbsp;&nbsp;|<span id="gamecenter-6">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="word-result" id="word-result-7">##########</span></p>
+		<p class="gameline">&nbsp;&nbsp;&nbsp;+--<span class="letter-button" id="letter-button-3"><span class="white">-</span>O<span class="white">-</span></span>--<span class="letter-button" id="letter-button-4"><span class="white">-</span>O<span class="white">-</span></span>--<span class="letter-button" id="letter-button-5"><span class="white">-</span>O<span class="white">-</span></span>---+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="word-result" id="word-result-8">##########</span></p>
+		<p class="gameline gamebottom">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="letter" id="letter-3">D</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="letter" id="letter-4">E</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="letter" id="letter-5">F</span>&nbsp;&nbsp;&nbsp;&nbsp;</p>
+		<br>
+		<p class="gameline normalspaced">
+			&nbsp;<span id="undo-button" class="gamebutton" onclick="undo()">Undo</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span id="submit-button" class="gamebutton" onclick="complete_word()">Submit</span>&nbsp;
+		</p>
+		<p class="gameline grey normalspaced" style="font-size: 2vmin; letter-spacing: 0px;"><b>
+			&nbsp;backspace&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="aligner">&nbsp;</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;enter
+		</b></p>
+	</div>
+	
+	<div class="bottombar tutorial-overlay" style="display: none" id="tutorial-overlay">
+		<p id="tutorial-big" class="left-text important" style="bottom: 24px; font-size: 3vmin;">...</p>
+		<p id="tutorial-small" class="left-text grey" style="bottom: 12px; font-size: 2vmin; color:#ccc;">...</p>
+		<a class="right-text" href="javascript:end_tutorial()" style="font-size: 2vmin; color:#f20"> << click me to skip the tutorial >> </a>
+	</div>
+
+	<div class="bottombar" id="normal-bottombar">
+		<p class="left-text" style="font-size: 3vmin; bottom: 36px">letters v1.0 | click or type letters to spell words.
+			use all the letters at least once, <br>
+			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;but try to do it in as few words and letters as possible.
+		</p>
+		<p class="right-text" style="font-size: 2vmin; color:#ccc;">written in pure JS/HTML</p>
+		<span style="left: 256px; font-size: 2vmin"><a style="color:#f20; font-size: 2vmin" href="../index.html" > << go back >> </a>&nbsp;&nbsp;&nbsp;&nbsp;<a style="color:#f20; font-size: 2vmin; left: 10%;" href="javascript:redo_tutorial()" > << see tutorial again >> </a></span>
+	</div>
+	
+	<script src="lines.js?v=00"></script>
+	<script src="freqs.js?v=00"></script>
+	<script src="words.js?v=04"></script>
+	<script src="letters.js?v=07"></script>
+</body>
+</html>

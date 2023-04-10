@@ -1,0 +1,235 @@
+@font-face {
+    font-family: "ibm_vga";
+    src: url("Web437_IBM_VGA_8x16.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "nec_apc";
+    src: url("Web437_NEC_APC3_8x16.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
+html {
+    touch-action: manipulation;
+}
+
+img {
+    image-rendering: optimizeSpeed;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: optimize-contrast;
+    image-rendering: pixelated;
+    -ms-interpolation-mode: nearest-neighbor;
+	
+	-moz-user-select: -moz-none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+}
+
+body {
+	overflow: hidden;
+	width:100%;
+	font-family: "MS Gothic", "nec_apc";
+	background-color:#000;
+	
+	font-smooth:never;
+	-webkit-font-smoothing:none;
+}
+
+.overlay {
+    opacity:1;
+    background-color:#000;
+    position:fixed;
+    width:100%;
+    height:100%;
+    top:0px;
+    left:0px;
+    z-index:1000;
+}
+
+.bottombar {
+    position: fixed;
+    bottom: 0px;
+	left:0px;
+    display:block;
+    height: 128px;
+    width: 100%;
+
+	z-index: 1;
+
+	background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 66%, rgba(0,0,0,0) 100%);
+}
+
+.topbar {
+    position: fixed;
+    top: 0px;
+	left:0px;
+    display:block;
+    height: 128px;
+    width: 100%;
+	
+	z-index: 1;
+
+	background: linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 66%, rgba(0,0,0,0) 100%);
+}
+
+.game {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	margin-right: -50%;
+	transform: translate(-50%, -50%);
+
+	font-size: calc(0.5vw + 1.5vh - 1px);
+	color: #fff;
+	
+	-moz-user-select: -moz-none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+	
+    justify-content: center;
+}
+
+.gamelines {
+	white-space: nowrap;
+}
+
+.check-dark {
+	background-color: #000;
+}
+
+.check-light {
+	background-color: #111;
+}
+
+a {
+	position: fixed;
+	bottom: 24px;
+	left: 24px;
+	
+	text-decoration: none;
+	font-weight: bold;
+	transition: color 0.3s;
+}
+
+a:hover {
+	text-decoration: underline;
+	color: #fff;
+}
+
+.right-text {
+	color: #0cf;
+	position: absolute;
+	font-size: 2.5vmin;
+	bottom: 12px;
+	right: 16px;
+	text-align: right;
+}
+
+.left-text {
+	color: #0cf;
+	position: absolute;
+	font-size: 2.5vmin;
+	bottom: 12px;
+	left: 16px;
+	text-align: left;
+}
+
+.top-r-text {
+	color: #0cf;
+	position: absolute;
+	font-size: 2.5vmin;
+	right: 16px;
+	text-align: right;
+}
+
+.top-text {
+	color: #0cf;
+	position: absolute;
+	font-size: 2.5vmin;
+}
+
+.important {
+	font-weight: bold;
+	color: #8df;
+}
+
+.yellow {
+	color: #dd4;
+}
+
+.green {
+	color: #4d4;
+}
+
+.white {
+	color: #fff;
+}
+
+.grey {
+	color: #444;
+}
+
+.red {
+	color: #f44;
+}
+
+.red > span {
+	color: #f44;
+}
+
+.invert {
+	filter: invert();
+}
+
+.dimmed {
+	opacity: 0.5;
+}
+
+.hidden {
+	visibility:hidden;
+}
+
+.mouse-active {
+	transition: filter 0.3s;
+}
+
+.mouse-active:hover {
+	filter: brightness(200%);
+	transition: filter 0.1s;
+}
+
+.mini {
+	font-size: 8px;
+	font-family: "MS Gothic", "Droid Sans Mono", "Courier";
+}
+
+h1 {
+	font-size: 72px;
+	font-family: "MS Gothic", "Droid Sans Mono", "Courier";
+}
+
+@keyframes disappear {
+  from {
+    filter: saturate(100%) brightness(100%) opacity(100%);
+  }
+
+  15% {
+	filter: saturate(100%) brightness(400%) opacity(100%)
+  }
+
+  50% {
+    filter: saturate(100%) brightness(100%) opacity(0%);
+  }
+}
+
+.ignore-mouse {
+	pointer-events: none;
+}

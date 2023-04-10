@@ -1,0 +1,295 @@
+@font-face {
+    font-family: "NEC_APC3";
+    src: url("Web437_NEC_APC3_8x16.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
+html {
+    touch-action: manipulation;
+}
+
+img {
+    image-rendering: optimizeSpeed;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: optimize-contrast;
+    image-rendering: pixelated;
+    -ms-interpolation-mode: nearest-neighbor;
+	
+	-moz-user-select: -moz-none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+}
+
+body {
+	overflow: hidden;
+	width:100%;
+	font-family: "MS Gothic", "NEC_APC3", "Tahoma";
+	background-color:#000;
+	
+	font-smooth:never;
+	-webkit-font-smoothing:none;
+}
+
+.overlay{
+    opacity:1;
+    background-color:#000;
+    position:fixed;
+    width:100%;
+    height:100%;
+    top:0px;
+    left:0px;
+    z-index:1000;
+}
+
+.dead-center {
+	color: #fff;
+	text-align: center;
+	vertical-align: middle;
+	font-size: 2vmin;
+}
+
+.bottombar {
+    position: fixed;
+    bottom: 0px;
+	left:0px;
+    display:block;
+    height: 128px;
+    width: 100%;
+
+	z-index: 1;
+
+	background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 66%, rgba(0,0,0,0) 100%);
+}
+
+.topbar {
+    position: fixed;
+    top: 0px;
+	left:0px;
+    display:block;
+    height: 128px;
+    width: 100%;
+	
+	z-index: 1;
+
+	background: linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 66%, rgba(0,0,0,0) 100%);
+}
+
+.game {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	margin-right: -50%;
+	transform: translate(-50%, -50%);
+
+	font-size: 4vmin;
+	color: #fff;
+	
+	-moz-user-select: -moz-none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+	
+    justify-content: center;
+}
+
+.gameline {
+	line-height: 0px;
+	letter-spacing: -2px;
+}
+
+.word-result {
+	letter-spacing: 0px;
+}
+
+.normalspaced {
+	letter-spacing: 0px;
+}
+
+.gametop {
+	padding-bottom: 12px;
+}
+
+.gamebottom {
+	padding-top: 12px;
+}
+
+.gamebutton {
+	color: #08a;
+}
+
+.gamebutton:hover {
+	color: #0cf;
+	text-decoration: underline;
+}
+
+.aligner {
+	font-size: 1vmin;
+}
+
+.letter {
+	color: #fff;
+}
+
+.letter-got {
+	color: #666;
+}
+
+.letter-button {
+	color: #2f2;
+	transition: color 0.1s;
+	transition: text-shadow 0.1s;
+}
+
+.letter-button-darken {
+	color: #0b0;
+}
+
+.letter-button-got {
+	color: #000;
+	text-shadow: 2px 0 #ccc, -2px 0 #ccc, 0 2px #ccc, 0 -2px #ccc,
+             1px 1px #fff, -1px -1px #fff, 1px -1px #fff, -1px 1px #fff;
+}
+
+.letter-button:hover {
+	color: #fff;
+}
+
+.letter-button-got:hover {
+	color: #fff;
+}
+
+.superwhite {
+	color: #fff !important;
+}
+
+a {
+	position: fixed;
+	bottom: 24px;
+	left: 24px;
+	font-size: 16px;
+	
+	text-decoration: none;
+	font-weight: bold;
+	transition: color 0.3s;
+}
+
+a:hover {
+	text-decoration: underline;
+	color: #fff;
+}
+
+.right-text {
+	color: #0cf;
+	position: absolute;
+	font-size: 24px;
+	bottom: 12px;
+	right: 16px;
+	text-align: right;
+}
+
+.left-text {
+	color: #0cf;
+	position: absolute;
+	font-size: 24px;
+	bottom: 12px;
+	left: 16px;
+	text-align: left;
+}
+
+.top-r-text {
+	color: #0cf;
+	position: absolute;
+	font-size: 24px;
+	right: 16px;
+	text-align: right;
+}
+
+.top-text {
+	color: #0cf;
+	position: absolute;
+	font-size: 24px;
+}
+
+.important {
+	font-weight: bold;
+	color: #8df;
+}
+
+.yellow {
+	color: #dd4;
+}
+
+.green {
+	color: #4d4;
+}
+
+.white {
+	color: #fff;
+	text-shadow: none;
+}
+
+.grey {
+	color: #444;
+}
+
+.red {
+	color: #f44;
+}
+
+.red > span {
+	color: #f44;
+}
+
+.invert {
+	filter: invert();
+}
+
+.dimmed {
+	opacity: 0.5;
+}
+
+.hidden {
+	visibility:hidden;
+}
+
+.mouse-active {
+	transition: filter 0.3s;
+}
+
+.mouse-active:hover {
+	filter: brightness(200%);
+	transition: filter 0.1s;
+}
+
+.mini {
+	font-size: 8px;
+	font-family: "MS Gothic", "Droid Sans Mono", "Courier";
+}
+
+h1 {
+	font-size: 72px;
+	font-family: "MS Gothic", "Droid Sans Mono", "Courier";
+}
+
+@keyframes disappear {
+  from {
+    filter: saturate(100%) brightness(100%) opacity(100%);
+  }
+
+  15% {
+	filter: saturate(100%) brightness(400%) opacity(100%)
+  }
+
+  50% {
+    filter: saturate(100%) brightness(100%) opacity(0%);
+  }
+}
+
+.ignore-mouse {
+	pointer-events: none;
+}

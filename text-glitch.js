@@ -1,3 +1,17 @@
+// event handler for both events needed
+function handler(event) {
+	// clear all intervals under this element
+	if (evts[event.target.id] != null)
+		clearInterval(evts[event.target.id]);
+
+	if (event.type == 'mouseover') {
+		evts[event.target.id] = setInterval(function() { run_text_grow(event.target); }, 1000/60);
+	}
+	if (event.type == 'mouseout') {
+		evts[event.target.id] = setInterval(function() { run_text_shrink(event.target); }, 1000/60);
+	}
+}
+
 /*
 let l1 = document.getElementById('1');
 l1.onmouseover = l1.onmouseout = handler;
@@ -19,7 +33,10 @@ aims = {
 	"4":">> a \"unique\" word-guessing game",
 	"5":">> select another style for the ocean",
 	"6":">> drwxr-xr-x 8 plaao plaao 4096 Nov 06 03:40 ..",
-	"7":"plaaosert#6386"
+	"7":"plaaosert#6386",
+	"8":">> a game about matching words in a box",
+	"9":">> not complete just yet!",
+	"banner":"// \u00A0hello!\u00A0\u00A0 //"
 };
 
 num_glitch_elements = Object.keys(aims).length;
@@ -27,7 +44,7 @@ num_glitch_elements = Object.keys(aims).length;
 // select elements using format "#" where # is i
 // then set their onmouseover and onmouseout to handler (defined below)
 for (var i = 1; i <= num_glitch_elements; i++) {
-	var l = document.getElementById(i);
+	var l = document.getElementById(i == 10 ? "banner" : i);
 	l.onmouseover = l.onmouseout = handler;
 }
 
@@ -47,9 +64,9 @@ evts = {};
 // setup original texts too
 origs = {}
 for (var i = 1; i <= num_glitch_elements; i++) {
-	var l = document.getElementById(i);
-	origs[i.toString()] = l.text;
-	evts[i.toString()] = null;
+	var l = document.getElementById(i == 10 ? "banner" : i);
+	origs[(i == 10 ? "banner" : i).toString()] = l.textContent;
+	evts[(i == 10 ? "banner" : i).toString()] = null;
 }
 
 /*
@@ -62,55 +79,40 @@ origs = {
 }
 */
 
-
-// event handler for both events needed
-function handler(event) {
-  // clear all intervals under this element
-  if (evts[event.target.id] != null)
-	clearInterval(evts[event.target.id]);
-
-  if (event.type == 'mouseover') {
-	evts[event.target.id] = setInterval(function() { run_text_grow(event.target); }, 1000/60);
-  }
-  if (event.type == 'mouseout') {
-    evts[event.target.id] = setInterval(function() { run_text_shrink(event.target); }, 1000/60);
-  }
-}
-
 function run_text_grow(el) {
 	// Attempt to repair incorrect chars with either another incorrect char or the correct char.
 	// Attempt to add chars to the string. If adding, add a block.
 	aim_string = aims[el.id]
 	
-	if (el.text == aim_string) {
+	if (el.textContent == aim_string) {
 		// clear all intervals under this element
 		clearInterval(evts[el.id]);
 		return;
 	}
 	
-	if (el.text.length < aim_string.length) {
+	if (el.textContent.length < aim_string.length) {
 		// for a pseudo-lerp motion, add one char for every 6 chars left to add
-		len_diff = aim_string.length - el.text.length
-		el.text += "█".repeat(Math.min(aim_string.length - el.text.length, Math.ceil(len_diff / 6)));
+		len_diff = aim_string.length - el.textContent.length
+		el.textContent += "█".repeat(Math.min(aim_string.length - el.textContent.length, Math.ceil(len_diff / 6)));
 	}
 	
 
 	// weights it more heavily to select the correct char if surrounding chars are already correct
 	// generates runaway correction which (mostly) prevents chars from remaining "glitched" for too long
 	correct_combo = 0;
-	for (var i = 0; i < el.text.length; i++) {
+	for (var i = 0; i < el.textContent.length; i++) {
 		// more likely to change to correct closer to the start of the string
-		change_weight = ((el.text.length - i) / el.text.length) * 5;
+		change_weight = ((el.textContent.length - i) / el.textContent.length) * 5;
 		correct_combo++;
 		correct_combo++;
 		
 		// if char is wrong at point replace with either the correct char or a random one
-		if (el.text.charAt(i) != aim_string.charAt(i)) {
-			el.text = el.text.replace_at(i, Math.floor(Math.random() * (40 - correct_combo)) <= change_weight ? aim_string.charAt(i) : alphabet[Math.floor(Math.random() * alphabet.length)]);
+		if (el.textContent.charAt(i) != aim_string.charAt(i)) {
+			el.textContent = el.textContent.replace_at(i, Math.floor(Math.random() * (40 - correct_combo)) <= change_weight ? aim_string.charAt(i) : alphabet[Math.floor(Math.random() * alphabet.length)]);
 			correct_combo = 0;
 		// if char is right at point (and low-chance roll is successful) replace with either the right char again or a random char
 		} else if (Math.floor(Math.random() * 250 + (change_weight * 0.5)) == 0) {
-			el.text = el.text.replace_at(i, Math.floor(Math.random() * 50) <= change_weight ? aim_string.charAt(i) : alphabet[Math.floor(Math.random() * alphabet.length)]);
+			el.textContent = el.textContent.replace_at(i, Math.floor(Math.random() * 50) <= change_weight ? aim_string.charAt(i) : alphabet[Math.floor(Math.random() * alphabet.length)]);
 		}
 	}
 }
@@ -120,35 +122,35 @@ function run_text_shrink(el) {
 	// Remove chars from the string until it reaches original length.
 	aim_string = origs[el.id]
 	
-	if (el.text == aim_string) {
+	if (el.textContent == aim_string) {
 		// clear all intervals under this element
 		clearInterval(evts[el.id]);
 		return;
 	}
 	
-	if (el.text.length > aim_string.length) {
+	if (el.textContent.length > aim_string.length) {
 		// pseudo-lerp again - remove one char for every 4 chars left to remove
-		len_diff = el.text.length - aim_string.length
-		el.text = el.text.substring(0, el.text.length - Math.ceil(len_diff / 4));
+		len_diff = el.textContent.length - aim_string.length
+		el.textContent = el.textContent.substring(0, el.textContent.length - Math.ceil(len_diff / 4));
 	}
 	
 
 	correct_combo = 0;
-	for (var i = 0; i < el.text.length; i++) {
-		change_weight = ((el.text.length - i) / el.text.length) * 5;
+	for (var i = 0; i < el.textContent.length; i++) {
+		change_weight = ((el.textContent.length - i) / el.textContent.length) * 5;
 		correct_combo++;
 		correct_combo++;
 		
 		if (i >= aim_string.length) {
 			// sometimes replace with random
-			el.text = el.text.replace_at(i, Math.floor(Math.random() * 50) <= change_weight ? el.text.charAt(i) : alphabet[Math.floor(Math.random() * alphabet.length)]);
+			el.textContent = el.textContent.replace_at(i, Math.floor(Math.random() * 50) <= change_weight ? el.textContent.charAt(i) : alphabet[Math.floor(Math.random() * alphabet.length)]);
 		}
-		else if (el.text.charAt(i) != aim_string.charAt(i)) {
+		else if (el.textContent.charAt(i) != aim_string.charAt(i)) {
 			// if in range, set to correct or random
-			el.text = el.text.replace_at(i, Math.floor(Math.random() * 40) <= change_weight ? aim_string.charAt(i) : alphabet[Math.floor(Math.random() * alphabet.length)]);
+			el.textContent = el.textContent.replace_at(i, Math.floor(Math.random() * 40) <= change_weight ? aim_string.charAt(i) : alphabet[Math.floor(Math.random() * alphabet.length)]);
 			correct_combo = 0;
 		} else if (Math.floor(Math.random() * 250 + (change_weight * 0.5)) == 0) {
-			el.text = el.text.replace_at(i, Math.floor(Math.random() * 50) <= change_weight ? aim_string.charAt(i) : alphabet[Math.floor(Math.random() * alphabet.length)]);
+			el.textContent = el.textContent.replace_at(i, Math.floor(Math.random() * 50) <= change_weight ? aim_string.charAt(i) : alphabet[Math.floor(Math.random() * alphabet.length)]);
 		}
 	}
 }
