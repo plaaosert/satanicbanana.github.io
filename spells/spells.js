@@ -51,6 +51,14 @@ class Vector2 {
         this.y = y;
     }
 
+    static from_hash_code(code) {
+        return new Vector2((code-1) % 1000000, Math.floor((code-1) / 1000000));
+    }
+
+    hash_code() {
+        return (this.y * 1000000) + this.x + 1;
+    }
+
     equals(other) {
         return this.x == other.x && this.y == other.y;
     }
@@ -81,6 +89,10 @@ class Vector2 {
 
     normalize() {
         return this.div(this.magnitude);
+    }
+
+    distance(other) {
+        return this.sub(other).magnitude();
     }
 
     round() {
@@ -136,7 +148,7 @@ class Renderer {
         this.right_menu_size = new Vector2(right_menu_len, game_view_size.y);
         this.total_size = new Vector2(game_view_size.x + left_menu_len + right_menu_len, game_view_size.y);
     
-        this.particle_speed= particle_speed;
+        this.particle_speed = particle_speed;
         this.active_particles = [];
         this.particle_list = [];
         for (var yt=0; yt<game_view_size.y; yt++) {
@@ -146,6 +158,11 @@ class Renderer {
                 this.active_particles[yt].push(null);
             }
         }
+
+        this.selected_tile = null;
+        this.last_selected_tiles = [];
+
+        this.last_player_spell_state = null;
     }
 
     change_size(game_view_size, left_menu_len, right_menu_len) {
@@ -157,6 +174,16 @@ class Renderer {
         this.setup();
     }
     
+    get_position_panel(pos) {
+        if (pos.x < this.left_menu_size.x) {
+            return 0;
+        } else if (pos.x >= this.left_menu_size.x && pos.x < this.left_menu_size.x + this.game_view_size.x) {
+            return 1;
+        } else {
+            return 2;
+        }
+    }
+
     setup() {
         var siz = this.total_size;
 
@@ -183,11 +210,79 @@ class Renderer {
 
                 c.textContent = x < this.left_menu_size.x ? "<" : (x >= this.left_menu_size.x + this.game_view_size.x ? ">" : ".");
                 
+                let flattened_id = (y * siz.x) + x;
+                let rdr = this;
+                c.addEventListener("mouseover", (event) => {
+                    rdr.mouseover(event, flattened_id);
+                })
+
+                c.addEventListener("click", (event) => {
+                    rdr.click(event, flattened_id);
+                })
+
                 parent.appendChild(c);
                 this.pixel_chars[y].push(c);
             }
 
             parent.appendChild(document.createElement("br"));
+        }
+    }
+
+    mouseover(event, flattened_id) {
+        var resolved_pos = new Vector2(
+            flattened_id % this.total_size.x,
+            Math.floor(flattened_id / this.total_size.x)
+        )
+
+        if (this.selected_tile) {
+            this.last_selected_tiles.push(this.selected_tile);
+        }
+
+        switch (this.get_position_panel(resolved_pos)) {
+            case 0:  // left panel
+                break;
+            case 1:  // game screen
+                // highlight current selected panel
+                this.selected_tile = resolved_pos;
+
+                break;
+            case 2:  // right panel
+                break;
+        }
+    }
+
+    click(event, flattened_id) {
+        var resolved_pos = new Vector2(
+            flattened_id % this.total_size.x,
+            Math.floor(flattened_id / this.total_size.x)
+        )
+
+        // convert to coords just on game space (- left tile x)
+        // find screen difference between clicked tile and player tile
+        // (player tile is always in the center, so half the x and y of game viewport)
+        // convert that into game difference (x/2)
+        // apply to player game position
+        // we have our game position
+        var normalised_pos = resolved_pos.sub(new Vector2(this.left_menu_size.x, 0));
+        normalised_pos = new Vector2(Math.floor(normalised_pos.x / 2) * 2, Math.floor(normalised_pos.y));
+
+        var player_screen_pos = this.game_view_size.div(2);
+        var screen_diff = normalised_pos.sub(player_screen_pos);
+        var game_diff = new Vector2(screen_diff.x / 2, screen_diff.y);
+
+        var game_pos = game.player_ent.position.add(game_diff);
+        target = game_pos;
+
+        if (game.selected_player_primed_spell) {
+            // temp
+            test2();
+        } else {
+            // try to move towards the tile - use line again.
+            let path = pathfind(game.player_ent.position, game_pos);
+
+            if (path && path.length > 0) {
+                game.move_entity(game.player_ent, path[1], false);
+            }
         }
     }
 
@@ -233,6 +328,18 @@ class Renderer {
         this.active_particles[pos.y][pos.x / 2] = null;
     }
 
+    set_back(pos, col) {
+        var p = this.pixel_chars[pos.y][pos.x];
+        p.style.backgroundColor = col;
+    }
+
+    set_back_pair(pos, col) {
+        this.set_back(pos, col);
+
+        let add_vec = pos.x % 2 == 0 ? new Vector2(1, 0) : new Vector2(-1, 0);
+        this.set_back(pos.add(add_vec), col);
+    }
+
     set_pixel(pos, char, col) {
         var p = this.pixel_chars[pos.y][pos.x];
         p.textContent = char;
@@ -244,7 +351,9 @@ class Renderer {
 
     set_pixel_pair(pos, chars, col) {
         this.set_pixel(pos, chars[0], col);
-        this.set_pixel(pos.add(new Vector2(1, 0)), chars[1], col);
+
+        let add_vec = pos.x % 2 == 0 ? new Vector2(1, 0) : new Vector2(-1, 0);
+        this.set_pixel(pos.add(add_vec), chars[1], col);
     }
 
     advance_particles() {
@@ -284,15 +393,22 @@ class Renderer {
 
         //console.log(tl, br);
 
+        let selected_col = "#888";
+        for (let i=0; i<this.last_selected_tiles.length; i++) {
+            this.set_back_pair(this.last_selected_tiles[i], null);
+        }
+
+        this.last_selected_tiles = [];
+
         for (var x=0; x<x_delta; x++) {
             for (var y=0; y<y_delta; y++) {
                 // screen pos is twice x because it's 2x1 on screen only
                 var screen_pos = new Vector2((x * 2) + this.left_menu_size.x, y);
 
                 var screen_particle = this.get_particle(screen_pos);
+                var game_pos = tl.add(new Vector2(x, y));
                 if (!screen_particle) {
                     // game pos is simply the top left plus current coords
-                    var game_pos = tl.add(new Vector2(x, y));
                     var ent = this.board.get_pos(game_pos);
 
                     //console.log("screen:", screen_pos, "game:", game_pos);
@@ -306,7 +422,43 @@ class Renderer {
                     // draw the particle instead
                     this.set_pixel_pair(screen_pos, screen_particle.current_str, screen_particle.template.col);
                 }
+
+                // now do spell range highlighting (and select highlighting),
+                // including LOS if necessary
+                
+                // if the game has a selected player spell,
+                // check if the spell is in range. if it is,
+                // tint green. if not, normal tint
+                //var current_state = game.selected_player_primed_spell ? "spell" : "none";
+
+                // can do some optimisation here since we overdraw the same stuff a lot
+                if (true) {
+                    if (game.selected_player_primed_spell) {
+                        if (game.selected_player_primed_spell.root_spell.in_range(game.player_ent, game_pos)) {
+                            let range_indicator_col = (Math.floor(screen_pos.x/2) + screen_pos.y) % 2 != 0 ? "#040" : "#050";
+
+                            this.set_back_pair(screen_pos, range_indicator_col);
+
+                            if (this.selected_tile && new Vector2(Math.floor(this.selected_tile.x / 2) * 2, this.selected_tile.y).equals(screen_pos)) {
+                                console.log("changed");
+                                selected_col = "#0a0";
+                                console.log(selected_col);
+                            }
+                        } else {
+                            this.set_back_pair(screen_pos, null);
+                        }
+                    } else {
+                        this.set_back_pair(screen_pos, null);
+                    }
+
+                    //this.last_player_spell_state = current_state;
+                }
             }
+        }
+
+        // selected cell
+        if (this.selected_tile) {
+            this.set_back_pair(this.selected_tile, selected_col);
         }
     }
 
@@ -468,7 +620,7 @@ class Entity {
         return affinities.some(affinity => this.has_affinity(affinity));
     }
 
-    cast_spell(spells, position_target) {
+    parse_spell(spells, position_target) {
         var spells_text = "";
         spells.forEach(spell => {
             var core_mod_st = spell.typ == SpellType.Core ? "[]" : "{}";
@@ -542,6 +694,18 @@ class Entity {
         }
 
         if (root_spell) {
+            return {root_spell: root_spell, manacost: manacost};
+        } else {
+            return null;
+        }
+    }
+
+    cast_spell(spells, position_target) {
+        let spell_info = this.parse_spell(spells, position_target);
+
+        if (spell_info) {
+            let root_spell = spell_info.root_spell;
+            let manacost = spell_info.manacost;
             //console.log("original spells:", spells);
             //console.log("about to cast", root_spell);
             if (this.mp < manacost) {
@@ -652,9 +816,10 @@ const SpellTargeting = {
 };
 
 const Teams = {
-    Player: "Player",
-    Enemy: "Enemy"
-    // if you pick a random value instead, it'll bef hostile to everything.
+    PLAYER: "Player",
+    ENEMY: "Enemy",
+    UNTARGETABLE_NO_LOS: "Untargetable No LOS",
+    UNTARGETABLE: "Untargetable",
 }
 
 function make_square(target, radius, predicate) {
@@ -684,8 +849,112 @@ function make_square(target, radius, predicate) {
     return positions;
 }
 
+function pathfind(start, goal) {
+    function h(pos) {
+        return goal.distance(pos);
+    }
+
+    function prepend(value, array) {
+        var newArray = array.slice();
+        newArray.unshift(value);
+        return newArray;
+    }
+
+    function reconstruct_path(cameFrom, current) {
+        let total_path = [Vector2.from_hash_code(current)]
+        while (cameFrom[current]) {
+            current = cameFrom[current]
+            total_path.push(Vector2.from_hash_code(current));
+        }
+
+        return total_path.reverse();
+    }
+
+    function get_or_inf(c, v) {
+        if (c[v] != undefined) {
+            return c[v];
+        }
+
+        return Number.POSITIVE_INFINITY;
+    }
+
+    // oh god
+    // https://en.wikipedia.org/wiki/A*_search_algorithm
+    // The set of discovered nodes that may need to be (re-)expanded.
+    // Initially, only the start node is known.
+    // This is usually implemented as a min-heap or priority queue rather than a hash-set.
+    let openSet = {};
+    openSet[start.hash_code()] = true;
+
+    // For node n, cameFrom[n] is the node immediately preceding it on the cheapest path from the start
+    // to n currently known.
+    let cameFrom = {};
+
+    // For node n, gScore[n] is the cost of the cheapest path from start to n currently known.
+    let gScore = {};
+    gScore[start.hash_code()] = 0;
+
+    // For node n, fScore[n] := gScore[n] + h(n). fScore[n] represents our current best guess as to
+    // how cheap a path could be from start to finish if it goes through n.
+    let fScore = {};
+    fScore[start.hash_code()] = h(start)
+
+    while (Object.keys(openSet).length > 0) {
+        // This operation can occur in O(Log(N)) time if openSet is a min-heap or a priority queue
+        let current = null;
+        let current_score = Number.POSITIVE_INFINITY;
+        Object.keys(openSet).forEach(pos => {
+            let score = get_or_inf(fScore, pos);
+
+            if (score < current_score) {
+                current_score = score;
+                current = Vector2.from_hash_code(pos);
+            }
+        })
+
+        if (current.equals(goal)) {
+            return reconstruct_path(cameFrom, current.hash_code())
+        }
+
+        delete openSet[current.hash_code()];
+
+        let neighbours = [
+            current.add(new Vector2(0, 1)),
+            current.add(new Vector2(0, -1)),
+            current.add(new Vector2(-1, 0)),
+            current.add(new Vector2(1, 0)),
+            current.add(new Vector2(-1, -1)),
+            current.add(new Vector2(1, -1)),
+            current.add(new Vector2(-1, 1)),
+            current.add(new Vector2(1, 1)),
+        ]
+
+        for (let i=0; i<neighbours.length; i++) {
+            let neighbor = neighbours[i];
+
+            if (board.position_valid(neighbor) && !board.get_pos(neighbor)) {
+                // d(current,neighbor) is the weight of the edge from current to neighbor
+                // tentative_gScore is the distance from start to the neighbor through current
+                let tentative_gScore = get_or_inf(gScore, current.hash_code()) + (current.distance(neighbor));
+                if (tentative_gScore < get_or_inf(gScore, neighbor.hash_code())) {
+                    // This path to neighbor is better than any previous one. Record it!
+                    cameFrom[neighbor.hash_code()] = current.hash_code();
+                    gScore[neighbor.hash_code()] = tentative_gScore
+                    fScore[neighbor.hash_code()] = tentative_gScore + h(neighbor)
+                    if (!openSet[neighbor.hash_code()]) {
+                        openSet[neighbor.hash_code()] = true;
+                    }
+                }
+            }
+        }
+    }
+
+    // Open set is empty but goal was never reached
+    return 0
+}
+
 // http://rosettacode.org/wiki/Bitmap/Bresenham%27s_line_algorithm#C
-function make_line(a, b, radius) {
+function make_line(a, b, radius, respect_los, just_one) {
     // need to later make radius too, which should just be a diamond from every point
     // pretty simple but im lazy rn
 
@@ -704,8 +973,21 @@ function make_line(a, b, radius) {
     var e2 = 0;
 
     while (true) {
+        if (just_one && coords.length >= 1) {
+            return coords;
+        }
+
         if (x0 != a.x || y0 != a.y) {
             var coord = new Vector2(x0, y0);
+
+            if (respect_los) {
+                let ent_raw = board.get_pos(coord);
+                if (ent_raw && ent_raw.has_team(Teams.UNTARGETABLE_NO_LOS)) {
+                    // occupied so stop early
+                    return coords;
+                }
+            }
+
             coords.push(coord);
         }
 
@@ -720,39 +1002,89 @@ function make_line(a, b, radius) {
     }
 }
 
+function propagate_diamond(origin, radius, los) {
+    let points = [[origin, radius]];
+    let positions = [origin];
+
+    let updated_points = [];
+    while (points.length > 0) {
+        points.forEach(point => {
+            let pos = point[0];
+            let radius_left = point[1];
+
+            let new_positions = [
+                pos.add(new Vector2(-1, 0)),
+                pos.add(new Vector2(1, 0)),
+                pos.add(new Vector2(0, -1)),
+                pos.add(new Vector2(0, 1)),
+            ]
+
+            for (let i=0; i<new_positions.length; i++) {
+                let new_pos = new_positions[i];
+
+                var point_ent = game.board.get_pos(new_pos);
+                var position_already_recorded = false;
+                for (let i=0; i<positions.length; i++) {
+                    if (positions[i].equals(new_pos)) {
+                        position_already_recorded = true;
+                        break;
+                    }
+                }
+
+                var ent_blocks_los = point_ent ? point_ent.has_team(Teams.UNTARGETABLE_NO_LOS) : false;
+
+                if ((!ent_blocks_los || !los) && !position_already_recorded) {
+                    // the position is empty and has not been marked yet
+                    positions.push(new_pos);
+                    if (radius_left > 1) {
+                        updated_points.push(
+                            [new_pos, radius_left - 1]
+                        );
+                    }
+                }
+            };
+        })
+
+        points = updated_points;
+        updated_points = [];
+    }
+
+    return positions.reverse();
+}
+
 const Shape = {
-    Square: ["square shape", function(origin, target, radius) {
+    Square: ["square shape", function(origin, target, radius, los) {
         if (origin == "whoami") {
             return "Square";
         }
 
         return make_square(target, radius);
     }],
-    Circle: ["circle shape", function(origin, target, radius) {
+    Circle: ["circle shape", function(origin, target, radius, los) {
 
     }],
-    Ring: ["ring shape", function(origin, target, radius) {
+    Ring: ["ring shape", function(origin, target, radius, los) {
 
     }],
-    Diamond: ["diamond shape", function(origin, target, radius) {
+    Diamond: ["burst", function(origin, target, radius, los) {
         if (origin == "whoami") {
             return "Diamond";
         }
 
         // make a square but filter it a little
-        return make_square(target, radius, (x, y) => x + y < radius);
+        return propagate_diamond(target, radius, los);
     }],
-    Line: ["straight line", function(origin, target, radius) {
+    Line: ["straight line", function(origin, target, radius, los) {
         if (origin == "whoami") {
             return "Line";
         }
 
-        return make_line(origin, target, radius);
+        return make_line(origin, target, radius, los);
     }],
-    PerpLine: ["line perpendicular to the target", function(origin, target, radius) {
+    PerpLine: ["line perpendicular to the target", function(origin, target, radius, los) {
 
     }],
-    Cone: ["cone shape", function(origin, target, radius) {
+    Cone: ["cone shape", function(origin, target, radius, los) {
 
     }]
 }
@@ -1018,14 +1350,19 @@ class PrimedSpell {
     }
 
     calculate() {
-        this.stats.target_team = [Teams.Enemy, Teams.Player];
+        this.stats.primed_spell = this;
+        this.stats.mutable_info = {};
+
+        this.stats.target_team = [Teams.ENEMY, Teams.PLAYER];
         this.stats.target_affinities = null;
         this.stats.damage = 0;
         this.stats.damage_type = DmgType.Physical;
         this.stats.targeting_predicates = [];
         this.stats.target_type = SpellTargeting.Positional;
         this.stats.radius = 0;
-        this.stats.shape = Shape.Square;
+        this.stats.range = 0;
+        this.stats.shape = Shape.Diamond;
+        this.stats.los = true;
 
         // REMEMBER: CORE ALWAYS FIRST, then modifiers
         // even though in the spell builder the core will be last
@@ -1036,10 +1373,22 @@ class PrimedSpell {
         })
     }
 
+    in_range(caster, position) {
+        if (caster.position.equals(position)) {
+            return true;
+        }
+
+        let los_check = game.has_los(caster, position);
+
+        if (los_check || !this.stats.los) {
+            return caster.position.distance(position) <= this.stats.range;
+        }
+    }
+
     cast(board, caster, position) {
         var self_target_safe = this.stats.target_type == SpellTargeting.SelfTarget;
 
-        var cast_locations = this.stats.shape(caster.position, position, this.stats.radius);
+        var cast_locations = this.stats.shape(caster.position, position, this.stats.radius, this.stats.los);
         //console.log(cast_locations);
 
         if (self_target_safe) {
@@ -1050,6 +1399,13 @@ class PrimedSpell {
 
         var sthis = this;
         cast_locations.forEach(location => {
+            // if the location is LOS untargetable never do anything
+            // unless we ignore LOS
+            let ent_raw = board.get_pos(location);
+            if (this.stats.los && ent_raw && ent_raw.has_team(Teams.UNTARGETABLE_NO_LOS)) {
+                return;
+            }
+
             // by default we add a particle on every location affected
             renderer.put_particle_from_game_loc(location, new Particle(
                 dmg_type_particles[sthis.stats.damage_type]
@@ -1125,6 +1481,9 @@ class Game {
         this.recorded_damage = {};  // indexed by caster id and name
         this.damage_counts = {};    // indexed by spell id
 
+        this.selected_player_spell = null;
+        this.selected_player_primed_spell = null;
+
         // current turn; pops spells off this stack one by one for the purposes of animation
         // anything that casts a spell goes through here first
         this.casting_stack = []
@@ -1184,6 +1543,20 @@ class Game {
         this.checker_interval = null;
     }
 
+    player_spell_in_range(position) {
+        return this.selected_player_primed_spell.root_spell.in_range(this.player_ent, position);
+    }
+
+    select_player_spell(spells) {
+        this.selected_player_spell = spells;
+        this.selected_player_primed_spell = this.player_ent.parse_spell(spells, new Vector2(0, 0));
+    }
+
+    deselect_player_spell() {
+        this.selected_player_spell = null;
+        this.selected_player_primed_spell = null;
+    }
+
     spawn_entity(ent_template, team, position, overwrite) {
         var ent = new Entity(ent_template, team);
         if (this.board.set_pos(position, ent, overwrite)) {
@@ -1196,7 +1569,20 @@ class Game {
     }
 
     spawn_player(player_ent, position) {
-        this.player_ent = this.spawn_entity(player_ent, Teams.Player, position);
+        this.player_ent = this.spawn_entity(player_ent, Teams.PLAYER, position);
+    }
+
+    has_los(ent, position) {
+        let line = make_line(ent.position, position, 1, true);
+
+        // line stops at an LOS blocker,
+        // so to find out if we have LOS we just check if the line
+        // ends at the position we want
+        if (line.length > 0 && line[line.length - 1].equals(position)) {
+            return line;
+        } else {
+            return false;
+        }
     }
 
     move_entity(ent, new_pos, overwrite) {
@@ -1304,13 +1690,14 @@ ${range_string}
 ${mp_string}`;
     
     var stat_function = function(user, spell, stats) {
+        stats.range = range;
         stats.damage = damage;
         stats.radius = radius;
         stats.shape = shape[1];
         stats.manacost = manacost;
         stats.damage_type = damage_type;
         stats.target_type = target_type;
-        stats.target_team = teams ? teams : [Teams.Enemy, Teams.Player];
+        stats.target_team = teams ? teams : [Teams.ENEMY, Teams.PLAYER];
     }
 
     return new Spell(name, SpellType.Core, desc_str, manacost, 0, null, stat_function, no_target, no_hit, no_tiles);
@@ -1341,18 +1728,18 @@ function modifier(name, desc, manacost, to_stats, at_target, on_hit, on_affected
 // [X] 7) multicasts
 spell_cores = [
     core_spell(
-        "Fireball", "", 10, DmgType.Fire, 10, 3,
+        "Fireball", "", 10, DmgType.Fire, 7, 3,
         Shape.Diamond, 25
     ),
 
     core_spell(
         "Fireball with Target Trigger", "Triggers another spell at the target position.", 
-        10, DmgType.Fire, 10, 3,
+        10, DmgType.Fire, 6, 3,
         Shape.Diamond, 60
     ).set_trigger("at_target"),
 
     core_spell(
-        "Icicle", "", 15, DmgType.Ice, 12, 1,
+        "Icicle", "", 15, DmgType.Ice, 8, 1,
         Shape.Square, 20
     )
 ];
@@ -1409,7 +1796,7 @@ spells_list = [
     ...spell_mods_triggers,
     // lightning and other stuff here temporarily
     core_spell(
-        "Lightning Bolt", "", 17, DmgType.Lightning, 12, 1,
+        "Lightning Bolt", "", 17, DmgType.Lightning, 10, 1,
         Shape.Line, 18
     ),
 
@@ -1417,6 +1804,38 @@ spells_list = [
         "Radius Plus I", "", 30,
         function(_, _, s) {
             s.radius += 1;
+        }
+    ),
+
+    modifier(
+        "Behind the Back", "Casts a copy of the spell behind the user.", 120,
+        no_stats, function(user, spell, stats, location) {
+            if (!stats.mutable_info["behind_the_back"]) {
+                stats.mutable_info["behind_the_back"] = true;
+                let user_vec = location.sub(user.position);
+
+                let new_pos = user.position.sub(user_vec);
+                game.cast_primed_spell(stats.primed_spell, new_pos);
+            }
+        }
+    ),
+
+    modifier(
+        "Multicast x4", "Casts a copy of the spell four times.", 300,
+        no_stats, function(user, spell, stats, location) {
+            if (!stats.mutable_info["multicast"] || stats.mutable_info["multicast"] < 4) {
+                stats.mutable_info["multicast"] = stats.mutable_info["multicast"] ? stats.mutable_info["multicast"] + 1 : 1;
+                
+                let new_pos = location;
+                game.cast_primed_spell(stats.primed_spell, new_pos);
+            }
+        }
+    ),
+
+    modifier(
+        "Projection", "Allows the spell to ignore line of sight for targeting and effects.", 40,
+        function(user, spell, stats) {
+            stats.los = false;
         }
     )
 ]
@@ -1434,6 +1853,12 @@ entity_templates = [
     ], [
         spells_list[0]
     ], 1),
+
+    new EntityTemplate("Wall", "[]", "#ccc", "Just a wall.", Number.POSITIVE_INFINITY, 0, [
+        Affinity.Construct
+    ], [
+
+    ], 0),
 ]
 
 var dmg_type_particles = {
@@ -1448,21 +1873,29 @@ var dmg_type_particles = {
     "Psychic": new ParticleTemplate(["@@", "##", "++", "--", ".."], damage_type_cols["Psychic"], 1),
 }
 
-board = new Board(new Vector2(64, 64));
-game = new Game(board);
-renderer = new Renderer(game, board, new Vector2(48, 24), 24, 24, 1/4);
+var board = new Board(new Vector2(64, 64));
+var game = new Game(board);
+var renderer = new Renderer(game, board, new Vector2(48, 24), 24, 24, 1/4);
 
 game.spawn_player(entity_templates[0], new Vector2(16, 16));
-game.spawn_entity(entity_templates[1], Teams.Enemy, new Vector2(48, 48), true).name = "AAA enemy";
-game.spawn_entity(entity_templates[1], Teams.Enemy, new Vector2(46, 48), true).name = "BBB enemy";
-var moving_ent = game.spawn_entity(entity_templates[1], Teams.Enemy, new Vector2(0, 22), true);
+game.spawn_entity(entity_templates[1], Teams.ENEMY, new Vector2(48, 48), true).name = "AAA enemy";
+game.spawn_entity(entity_templates[1], Teams.ENEMY, new Vector2(46, 48), true).name = "BBB enemy";
+var moving_ent = game.spawn_entity(entity_templates[1], Teams.ENEMY, new Vector2(20, 22), true);
 moving_ent.name = "moving guy";
+
+for (let xt=0; xt<game.board.dimensions.x; xt++) {
+    for (let yt=0; yt<game.board.dimensions.y; yt++) {
+        if (Math.random() < 0.1) {
+            game.spawn_entity(entity_templates[2], Teams.UNTARGETABLE_NO_LOS, new Vector2(xt, yt), false);
+        }
+    }
+}
 
 //var primed_spell_test = new PrimedSpell(game.player_ent, [spells_list[0],]);
 var target = new Vector2(20, 22);
 
 // Fireball
-var spell_simple = [spells_list[0],];  
+var spell_simple = [spells_list[11], spells_list[0],];  
 
 // Fireball, Ice Bolt (should ignore ice bolt)
 var spell_extra = [spells_list[0], spells_list[2]];
@@ -1490,18 +1923,37 @@ var spell_lightning = [
 ]
 
 var spell_all = [
-    spells_list[4], spells_list[7], spells_list[8], spells_list[6], spells_list[0], spells_list[2]
+    spells_list[10], spells_list[4], spells_list[7], spells_list[8], spells_list[6], spells_list[0], spells_list[2]
+]
+
+var behind_back = [
+    spells_list[9], spells_list[7]
 ]
 
 
 game.begin_turn();
 //game.player_ent.cast_spell(spell_simple, target);
 
-var test = function(spells) {
+var selected_spells = [];
+
+var test2 = function() {
     game.end_turn();
     game.turn_index = 0;
     game.begin_turn();
-    game.player_ent.cast_spell(spells ? spells : spell_simple, target);
+
+    if (selected_spells.length > 0) {
+        if (game.player_spell_in_range(target)) {
+            game.player_ent.cast_spell(selected_spells, target);
+        }
+    }
+
+    game.deselect_player_spell();
+}
+
+var test = function(spells) {
+    selected_spells = spells ? spells : spell_simple;
+    game.select_player_spell(selected_spells);
+    //test2();
 }
 
 var tmp = new ParticleTemplate(["@@", "##", "++", "--", ".."], "#f00", 1);
@@ -1512,12 +1964,27 @@ var hitcount = 0;
 
 renderer.setup();
 renderer.render_game_view();
-setInterval(function() {
+
+let last_frame_time = Date.now();
+let frame_times = [];
+
+function game_loop() {
     //renderer.add_particle(ppos, new Particle(tmp));
+    last_frame_time = Date.now();
+    frame_times.push(Date.now());
+    frame_times = frame_times.slice(-10);
+
     ppos = ppos.add(new Vector2(2, 1));
     ppos = ppos.wrap(new Vector2(48, 24));
 
-    if (ppos.x % ((moving_ent.position.x > 24 || moving_ent.position.x < 16) ? 1 : 48) == 0) {
+    if (ppos.x % 4 == 0) {
+        if (Math.random() < 0.1) {
+            mov_dir = new Vector2(
+                Math.floor(Math.random() * 2) - 1,
+                Math.floor(Math.random() * 2) - 1
+            )
+        } 
+        
         var moved = game.move_entity(moving_ent, moving_ent.position.add(mov_dir), false);
         if (!moved) {
             mov_dir = mov_dir.neg();
@@ -1526,4 +1993,65 @@ setInterval(function() {
 
     renderer.render_game_view();
     renderer.advance_particles();
-}, (1000/30));
+
+    let frame_duration = Date.now() - last_frame_time;
+    //console.log("frame took", frame_duration, "so waiting", (1000/30) - frame_duration);
+    setTimeout(game_loop, (1000/30) - frame_duration);
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("keydown", (event) => {
+        let name = event.key;
+        let code = event.code;
+
+        console.log(name, code);
+        let mov_pos = null;
+        switch (name) {
+            case "1":
+                test();
+                break;
+
+            case "2":
+                test(spell_trigger_tile);
+                break;
+
+            case "3":
+                test(spell_lightning);
+                break;
+
+            case "4":
+                test(spell_all);
+                break;
+
+            case "ArrowUp":
+            case "w":
+                mov_pos = new Vector2(0, -1);
+                break;
+
+            case "ArrowDown":
+            case "s":
+                mov_pos = new Vector2(0, 1);
+                break;
+
+            case "ArrowLeft":
+            case "a":
+                mov_pos = new Vector2(-1, 0);
+                break;
+
+            case "ArrowRight":
+            case "d":
+                mov_pos = new Vector2(1, 0);
+                break;
+        }
+
+        if (mov_pos) {
+            game.move_entity(
+                game.player_ent,
+                game.player_ent.position.add(mov_pos),
+                false
+            );
+        }
+    });
+
+    game_loop();
+})
