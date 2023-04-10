@@ -251,6 +251,30 @@ class Renderer {
         }
     }
 
+    move_particles(delta) {
+        // this.active_particles[pos.y][pos.x / 2] = particle;
+        // this.particle_list.push([particle, pos]);
+
+        let new_particle_list = [];
+        for (let i=0; i<this.particle_list.length; i++) {
+            let p = this.particle_list[i];
+            this.active_particles[p[1].y][p[1].x / 2] = null;
+        }
+
+        for (let i=0; i<this.particle_list.length; i++) {
+            let p = this.particle_list[i];
+            let new_pos = p[1].add(new Vector2(delta.x * 2, delta.y));
+
+            if (new_pos.x >= 0 && new_pos.x < this.game_view_size.x && new_pos.y >= 0 && new_pos.y < this.game_view_size.y) {
+                this.active_particles[new_pos.y][new_pos.x / 2] = p[0];
+                new_particle_list.push([p[0], new_pos]);
+            }
+        }
+
+        //console.log(this.particle_list, new_particle_list)
+        this.particle_list = new_particle_list;
+    }
+
     click(event, flattened_id) {
         var resolved_pos = new Vector2(
             flattened_id % this.total_size.x,
@@ -282,6 +306,7 @@ class Renderer {
 
             if (path && path.length > 1) {
                 game.move_entity(game.player_ent, path[1], false);
+                this.move_particles(path[1].sub(game.player_ent.position).neg());
             }
         }
     }
@@ -2191,6 +2216,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 game.player_ent.position.add(mov_pos),
                 false
             );
+
+            renderer.move_particles(mov_pos.neg());
         }
     });
 
