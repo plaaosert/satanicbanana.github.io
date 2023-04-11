@@ -102,11 +102,11 @@ body {
 }
 
 .check-dark {
-	background-color: #000;
+	background-color: #f00;
 }
 
 .check-light {
-	background-color: #111;
+	background-color: #0f0;
 }
 
 a {
