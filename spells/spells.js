@@ -41,6 +41,26 @@
 // levelups let you gain skills which will help with [stuff] like mana regen or max mana etc idk
 // dont want to write a skill tree so the bonuses will either be random or fixed every time
 // i want the focus to be on the spells, not skills
+
+/*
+TODO:
+- right panel; when mouseover enemy on screen, show their:
+   - name
+   - hp
+   - mp
+   - affinities
+   - spells:
+      - for each innate spell, show list of components on one side
+      - and calculated stats on the other
+      - don't forget cooldown (it's outside the primed spell area)
+
+- left panel; show player info
+    - hp, mp, affinities
+- up to 5(?) spells can be equipped so show basic info about each
+- spells can have custom names given by the player. this is stored in Game somewhere
+- spells should be clickable to select them, or bound to numbers 1-5
+*/
+
 function in_bounds(val, lo, hi) {
     return val >= lo && val < hi;
 }
@@ -1969,15 +1989,6 @@ function modifier(name, desc, manacost, to_stats, at_target, on_hit, on_affected
     return spell_gen;
 }
 
-
-// TODO
-// [+] 1) write some helper functions to make spells easier
-// [+] 2) write a few cores and modifiers
-// [+] 3) test the spawning of enemies and stuff
-// [+] 4) test casting of spells on enemies (also need to write the spell parser on the "wand" side)
-// [-] 5) rendering!!!!!!! yippee  <- It's time.
-// [+] 6) triggers
-// [X] 7) multicasts
 spell_cores = [
     core_spell(
         "Fireball", "", 10, DmgType.Fire, 7, 3,
