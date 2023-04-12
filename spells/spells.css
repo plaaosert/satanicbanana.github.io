@@ -70,7 +70,7 @@ body {
     top: 0px;
 	left:0px;
     display:block;
-    height: 128px;
+    height: 64px;
     width: 100%;
 	
 	z-index: 1;
@@ -95,6 +95,7 @@ body {
     user-select: none;
 	
     justify-content: center;
+	line-height: calc(0.4vw + 1vh - 1px);
 }
 
 .gamelines {

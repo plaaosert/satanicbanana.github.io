@@ -364,11 +364,9 @@ class Renderer {
             var game_diff = new Vector2(screen_diff.x / 2, screen_diff.y);
 
             var game_pos = game.player_ent.position.add(game_diff);
-            target = game_pos;
 
             if (game.selected_player_primed_spell) {
-                // temp
-                test2();
+                game.player_cast_selected(game_pos);
             } else {
                 // try to move towards the tile - use line again.
                 let path = pathfind(game.player_ent.position, game_pos);
@@ -1104,7 +1102,7 @@ class Entity {
             spells_text += `${core_mod_st} ${spell.name}<br>`;
         })
 
-        document.getElementById("spell-list").innerHTML = spells_text;
+        // document.getElementById("spell-list").innerHTML = spells_text;
 
         // parse the spell into a primed spell first
         // then check its manacost and ensure the entity can cast it
@@ -1238,7 +1236,7 @@ class Entity {
         console.log(`${this.name} says "ow i took ${final_damage} ${damage_type} damage (multiplied by ${dmg_mult} from original ${damage}) from ${caster.name}`);
         if (this.name == "moving guy") {
             hitcount++;
-            document.getElementById("hit-text").textContent = `guy took ${final_damage} ${damage_type} damage (hit ${hitcount})`;
+            // document.getElementById("hit-text").textContent = `guy took ${final_damage} ${damage_type} damage (hit ${hitcount})`;
         }
 
         return final_damage;
@@ -1247,10 +1245,14 @@ class Entity {
 
 class Spell {
     // inventory items use references to these single objects. do not edit them
-    constructor(name, typ, desc, manacost, bonus_draws, trigger_type, to_stats_fn, at_target_fn, on_hit_fn, on_affected_tiles_fn) {
+    constructor(name, icon, col, back_col, typ, desc, manacost, bonus_draws, trigger_type, to_stats_fn, at_target_fn, on_hit_fn, on_affected_tiles_fn) {
         this.name = name;
         // in all cases, the core spell's functions are called first,
         // followed by modifiers in the order of placement.
+        this.icon = icon
+        this.col = col;
+        this.back_col = back_col;
+        
         this.typ = typ;
         this.desc = desc;
         this.bonus_draws = bonus_draws;
@@ -1982,6 +1984,7 @@ class Game {
         this.recorded_damage = {};  // indexed by caster id and name
         this.damage_counts = {};    // indexed by spell id
 
+        this.player_spells = [];
         this.selected_player_spell = null;
         this.selected_player_primed_spell = null;
 
@@ -2086,7 +2089,36 @@ class Game {
         return this.selected_player_primed_spell.root_spell.in_range(this.player_ent, position);
     }
 
-    select_player_spell(spells) {
+    player_cast_selected(at, ignore_turn) {
+        if (!game.is_player_turn() && !ignore_turn) {
+            return;
+        }
+
+        this.player_cast_spell(this.selected_player_spell, at);
+        this.deselect_player_spell();
+    }
+
+    player_cast_spell(spells, at, ignore_turn) {
+        if (!game.is_player_turn() && !ignore_turn) {
+            return;
+        }
+
+        if (spells && spells.length > 0) {
+            if (this.player_spell_in_range(at)) {
+                this.player_ent.cast_spell(spells, at);
+            }
+        }
+    }
+
+    select_player_spell(id) {
+        this.select_player_spell_list(this.player_spells[id].spells);
+    }
+
+    select_player_spell_list(spells) {
+        if (!game.is_player_turn()) {
+            return;
+        }
+
         this.selected_player_spell = spells;
         this.selected_player_primed_spell = this.player_ent.parse_spell(spells, new Vector2(0, 0));
     }
@@ -2232,7 +2264,7 @@ var no_target = function(a, b, c, d) {return null};
 var no_hit = function(a, b, c, d, e, f) {return null};
 var no_tiles = function(a, b, c, d) {return null};
 
-function core_spell(name, desc, damage, damage_type, range, radius, shape, manacost, target_type=SpellTargeting.Positional, teams=null) {
+function core_spell(name, icon, col, back_col, desc, damage, damage_type, range, radius, shape, manacost, target_type=SpellTargeting.Positional, teams=null) {
     var dmg_string = "";
     if (damage == 0) {
         dmg_string += "Affects tiles ";
@@ -2268,13 +2300,13 @@ ${mp_string}`;
         stats.target_team = teams ? teams : [Teams.ENEMY, Teams.PLAYER];
     }
 
-    return new Spell(name, SpellType.Core, desc_str, manacost, 0, null, stat_function, no_target, no_hit, no_tiles);
+    return new Spell(name, icon, col, back_col, SpellType.Core, desc_str, manacost, 0, null, stat_function, no_target, no_hit, no_tiles);
 }
 
-function modifier(name, desc, manacost, to_stats, at_target, on_hit, on_affected_tiles) {
+function modifier(name, icon, col, back_col, desc, manacost, to_stats, at_target, on_hit, on_affected_tiles) {
     var generated_desc = `\nMP cost: [white]${manacost}[clear]`;
     var spell_gen = new Spell(
-        name, SpellType.Modifier, desc + generated_desc, manacost,
+        name, icon, col, back_col, SpellType.Modifier, desc + generated_desc, manacost,
         1, null, to_stats, at_target, on_hit, on_affected_tiles
     );
 
@@ -2287,25 +2319,25 @@ function modifier(name, desc, manacost, to_stats, at_target, on_hit, on_affected
 
 spell_cores = [
     core_spell(
-        "Fireball", "", 10, DmgType.Fire, 7, 3,
+        "Fireball", "##", "white", "black", "", 10, DmgType.Fire, 7, 3,
         Shape.Diamond, 25
     ),
 
     core_spell(
-        "Fireball with Target Trigger", "Triggers another spell at the target position.", 
+        "Fireball with Target Trigger", "##", "white", "black", "Triggers another spell at the target position.", 
         10, DmgType.Fire, 6, 3,
         Shape.Diamond, 60
     ).set_trigger("at_target"),
 
     core_spell(
-        "Icicle", "", 15, DmgType.Ice, 8, 1,
+        "Icicle", "##", "white", "black", "", 15, DmgType.Ice, 8, 1,
         Shape.Square, 20
     )
 ];
 
 spell_mods_stats = [
     modifier(
-        "Damage Plus I", "Increase spell damage by 5.", 10,
+        "Damage Plus I", "##", "white", "black", "Increase spell damage by 5.", 10,
         function(_, _, s) {
             s.damage += 5;
         }
@@ -2322,17 +2354,17 @@ spell_mods_cosmetic = [
 
 spell_mods_triggers = [
     modifier(
-        "Add Target Trigger", "Triggers the linked spell at the position the previous spell was cast.",
+        "Add Target Trigger", "##", "white", "black", "Triggers the linked spell at the position the previous spell was cast.",
         25
     ).set_trigger("at_target"),
 
     modifier(
-        "Add Tile Trigger", "Triggers a copy of the linked spell at every position the previous spell affected.",
+        "Add Tile Trigger", "##", "white", "black", "Triggers a copy of the linked spell at every position the previous spell affected.",
         500
     ).set_trigger("on_affected_tiles"),
 
     modifier(
-        "Add Damage Trigger", "Triggers a copy of the linked spell at the position of every instance of damage caused by the spell.",
+        "Add Damage Trigger", "##", "white", "black", "Triggers a copy of the linked spell at the position of every instance of damage caused by the spell.",
         400
     ).set_trigger("on_hit"),
 ];
@@ -2355,19 +2387,19 @@ spells_list = [
     ...spell_mods_triggers,
     // lightning and other stuff here temporarily
     core_spell(
-        "Lightning Bolt", "", 17, DmgType.Lightning, 10, 1,
+        "Lightning Bolt", "##", "white", "black", "", 17, DmgType.Lightning, 10, 1,
         Shape.Line, 18
     ),
 
     modifier(
-        "Radius Plus I", "", 30,
+        "Radius Plus I", "##", "white", "black", "", 30,
         function(_, _, s) {
             s.radius += 1;
         }
     ),
 
     modifier(
-        "Behind the Back", "Casts a copy of the spell behind the user.", 120,
+        "Behind the Back", "##", "white", "black", "Casts a copy of the spell behind the user.", 120,
         no_stats, function(user, spell, stats, location) {
             if (!stats.mutable_info["behind_the_back"]) {
                 stats.mutable_info["behind_the_back"] = true;
@@ -2380,7 +2412,7 @@ spells_list = [
     ),
 
     modifier(
-        "Multicast x4", "Casts a copy of the spell four times.", 300,
+        "Multicast x4", "##", "white", "black", "Casts a copy of the spell four times.", 300,
         no_stats, function(user, spell, stats, location) {
             if (!stats.mutable_info["multicastx4"] || stats.mutable_info["multicastx4"] < 4) {
                 stats.mutable_info["multicastx4"] = stats.mutable_info["multicastx4"] ? stats.mutable_info["multicastx4"] + 1 : 1;
@@ -2392,24 +2424,24 @@ spells_list = [
     ),
 
     modifier(
-        "Projection", "Allows the spell to ignore line of sight for targeting and effects.", 40,
+        "Projection", "##", "white", "black", "Allows the spell to ignore line of sight for targeting and effects.", 40,
         function(user, spell, stats) {
             stats.los = false;
         }
     ),
 
     core_spell(
-        "Gun", "", 50, DmgType.Physical, 30, 1, Shape.Line, 50
+        "Gun", "##", "white", "black", "", 50, DmgType.Physical, 30, 1, Shape.Line, 50
     ).augment("at_target", function(user, spell, stats, location) {
         user.cast_spell([
             core_spell(
-                "gun explosion", "", 25, DmgType.Fire, 1, 1, Shape.Diamond, 0
+                "gun explosion", "##", "white", "black", "", 25, DmgType.Fire, 1, 1, Shape.Diamond, 0
             )
         ], location);
     }),
 
     modifier(
-        "Uncontrolled Multicast x16", "Casts a copy of the spell sixteen times, moving the target by a random number of tiles up to the spell's radius + 1 each time.", 200,
+        "Uncontrolled Multicast x16", "##", "white", "black", "Casts a copy of the spell sixteen times, moving the target by a random number of tiles up to the spell's radius + 1 each time.", 200,
         no_stats, function(user, spell, stats, location) {
             if (!stats.mutable_info["unc_multicastx16"] || stats.mutable_info["unc_multicastx16"] < 16) {
                 stats.mutable_info["unc_multicastx16"] = stats.mutable_info["unc_multicastx16"] ? stats.mutable_info["unc_multicastx16"] + 1 : 1;
@@ -2423,7 +2455,7 @@ spells_list = [
     ),
 
     core_spell(
-        "All Elements", "all at once. testing", 1, DmgType.Physical, 20, 1, Shape.Diamond, 0
+        "All Elements", "##", "white", "black", "all at once. testing", 1, DmgType.Physical, 20, 1, Shape.Diamond, 0
     ).augment("at_target", function(user, spell, stats, location) {
         let dmgtypes = [
             "Fire",
@@ -2442,29 +2474,29 @@ spells_list = [
     
             user.cast_spell([
                 core_spell(
-                    t, "", 100, DmgType[t], 1, 3, Shape.Diamond, 0
+                    t, "##", "white", "black", "", 100, DmgType[t], 1, 3, Shape.Diamond, 0
                 ).augment("to_stats", function(_, _, s) { s.los = false; })
             ], location.add(new Vector2(0, -8)));
 
             user.cast_spell([
                 core_spell(
-                    t, "", 100, DmgType[t], 1, 3, Shape.Diamond, 0
+                    t, "##", "white", "black", "", 100, DmgType[t], 1, 3, Shape.Diamond, 0
                 ).augment("to_stats", function(_, _, s) { s.los = true; })
             ], location.add(new Vector2(-8, 0)));
 
             user.cast_spell([
                 core_spell(
-                    t, "", 100, DmgType[t], 1, 3, Shape.Line, 0
+                    t, "##", "white", "black", "", 100, DmgType[t], 1, 3, Shape.Line, 0
                 ).augment("to_stats", function(_, _, s) { s.los = false; })
             ], location.add(new Vector2(8, 0)));
 
             user.cast_spell([
                 core_spell(
-                    t, "", 100, DmgType[t], 1, 3, Shape.Line, 0
+                    t, "##", "white", "black", "", 100, DmgType[t], 1, 3, Shape.Line, 0
                 ).augment("to_stats", function(_, _, s) { s.los = true; }).augment("at_target", function(_, _, _, _) { 
                     console.log(t);
-                    document.getElementById("dmg-type-display").textContent = t;
-                    document.getElementById("dmg-type-display").style.color = damage_type_cols[t];
+                    // document.getElementById("dmg-type-display").textContent = t;
+                    // document.getElementById("dmg-type-display").style.color = damage_type_cols[t];
                 })
             ], location.add(new Vector2(0, 8)));
         })
@@ -2474,7 +2506,7 @@ spells_list = [
 
             let new_spell = user.parse_spell([
                 core_spell(
-                    "t", "", 1, DmgType.Physical, 1, 3, Shape.Line, 0
+                    "t", "##", "white", "black", "", 1, DmgType.Physical, 1, 3, Shape.Line, 0
                 ).augment("at_target", function(_, _, _, _) { 
                     game.spell_speed = 100
                 })
@@ -2498,7 +2530,7 @@ entity_templates = [
     ], [
         [[
             core_spell(
-                "Bite", "", 6, DmgType.Physical, 1, 1,
+                "Bite", "##", "white", "black", "", 6, DmgType.Physical, 1, 1,
                 Shape.Diamond, 0
             )
         ], 0],
@@ -2554,7 +2586,7 @@ var moving_ent = game.spawn_entity(entity_templates[1], Teams.ENEMY, new Vector2
 moving_ent.name = "moving guy";
 moving_ent.add_innate_spell([[
     core_spell(
-        "Laser", "", 16, DmgType.Psychic, 6, 1,
+        "Laser", "##", "white", "black", "", 16, DmgType.Psychic, 6, 1,
         Shape.Line, 0
     )
 ], 3]);
@@ -2616,11 +2648,18 @@ let machine_gun = [
     spells_list[13], spells_list[12]
 ]
 
+game.player_spells = [
+    {spells: spell_simple, name: "Fireball (Aerial)"},
+    {spells: spell_trigger_tile, name: "Fireball with Ice Trigger"},
+    {spells: spell_lightning, name: "lightning bolt"},
+    {spells: spell_all, name: "a bunch of stuff"},
+    {spells: gun, name: "gun"}
+]
+
 game.begin_turn();
 //game.player_ent.cast_spell(spell_simple, target);
 
-var selected_spells = [];
-
+/*
 var test2 = function() {
     //game.end_turn();
     //game.turn_index = 0;
@@ -2649,6 +2688,7 @@ var test = function(spells) {
     game.select_player_spell(selected_spells);
     //test2();
 }
+*/
 
 var tmp = new ParticleTemplate(["@@", "##", "++", "--", ".."], "#f00", 1);
 var ppos = new Vector2(0, 0);
@@ -2702,27 +2742,11 @@ document.addEventListener("DOMContentLoaded", function() {
         let mov_pos = null;
         switch (name) {
             case "1":
-                test();
-                break;
-
             case "2":
-                test(spell_trigger_tile);
-                break;
-
             case "3":
-                test(spell_lightning);
-                break;
-
             case "4":
-                test(spell_all);
-                break;
-
             case "5":
-                test(gun);
-                break;
-
-            case "6":
-                test(machine_gun);
+                game.select_player_spell(Number.parseInt(name) - 1);
                 break;
 
             case "q":
