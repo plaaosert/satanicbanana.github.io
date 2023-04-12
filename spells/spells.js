@@ -83,6 +83,10 @@ class Vector2 {
         return this.x == other.x && this.y == other.y;
     }
 
+    copy() {
+        return new Vector2(this.x, this.y);
+    }
+
     neg() {
         return new Vector2(-this.x, -this.y);
     }
@@ -178,6 +182,7 @@ class Renderer {
         this.game = game;
         this.board = board;
         this.game_view_size = game_view_size;
+        this.default_text_col = "white"
 
         this.pixel_chars = [];
         this.left_menu_size = new Vector2(left_menu_len, game_view_size.y);
@@ -196,6 +201,7 @@ class Renderer {
         }
 
         this.selected_tile = null;
+        this.selected_ent = null;
         this.last_selected_tiles = [];
 
         this.last_player_spell_state = null;
@@ -244,7 +250,23 @@ class Renderer {
                     }
                 }
 
-                c.textContent = x < this.left_menu_size.x ? "<" : (x >= this.left_menu_size.x + this.game_view_size.x ? ">" : ".");
+                let text = "\u00A0";
+                let pipe_points = [
+                    0, this.left_menu_size.x - 1,
+                    this.left_menu_size.x + this.game_view_size.x, this.total_size.x - 1
+                ];
+
+                if (pipe_points.includes(x)) {
+                    text = "|";
+                }
+
+                let within_menu = x < this.left_menu_size.x || x >= this.left_menu_size.x + this.game_view_size.x;
+
+                if (within_menu && (y == 0 || y == this.total_size.y - 1)) {
+                    text = text == "|" ? "+" : "-";
+                }
+
+                c.textContent = text;
                 
                 let flattened_id = (y * siz.x) + x;
                 let rdr = this;
@@ -280,6 +302,16 @@ class Renderer {
             case 1:  // game screen
                 // highlight current selected panel
                 this.selected_tile = resolved_pos;
+
+                let s_normalised_pos = this.selected_tile.sub(new Vector2(this.left_menu_size.x, 0));
+                s_normalised_pos = new Vector2(Math.floor(s_normalised_pos.x / 2) * 2, Math.floor(s_normalised_pos.y));
+
+                let s_player_screen_pos = this.game_view_size.div(2);
+                let s_screen_diff = s_normalised_pos.sub(s_player_screen_pos);
+                let s_game_diff = new Vector2(s_screen_diff.x / 2, s_screen_diff.y);
+
+                let s_game_pos = this.game.player_ent.position.add(s_game_diff);
+                this.selected_ent = this.game.board.get_pos(s_game_pos);
 
                 break;
             case 2:  // right panel
@@ -348,6 +380,8 @@ class Renderer {
                         this.move_particles(path[1].sub(game.player_ent.position).neg());
                     }
 
+                    game.end_turn();
+                } else if (game_pos.equals(game.player_ent.position)) {
                     game.end_turn();
                 }
             }
@@ -424,6 +458,54 @@ class Renderer {
         this.set_pixel(pos.add(add_vec), chars[1], col);
     }
 
+    set_pixel_text(pos, text, start_col) {
+        let col = start_col;
+        let reading_new_col = false;
+        let col_read = "";
+        let cur_pos = pos.copy();
+        let wraps = 0;
+
+        for (let i=0; i<text.length; i++) {
+            let char = text[i];
+            if (reading_new_col) {
+                if (char == "]") {
+                    if (col_read == "newline") {
+                        wraps++;
+                        cur_pos = new Vector2(pos.x, cur_pos.y + 1);
+                        if (cur_pos.y >= this.total_size.y) {
+                            return wraps;  // out of bounds
+                        }
+                    } else {
+                        col = col_read == "clear" ? this.default_text_col : col_read;
+                    }
+
+                    col_read = "";
+                    reading_new_col = false;
+                } else {
+                    col_read += char;
+                }
+            } else {
+                if (char == "[" && (i == text.length - 1 || text[i+1] != "]")) {
+                    reading_new_col = true;
+                } else {
+                    this.set_pixel(cur_pos, char, col);
+                    cur_pos = cur_pos.add(new Vector2(1, 0));
+
+                    // line wrap if needed, keep margin from the starting pos
+                    if (cur_pos.x >= this.total_size.x - 2) {
+                        wraps++;
+                        cur_pos = new Vector2(pos.x, cur_pos.y + 1);
+                        if (cur_pos.y >= this.total_size.y) {
+                            return wraps;  // out of bounds
+                        }
+                    }
+                }
+            }
+        }
+
+        return wraps;
+    } 
+
     advance_particles() {
         var new_particle_list = [];
         var sthis = this;
@@ -439,6 +521,196 @@ class Renderer {
         });
 
         this.particle_list = new_particle_list;
+    }
+
+    render_left_panel() {
+        // whatever
+    }
+
+    render_right_panel() {
+        /*
+        TODO:
+        - right panel; when mouseover enemy on screen, show their:
+        - name
+        - hp
+        - mp
+        - affinities
+        - spells:
+            - for each innate spell, show list of components on one side
+            - and calculated stats on the other
+            - don't forget cooldown (it's outside the primed spell area)
+        */
+        function pad_str(s, len) {
+            let string_len = 0;
+            let in_code = false;
+            for (let i=0; i<s.length; i++) {
+                let char = s[i];
+                if (in_code) {
+                    if (char == "]") {
+                        in_code = false;
+                    }
+                } else {
+                    if (char == "[" && (i == s.length - 1 || s[i+1] != "]")) {
+                        in_code = true;
+                    } else {
+                        string_len++;
+                    }
+                }
+            }
+
+            return s + "\u00A0".repeat(Math.max(0, len - string_len));
+        }
+
+        let right_mount_pos = new Vector2(
+            this.left_menu_size.x + this.game_view_size.x + 2, 1
+        );
+
+        let clearance_x = this.right_menu_size.x - 4;
+
+        let string_len = (this.right_menu_size.x - 4) * (this.right_menu_size.y - 2);
+        this.set_pixel_text(right_mount_pos, "\u00A0".repeat(string_len), null);
+
+        if (this.selected_ent && !this.selected_ent.team_present([Teams.UNTARGETABLE, Teams.UNTARGETABLE_NO_LOS])) {
+            let ent = this.selected_ent;
+            
+            // name and icon
+            this.set_pixel_text(
+                right_mount_pos,
+                pad_str(ent.name, clearance_x),
+                null
+            );
+
+            this.set_pixel_text(
+                right_mount_pos.add(new Vector2(clearance_x - 2, 0)),
+                `[${ent.col}]${ent.icon}`,
+                null
+            )
+
+            // desc
+            let wraps = this.set_pixel_text(
+                right_mount_pos.add(new Vector2(0, 1)),
+                pad_str(`[#aaa]${ent.desc}`, clearance_x * 3),
+                null
+            )
+
+            let stats_mount_point = right_mount_pos.add(new Vector2(0, 3 + wraps));
+
+            // hp and mp
+            this.set_pixel_text(
+                stats_mount_point,
+                pad_str(`[red]${ent.hp}/${ent.max_hp}[clear] HP`, 4+1+4+3) // hp 4 digits twice, / (1), " HP" (3)
+            )
+
+            this.set_pixel_text(
+                stats_mount_point.add(new Vector2(0, 1)),
+                pad_str(`[cyan]${ent.mp}/${ent.max_mp}[clear] MP`, 4+1+4+3)
+            )
+
+            // affinities
+            for (let i=0; i<ent.affinities.length; i++) {
+                this.set_pixel_text(
+                    stats_mount_point.add(new Vector2(clearance_x - 10, i)),
+                    pad_str(`[${affinity_cols[ent.affinities[i]]}]${ent.affinities[i]}`, 10) // longest affinity is 10 i hope
+                )
+            }
+
+            // weaknesses
+            let dmgtypes = Object.keys(DmgType);
+            let affinity_pos = stats_mount_point.add(new Vector2(clearance_x - 16, this.total_size.y - 18));
+
+            this.set_pixel_text(
+                affinity_pos.sub(new Vector2(0, 2)),
+                pad_str(`[clear]Weak / Resist:`, 16)
+            )
+
+            for (let i=0; i<dmgtypes.length; i++) {
+                let dmgtype = dmgtypes[i];
+                let dmg_mult = ent.get_damage_mult(dmgtype);
+                dmg_mult = Math.round(dmg_mult * 100) / 100;
+
+                if (dmg_mult != 1) {
+                    this.set_pixel_text(
+                        affinity_pos,
+                        pad_str(`[${damage_type_cols[dmgtype]}]${dmg_mult}x ${dmgtype}`, 16)
+                    )
+                } else {
+                    this.set_pixel_text(
+                        affinity_pos,
+                        pad_str(``, 16)
+                    )
+                }
+
+                affinity_pos = affinity_pos.add(new Vector2(0, 1));
+            }
+
+            // spells
+            // for each spell, show the spell list
+            let current_spell_point = stats_mount_point.add(new Vector2(0, 3));
+            for (let i=0; i<ent.innate_spells.length; i++) {
+                let spells = ent.innate_spells[i][0];
+                let cooldown = ent.innate_spells[i][1];
+
+                spells.forEach(spell => {
+                    var core_mod_st = spell.typ == SpellType.Core ? "[]" : "{}";
+                    this.set_pixel_text(
+                        current_spell_point,
+                        pad_str(`[#bbb]${core_mod_st} ${spell.name}`, clearance_x - 18) // longest affinity is 10 i hope
+                    )
+
+                    current_spell_point = current_spell_point.add(new Vector2(0, 1));
+                });
+
+                let pstats = ent.innate_primed_spells[i][0].root_spell.stats;
+                this.set_pixel_text(
+                    current_spell_point,
+                    pad_str(`[clear]${pstats.damage} [${damage_type_cols[pstats.damage_type]}]${pstats.damage_type}[clear] damage`, clearance_x - 18)
+                )
+
+                current_spell_point = current_spell_point.add(new Vector2(0, 1));
+
+                this.set_pixel_text(
+                    current_spell_point,
+                    pad_str(`[clear]${pstats.range} range`, clearance_x - 18)
+                )
+
+                current_spell_point = current_spell_point.add(new Vector2(0, 1));
+
+                this.set_pixel_text(
+                    current_spell_point,
+                    pad_str(`[clear]${cooldown} turn cooldown`, clearance_x - 18)
+                )
+
+                current_spell_point = current_spell_point.add(new Vector2(0, 1));
+
+                let current_cd = ent.innate_primed_spells[i][1]
+                if (current_cd > 0) {
+                    this.set_pixel_text(
+                        current_spell_point,
+                        pad_str(`(${current_cd} turn${current_cd == 1 ? "" : "s"} left)`, clearance_x - 18)
+                    )
+                } else {
+                    this.set_pixel_text(
+                        current_spell_point,
+                        pad_str("", clearance_x - 18)
+                    )
+                }
+
+                current_spell_point = current_spell_point.add(new Vector2(0, 3));
+            }
+        } else if (this.selected_ent) {
+            this.set_pixel_text(
+                right_mount_pos,
+                pad_str(this.selected_ent.name, clearance_x),
+                null
+            );
+        } else {
+            // need to clear the whole panel. can do this with a well-constructed string
+            // size of right panel is right panel size x - 4 (border margin) multiplied by y - 2
+            /*
+            let string_len = (this.right_menu_size.x - 4) * (this.right_menu_size.y - 2);
+            this.set_pixel_text(right_mount_pos, "\u00A0".repeat(string_len), null);
+            */
+        }
     }
 
     render_game_view() {
@@ -466,7 +738,9 @@ class Renderer {
             // selected tile needs to be scaled back by size of left,
             // then halved,
             // then used as a difference from center
-            var s_normalised_pos = this.selected_tile.sub(new Vector2(this.left_menu_size.x, 0));
+            let selected_loc = this.selected_tile ? this.selected_tile : new Vector2(0, 0);
+
+            var s_normalised_pos = selected_loc.sub(new Vector2(this.left_menu_size.x, 0));
             s_normalised_pos = new Vector2(Math.floor(s_normalised_pos.x / 2) * 2, Math.floor(s_normalised_pos.y));
 
             var s_player_screen_pos = this.game_view_size.div(2);
@@ -505,7 +779,7 @@ class Renderer {
                     //console.log("screen:", screen_pos, "game:", game_pos);
 
                     if (ent) {
-                        this.set_pixel_pair(screen_pos, ent.template.icon, ent.template.col);
+                        this.set_pixel_pair(screen_pos, ent.icon, ent.col);
                     } else {
                         this.set_pixel_pair(screen_pos, "\u00A0\u00A0");
                     }
@@ -719,19 +993,32 @@ class Entity {
         Entity.id_inc++;
 
         this.template = template;
-        this.name = template.name
-        this.max_hp = template.max_hp
+        this.name = template.name;
+        this.desc = template.desc;
+        this.col = template.col;
+        this.icon = template.icon;
+
+        this.max_hp = template.max_hp;
         this.hp = this.max_hp;
-        this.max_mp = template.max_mp
+        this.max_mp = template.max_mp;
         this.mp = this.max_mp;
         this.position = new Vector2(0, 0);
         this.affinities = template.affinities.slice();
         this.innate_spells = template.innate_spells.slice();
         this.innate_primed_spells = [];
 
-        this.ai_level = template.ai_level
-        this.team = team
+        this.ai_level = template.ai_level;
+        this.team = team;
         this.dead = false;
+
+        this.calculate_primed_spells(new Vector2(0, 0));
+    }
+
+    add_innate_spell(spells) {
+        this.innate_spells.push(spells);
+        this.innate_primed_spells = [];
+
+        this.calculate_primed_spells(new Vector2(0, 0));
     }
 
     calculate_primed_spells(pos) {
@@ -739,8 +1026,8 @@ class Entity {
         for (let i=0; i<this.innate_spells.length; i++) {
             let primed_spell = this.parse_spell(this.innate_spells[i][0], pos);
 
-            // [spell, cooldown]
-            let cooldown = this.innate_primed_spells[i] ? this.innate_primed_spells[i][1] - 1 : this.innate_spells[i][1];
+            // [spells, cooldown]
+            let cooldown = this.innate_primed_spells[i] ? this.innate_primed_spells[i][1] - 1 : 0;
             new_primed.push([primed_spell, cooldown]);
         }
 
@@ -924,6 +1211,15 @@ class Entity {
         }
     }
 
+    get_damage_mult(damage_type) {
+        let dmg_mult = 1;
+        this.affinities.forEach(affinity => {
+            dmg_mult *= affinity_weaknesses[affinity][damage_type]
+        });
+
+        return dmg_mult;
+    }
+
     take_damage(caster, damage, damage_type) {
         if (this.dead) {
             return 0;
@@ -936,7 +1232,7 @@ class Entity {
         });
 
         // spell source might change damage but not right now
-        var final_damage = damage * dmg_mult;
+        var final_damage = Math.round(damage * dmg_mult);
 
         this.lose_hp(final_damage);
         console.log(`${this.name} says "ow i took ${final_damage} ${damage_type} damage (multiplied by ${dmg_mult} from original ${damage}) from ${caster.name}`);
@@ -1328,204 +1624,204 @@ const Affinity = {
 }
 
 const affinity_cols = {
-    "Fire": "#fff",
-    "Ice": "#fff",
-    "Lightning": "#fff",
-    "Arcane": "#fff",
-    "Ghost": "#fff",
-    "Chaos": "#fff",
-    "Holy": "#fff",
-    "Dark": "#fff",
-    "Demon": "#fff",
-    "Undead": "#fff",
-    "Natural": "#fff",
-    "Living": "#fff",
-    "Insect": "#fff",
-    "Construct": "#fff",
-    "Order": "#fff"
+    "Fire": "#e25822",
+    "Ice": "#A5F2F3",
+    "Lightning": "#ffff33",
+    "Arcane": "#ff4d94",
+    "Ghost": "#ddd",
+    "Chaos": "#e6970f",
+    "Holy": "#fef19a",
+    "Dark": "#7a49a2",
+    "Demon": "#ff2812",
+    "Undead": "#888",
+    "Natural": "#4a4",
+    "Living": "#6f6",
+    "Insect": "#282",
+    "Construct": "#bbb",
+    "Order": "#D5C2A5"
 }
 
 // index 1: what type the defender is
 // index 2: what type the attacker is
-affinity_weaknesses = {
+const affinity_weaknesses = {
     "Fire": {
-        "Fire": 2,  // fight fire with fire >:)
-        "Ice": 0.25,  // ice very ineffective
-        "Lightning": 1,  // lightning is neutral
-        "Arcane": 1,  // arcane also neutral
-        "Physical": 0.75,  // physical slightly ineffective
-        "Dark": 2,  // dark extinguishes fire
-        "Chaos": 0.5,  // fire is already chaos so ineffective
-        "Holy": 1.5,  // holy beats fire because order
-        "Psychic": 1,  // neutral
+        "Fire": 0.5,       // resistant
+        "Ice": 0.25,        // resistant
+        "Lightning": 1,  // neutral
+        "Arcane": 1,     // neutral
+        "Physical": 0.75,   // resistant
+        "Dark": 1.5,       // weak
+        "Chaos": 1.5,      // weak
+        "Holy": 1,       // neutral
+        "Psychic": 1.5,    // weak
     },
 
     "Ice": {
-        "Fire": 2,       // fire OWNS ice
-        "Ice": 1,        // neutral
-        "Lightning": 0.75,  // ice resists shocks
-        "Arcane": 1.5,     // arcane beats ice because arcane crystals
-        "Physical": 1.5,   // physical cracks ice
+        "Fire": 2,       // weak
+        "Ice": 0.5,        // resistant
+        "Lightning": 1,  // neutral
+        "Arcane": 0.75,     // resistant
+        "Physical": 1.5,   // weak
         "Dark": 1,       // neutral
-        "Chaos": 1.5,      // chaos beats ice b/c kinda fire
-        "Holy": 0.5,       // ice beats holy because dark-aligned
-        "Psychic": 0.5,    // ice beats psychic. too big
+        "Chaos": 1.5,      // weak
+        "Holy": 1,       // neutral
+        "Psychic": 1,    // neutral
     },
 
     "Lightning": {
         "Fire": 1,       // neutral
-        "Ice": 1.5,        // ice wins
-        "Lightning": 1,  // neutral
-        "Arcane": 0.75,     // lightning wins
-        "Physical": 0.75,   // lightning wins
-        "Dark": 0.5,       // lightning wins
-        "Chaos": 1.5,      // chaos wins
-        "Holy": 1.5,       // holy wins
-        "Psychic": 1,    // neutral
+        "Ice": 1,        // neutral
+        "Lightning": 0.5,  // resistant
+        "Arcane": 1,     // neutral
+        "Physical": 0.75,   // resistant
+        "Dark": 1.5,       // weak
+        "Chaos": 1,      // neutral
+        "Holy": 1,       // neutral
+        "Psychic": 1.5,    // weak
     },
  
     "Arcane": {
-        "Fire": 1,       // justification
-        "Ice": 1,        // justification
-        "Lightning": 1,  // justification
-        "Arcane": 1,     // justification
-        "Physical": 1,   // justification
-        "Dark": 1,       // justification
-        "Chaos": 1,      // justification
-        "Holy": 1,       // justification
-        "Psychic": 1,    // justification
+        "Fire": 1,       // neutral
+        "Ice": 0.75,        // resistant
+        "Lightning": 1,  // neutral
+        "Arcane": 1,     // neutral
+        "Physical": 1,   // neutral
+        "Dark": 1.5,       // weak
+        "Chaos": 1,      // neutral
+        "Holy": 1.25,       // weak
+        "Psychic": 1.5,    // weak
     },
  
     "Ghost": {
-        "Fire": 1,       // justification
-        "Ice": 1,        // justification
-        "Lightning": 1,  // justification
-        "Arcane": 1,     // justification
-        "Physical": 1,   // justification
-        "Dark": 1,       // justification
-        "Chaos": 1,      // justification
-        "Holy": 1,       // justification
-        "Psychic": 1,    // justification
+        "Fire": 1,       // neutral
+        "Ice": 1,        // resistant
+        "Lightning": 1,  // neutral
+        "Arcane": 1,     // weak
+        "Physical": 1,   // immune
+        "Dark": 1,       // resistant
+        "Chaos": 1,      // neutral
+        "Holy": 1,       // weak
+        "Psychic": 1,    // weak
     },
  
     "Chaos": {
-        "Fire": 1,       // justification
-        "Ice": 1,        // justification
-        "Lightning": 1,  // justification
-        "Arcane": 1,     // justification
-        "Physical": 1,   // justification
-        "Dark": 1,       // justification
-        "Chaos": 1,      // justification
-        "Holy": 1,       // justification
-        "Psychic": 1,    // justification
+        "Fire": 0.5,       // resistant
+        "Ice": 0.5,        // resistant
+        "Lightning": 0.5,  // resistant
+        "Arcane": 1.75,     // weak
+        "Physical": 1,   // neutral
+        "Dark": 1,       // neutral
+        "Chaos": 0.5,      // resistant
+        "Holy": 1,       // neutral
+        "Psychic": 1.5,    // weak
     },
  
     "Holy": {
-        "Fire": 1,       // justification
-        "Ice": 1,        // justification
-        "Lightning": 1,  // justification
-        "Arcane": 1,     // justification
-        "Physical": 1,   // justification
-        "Dark": 1,       // justification
-        "Chaos": 1,      // justification
-        "Holy": 1,       // justification
-        "Psychic": 1,    // justification
+        "Fire": 0.5,       // resistant
+        "Ice": 1,        // neutral
+        "Lightning": 0.5,  // resistant
+        "Arcane": 1.5,     // weak
+        "Physical": 1,   // neutral
+        "Dark": 2,       // weak
+        "Chaos": 1,      // neutral
+        "Holy": 1,       // neutral
+        "Psychic": 1.5,    // weak
     },
  
     "Dark": {
-        "Fire": 1,       // justification
-        "Ice": 1,        // justification
-        "Lightning": 1,  // justification
-        "Arcane": 1,     // justification
-        "Physical": 1,   // justification
-        "Dark": 1,       // justification
-        "Chaos": 1,      // justification
-        "Holy": 1,       // justification
-        "Psychic": 1,    // justification
+        "Fire": 1.5,       // weak
+        "Ice": 0.5,        // resistant
+        "Lightning": 1,  // neutral
+        "Arcane": 1.5,     // weak
+        "Physical": 1,   // neutral
+        "Dark": 0.5,       // resistant
+        "Chaos": 0.75,      // resistant
+        "Holy": 2,       // weak
+        "Psychic": 1.5,    // weak
     },
  
     "Demon": {
-        "Fire": 1,       // justification
-        "Ice": 1,        // justification
-        "Lightning": 1,  // justification
-        "Arcane": 1,     // justification
-        "Physical": 1,   // justification
-        "Dark": 1,       // justification
-        "Chaos": 1,      // justification
-        "Holy": 1,       // justification
-        "Psychic": 1,    // justification
+        "Fire": 0.5,       // resistant
+        "Ice": 0.5,        // resistant
+        "Lightning": 1,  // neutral
+        "Arcane": 1,     // neutral
+        "Physical": 1,   // neutral
+        "Dark": 0.25,       // resistant
+        "Chaos": 0.5,      // resistant
+        "Holy": 2,       // weak
+        "Psychic": 1,    // neutral
     },
  
     "Undead": {
-        "Fire": 1,       // justification
-        "Ice": 1,        // justification
-        "Lightning": 1,  // justification
-        "Arcane": 1,     // justification
-        "Physical": 1,   // justification
-        "Dark": 1,       // justification
-        "Chaos": 1,      // justification
-        "Holy": 1,       // justification
-        "Psychic": 1,    // justification
+        "Fire": 1.5,       // weak
+        "Ice": 0.5,        // resistant
+        "Lightning": 1,  // neutral
+        "Arcane": 1,     // neutral
+        "Physical": 1,   // neutral
+        "Dark": 0.25,       // resistant
+        "Chaos": 1,      // neutral
+        "Holy": 2,       // weak
+        "Psychic": 1,    // neutral
     },
  
     "Natural": {
-        "Fire": 1,       // justification
-        "Ice": 1,        // justification
-        "Lightning": 1,  // justification
-        "Arcane": 1,     // justification
-        "Physical": 1,   // justification
-        "Dark": 1,       // justification
-        "Chaos": 1,      // justification
-        "Holy": 1,       // justification
-        "Psychic": 1,    // justification
+        "Fire": 1.5,       // weak (be aware many things will be natural and living)
+        "Ice": 1.5,        // weak
+        "Lightning": 1,  // neutral
+        "Arcane": 1,     // neutral
+        "Physical": 1,   // neutral
+        "Dark": 1,       // neutral
+        "Chaos": 1.25,      // weak
+        "Holy": 1,       // neutral
+        "Psychic": 1,    // neutral
     },
  
     "Living": {
-        "Fire": 1,       // justification
-        "Ice": 1,        // justification
-        "Lightning": 1,  // justification
-        "Arcane": 1,     // justification
-        "Physical": 1,   // justification
-        "Dark": 1,       // justification
-        "Chaos": 1,      // justification
-        "Holy": 1,       // justification
-        "Psychic": 1,    // justification
+        "Fire": 1.5,       // weak
+        "Ice": 1,        // neutral
+        "Lightning": 1.5,  // weak
+        "Arcane": 1,     // neutral
+        "Physical": 1,   // neutral
+        "Dark": 1,       // neutral
+        "Chaos": 1,      // neutral
+        "Holy": 1,       // neutral
+        "Psychic": 1,    // neutral
     },
  
     "Insect": {
-        "Fire": 1,       // justification
-        "Ice": 1,        // justification
-        "Lightning": 1,  // justification
-        "Arcane": 1,     // justification
-        "Physical": 1,   // justification
-        "Dark": 1,       // justification
-        "Chaos": 1,      // justification
-        "Holy": 1,       // justification
-        "Psychic": 1,    // justification
+        "Fire": 2,       // weak
+        "Ice": 1.5,        // weak
+        "Lightning": 1,  // neutral
+        "Arcane": 1,     // neutral
+        "Physical": 1,   // neutral
+        "Dark": 1,       // neutral
+        "Chaos": 1,      // neutral
+        "Holy": 1,       // neutral
+        "Psychic": 0.5,    // resistant
     },
  
     "Construct": {
-        "Fire": 1,       // justification
-        "Ice": 1,        // justification
-        "Lightning": 1,  // justification
-        "Arcane": 1,     // justification
-        "Physical": 1,   // justification
-        "Dark": 1,       // justification
-        "Chaos": 1,      // justification
-        "Holy": 1,       // justification
-        "Psychic": 1,    // justification
+        "Fire": 0.25,       // resistant
+        "Ice": 0.25,        // resistant
+        "Lightning": 0.5,  // resistant
+        "Arcane": 1,     // neutral
+        "Physical": 0.5,   // resistant
+        "Dark": 1,       // neutral
+        "Chaos": 1,      // neutral
+        "Holy": 1,       // neutral
+        "Psychic": 0.25,    // resistant
     },
  
     "Order": {
-        "Fire": 1,       // justification
-        "Ice": 1,        // justification
-        "Lightning": 1,  // justification
-        "Arcane": 1,     // justification
-        "Physical": 1,   // justification
-        "Dark": 1,       // justification
-        "Chaos": 1,      // justification
-        "Holy": 1,       // justification
-        "Psychic": 1,    // justification
+        "Fire": 1,       // neutral
+        "Ice": 1,        // neutral
+        "Lightning": 1,  // neutral
+        "Arcane": 0.5,     // resistant
+        "Physical": 1,   // neutral
+        "Dark": 0.5,       // resistant
+        "Chaos": 2,      // weak
+        "Holy": 1,       // neutral
+        "Psychic": 2,    // weak
     },
 };
 
@@ -2191,13 +2487,13 @@ spells_list = [
 
 
 entity_templates = [
-    new EntityTemplate("Player", "@=", "#0cf", "It's you.", 100 + 1000000, 100000, [
+    new EntityTemplate("Player", "@=", "#0cf", "It's you.", 100, 9999, [
         Affinity.Living  // player is only living by default, can be changed by events
     ], [
 
     ], 0),
 
-    new EntityTemplate("test enemy", "Gg", "#0f0", "idk goblin or smt", 100, 1000000, [
+    new EntityTemplate("test enemy", "Gg", "#0f0", "idk goblin or smt", 100, 10, [
         Affinity.Arcane, Affinity.Construct, Affinity.Order
     ], [
         [[
@@ -2206,6 +2502,26 @@ entity_templates = [
                 Shape.Diamond, 0
             )
         ], 0],
+    ], 1),
+
+    new EntityTemplate("big guy", "#+", "#f00", "scary guy who tests the description line wrapping too. really long text", 9999, 9999, [
+        Affinity.Fire,
+        Affinity.Ice,
+        Affinity.Lightning,
+        Affinity.Arcane,
+        Affinity.Ghost,
+        Affinity.Chaos,
+        Affinity.Holy,
+        Affinity.Dark,
+        Affinity.Demon,
+        Affinity.Undead,
+        Affinity.Natural,
+        Affinity.Living,
+        Affinity.Insect,
+        Affinity.Construct,
+        Affinity.Order
+    ], [
+
     ], 1),
 
     new EntityTemplate("Wall", "[]", "#ccc", "Just a wall.", Number.POSITIVE_INFINITY, 0, [
@@ -2229,24 +2545,26 @@ var dmg_type_particles = {
 
 var board = new Board(new Vector2(64, 64));
 var game = new Game(board);
-var renderer = new Renderer(game, board, new Vector2(48, 24), 24, 24, 1/2);
+var renderer = new Renderer(game, board, new Vector2(64, 36), 48, 48, 1/2);
 
-game.spawn_player(entity_templates[0], new Vector2(16, 16));
+game.spawn_player(entity_templates[0], new Vector2(32, 32));
 game.spawn_entity(entity_templates[1], Teams.ENEMY, new Vector2(48, 48), true).name = "AAA enemy";
 game.spawn_entity(entity_templates[1], Teams.ENEMY, new Vector2(46, 48), true).name = "BBB enemy";
 var moving_ent = game.spawn_entity(entity_templates[1], Teams.ENEMY, new Vector2(20, 22), true);
 moving_ent.name = "moving guy";
-moving_ent.innate_spells.push([[
+moving_ent.add_innate_spell([[
     core_spell(
         "Laser", "", 16, DmgType.Psychic, 6, 1,
         Shape.Line, 0
     )
-], 3])
+], 3]);
+
+game.spawn_entity(entity_templates[2], Teams.ENEMY, new Vector2(14, 22), true);
 
 for (let xt=0; xt<game.board.dimensions.x; xt++) {
     for (let yt=0; yt<game.board.dimensions.y; yt++) {
         if (Math.random() < 0.01) {
-            game.spawn_entity(entity_templates[2], Teams.UNTARGETABLE_NO_LOS, new Vector2(xt, yt), false);
+            game.spawn_entity(entity_templates[3], Teams.UNTARGETABLE_NO_LOS, new Vector2(xt, yt), false);
         }
     }
 }
@@ -2339,7 +2657,6 @@ var mov_dir = new Vector2(1, 0);
 var hitcount = 0;
 
 renderer.setup();
-renderer.render_game_view();
 
 let last_frame_time = Date.now();
 let frame_times = [];
@@ -2368,6 +2685,7 @@ function game_loop() {
     // }
 
     renderer.render_game_view();
+    renderer.render_right_panel();
     renderer.advance_particles();
 
     let frame_duration = Date.now() - last_frame_time;

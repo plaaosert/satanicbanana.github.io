@@ -85,7 +85,7 @@ body {
 	margin-right: -50%;
 	transform: translate(-50%, -50%);
 
-	font-size: calc(0.5vw + 1.5vh - 1px);
+	font-size: calc(0.4vw + 1vh - 1px);
 	color: #fff;
 	
 	-moz-user-select: -moz-none;
