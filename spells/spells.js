@@ -202,10 +202,10 @@ class Renderer {
         this.particle_speed = particle_speed;
         this.active_particles = [];
         this.particle_list = [];
-        for (var yt=0; yt<game_view_size.y; yt++) {
+        for (let yt=0; yt<game_view_size.y; yt++) {
             this.active_particles.push([]);
 
-            for (var xt=0; xt<game_view_size.x/2; xt++) {
+            for (let xt=0; xt<game_view_size.x/2; xt++) {
                 this.active_particles[yt].push(null);
             }
         }
@@ -215,6 +215,10 @@ class Renderer {
         this.last_selected_tiles = [];
 
         this.last_player_spell_state = null;
+
+        this.selectable_spell_icons = {};
+        this.selected_spell = null;
+        this.selected_spell_loc = null;
     }
 
     change_size(game_view_size, left_menu_len, right_menu_len) {
@@ -237,19 +241,19 @@ class Renderer {
     }
 
     setup() {
-        var siz = this.total_size;
+        let siz = this.total_size;
 
         // make a span for every pixel for now. this might suck but i think
         // it's better than repainting the DOM heavily every frame
         this.pixel_chars = [];
-        var parent = document.getElementById("gamelines");
+        let parent = document.getElementById("gamelines");
         parent.innerHTML = "";
 
-        for (var y=0; y<siz.y; y++) {
+        for (let y=0; y<siz.y; y++) {
             this.pixel_chars.push([]);
 
-            for (var x=0; x<siz.x; x++) {
-                var c = document.createElement("span");
+            for (let x=0; x<siz.x; x++) {
+                let c = document.createElement("span");
                 c.classList.add("gamepixel");
                 c.classList.add("white");
                 if (x >= this.left_menu_size.x && x < this.left_menu_size.x + this.game_view_size.x) {
@@ -297,7 +301,7 @@ class Renderer {
     }
 
     mouseover(event, flattened_id) {
-        var resolved_pos = new Vector2(
+        let resolved_pos = new Vector2(
             flattened_id % this.total_size.x,
             Math.floor(flattened_id / this.total_size.x)
         )
@@ -306,10 +310,17 @@ class Renderer {
             this.last_selected_tiles.push(this.selected_tile);
         }
 
+        this.selected_spell = null;
+        this.selected_spell_loc = null;
+
         switch (this.get_position_panel(resolved_pos)) {
             case 0:  // left panel
                 this.selected_tile = null;
                 this.selected_ent = null;
+                this.selected_spell = this.selectable_spell_icons[resolved_pos.hash_code()];
+                if (this.selected_spell) {
+                    this.selected_spell_loc = resolved_pos;
+                }
                 break;
             case 1:  // game screen
                 // highlight current selected panel
@@ -356,7 +367,7 @@ class Renderer {
     }
 
     click(event, flattened_id) {
-        var resolved_pos = new Vector2(
+        let resolved_pos = new Vector2(
             flattened_id % this.total_size.x,
             Math.floor(flattened_id / this.total_size.x)
         )
@@ -368,14 +379,14 @@ class Renderer {
         // apply to player game position
         // we have our game position
         if (game.is_player_turn()) {
-            var normalised_pos = resolved_pos.sub(new Vector2(this.left_menu_size.x, 0));
+            let normalised_pos = resolved_pos.sub(new Vector2(this.left_menu_size.x, 0));
             normalised_pos = new Vector2(Math.floor(normalised_pos.x / 2) * 2, Math.floor(normalised_pos.y));
 
-            var player_screen_pos = this.game_view_size.div(2);
-            var screen_diff = normalised_pos.sub(player_screen_pos);
-            var game_diff = new Vector2(screen_diff.x / 2, screen_diff.y);
+            let player_screen_pos = this.game_view_size.div(2);
+            let screen_diff = normalised_pos.sub(player_screen_pos);
+            let game_diff = new Vector2(screen_diff.x / 2, screen_diff.y);
 
-            var game_pos = game.player_ent.position.add(game_diff);
+            let game_pos = game.player_ent.position.add(game_diff);
 
             if (game.selected_player_primed_spell) {
                 game.player_cast_selected(game_pos);
@@ -416,23 +427,23 @@ class Renderer {
         // convert game into viewport space.
         // this isn't actually the simplest thing in the world
         // get the difference vector in game coords between the particle and the player
-        var game_dist_diff = pos.sub(this.game.player_ent.position);
+        let game_dist_diff = pos.sub(this.game.player_ent.position);
 
         // convert into screen space (multiply by 2)
-        var screen_diff = new Vector2(game_dist_diff.x * 2, game_dist_diff.y);
+        let screen_diff = new Vector2(game_dist_diff.x * 2, game_dist_diff.y);
 
         // screen position of player is always centered so:
-        var player_screen_pos = this.game_view_size.div(2);
+        let player_screen_pos = this.game_view_size.div(2);
 
         // sum
-        var particle_pos = screen_diff.add(player_screen_pos);
+        let particle_pos = screen_diff.add(player_screen_pos);
 
         //console.log("putting particle. game", pos, "screen", particle_pos);
         this.add_particle(particle_pos, particle);
     }
 
     get_particle(pos) {
-        var particle_pos = new Vector2(pos.x - this.left_menu_size.x, pos.y);
+        let particle_pos = new Vector2(pos.x - this.left_menu_size.x, pos.y);
         return this.active_particles[particle_pos.y][particle_pos.x / 2];
     }
 
@@ -441,7 +452,7 @@ class Renderer {
     }
 
     set_back(pos, col) {
-        var p = this.pixel_chars[pos.y][pos.x];
+        let p = this.pixel_chars[pos.y][pos.x];
         p.style.backgroundColor = col;
     }
 
@@ -461,7 +472,7 @@ class Renderer {
     }
 
     set_pixel(pos, char, col) {
-        var p = this.pixel_chars[pos.y][pos.x];
+        let p = this.pixel_chars[pos.y][pos.x];
         p.textContent = char;
 
         if (col) {
@@ -476,15 +487,71 @@ class Renderer {
         this.set_pixel(pos.add(add_vec), chars[1], col);
     }
 
-    set_pixel_text(pos, text, start_col) {
+    wrap(s, w) {
+        let lines = [];
+        let cur_line = "";
+        let cur_word = "";
+        let string_len = 0;
+        let in_code = false;
+
+        for (let i=0; i<s.length; i++) {
+            let char = s[i];
+            if (in_code) {
+                if (char == "]") {
+                    in_code = false;
+                }
+            } else {
+                if (char == "[" && (i == s.length - 1 || s[i+1] != "]")) {
+                    in_code = true;
+                } else {
+                    if (char != "\n") {
+                        if (char == " ") {
+                            cur_line += cur_word + " ";
+                            cur_word = "";
+                        }
+
+                        string_len++;
+                    }
+                }
+            }
+
+            if (string_len > w || char == "\n") {
+                if (char == "\n" && !(string_len > w)) {
+                    cur_line += cur_word + " ";
+                    cur_word = "";
+                }
+
+                lines.push(cur_line.trim());
+                cur_line = "";
+                string_len = cur_word.length;
+            }
+
+            if (char != " " && char != "\n") {
+                cur_word += char;
+            }
+        }
+
+        cur_line += cur_word;
+        if (cur_line.length > 0) {
+            lines.push(cur_line)
+        }
+
+        return lines.join("\n");
+    }
+    
+    set_pixel_text(pos, text, start_col, clearance_x) {
         let col = start_col;
         let reading_new_col = false;
         let col_read = "";
         let cur_pos = pos.copy();
         let wraps = 0;
 
-        for (let i=0; i<text.length; i++) {
-            let char = text[i];
+        let wrapped_text = clearance_x ? this.wrap(text, clearance_x) : text;
+        //console.log(text);
+        //console.log(wrapped_text);
+
+        for (let i=0; i<wrapped_text.length; i++) {
+            let char = wrapped_text[i];
             if (reading_new_col) {
                 if (char == "]") {
                     if (col_read == "newline") {
@@ -503,15 +570,18 @@ class Renderer {
                     col_read += char;
                 }
             } else {
-                if (char == "[" && (i == text.length - 1 || text[i+1] != "]")) {
+                if (char == "[" && (i == wrapped_text.length - 1 || wrapped_text[i+1] != "]")) {
                     reading_new_col = true;
                 } else {
                     char = char.replace("{", "[").replace("}", "]");
-                    this.set_pixel(cur_pos, char, col);
-                    cur_pos = cur_pos.add(new Vector2(1, 0));
+
+                    if (char != "\n") {
+                        this.set_pixel(cur_pos, char, col);
+                        cur_pos = cur_pos.add(new Vector2(1, 0));
+                    }
 
                     // line wrap if needed, keep margin from the starting pos
-                    if (cur_pos.x >= this.total_size.x - 2) {
+                    if (cur_pos.x >= this.total_size.x - 2 || char == "\n") {
                         wraps++;
                         cur_pos = new Vector2(pos.x, cur_pos.y + 1);
                         if (cur_pos.y >= this.total_size.y) {
@@ -526,8 +596,8 @@ class Renderer {
     } 
 
     advance_particles() {
-        var new_particle_list = [];
-        var sthis = this;
+        let new_particle_list = [];
+        let sthis = this;
         this.particle_list.forEach(particle => {
             // check if particle isn't orphaned (exists in list but not present in board)
             if (this.get_particle(particle[1].add(new Vector2(this.left_menu_size.x, 0))).id == particle[0].id) {
@@ -582,6 +652,8 @@ class Renderer {
         - show list of all 5 spells
         - show inventory and number of spells
         */
+
+        this.selectable_spell_icons = {};
 
         let left_mount_pos = new Vector2(
             2, 1
@@ -678,6 +750,14 @@ class Renderer {
                 let icon = spell.icon;
                 let col = spell.col;
                 let back_col = spell.back_col;
+                if (this.selected_spell && this.selected_spell.id == spell.id) {
+                    if (this.selected_spell_loc.equals(current_spell_point.add(new Vector2(num_spells * 3, 0))) || this.selected_spell_loc.equals(current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)))) { 
+                        back_col = "white";
+                    } else {
+                        back_col = "#aaa";
+                    }
+                    col = "black";
+                }
 
                 spell_str += `[${col}]${icon} `;
                 this.set_back_set(
@@ -685,6 +765,9 @@ class Renderer {
                     current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)),
                     back_col
                 )
+
+                this.selectable_spell_icons[current_spell_point.add(new Vector2(num_spells * 3, 0)).hash_code()] = spell;
+                this.selectable_spell_icons[current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)).hash_code()] = spell;
 
                 num_spells++;
             })
@@ -729,7 +812,7 @@ class Renderer {
             this.set_pixel_text(
                 right_mount_pos,
                 this.pad_str(ent.name, clearance_x),
-                null
+                "white"
             );
 
             this.set_pixel_text(
@@ -738,14 +821,20 @@ class Renderer {
                 null
             )
 
+            this.set_pixel_text(
+                right_mount_pos.add(new Vector2(0, 1)),
+                "\u00A0".repeat(clearance_x * 3),
+                null
+            );
+
             // desc
             let wraps = this.set_pixel_text(
                 right_mount_pos.add(new Vector2(0, 1)),
-                this.pad_str(`[#aaa]${ent.desc}`, clearance_x * 3),
-                null
+                `[#aaa]${ent.desc}`,
+                null, clearance_x - 1
             )
 
-            let stats_mount_point = right_mount_pos.add(new Vector2(0, 3 + wraps));
+            let stats_mount_point = right_mount_pos.add(new Vector2(0, 6));
 
             // hp and mp
             this.set_pixel_text(
@@ -780,10 +869,12 @@ class Renderer {
                 let dmg_mult = ent.get_damage_mult(dmgtype);
                 dmg_mult = Math.round(dmg_mult * 100) / 100;
 
-                if (dmg_mult != 1) {
+                let col = `rgb(${Math.max(0, Math.min(255, (dmg_mult) * 256))}, ${Math.max(0, Math.min(255, (-dmg_mult+2) * 256))}, 0)`
+
+                if (true) {
                     this.set_pixel_text(
                         affinity_pos,
-                        this.pad_str(`[${damage_type_cols[dmgtype]}]${this.pad_str(dmg_mult + "x", 5, true)} ${dmgtype}`, 16)
+                        this.pad_str(`[${col}]${this.pad_str(dmg_mult + "x", 5, true)} [${damage_type_cols[dmgtype]}]${dmgtype}`, 16)
                     )
                 } else {
                     this.set_pixel_text(
@@ -889,6 +980,50 @@ class Renderer {
                 this.pad_str(this.selected_ent.name, clearance_x),
                 null
             );
+        } else if (this.selected_spell) {
+            // show spell information here instead.
+            let s = this.selected_spell;
+
+            this.set_pixel_text(
+                right_mount_pos,
+                this.pad_str(`[${s.col}]${s.name}`, clearance_x - 3),
+                "white"
+            );
+
+            this.set_back_set(
+                right_mount_pos,
+                right_mount_pos.add(new Vector2(s.name.length - 1, 0)),
+                s.back_col
+            );
+
+            this.set_pixel_text(
+                right_mount_pos.add(new Vector2(clearance_x - 2, 0)),
+                this.pad_str(`[${s.col}]${s.icon}`, 3),
+                "white"
+            );
+
+            this.set_back_set(
+                right_mount_pos.add(new Vector2(clearance_x - 2, 0)),
+                right_mount_pos.add(new Vector2(clearance_x - 1, 0)),
+                s.back_col
+            );
+
+            let typ_col = {
+                "Core": "#f00",
+                "Modifier": "#0af" 
+            }[s.typ];
+            this.set_pixel_text(
+                right_mount_pos.add(new Vector2(0, 2)),
+                this.pad_str(`[${typ_col}]${s.typ}`, 3),
+                "white"
+            );
+
+            this.set_pixel_text(
+                right_mount_pos.add(new Vector2(0, 4)),
+                this.pad_str(s.desc, clearance_x),
+                "white",
+                clearance_x - 1
+            );
         } else {
             // need to clear the whole panel. can do this with a well-constructed string
             // size of right panel is right panel size x - 4 (border margin) multiplied by y - 2
@@ -905,17 +1040,17 @@ class Renderer {
         // need to factor that into our horizontal length
         // (we can only fit half as many chars as it seems)
 
-        var hlen = this.game_view_size.x / 2;
-        var vlen = this.game_view_size.y / 2;
+        let hlen = this.game_view_size.x / 2;
+        let vlen = this.game_view_size.y / 2;
 
-        var player_pos = this.game.player_ent.position;
+        let player_pos = this.game.player_ent.position;
 
         // game positions. here we ensure we only go half as much back
-        var tl = new Vector2(Math.floor(player_pos.x - (hlen / 2)), Math.floor(player_pos.y - vlen));
-        var br = new Vector2(Math.ceil(player_pos.x + (hlen / 2)), Math.ceil(player_pos.y + vlen));
+        let tl = new Vector2(Math.floor(player_pos.x - (hlen / 2)), Math.floor(player_pos.y - vlen));
+        let br = new Vector2(Math.ceil(player_pos.x + (hlen / 2)), Math.ceil(player_pos.y + vlen));
 
-        var x_delta = br.x - tl.x;
-        var y_delta = br.y - tl.y;
+        let x_delta = br.x - tl.x;
+        let y_delta = br.y - tl.y;
 
         //console.log(tl, br);
 
@@ -926,14 +1061,14 @@ class Renderer {
             // then used as a difference from center
             let selected_loc = this.selected_tile ? this.selected_tile : new Vector2(0, 0);
 
-            var s_normalised_pos = selected_loc.sub(new Vector2(this.left_menu_size.x, 0));
+            let s_normalised_pos = selected_loc.sub(new Vector2(this.left_menu_size.x, 0));
             s_normalised_pos = new Vector2(Math.floor(s_normalised_pos.x / 2) * 2, Math.floor(s_normalised_pos.y));
 
-            var s_player_screen_pos = this.game_view_size.div(2);
-            var s_screen_diff = s_normalised_pos.sub(s_player_screen_pos);
-            var s_game_diff = new Vector2(s_screen_diff.x / 2, s_screen_diff.y);
+            let s_player_screen_pos = this.game_view_size.div(2);
+            let s_screen_diff = s_normalised_pos.sub(s_player_screen_pos);
+            let s_game_diff = new Vector2(s_screen_diff.x / 2, s_screen_diff.y);
 
-            var s_game_pos = game.player_ent.position.add(s_game_diff);
+            let s_game_pos = game.player_ent.position.add(s_game_diff);
 
             if (game.selected_player_primed_spell.root_spell.in_range(game.player_ent, s_game_pos)) {
                 radius_vecs = game.selected_player_primed_spell.root_spell.stats.shape(
@@ -951,16 +1086,16 @@ class Renderer {
 
         this.last_selected_tiles = [];
 
-        for (var x=0; x<x_delta; x++) {
-            for (var y=0; y<y_delta; y++) {
+        for (let x=0; x<x_delta; x++) {
+            for (let y=0; y<y_delta; y++) {
                 // screen pos is twice x because it's 2x1 on screen only
-                var screen_pos = new Vector2((x * 2) + this.left_menu_size.x, y);
+                let screen_pos = new Vector2((x * 2) + this.left_menu_size.x, y);
 
-                var screen_particle = this.get_particle(screen_pos);
-                var game_pos = tl.add(new Vector2(x, y));
+                let screen_particle = this.get_particle(screen_pos);
+                let game_pos = tl.add(new Vector2(x, y));
                 if (!screen_particle) {
                     // game pos is simply the top left plus current coords
-                    var ent = this.board.get_pos(game_pos);
+                    let ent = this.board.get_pos(game_pos);
 
                     //console.log("screen:", screen_pos, "game:", game_pos);
 
@@ -980,10 +1115,10 @@ class Renderer {
                 // if the game has a selected player spell,
                 // check if the spell is in range. if it is,
                 // tint green. if not, normal tint
-                //var current_state = game.selected_player_primed_spell ? "spell" : "none";
+                //let current_state = game.selected_player_primed_spell ? "spell" : "none";
 
                 // can do some optimisation here since we overdraw the same stuff a lot
-                var back_rgb = [0, 0, 0];
+                let back_rgb = [0, 0, 0];
                 if (true) {
                     let pos_in_bounds = true;
                     if (!this.board.position_valid(game_pos)) {
@@ -1051,18 +1186,18 @@ class Renderer {
     }
 
     test() {
-        var cols = ["#fff", "#f00", "#0f0", "#00f", "#000"];
-        var chars = ["#", "&", "+", "-", "\u00A0"];
-        var sthis = this;
+        let cols = ["#fff", "#f00", "#0f0", "#00f", "#000"];
+        let chars = ["#", "&", "+", "-", "\u00A0"];
+        let sthis = this;
         
         for (let i=0; i<1024; i++) {
             setTimeout(function() {
                 //console.log(i);
-                var col = cols[i % 4];
+                let col = cols[i % 4];
 
-                for (var o=0; o<50; o++) {
+                for (let o=0; o<50; o++) {
                     if (i-o >= 0) {
-                        var loc = new Vector2((i-o) % (sthis.total_size.x + sthis.total_size.y), 0);
+                        let loc = new Vector2((i-o) % (sthis.total_size.x + sthis.total_size.y), 0);
                         while (true) {
                             if (loc.x < sthis.total_size.x) {
                                 sthis.set_pixel(loc, chars[Math.floor(o/10)], cols[Math.floor(o/10)]);
@@ -1082,15 +1217,15 @@ class Renderer {
 
 class Board {
     constructor(size) {
-        var x = size.x;
-        var y = size.y;
+        let x = size.x;
+        let y = size.y;
 
         this.dimensions = new Vector2(size.x, size.y);
         this.cells = [];
-        for (var yt=0; yt<y; yt++) {
+        for (let yt=0; yt<y; yt++) {
             this.cells.push([]);
 
-            for (var xt=0; xt<x; xt++) {
+            for (let xt=0; xt<x; xt++) {
                 this.cells[yt].push(null);
             }
         }
@@ -1132,7 +1267,7 @@ class Board {
     }
 
     check_for_entity(position, teams, affinities, predicate) {
-        var result = this.get_pos(position);
+        let result = this.get_pos(position);
         if (result) {
             if (teams && !(result.team_present(teams))) {
                 return null;
@@ -1273,6 +1408,11 @@ class Entity {
         }
     }
 
+    do_end_turn() {
+        // for now just give some mp regen
+        this.mp = Math.min(this.max_mp, this.mp + Math.round(this.max_mp / 25));
+    }
+
     has_team(team) {
         return this.team == team;
     }
@@ -1290,9 +1430,9 @@ class Entity {
     }
 
     parse_spell(spells, position_target) {
-        var spells_text = "";
+        let spells_text = "";
         spells.forEach(spell => {
-            var core_mod_st = spell.typ == SpellType.Core ? "[]" : "{}";
+            let core_mod_st = spell.typ == SpellType.Core ? "[]" : "{}";
             spells_text += `${core_mod_st} ${spell.name}<br>`;
         })
 
@@ -1304,23 +1444,23 @@ class Entity {
 
         // until i can figure out multicasts, we're dropping them.
         // triggers only
-        var root_spell = null;
-        var last_spell = null;
-        var draws = 1;
-        var after_finishing_draws = "stop";
-        var next_trigger = "";
-        var cores_in_draw = [];
-        var modifiers_in_draw = [];
-        var finished_drawing = false;
+        let root_spell = null;
+        let last_spell = null;
+        let draws = 1;
+        let after_finishing_draws = "stop";
+        let next_trigger = "";
+        let cores_in_draw = [];
+        let modifiers_in_draw = [];
+        let finished_drawing = false;
 
-        var manacost = 0;
+        let manacost = 0;
 
-        for (var i=0; i<spells.length; i++) {
+        for (let i=0; i<spells.length; i++) {
             if (finished_drawing) {
                 break;
             }
 
-            var spell = spells[i];
+            let spell = spells[i];
 
             manacost += spell.manacost;
 
@@ -1336,7 +1476,7 @@ class Entity {
             draws--;
 
             if (draws <= 0) {
-                var new_primed_spell = new PrimedSpell(this, [
+                let new_primed_spell = new PrimedSpell(this, [
                     ...cores_in_draw, ...modifiers_in_draw
                 ]);
 
@@ -1421,13 +1561,13 @@ class Entity {
         }
 
         // compare damage type to affinities and determine total multiplier
-        var dmg_mult = 1;
+        let dmg_mult = 1;
         this.affinities.forEach(affinity => {
             dmg_mult *= affinity_weaknesses[affinity][damage_type]
         });
 
         // spell source might change damage but not right now
-        var final_damage = Math.round(damage * dmg_mult);
+        let final_damage = Math.round(damage * dmg_mult);
 
         let died = this.lose_hp(final_damage);
         console.log(`${this.name} says "ow i took ${final_damage} ${damage_type} damage (multiplied by ${dmg_mult} from original ${damage}) from ${caster.name}`);
@@ -1448,9 +1588,9 @@ class Entity {
                 let x_left = x;
 
                 // chunks should be such that 10 chunks = one level of xp
-                // max of 10
+                // max of 25
                 let num_chunks = 1 + (9 * (x / game.get_xp_for_levelup(game.player_level)));
-                num_chunks = Math.floor(Math.min(10, num_chunks));
+                num_chunks = Math.floor(Math.min(25, num_chunks));
 
                 let sthis = this;
                 for (let i=0; i<num_chunks; i++) {
@@ -1472,8 +1612,13 @@ class Entity {
 }
 
 class Spell {
+    static id_inc = 0;
+
     // inventory items use references to these single objects. do not edit them
     constructor(name, icon, col, back_col, typ, desc, manacost, bonus_draws, trigger_type, to_stats_fn, at_target_fn, on_hit_fn, on_affected_tiles_fn) {
+        this.id = Spell.id_inc;
+        Spell.id_inc++;
+        
         this.name = name;
         // in all cases, the core spell's functions are called first,
         // followed by modifiers in the order of placement.
@@ -1495,7 +1640,7 @@ class Spell {
     }
 
     augment(fn, new_fn) {
-        var old_function = this.fns[fn];
+        let old_function = this.fns[fn];
         this.fns[fn] = function(a, b, c, d, e, f) {
             if (old_function) {
                 old_function(a, b, c, d, e, f);
@@ -1529,9 +1674,9 @@ const SpellType = {
 }
 
 const SpellTargeting = {
-    Positional: 'a position',
+    Positional: 'a position on the ground',
     UnitTarget: 'a specific unit',      // includes teams for filtering
-    SelfTarget: 'around the caster',    // cast location is self tile
+    SelfTarget: 'the area around the caster',    // cast location is self tile
     SelfTargetPlusCasterTile: 'at the caster\'s position'  // self target implicitly removes caster tile but this doesn't
 };
 
@@ -1543,12 +1688,12 @@ const Teams = {
 }
 
 function make_square(target, radius, predicate) {
-    var positions = [];
-    var tx = target.x;
-    var ty = target.y;
+    let positions = [];
+    let tx = target.x;
+    let ty = target.y;
 
-    for (var y=0; y<radius; y++) {
-        for (var x=0; x<radius; x++) {
+    for (let y=0; y<radius; y++) {
+        for (let x=0; x<radius; x++) {
             if (!predicate || predicate(x, y)) {
                 positions.push(new Vector2(tx + x, ty + y));
                 if (x > 0) {
@@ -1575,7 +1720,7 @@ function pathfind(start, goal) {
     }
 
     function prepend(value, array) {
-        var newArray = array.slice();
+        let newArray = array.slice();
         newArray.unshift(value);
         return newArray;
     }
@@ -1678,19 +1823,19 @@ function make_line(a, b, radius, respect_los, just_one) {
     // need to later make radius too, which should just be a diamond from every point
     // pretty simple but im lazy rn
 
-    var x0 = a.x;
-    var y0 = a.y;
+    let x0 = a.x;
+    let y0 = a.y;
 
-    var x1 = b.x;
-    var y1 = b.y;
+    let x1 = b.x;
+    let y1 = b.y;
 
-    var coords = [];
-    var dx = Math.abs(x1-x0);
-    var sx = x0<x1 ? 1 : -1;
-    var dy = Math.abs(y1-y0);
-    var sy = y0<y1 ? 1 : -1; 
-    var err = (dx>dy ? dx : -dy)/2;
-    var e2 = 0;
+    let coords = [];
+    let dx = Math.abs(x1-x0);
+    let sx = x0<x1 ? 1 : -1;
+    let dy = Math.abs(y1-y0);
+    let sy = y0<y1 ? 1 : -1; 
+    let err = (dx>dy ? dx : -dy)/2;
+    let e2 = 0;
 
     while (true) {
         if (just_one && coords.length >= 1) {
@@ -1698,7 +1843,7 @@ function make_line(a, b, radius, respect_los, just_one) {
         }
 
         if (x0 != a.x || y0 != a.y) {
-            var coord = new Vector2(x0, y0);
+            let coord = new Vector2(x0, y0);
 
             if (respect_los) {
                 let ent_raw = board.get_pos(coord);
@@ -1742,8 +1887,8 @@ function propagate_diamond(origin, radius, los) {
             for (let i=0; i<new_positions.length; i++) {
                 let new_pos = new_positions[i];
 
-                var point_ent = game.board.get_pos(new_pos);
-                var position_already_recorded = false;
+                let point_ent = game.board.get_pos(new_pos);
+                let position_already_recorded = false;
                 for (let i=0; i<positions.length; i++) {
                     if (positions[i].equals(new_pos)) {
                         position_already_recorded = true;
@@ -1751,7 +1896,7 @@ function propagate_diamond(origin, radius, los) {
                     }
                 }
 
-                var ent_blocks_los = point_ent ? point_ent.has_team(Teams.UNTARGETABLE_NO_LOS) : false;
+                let ent_blocks_los = point_ent ? point_ent.has_team(Teams.UNTARGETABLE_NO_LOS) : false;
 
                 if ((!ent_blocks_los || !los) && !position_already_recorded) {
                     // the position is empty and has not been marked yet
@@ -2118,9 +2263,9 @@ class PrimedSpell {
     }
 
     cast(board, caster, position) {
-        var self_target_safe = this.stats.target_type == SpellTargeting.SelfTarget;
+        let self_target_safe = this.stats.target_type == SpellTargeting.SelfTarget;
 
-        var cast_locations = this.stats.shape(caster.position, position, this.stats.radius, this.stats.los);
+        let cast_locations = this.stats.shape(caster.position, position, this.stats.radius, this.stats.los);
         //console.log(cast_locations);
 
         if (self_target_safe) {
@@ -2129,7 +2274,7 @@ class PrimedSpell {
         
         game.reset_damage_count(this.id);
 
-        var sthis = this;
+        let sthis = this;
         cast_locations.forEach(location => {
             // if we're out of bounds, exit instantly
             if (!game.board.position_valid(location)) {
@@ -2148,8 +2293,8 @@ class PrimedSpell {
                 dmg_type_particles[sthis.stats.damage_type]
             ));
 
-            var targeting_predicate = sthis.stats.targeting_predicates.length > 0 ? function(e) { sthis.stats.targeting_predicates.every(p => p(e)) } : null;
-            var ent = board.check_for_entity(
+            let targeting_predicate = sthis.stats.targeting_predicates.length > 0 ? function(e) { sthis.stats.targeting_predicates.every(p => p(e)) } : null;
+            let ent = board.check_for_entity(
                 location, sthis.stats.target_team, 
                 sthis.stats.target_affinities, targeting_predicate
             )
@@ -2185,15 +2330,15 @@ class PrimedSpell {
         }
 
         // get list of damaged entities from this spell
-        var damaged_entities = game.get_damage_count(this.id);
+        let damaged_entities = game.get_damage_count(this.id);
         // [{ent, dmg_amount, dmg_type}]
         // each instance of damage is handled separately
 
         if (damaged_entities) {
             damaged_entities.forEach(dmg_instance => {
-                var ent = dmg_instance.ent;
-                var amt = dmg_instance.amount;
-                var typ = dmg_instance.dmg_type;
+                let ent = dmg_instance.ent;
+                let amt = dmg_instance.amount;
+                let typ = dmg_instance.dmg_type;
 
                 this.spells.forEach(spell => {
                     if (spell.fns.on_hit) {
@@ -2251,7 +2396,7 @@ class Game {
         // we then periodically check the casting stack to see if there's anything on there.
         // if there is, we cast it and set waiting_for_spell to true, which means
         // that once we clear out the casting stack the current entity's turn will end.
-        var me = this;
+        let me = this;
         this.checker_interval = setTimeout(function() {
             me.check_spell_stack();
         }, this.spell_speed);
@@ -2272,12 +2417,12 @@ class Game {
         //console.log("checking spell stack");
         //console.log("casting stack:", this.casting_stack, "waiting:", this.waiting_for_spell);
         if (this.casting_stack.length > 0) {
-            var spell_to_cast = this.casting_stack.pop();
+            let spell_to_cast = this.casting_stack.pop();
             //console.log("popping spell off stack:", spell_to_cast, "for",  this.entities[this.turn_index]);
             spell_to_cast.spell.cast(this.board, this.entities[this.turn_index], spell_to_cast.target);
             this.waiting_for_spell = false;
 
-            var me = this;
+            let me = this;
             this.checker_interval = setTimeout(function() {
                 me.check_spell_stack();
             }, this.spell_speed);
@@ -2290,7 +2435,7 @@ class Game {
                     sthis.end_turn()
                 }, interval);
             } else {
-                var me = this;
+                let me = this;
                 this.checker_interval = setTimeout(function() {
                     me.check_spell_stack();
                 }, this.spell_speed);
@@ -2302,6 +2447,8 @@ class Game {
         this.waiting_for_spell = false;
         //console.log("ending turn for", this.entities[this.turn_index].name)
         
+        this.entities[this.turn_index].do_end_turn();
+
         clearTimeout(this.checker_interval);
         this.checker_interval = null;
 
@@ -2310,6 +2457,23 @@ class Game {
             this.turn_index = (this.turn_index + 1) % this.entities.length;
             if (this.entities[this.turn_index].ai_level != 999) {
                 valid_ent = true;
+            }
+        }
+
+        if (Math.random() < (0.05 + (num_enemy_spawns / 100)) && this.entities[this.turn_index].id == this.player_ent.id) {
+            let loc = new Vector2(Math.floor(Math.random() * 64), Math.floor(Math.random() * 64));
+            let enemy = game.spawn_entity(entity_templates[1], Teams.ENEMY, loc, false);
+            if (enemy) {
+                enemy.name = "spawned guy #" + num_enemy_spawns;
+
+                enemy.add_innate_spell([[
+                    core_spell(
+                        "Laser", "??", "white", "red", "", 16, DmgType.Psychic, 6, 1,
+                        Shape.Line, 0
+                    )
+                ], 3, "Psycho-Laser", damage_type_cols["Psychic"]]);
+
+                num_enemy_spawns++;
             }
         }
 
@@ -2416,7 +2580,7 @@ class Game {
     }
 
     spawn_entity(ent_template, team, position, overwrite) {
-        var ent = new Entity(ent_template, team);
+        let ent = new Entity(ent_template, team);
         if (this.board.set_pos(position, ent, overwrite)) {
             ent.position = position;
             this.entities.push(ent);
@@ -2488,8 +2652,8 @@ class Game {
     }
 
     setup_damage_count() {
-        var cnts = {};
-        for (var typ in DmgType) {
+        let cnts = {};
+        for (let typ in DmgType) {
             cnts[typ] = 0;
         }
         
@@ -2497,7 +2661,7 @@ class Game {
     }
 
     deal_damage(target, caster, spell_id, damage, damage_type) {
-        var dmg_taken = target.take_damage(caster, damage, damage_type);
+        let dmg_taken = target.take_damage(caster, damage, damage_type);
 
         if (!this.damage_counts[spell_id]) {
             this.damage_counts[spell_id] = [];
@@ -2509,7 +2673,7 @@ class Game {
             typ: damage_type
         });
 
-        var record_name = caster.id.toString() + caster.name;
+        let record_name = caster.id.toString() + caster.name;
         if (this.recorded_damage[record_name]) {
             this.recorded_damage[record_name] += dmg_taken;
         } else {
@@ -2518,17 +2682,17 @@ class Game {
     }
 
     kill(ent) {
-        var current_turn_entity = this.entities[this.turn_index];
-        var new_entity_list = [];
-        for (var i=0; i<this.entities.length; i++) {
+        let current_turn_entity = this.entities[this.turn_index];
+        let new_entity_list = [];
+        for (let i=0; i<this.entities.length; i++) {
             if (this.entities[i].id != ent.id) {
                 new_entity_list.push(this.entities[i]);
             }
         }
 
         if (current_turn_entity.id != ent.id) {
-            var updated_turn_index = null;
-            for (var i=0; i<new_entity_list.length; i++) {
+            let updated_turn_index = null;
+            for (let i=0; i<new_entity_list.length; i++) {
                 if (this.entities[i].id == current_turn_entity.id) {
                     updated_turn_index = i;
                 }
@@ -2546,37 +2710,37 @@ class Game {
     }
 }
 
-var no_stats = function(a, b, c) {return null};
-var no_target = function(a, b, c, d) {return null};
-var no_hit = function(a, b, c, d, e, f) {return null};
-var no_tiles = function(a, b, c, d) {return null};
+let no_stats = function(a, b, c) {return null};
+let no_target = function(a, b, c, d) {return null};
+let no_hit = function(a, b, c, d, e, f) {return null};
+let no_tiles = function(a, b, c, d) {return null};
 
 function core_spell(name, icon, col, back_col, desc, damage, damage_type, range, radius, shape, manacost, target_type=SpellTargeting.Positional, teams=null) {
-    var dmg_string = "";
+    let dmg_string = "";
     if (damage == 0) {
         dmg_string += "Affects tiles ";
     } else if (damage > 0) {
-        dmg_string += `Deals [white]${damage} [${damage_type_cols[damage_type]}]${damage_type}[clear] damage `;
+        dmg_string += `Deals [#4df]${damage} [${damage_type_cols[damage_type]}]${damage_type}[clear] damage `;
     } else if (damage < 0) {
-        dmg_string += `Applies [white]${damage} [${damage_type_cols[damage_type]}]${damage_type}[clear] healing `
+        dmg_string += `Applies [#4df]${damage} [${damage_type_cols[damage_type]}]${damage_type}[clear] healing `
     }
     
-    var shape_string = `in a [white]${shape[0]}[clear] with radius [white]${radius}[clear].`;
+    let shape_string = `in a [#4df]${shape[0]}[clear] with a radius of [#4df]${radius}[clear].`;
     
-    var target_string = `Targets [white]${target_type}[clear].`;
+    let target_string = `Targets [#4df]${target_type}[clear].`;
 
-    var range_string = `Range: [white]${range}[clear] tiles`;
+    let range_string = `Range: [#4df]${range}[clear] tiles`;
 
-    var mp_string = `MP cost: [white]${manacost}[clear]`;
+    let mp_string = `MP cost: [#4df]${manacost}[clear]`;
 
-    var desc_computed = desc.length > 0 ? desc + "\n" : "";
-    var desc_str = `${desc_computed}${dmg_string}
-${shape_string}
+    let desc_computed = desc.length > 0 ? desc + "\n\n" : "";
+    let desc_str = `${desc_computed}${dmg_string}${shape_string}
+
 ${target_string}
 ${range_string}
 ${mp_string}`;
     
-    var stat_function = function(user, spell, stats) {
+    let stat_function = function(user, spell, stats) {
         stats.range = range;
         stats.damage = damage;
         stats.radius = radius;
@@ -2592,10 +2756,10 @@ ${mp_string}`;
 }
 
 function modifier(name, icon, col, back_col, desc, manacost, to_stats, at_target, on_hit, on_affected_tiles) {
-    var generated_desc = `\nMP cost: [white]${manacost}[clear]`;
+    let generated_desc = `\n\nMP cost: [#4df]${manacost}[clear]`;
 
     let back_col_checked = back_col.length > 0 ? back_col : "#03f";
-    var spell_gen = new Spell(
+    let spell_gen = new Spell(
         name, icon, col, back_col_checked, SpellType.Modifier, desc + generated_desc, manacost,
         1, null, to_stats, at_target, on_hit, on_affected_tiles
     );
@@ -2614,8 +2778,8 @@ spell_cores = [
     ),
 
     core_spell(
-        "Fireball with Target Trigger", "@*", "red", "#440", "Triggers another spell at the target position.", 
-        10, DmgType.Fire, 6, 3,
+        "Fireball with Target Trigger", "@*", "red", "#440", "Triggers another core at the target position.", 
+        10, DmgType.Fire, 7, 3,
         Shape.Diamond, 60
     ).set_trigger("at_target"),
 
@@ -2627,7 +2791,7 @@ spell_cores = [
 
 spell_mods_stats = [
     modifier(
-        "Damage Plus I", "D+", "#c44", "", "Increase spell damage by 5.", 10,
+        "Damage Plus I", "D+", "#c44", "", "Increase core damage by [#4df]5[clear].", 10,
         function(_, _, s) {
             s.damage += 5;
         }
@@ -2644,17 +2808,20 @@ spell_mods_cosmetic = [
 
 spell_mods_triggers = [
     modifier(
-        "Add Target Trigger", "+*", "#990", "#44f", "Triggers the linked spell at the position the previous spell was cast.",
+        "Add Target Trigger", "+*", "#990", "#26f",
+        "Makes the core cast the next core at the point it was targeted.",
         25
     ).set_trigger("at_target"),
 
     modifier(
-        "Add Tile Trigger", "+x", "#990", "#44f", "Triggers a copy of the linked spell at every position the previous spell affected.",
+        "Add Tile Trigger", "+x", "#990", "#26f",
+        "Makes the core cast a copy of the next core at every tile the core affected.",
         500
     ).set_trigger("on_affected_tiles"),
 
     modifier(
-        "Add Damage Trigger", "+;", "#990", "#44f", "Triggers a copy of the linked spell at the position of every instance of damage caused by the spell.",
+        "Add Damage Trigger", "+;", "#990", "#26f",
+        "Makes the core cast a copy of the next core at every instance of damage the core caused.",
         400
     ).set_trigger("on_hit"),
 ];
@@ -2682,14 +2849,14 @@ spells_list = [
     ),
 
     modifier(
-        "Radius Plus I", "R+", "#4cf", "", "", 30,
+        "Radius Plus I", "R+", "#4cf", "", "Increases the core's radius by [#4df]1[clear].", 30,
         function(_, _, s) {
             s.radius += 1;
         }
     ),
 
     modifier(
-        "Behind the Back", "<$", "white", "", "Casts a copy of the spell behind the user.", 120,
+        "Behind the Back", "<$", "white", "", "Casts a copy of the core behind the user.", 120,
         no_stats, function(user, spell, stats, location) {
             if (!stats.mutable_info["behind_the_back"]) {
                 stats.mutable_info["behind_the_back"] = true;
@@ -2702,7 +2869,7 @@ spells_list = [
     ),
 
     modifier(
-        "Multicast x4", ">4", "#0f0", "", "Casts a copy of the spell four times.", 300,
+        "Multicast x4", ">4", "#0f0", "", "Casts a copy of the core four times.", 300,
         no_stats, function(user, spell, stats, location) {
             if (!stats.mutable_info["multicastx4"] || stats.mutable_info["multicastx4"] < 4) {
                 stats.mutable_info["multicastx4"] = stats.mutable_info["multicastx4"] ? stats.mutable_info["multicastx4"] + 1 : 1;
@@ -2714,7 +2881,7 @@ spells_list = [
     ),
 
     modifier(
-        "Projection", ">~", "white", "", "Allows the spell to ignore line of sight for targeting and effects.", 40,
+        "Projection", ">~", "white", "", "Allows the core to ignore line of sight for targeting and effects.", 40,
         function(user, spell, stats) {
             stats.los = false;
         }
@@ -2731,7 +2898,7 @@ spells_list = [
     }),
 
     modifier(
-        "Uncontrolled Multicast x16", "!F", "#0f0", "red", "Casts a copy of the spell sixteen times, moving the target by a random number of tiles up to the spell's radius + 1 each time.", 200,
+        "Uncontrolled Multicast x16", "!F", "#0f0", "red", "Casts a copy of the core sixteen times, moving the target by a random number of tiles up to the core's final radius + 1 each time.", 200,
         no_stats, function(user, spell, stats, location) {
             if (!stats.mutable_info["unc_multicastx16"] || stats.mutable_info["unc_multicastx16"] < 16) {
                 stats.mutable_info["unc_multicastx16"] = stats.mutable_info["unc_multicastx16"] ? stats.mutable_info["unc_multicastx16"] + 1 : 1;
@@ -2745,7 +2912,7 @@ spells_list = [
     ),
 
     core_spell(
-        "All Elements", "!!", "white", "red", "all at once. testing", 1, DmgType.Physical, 20, 1, Shape.Diamond, 0
+        "All Elements", "!!", "white", "red", "all at once. testing", 99999, DmgType.Physical, 1, 40, Shape.Diamond, 0, SpellTargeting.SelfTarget
     ).augment("at_target", function(user, spell, stats, location) {
         let dmgtypes = [
             "Fire",
@@ -2853,7 +3020,7 @@ entity_templates = [
     ], 999),
 ]
 
-var dmg_type_particles = {
+let dmg_type_particles = {
     "Fire": new ParticleTemplate(["@@", "##", "++", "\"\"", "''"], damage_type_cols["Fire"], 1),
     "Ice": new ParticleTemplate(["##", "<>", "''", "::", ".."], damage_type_cols["Ice"], 1),
     "Lightning": new ParticleTemplate(["&&", "];", "!-", ".'", " ."], damage_type_cols["Lightning"], 1),
@@ -2865,14 +3032,16 @@ var dmg_type_particles = {
     "Psychic": new ParticleTemplate(["@@", "[]", "{}", "||", "::"], damage_type_cols["Psychic"], 1),
 }
 
-var board = new Board(new Vector2(64, 64));
-var game = new Game(board);
-var renderer = new Renderer(game, board, new Vector2(64, 36), 48, 48, 1/2);
+let num_enemy_spawns = 0;
+
+let board = new Board(new Vector2(64, 64));
+let game = new Game(board);
+let renderer = new Renderer(game, board, new Vector2(64, 36), 48, 48, 1/2);
 
 game.spawn_player(entity_templates[0], new Vector2(24, 32));
 game.spawn_entity(entity_templates[1], Teams.ENEMY, new Vector2(48, 48), true).name = "AAA enemy";
 game.spawn_entity(entity_templates[1], Teams.ENEMY, new Vector2(46, 48), true).name = "BBB enemy";
-var moving_ent = game.spawn_entity(entity_templates[1], Teams.ENEMY, new Vector2(20, 22), true);
+let moving_ent = game.spawn_entity(entity_templates[1], Teams.ENEMY, new Vector2(20, 22), true);
 moving_ent.name = "moving guy";
 moving_ent.add_innate_spell([[
     core_spell(
@@ -2891,42 +3060,42 @@ for (let xt=0; xt<game.board.dimensions.x; xt++) {
     }
 }
 
-//var primed_spell_test = new PrimedSpell(game.player_ent, [spells_list[0],]);
-var target = new Vector2(20, 22);
+//let primed_spell_test = new PrimedSpell(game.player_ent, [spells_list[0],]);
+let target = new Vector2(20, 22);
 
 // Fireball
-var spell_simple = [spells_list[11], spells_list[1], spells_list[2]];  
+let spell_simple = [spells_list[11], spells_list[1], spells_list[2]];  
 
 // Fireball, Ice Bolt (should ignore ice bolt)
-var spell_extra = [spells_list[0], spells_list[2]];
+let spell_extra = [spells_list[0], spells_list[2]];
 
 // Damage Plus I, Fireball
-var spell_mod = [spells_list[3], spells_list[0]];
+let spell_mod = [spells_list[3], spells_list[0]];
 
 // Damage Plus I, Damage Plus I, Fireball
-var spell_mod_2 = [spells_list[3], spells_list[3], spells_list[0]];
+let spell_mod_2 = [spells_list[3], spells_list[3], spells_list[0]];
 
 // Fireball with Trigger, Damage Plus I, Ice Bolt
 // 10 fire dmg, 20 ice dmg
-var spell_complex = [spells_list[1], spells_list[3], spells_list[2]];
+let spell_complex = [spells_list[1], spells_list[3], spells_list[2]];
 
-var spell_trigger_target = [spells_list[4], spells_list[0], spells_list[2]];
-var spell_trigger_tile = [spells_list[3], spells_list[3], spells_list[5], spells_list[0], spells_list[2]];
-var spell_trigger_dmg = [spells_list[6], spells_list[0], spells_list[2]];
+let spell_trigger_target = [spells_list[4], spells_list[0], spells_list[2]];
+let spell_trigger_tile = [spells_list[3], spells_list[3], spells_list[5], spells_list[0], spells_list[2]];
+let spell_trigger_dmg = [spells_list[6], spells_list[0], spells_list[2]];
 
-var spell_crazy = [
+let spell_crazy = [
     spells_list[5], spells_list[0], spells_list[5], spells_list[0], spells_list[2]
 ]
 
-var spell_lightning = [
+let spell_lightning = [
     spells_list[7]
 ]
 
-var spell_all = [
+let spell_all = [
     spells_list[10], spells_list[4], spells_list[7], spells_list[8], spells_list[6], spells_list[0], spells_list[2]
 ]
 
-var behind_back = [
+let behind_back = [
     spells_list[9], spells_list[7]
 ]
 
@@ -2950,7 +3119,7 @@ game.begin_turn();
 //game.player_ent.cast_spell(spell_simple, target);
 
 /*
-var test2 = function() {
+let test2 = function() {
     //game.end_turn();
     //game.turn_index = 0;
     //game.begin_turn();
@@ -2969,7 +3138,7 @@ var test2 = function() {
     game.deselect_player_spell();
 }
 
-var test = function(spells) {
+let test = function(spells) {
     if (!game.is_player_turn()) {
         return;
     }
@@ -3021,14 +3190,14 @@ function xp_sparkle(xp, from) {
     }, (1000/30));
 }
 
-var xp_flash = new ParticleTemplate(["++", "''"], "#ddd", 1);
-var lvl_flash = new ParticleTemplate(["**", "++", "\"\"", "''"], "#fff", 0.5);
+let xp_flash = new ParticleTemplate(["++", "''"], "#ddd", 1);
+let lvl_flash = new ParticleTemplate(["**", "++", "\"\"", "''"], "#fff", 0.5);
 
-var tmp = new ParticleTemplate(["@@", "##", "++", "--", ".."], "#f00", 1);
-var ppos = new Vector2(0, 0);
-var mov_dir = new Vector2(1, 0);
+let tmp = new ParticleTemplate(["@@", "##", "++", "--", ".."], "#f00", 1);
+let ppos = new Vector2(0, 0);
+let mov_dir = new Vector2(1, 0);
 
-var hitcount = 0;
+let hitcount = 0;
 
 renderer.setup();
 
@@ -3052,7 +3221,7 @@ function game_loop() {
     //         )
     //     } 
     //     
-    //     var moved = game.move_entity(moving_ent, moving_ent.position.add(mov_dir), false);
+    //     let moved = game.move_entity(moving_ent, moving_ent.position.add(mov_dir), false);
     //     if (!moved) {
     //         mov_dir = mov_dir.neg();
     //     }
@@ -3089,7 +3258,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 break;
 
             case "q":
-                test([spells_list[14]]);
+                game.select_player_spell_list([spells_list[14]]);
                 break;
 
             case "ArrowUp":
