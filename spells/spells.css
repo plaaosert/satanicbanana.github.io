@@ -80,7 +80,7 @@ body {
 
 .game {
 	position: absolute;
-	top: 50%;
+	top: 48%;
 	left: 50%;
 	margin-right: -50%;
 	transform: translate(-50%, -50%);
@@ -95,11 +95,11 @@ body {
     user-select: none;
 	
     justify-content: center;
-	line-height: calc(0.4vw + 1vh - 1px);
 }
 
 .gamelines {
 	white-space: nowrap;
+	line-height: calc(0.4vw + 1vh - 1.01px);
 }
 
 .check-dark {

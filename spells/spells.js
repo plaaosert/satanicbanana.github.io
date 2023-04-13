@@ -65,6 +65,15 @@ function in_bounds(val, lo, hi) {
     return val >= lo && val < hi;
 }
 
+function random_on_circle(r) {
+    let theta = Math.random() * 2 * Math.PI;
+
+    let x = r * Math.cos(theta);
+    let y = r * Math.sin(theta);
+
+    return new Vector2(x, y);
+}
+
 class Vector2 {
     constructor(x, y) {
         this.x = x;
@@ -112,7 +121,7 @@ class Vector2 {
     }
 
     normalize() {
-        return this.div(this.magnitude);
+        return this.div(this.magnitude());
     }
 
     distance(other) {
@@ -140,11 +149,12 @@ class ParticleTemplate {
 class Particle {
     static id_inc = 0;
 
-    constructor(template, start_at, override_speed) {
+    constructor(template, start_at, override_speed, override_col) {
         this.id = Particle.id_inc;
         Particle.id_inc++;
 
         this.template = template;
+        this.col = override_col ? override_col : template.col;
         this.current_frame = start_at ? start_at : 0;
         this.current_str = template.frames[this.current_frame];
         this.speed = override_speed ? override_speed : template.speed;
@@ -298,6 +308,8 @@ class Renderer {
 
         switch (this.get_position_panel(resolved_pos)) {
             case 0:  // left panel
+                this.selected_tile = null;
+                this.selected_ent = null;
                 break;
             case 1:  // game screen
                 // highlight current selected panel
@@ -440,6 +452,14 @@ class Renderer {
         this.set_back(pos.add(add_vec), col);
     }
 
+    set_back_set(from, to, col) {
+        for (let x=from.x; x<=to.x; x++) {
+            for (let y=from.y; y<=to.y; y++) {
+                this.set_back(new Vector2(x, y), col);
+            }
+        }
+    }
+
     set_pixel(pos, char, col) {
         var p = this.pixel_chars[pos.y][pos.x];
         p.textContent = char;
@@ -486,6 +506,7 @@ class Renderer {
                 if (char == "[" && (i == text.length - 1 || text[i+1] != "]")) {
                     reading_new_col = true;
                 } else {
+                    char = char.replace("{", "[").replace("}", "]");
                     this.set_pixel(cur_pos, char, col);
                     cur_pos = cur_pos.add(new Vector2(1, 0));
 
@@ -521,13 +542,166 @@ class Renderer {
         this.particle_list = new_particle_list;
     }
 
+    pad_str(s, len, pad_type) {
+        let string_len = 0;
+        let in_code = false;
+        for (let i=0; i<s.length; i++) {
+            let char = s[i];
+            if (in_code) {
+                if (char == "]") {
+                    in_code = false;
+                }
+            } else {
+                if (char == "[" && (i == s.length - 1 || s[i+1] != "]")) {
+                    in_code = true;
+                } else {
+                    string_len++;
+                }
+            }
+        }
+
+        if (!pad_type) {
+            return s + "\u00A0".repeat(Math.max(0, len - string_len));
+        } else if (pad_type == 1) {
+            return "\u00A0".repeat(Math.max(0, len - string_len)) + s;
+        } else if (pad_type == 2) {
+            let hlen = Math.max(0, len - string_len) / 2;
+            return "\u00A0".repeat(Math.ceil(hlen)) + s + "\u00A0".repeat(Math.floor(hlen));
+        } else if (pad_type == 3) {
+            let hlen = Math.max(0, len - string_len) / 2;
+            return "\u00A0".repeat(Math.floor(hlen)) + s + "\u00A0".repeat(Math.ceil(hlen));
+        }
+    }
+
     render_left_panel() {
-        // whatever
+        /*
+        TODO:
+        - show player hp and mp
+        - show player xp bar and waiting skill points
+        - show affinities
+        - show list of all 5 spells
+        - show inventory and number of spells
+        */
+
+        let left_mount_pos = new Vector2(
+            2, 1
+        );
+
+        let clearance_x = this.left_menu_size.x - 4;
+
+        let p = this.game.player_ent;
+
+        // hp/mp/level
+        let sp_str = game.player_skill_points > 0 ? ` [#f0f](+${game.player_skill_points})` : "";
+        this.set_pixel_text(
+            left_mount_pos.add(new Vector2(0, 0)),
+            this.pad_str(`[clear]Player LV [#8ff]${game.player_level}[clear]${sp_str}`, 4+1+4+3)
+        )
+
+        this.set_pixel_text(
+            left_mount_pos.add(new Vector2(0, 1)),
+            this.pad_str(`[red]${p.hp}/${p.max_hp}[clear] HP`, 4+1+4+3)
+        )
+
+        this.set_pixel_text(
+            left_mount_pos.add(new Vector2(0, 2)),
+            this.pad_str(`[cyan]${p.mp}/${p.max_mp}[clear] MP`, 4+1+4+3)
+        )
+
+        // affinities
+        for (let i=0; i<p.affinities.length; i++) {
+            this.set_pixel_text(
+                left_mount_pos.add(new Vector2(clearance_x - 10, i)),
+                this.pad_str(`[${affinity_cols[p.affinities[i]]}]${p.affinities[i]}`, 10)
+            )
+        }
+
+        // xp and bar
+        let xp_mount_pos = left_mount_pos.add(new Vector2(0, 4));
+        let bar_len = clearance_x - 2; // for affinities
+        let pct = game.player_xp / game.get_xp_for_levelup(game.player_level);
+        let pips = Math.max(0, Math.floor(bar_len * pct));
+
+        let bar_string = `[#8ff]{${"#".repeat(pips)}${"-".repeat(bar_len - pips)}}[clear]`;
+        this.set_pixel_text(
+            xp_mount_pos,
+            this.pad_str(bar_string, clearance_x)
+        );
+
+        this.set_pixel_text(
+            xp_mount_pos.add(new Vector2(0, 1)),
+            this.pad_str(`[#8ff]${game.player_xp}/${game.get_xp_for_levelup(game.player_level)}[clear] XP`, bar_len + 2, 2)
+        );
+
+        // spells
+        let current_spell_point = xp_mount_pos.add(new Vector2(0, 4));
+        for (let i=0; i<game.player_spells.length; i++) {
+            let spells = game.player_spells[i].spells;
+            let parsed = game.player_ent.parse_spell(spells, new Vector2(0, 0));
+            let name = game.player_spells[i].name;
+            
+            let affordable = parsed.manacost <= p.mp;
+            let cols = [
+                affordable ? "white" : "#666",
+                affordable ? "white" : "#666",
+                affordable ? "cyan" : "#800",
+            ]
+
+            this.set_pixel_text(
+                current_spell_point,
+                this.pad_str(`[${cols[0]}](${i+1}) [${cols[1]}]${name}`, clearance_x - 8) + this.pad_str(`[${cols[2]}]${parsed.manacost} MP`, 8)
+            );
+
+            if (game.selected_id == i) {
+                this.set_back_set(current_spell_point, current_spell_point.add(new Vector2(clearance_x, 0)), "#444");
+            } else {
+                this.set_back_set(current_spell_point, current_spell_point.add(new Vector2(clearance_x, 0)), "#000");
+            }
+
+            current_spell_point = current_spell_point.add(new Vector2(0, 1));
+
+            // show all the icons
+            let spell_str = "";
+            let num_spells = 0;
+            spells.forEach(spell => {
+                if (num_spells * 3 >= clearance_x - 11) {
+                    this.set_pixel_text(
+                        current_spell_point,
+                        this.pad_str(spell_str, clearance_x)
+                    );
+
+                    current_spell_point = current_spell_point.add(new Vector2(0, 1));
+                    spell_str = "";
+                    num_spells = 0;
+                }
+
+                let icon = spell.icon;
+                let col = spell.col;
+                let back_col = spell.back_col;
+
+                spell_str += `[${col}]${icon} `;
+                this.set_back_set(
+                    current_spell_point.add(new Vector2(num_spells * 3, 0)),
+                    current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)),
+                    back_col
+                )
+
+                num_spells++;
+            })
+
+            this.set_pixel_text(
+                current_spell_point,
+                this.pad_str(spell_str, clearance_x)
+            );
+
+            current_spell_point = current_spell_point.add(new Vector2(0, 2));
+        }
+
+        // inventory
     }
 
     render_right_panel() {
         /*
-        TODO:
         - right panel; when mouseover enemy on screen, show their:
         - name
         - hp
@@ -538,27 +712,6 @@ class Renderer {
             - and calculated stats on the other
             - don't forget cooldown (it's outside the primed spell area)
         */
-        function pad_str(s, len) {
-            let string_len = 0;
-            let in_code = false;
-            for (let i=0; i<s.length; i++) {
-                let char = s[i];
-                if (in_code) {
-                    if (char == "]") {
-                        in_code = false;
-                    }
-                } else {
-                    if (char == "[" && (i == s.length - 1 || s[i+1] != "]")) {
-                        in_code = true;
-                    } else {
-                        string_len++;
-                    }
-                }
-            }
-
-            return s + "\u00A0".repeat(Math.max(0, len - string_len));
-        }
-
         let right_mount_pos = new Vector2(
             this.left_menu_size.x + this.game_view_size.x + 2, 1
         );
@@ -567,6 +720,7 @@ class Renderer {
 
         let string_len = (this.right_menu_size.x - 4) * (this.right_menu_size.y - 2);
         this.set_pixel_text(right_mount_pos, "\u00A0".repeat(string_len), null);
+        this.set_back_set(right_mount_pos, right_mount_pos.add(this.right_menu_size).sub(new Vector2(4, 2)), "black")
 
         if (this.selected_ent && !this.selected_ent.team_present([Teams.UNTARGETABLE, Teams.UNTARGETABLE_NO_LOS])) {
             let ent = this.selected_ent;
@@ -574,7 +728,7 @@ class Renderer {
             // name and icon
             this.set_pixel_text(
                 right_mount_pos,
-                pad_str(ent.name, clearance_x),
+                this.pad_str(ent.name, clearance_x),
                 null
             );
 
@@ -587,7 +741,7 @@ class Renderer {
             // desc
             let wraps = this.set_pixel_text(
                 right_mount_pos.add(new Vector2(0, 1)),
-                pad_str(`[#aaa]${ent.desc}`, clearance_x * 3),
+                this.pad_str(`[#aaa]${ent.desc}`, clearance_x * 3),
                 null
             )
 
@@ -596,19 +750,19 @@ class Renderer {
             // hp and mp
             this.set_pixel_text(
                 stats_mount_point,
-                pad_str(`[red]${ent.hp}/${ent.max_hp}[clear] HP`, 4+1+4+3) // hp 4 digits twice, / (1), " HP" (3)
+                this.pad_str(`[red]${ent.hp}/${ent.max_hp}[clear] HP`, 4+1+4+3) // hp 4 digits twice, / (1), " HP" (3)
             )
 
             this.set_pixel_text(
                 stats_mount_point.add(new Vector2(0, 1)),
-                pad_str(`[cyan]${ent.mp}/${ent.max_mp}[clear] MP`, 4+1+4+3)
+                this.pad_str(`[cyan]${ent.mp}/${ent.max_mp}[clear] MP`, 4+1+4+3)
             )
 
             // affinities
             for (let i=0; i<ent.affinities.length; i++) {
                 this.set_pixel_text(
                     stats_mount_point.add(new Vector2(clearance_x - 10, i)),
-                    pad_str(`[${affinity_cols[ent.affinities[i]]}]${ent.affinities[i]}`, 10) // longest affinity is 10 i hope
+                    this.pad_str(`[${affinity_cols[ent.affinities[i]]}]${ent.affinities[i]}`, 10) // longest affinity is 10 i hope
                 )
             }
 
@@ -618,7 +772,7 @@ class Renderer {
 
             this.set_pixel_text(
                 affinity_pos.sub(new Vector2(0, 2)),
-                pad_str(`[clear]Weak / Resist:`, 16)
+                this.pad_str(`[clear]Weak / Resist:`, 16)
             )
 
             for (let i=0; i<dmgtypes.length; i++) {
@@ -629,12 +783,12 @@ class Renderer {
                 if (dmg_mult != 1) {
                     this.set_pixel_text(
                         affinity_pos,
-                        pad_str(`[${damage_type_cols[dmgtype]}]${dmg_mult}x ${dmgtype}`, 16)
+                        this.pad_str(`[${damage_type_cols[dmgtype]}]${this.pad_str(dmg_mult + "x", 5, true)} ${dmgtype}`, 16)
                     )
                 } else {
                     this.set_pixel_text(
                         affinity_pos,
-                        pad_str(``, 16)
+                        this.pad_str(``, 16)
                     )
                 }
 
@@ -647,35 +801,69 @@ class Renderer {
             for (let i=0; i<ent.innate_spells.length; i++) {
                 let spells = ent.innate_spells[i][0];
                 let cooldown = ent.innate_spells[i][1];
+                let name = ent.innate_spells[i][2];
+                let col = ent.innate_spells[i][3];
 
+                this.set_pixel_text(
+                    current_spell_point,
+                    this.pad_str(`[${col}]${name}`, clearance_x - 18)
+                )
+
+                current_spell_point = current_spell_point.add(new Vector2(0, 1));
+
+                let spell_str = "";
+                let num_spells = 0;
                 spells.forEach(spell => {
-                    var core_mod_st = spell.typ == SpellType.Core ? "[]" : "{}";
-                    this.set_pixel_text(
-                        current_spell_point,
-                        pad_str(`[#bbb]${core_mod_st} ${spell.name}`, clearance_x - 18) // longest affinity is 10 i hope
+                    if (num_spells * 3 >= clearance_x - 18) {
+                        this.set_pixel_text(
+                            current_spell_point,
+                            this.pad_str(spell_str, clearance_x)
+                        );
+
+                        current_spell_point = current_spell_point.add(new Vector2(0, 1));
+                        spell_str = "";
+                        num_spells = 0;
+                    }
+
+                    let icon = spell.icon;
+                    let col = spell.col;
+                    let back_col = spell.back_col;
+
+                    spell_str += `[${col}]${icon} `;
+                    this.set_back_set(
+                        current_spell_point.add(new Vector2(num_spells * 3, 0)),
+                        current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)),
+                        back_col
                     )
 
-                    current_spell_point = current_spell_point.add(new Vector2(0, 1));
-                });
+                    num_spells++;
+                })
+
+                this.set_pixel_text(
+                    current_spell_point,
+                    this.pad_str(spell_str, clearance_x)
+                );
+
+                current_spell_point = current_spell_point.add(new Vector2(0, 2));
 
                 let pstats = ent.innate_primed_spells[i][0].root_spell.stats;
                 this.set_pixel_text(
                     current_spell_point,
-                    pad_str(`[clear]${pstats.damage} [${damage_type_cols[pstats.damage_type]}]${pstats.damage_type}[clear] damage`, clearance_x - 18)
+                    this.pad_str(`[clear]${pstats.damage} [${damage_type_cols[pstats.damage_type]}]${pstats.damage_type}[clear] damage`, clearance_x - 18)
                 )
 
                 current_spell_point = current_spell_point.add(new Vector2(0, 1));
 
                 this.set_pixel_text(
                     current_spell_point,
-                    pad_str(`[clear]${pstats.range} range`, clearance_x - 18)
+                    this.pad_str(`[clear]${pstats.range} range`, clearance_x - 18)
                 )
 
                 current_spell_point = current_spell_point.add(new Vector2(0, 1));
 
                 this.set_pixel_text(
                     current_spell_point,
-                    pad_str(`[clear]${cooldown} turn cooldown`, clearance_x - 18)
+                    this.pad_str(`[clear]${cooldown} turn cooldown`, clearance_x - 18)
                 )
 
                 current_spell_point = current_spell_point.add(new Vector2(0, 1));
@@ -684,12 +872,12 @@ class Renderer {
                 if (current_cd > 0) {
                     this.set_pixel_text(
                         current_spell_point,
-                        pad_str(`(${current_cd} turn${current_cd == 1 ? "" : "s"} left)`, clearance_x - 18)
+                        this.pad_str(`(${current_cd} turn${current_cd == 1 ? "" : "s"} left)`, clearance_x - 18)
                     )
                 } else {
                     this.set_pixel_text(
                         current_spell_point,
-                        pad_str("", clearance_x - 18)
+                        this.pad_str("", clearance_x - 18)
                     )
                 }
 
@@ -698,7 +886,7 @@ class Renderer {
         } else if (this.selected_ent) {
             this.set_pixel_text(
                 right_mount_pos,
-                pad_str(this.selected_ent.name, clearance_x),
+                this.pad_str(this.selected_ent.name, clearance_x),
                 null
             );
         } else {
@@ -783,7 +971,7 @@ class Renderer {
                     }
                 } else {
                     // draw the particle instead
-                    this.set_pixel_pair(screen_pos, screen_particle.current_str, screen_particle.template.col);
+                    this.set_pixel_pair(screen_pos, screen_particle.current_str, screen_particle.col);
                 }
 
                 // now do spell range highlighting (and select highlighting),
@@ -969,16 +1157,17 @@ class Board {
 
 
 class EntityTemplate {
-    constructor(name, icon, col, desc, max_hp, max_mp, affinities, innate_spells, ai_level) {
+    constructor(name, icon, col, desc, max_hp, max_mp, affinities, xp_value, innate_spells, ai_level) {
         this.name = name
         this.icon = icon
         this.col = col
         this.desc = desc
         this.max_hp = max_hp
         this.max_mp = max_mp
-        this.affinities = affinities
-        this.innate_spells = innate_spells
-        this.ai_level = ai_level
+        this.affinities = affinities != undefined ? affinities : []
+        this.xp_value = xp_value != undefined ? xp_value : 0
+        this.innate_spells = innate_spells != undefined ? innate_spells : []
+        this.ai_level = ai_level != undefined ? ai_level : 999
     }
 }
 
@@ -1004,6 +1193,8 @@ class Entity {
         this.affinities = template.affinities.slice();
         this.innate_spells = template.innate_spells.slice();
         this.innate_primed_spells = [];
+
+        this.xp_value = template.xp_value
 
         this.ai_level = template.ai_level;
         this.team = team;
@@ -1060,6 +1251,9 @@ class Entity {
                     }
                 }
 
+                // for ai level 2+, the entity should stay at the range of their shortest range spell
+                // they should only move towards the player if they are out of range
+                // and move away otherwise
                 if (!cast_spell) {
                     let path = pathfind(this.position, game.player_ent.position);
 
@@ -1206,7 +1400,10 @@ class Entity {
         this.hp -= amount;
         if (this.hp <= 0) {
             this.die();
+            return true;
         }
+
+        return false;
     }
 
     get_damage_mult(damage_type) {
@@ -1232,11 +1429,42 @@ class Entity {
         // spell source might change damage but not right now
         var final_damage = Math.round(damage * dmg_mult);
 
-        this.lose_hp(final_damage);
+        let died = this.lose_hp(final_damage);
         console.log(`${this.name} says "ow i took ${final_damage} ${damage_type} damage (multiplied by ${dmg_mult} from original ${damage}) from ${caster.name}`);
+        /*
         if (this.name == "moving guy") {
             hitcount++;
             // document.getElementById("hit-text").textContent = `guy took ${final_damage} ${damage_type} damage (hit ${hitcount})`;
+        }
+        */
+
+        if (died) {
+            // spawn xp
+            // even if not killed by the player
+            // (because that encourages making enemies hit each other)
+            if (this.xp_value > 0) {
+                // split xp into chunks
+                let x = this.xp_value;
+                let x_left = x;
+
+                // chunks should be such that 10 chunks = one level of xp
+                // max of 10
+                let num_chunks = 1 + (9 * (x / game.get_xp_for_levelup(game.player_level)));
+                num_chunks = Math.floor(Math.min(10, num_chunks));
+
+                let sthis = this;
+                for (let i=0; i<num_chunks; i++) {
+                    setTimeout(function() {
+                        let xp_to_give = Math.ceil(x / num_chunks);
+                        if (xp_to_give > x_left) {
+                            xp_to_give = x_left;
+                        }
+                        x_left -= xp_to_give;
+
+                        xp_sparkle(xp_to_give, sthis.position);
+                    })
+                }
+            }
         }
 
         return final_damage;
@@ -1868,8 +2096,14 @@ class PrimedSpell {
     }
 
     in_range(caster, position) {
+        if ([SpellTargeting.SelfTarget, SpellTargeting.SelfTargetPlusCasterTile].includes(this.stats.target_type)) {
+            return caster.position.equals(position);
+        }
+
         if (caster.position.equals(position)) {
-            return true;
+            // self-targeting is only valid for self-targeted spells
+            // (where it is the only valid target)
+            return false;
         }
 
         if (!game.board.position_valid(position)) {
@@ -1985,8 +2219,12 @@ class Game {
         this.damage_counts = {};    // indexed by spell id
 
         this.player_spells = [];
+        this.selected_id = -1;
         this.selected_player_spell = null;
         this.selected_player_primed_spell = null;
+        this.player_xp = 0;
+        this.player_level = 1;
+        this.player_skill_points = 0;
 
         // current turn; pops spells off this stack one by one for the purposes of animation
         // anything that casts a spell goes through here first
@@ -2085,6 +2323,39 @@ class Game {
         return this.entities[this.turn_index].id == this.player_ent.id && this.waiting_for_spell;
     }
 
+    get_xp_for_levelup(level) {
+        return Math.round(89 + (10 * level) + Math.pow(level, 1.5));
+    }
+
+    player_gain_xp(amount) {
+        this.player_xp += amount;
+        while (this.player_try_level_up()) {
+            // make particles
+            /*
+            for (let x=-1; x<2; x++) {
+                for (let y=-1; y<2; y++) {
+                    renderer.put_particle_from_game_loc(this.player_ent.position.add(new Vector2(x, y)), new Particle(
+                        lvl_flash
+                    ));
+                }
+            }
+            */
+        }
+    }
+
+    player_try_level_up() {
+        let xp_req = this.get_xp_for_levelup(this.player_level);
+        if (this.player_xp >= this.get_xp_for_levelup(this.player_level)) {
+            this.player_level++;
+            this.player_skill_points++;
+            this.player_xp -= xp_req;
+
+            return true;
+        }
+
+        return false;
+    }
+
     player_spell_in_range(position) {
         return this.selected_player_primed_spell.root_spell.in_range(this.player_ent, position);
     }
@@ -2111,7 +2382,13 @@ class Game {
     }
 
     select_player_spell(id) {
-        this.select_player_spell_list(this.player_spells[id].spells);
+        let result = this.select_player_spell_list(this.player_spells[id].spells);
+        
+        if (result) {
+            this.selected_id = id;
+        } else {
+            this.deselect_player_spell();
+        }
     }
 
     select_player_spell_list(spells) {
@@ -2119,11 +2396,21 @@ class Game {
             return;
         }
 
-        this.selected_player_spell = spells;
-        this.selected_player_primed_spell = this.player_ent.parse_spell(spells, new Vector2(0, 0));
+        let parsed = this.player_ent.parse_spell(spells, new Vector2(0, 0));
+
+        if (this.player_ent.mp >= parsed.manacost) {
+            this.selected_id = -1;
+            this.selected_player_spell = spells;
+            this.selected_player_primed_spell = parsed;
+
+            return true;
+        }
+
+        return false;
     }
 
     deselect_player_spell() {
+        this.selected_id = -1;
         this.selected_player_spell = null;
         this.selected_player_primed_spell = null;
     }
@@ -2300,13 +2587,16 @@ ${mp_string}`;
         stats.target_team = teams ? teams : [Teams.ENEMY, Teams.PLAYER];
     }
 
-    return new Spell(name, icon, col, back_col, SpellType.Core, desc_str, manacost, 0, null, stat_function, no_target, no_hit, no_tiles);
+    let back_col_checked = back_col.length > 0 ? back_col : "black";
+    return new Spell(name, icon, col, back_col_checked, SpellType.Core, desc_str, manacost, 0, null, stat_function, no_target, no_hit, no_tiles);
 }
 
 function modifier(name, icon, col, back_col, desc, manacost, to_stats, at_target, on_hit, on_affected_tiles) {
     var generated_desc = `\nMP cost: [white]${manacost}[clear]`;
+
+    let back_col_checked = back_col.length > 0 ? back_col : "#03f";
     var spell_gen = new Spell(
-        name, icon, col, back_col, SpellType.Modifier, desc + generated_desc, manacost,
+        name, icon, col, back_col_checked, SpellType.Modifier, desc + generated_desc, manacost,
         1, null, to_stats, at_target, on_hit, on_affected_tiles
     );
 
@@ -2319,25 +2609,25 @@ function modifier(name, icon, col, back_col, desc, manacost, to_stats, at_target
 
 spell_cores = [
     core_spell(
-        "Fireball", "##", "white", "black", "", 10, DmgType.Fire, 7, 3,
+        "Fireball", "@>", "red", "", "", 10, DmgType.Fire, 7, 3,
         Shape.Diamond, 25
     ),
 
     core_spell(
-        "Fireball with Target Trigger", "##", "white", "black", "Triggers another spell at the target position.", 
+        "Fireball with Target Trigger", "@*", "red", "#440", "Triggers another spell at the target position.", 
         10, DmgType.Fire, 6, 3,
         Shape.Diamond, 60
     ).set_trigger("at_target"),
 
     core_spell(
-        "Icicle", "##", "white", "black", "", 15, DmgType.Ice, 8, 1,
-        Shape.Square, 20
+        "Icicle", "V^", "#A5F2F3", "", "", 15, DmgType.Ice, 8, 1,
+        Shape.Diamond, 20
     )
 ];
 
 spell_mods_stats = [
     modifier(
-        "Damage Plus I", "##", "white", "black", "Increase spell damage by 5.", 10,
+        "Damage Plus I", "D+", "#c44", "", "Increase spell damage by 5.", 10,
         function(_, _, s) {
             s.damage += 5;
         }
@@ -2354,17 +2644,17 @@ spell_mods_cosmetic = [
 
 spell_mods_triggers = [
     modifier(
-        "Add Target Trigger", "##", "white", "black", "Triggers the linked spell at the position the previous spell was cast.",
+        "Add Target Trigger", "+*", "#990", "#44f", "Triggers the linked spell at the position the previous spell was cast.",
         25
     ).set_trigger("at_target"),
 
     modifier(
-        "Add Tile Trigger", "##", "white", "black", "Triggers a copy of the linked spell at every position the previous spell affected.",
+        "Add Tile Trigger", "+x", "#990", "#44f", "Triggers a copy of the linked spell at every position the previous spell affected.",
         500
     ).set_trigger("on_affected_tiles"),
 
     modifier(
-        "Add Damage Trigger", "##", "white", "black", "Triggers a copy of the linked spell at the position of every instance of damage caused by the spell.",
+        "Add Damage Trigger", "+;", "#990", "#44f", "Triggers a copy of the linked spell at the position of every instance of damage caused by the spell.",
         400
     ).set_trigger("on_hit"),
 ];
@@ -2387,19 +2677,19 @@ spells_list = [
     ...spell_mods_triggers,
     // lightning and other stuff here temporarily
     core_spell(
-        "Lightning Bolt", "##", "white", "black", "", 17, DmgType.Lightning, 10, 1,
+        "Lightning Bolt", "&>", "#ffff33", "", "", 17, DmgType.Lightning, 10, 1,
         Shape.Line, 18
     ),
 
     modifier(
-        "Radius Plus I", "##", "white", "black", "", 30,
+        "Radius Plus I", "R+", "#4cf", "", "", 30,
         function(_, _, s) {
             s.radius += 1;
         }
     ),
 
     modifier(
-        "Behind the Back", "##", "white", "black", "Casts a copy of the spell behind the user.", 120,
+        "Behind the Back", "<$", "white", "", "Casts a copy of the spell behind the user.", 120,
         no_stats, function(user, spell, stats, location) {
             if (!stats.mutable_info["behind_the_back"]) {
                 stats.mutable_info["behind_the_back"] = true;
@@ -2412,7 +2702,7 @@ spells_list = [
     ),
 
     modifier(
-        "Multicast x4", "##", "white", "black", "Casts a copy of the spell four times.", 300,
+        "Multicast x4", ">4", "#0f0", "", "Casts a copy of the spell four times.", 300,
         no_stats, function(user, spell, stats, location) {
             if (!stats.mutable_info["multicastx4"] || stats.mutable_info["multicastx4"] < 4) {
                 stats.mutable_info["multicastx4"] = stats.mutable_info["multicastx4"] ? stats.mutable_info["multicastx4"] + 1 : 1;
@@ -2424,14 +2714,14 @@ spells_list = [
     ),
 
     modifier(
-        "Projection", "##", "white", "black", "Allows the spell to ignore line of sight for targeting and effects.", 40,
+        "Projection", ">~", "white", "", "Allows the spell to ignore line of sight for targeting and effects.", 40,
         function(user, spell, stats) {
             stats.los = false;
         }
     ),
 
     core_spell(
-        "Gun", "##", "white", "black", "", 50, DmgType.Physical, 30, 1, Shape.Line, 50
+        "Gun", "%=", "white", "red", "", 5000, DmgType.Physical, 30, 1, Shape.Line, 50
     ).augment("at_target", function(user, spell, stats, location) {
         user.cast_spell([
             core_spell(
@@ -2441,7 +2731,7 @@ spells_list = [
     }),
 
     modifier(
-        "Uncontrolled Multicast x16", "##", "white", "black", "Casts a copy of the spell sixteen times, moving the target by a random number of tiles up to the spell's radius + 1 each time.", 200,
+        "Uncontrolled Multicast x16", "!F", "#0f0", "red", "Casts a copy of the spell sixteen times, moving the target by a random number of tiles up to the spell's radius + 1 each time.", 200,
         no_stats, function(user, spell, stats, location) {
             if (!stats.mutable_info["unc_multicastx16"] || stats.mutable_info["unc_multicastx16"] < 16) {
                 stats.mutable_info["unc_multicastx16"] = stats.mutable_info["unc_multicastx16"] ? stats.mutable_info["unc_multicastx16"] + 1 : 1;
@@ -2455,7 +2745,7 @@ spells_list = [
     ),
 
     core_spell(
-        "All Elements", "##", "white", "black", "all at once. testing", 1, DmgType.Physical, 20, 1, Shape.Diamond, 0
+        "All Elements", "!!", "white", "red", "all at once. testing", 1, DmgType.Physical, 20, 1, Shape.Diamond, 0
     ).augment("at_target", function(user, spell, stats, location) {
         let dmgtypes = [
             "Fire",
@@ -2519,24 +2809,24 @@ spells_list = [
 
 
 entity_templates = [
-    new EntityTemplate("Player", "@=", "#0cf", "It's you.", 100, 9999, [
-        Affinity.Living  // player is only living by default, can be changed by events
-    ], [
+    new EntityTemplate("Player", "@=", "#0cf", "It's you.", 100+5000, 1000, [
+        Affinity.Living, Affinity.Chaos, Affinity.Insect  // player is only living by default, can be changed by events
+    ], 0, [
 
     ], 0),
 
     new EntityTemplate("test enemy", "Gg", "#0f0", "idk goblin or smt", 100, 10, [
-        Affinity.Arcane, Affinity.Construct, Affinity.Order
-    ], [
+        Affinity.Ice, Affinity.Insect, Affinity.Living
+    ], 15, [
         [[
             core_spell(
-                "Bite", "##", "white", "black", "", 6, DmgType.Physical, 1, 1,
+                "Bite", "??", "white", "red", "", 6, DmgType.Physical, 1, 1,
                 Shape.Diamond, 0
             )
-        ], 0],
+        ], 0, "Bite", "white"],
     ], 1),
 
-    new EntityTemplate("big guy", "#+", "#f00", "scary guy who tests the description line wrapping too. really long text", 9999, 9999, [
+    new EntityTemplate("big guy", "#+", "#f00", "scary guy who tests the description line wrapping too. really long text", 500, 9999, [
         Affinity.Fire,
         Affinity.Ice,
         Affinity.Lightning,
@@ -2552,13 +2842,13 @@ entity_templates = [
         Affinity.Insect,
         Affinity.Construct,
         Affinity.Order
-    ], [
+    ], 2500, [
 
     ], 1),
 
     new EntityTemplate("Wall", "[]", "#ccc", "Just a wall.", Number.POSITIVE_INFINITY, 0, [
         Affinity.Construct
-    ], [
+    ], 0, [
 
     ], 999),
 ]
@@ -2579,17 +2869,17 @@ var board = new Board(new Vector2(64, 64));
 var game = new Game(board);
 var renderer = new Renderer(game, board, new Vector2(64, 36), 48, 48, 1/2);
 
-game.spawn_player(entity_templates[0], new Vector2(32, 32));
+game.spawn_player(entity_templates[0], new Vector2(24, 32));
 game.spawn_entity(entity_templates[1], Teams.ENEMY, new Vector2(48, 48), true).name = "AAA enemy";
 game.spawn_entity(entity_templates[1], Teams.ENEMY, new Vector2(46, 48), true).name = "BBB enemy";
 var moving_ent = game.spawn_entity(entity_templates[1], Teams.ENEMY, new Vector2(20, 22), true);
 moving_ent.name = "moving guy";
 moving_ent.add_innate_spell([[
     core_spell(
-        "Laser", "##", "white", "black", "", 16, DmgType.Psychic, 6, 1,
+        "Laser", "??", "white", "red", "", 16, DmgType.Psychic, 6, 1,
         Shape.Line, 0
     )
-], 3]);
+], 3, "Psycho-Laser", damage_type_cols["Psychic"]]);
 
 game.spawn_entity(entity_templates[2], Teams.ENEMY, new Vector2(14, 22), true);
 
@@ -2605,7 +2895,7 @@ for (let xt=0; xt<game.board.dimensions.x; xt++) {
 var target = new Vector2(20, 22);
 
 // Fireball
-var spell_simple = [spells_list[11], spells_list[0],];  
+var spell_simple = [spells_list[11], spells_list[1], spells_list[2]];  
 
 // Fireball, Ice Bolt (should ignore ice bolt)
 var spell_extra = [spells_list[0], spells_list[2]];
@@ -2649,9 +2939,9 @@ let machine_gun = [
 ]
 
 game.player_spells = [
-    {spells: spell_simple, name: "Fireball (Aerial)"},
+    {spells: spell_simple, name: "proj fireball w/ trigger icicle"},
     {spells: spell_trigger_tile, name: "Fireball with Ice Trigger"},
-    {spells: spell_lightning, name: "lightning bolt"},
+    {spells: [...spells_list], name: "Every Spell In The Spells List"},
     {spells: spell_all, name: "a bunch of stuff"},
     {spells: gun, name: "gun"}
 ]
@@ -2690,6 +2980,50 @@ var test = function(spells) {
 }
 */
 
+function xp_sparkle(xp, from) {
+    let random_256 = function() {
+        return Math.floor(Math.random() * 256);
+    }
+
+    let dat = {
+        speed: random_on_circle((Math.random() * 1.5) + 1),
+        pos: from.copy(),
+        col: "#8ff",
+        xp: xp
+    }
+
+    dat.interval = setInterval(function() {
+        let times = Math.ceil(dat.speed.magnitude());
+
+        for (let i=0; i<times; i++) {
+            renderer.put_particle_from_game_loc(dat.pos.round(), new Particle(
+                xp_flash, null, null, dat.col
+            ));
+
+            dat.pos = dat.pos.add(dat.speed.div(times));
+
+            if (dat.pos.round().equals(game.player_ent.position)) {
+                clearInterval(dat.interval);
+                game.player_gain_xp(dat.xp);
+                return;
+            }
+        }
+
+        let difference_vec = game.player_ent.position.sub(dat.pos);
+        dat.speed = dat.speed.add(difference_vec.normalize().mul(0.2));
+        if (difference_vec.magnitude() < 1) {
+            clearInterval(dat.interval);
+            game.player_gain_xp(dat.xp);
+            return;
+        }
+
+        dat.speed = dat.speed.mul(0.85);
+    }, (1000/30));
+}
+
+var xp_flash = new ParticleTemplate(["++", "''"], "#ddd", 1);
+var lvl_flash = new ParticleTemplate(["**", "++", "\"\"", "''"], "#fff", 0.5);
+
 var tmp = new ParticleTemplate(["@@", "##", "++", "--", ".."], "#f00", 1);
 var ppos = new Vector2(0, 0);
 var mov_dir = new Vector2(1, 0);
@@ -2724,6 +3058,7 @@ function game_loop() {
     //     }
     // }
 
+    renderer.render_left_panel();
     renderer.render_game_view();
     renderer.render_right_panel();
     renderer.advance_particles();
@@ -2747,6 +3082,10 @@ document.addEventListener("DOMContentLoaded", function() {
             case "4":
             case "5":
                 game.select_player_spell(Number.parseInt(name) - 1);
+                break;
+
+            case "Escape":
+                game.deselect_player_spell();
                 break;
 
             case "q":
