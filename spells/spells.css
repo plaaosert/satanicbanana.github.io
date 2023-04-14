@@ -37,7 +37,7 @@ body {
 	font-family: "MS Gothic", "nec_apc";
 	background-color:#000;
 	
-	font-smooth:never;
+	font-smooth: never;
 	-webkit-font-smoothing:none;
 }
 
@@ -99,7 +99,11 @@ body {
 
 .gamelines {
 	white-space: nowrap;
-	line-height: calc(0.4vw + 1vh - 1.01px);
+}
+
+.gamepixel {
+	height: 16px;
+	width: 8px;
 }
 
 .check-dark {

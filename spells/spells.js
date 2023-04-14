@@ -216,9 +216,38 @@ class Renderer {
 
         this.last_player_spell_state = null;
 
+        // TODO make the spells (not just the fragments) on the left panel clickable
+        // as well as showing an effect when you mouseover them
+        // selectable_spells is for this purpose
+        // after that, its probably content making time
+        this.selectable_spells = {};
         this.selectable_spell_icons = {};
         this.selected_spell = null;
+        this.selected_full_spell = null;
         this.selected_spell_loc = null;
+
+        this.refresh_left_panel = false;
+        this.refresh_right_panel = false;
+
+        // TODO:
+        // selected spell name (or editing spell name) should show on rightpanel
+        // selected / editing spell frag should also show on rightpanel
+        // order of precedence:
+        //    - selected name / frag [mutually exclusive]
+        //    - editing name / frag [mutex]
+
+        this.inventory_spell_origins = {};  // {vec: {spell, frag_id, spell_id}}
+        this.inventory_items_origins = {};  // {vec: {spell, inv_id}}
+        this.inventory_spell_names = {};    // {y: spellid}
+
+        this.inventory_editing_spell_name = undefined;
+        this.inventory_editing_spell_frag = undefined;  // {frag_id, spell_id, inv_id} <- if inv_id present, ignores frag, spell
+
+        this.inventory_selected_spell_name = undefined;
+        this.inventory_selected_spell = undefined;
+        this.inventory_selected_spell_loc = undefined;
+        this.inventory_selected_spell_item = undefined;
+        this.inventory_selected_spell_item_loc = undefined;
     }
 
     change_size(game_view_size, left_menu_len, right_menu_len) {
@@ -312,29 +341,80 @@ class Renderer {
 
         this.selected_spell = null;
         this.selected_spell_loc = null;
+        this.selected_full_spell = null;
 
         switch (this.get_position_panel(resolved_pos)) {
             case 0:  // left panel
                 this.selected_tile = null;
                 this.selected_ent = null;
+                this.refresh_right_panel = true;
+                console.log("asking for refresh right");
                 this.selected_spell = this.selectable_spell_icons[resolved_pos.hash_code()];
                 if (this.selected_spell) {
                     this.selected_spell_loc = resolved_pos;
                 }
+
+                this.selected_full_spell = this.selectable_spells[resolved_pos.y];
+                /*
+                if (this.selected_full_spell == undefined) {
+                    this.selected_full_spell = this.selectable_spells[resolved_pos.y - 1];
+                }
+
+                if (this.selected_full_spell == undefined) {
+                    this.selected_full_spell = this.selectable_spells[resolved_pos.y + 1];
+                }
+                */
                 break;
             case 1:  // game screen
                 // highlight current selected panel
-                this.selected_tile = resolved_pos;
+                if (this.game.inventory_open) {
+                    // check for mouseover on spells, items and names
+                    this.inventory_selected_spell_name = this.inventory_spell_names[resolved_pos.y];
 
-                let s_normalised_pos = this.selected_tile.sub(new Vector2(this.left_menu_size.x, 0));
-                s_normalised_pos = new Vector2(Math.floor(s_normalised_pos.x / 2) * 2, Math.floor(s_normalised_pos.y));
+                    this.inventory_selected_spell = this.inventory_spell_origins[resolved_pos.hash_code()];
+                    if (this.inventory_selected_spell) {
+                        this.inventory_selected_spell_loc = resolved_pos;
+                    } else {
+                        this.inventory_selected_spell_loc = undefined;
+                    }
 
-                let s_player_screen_pos = this.game_view_size.div(2);
-                let s_screen_diff = s_normalised_pos.sub(s_player_screen_pos);
-                let s_game_diff = new Vector2(s_screen_diff.x / 2, s_screen_diff.y);
+                    this.inventory_selected_spell_item = this.inventory_items_origins[resolved_pos.hash_code()];
+                    if (this.inventory_selected_spell_item) {
+                        this.inventory_selected_spell_item_loc = resolved_pos;
+                    } else {
+                        this.inventory_selected_spell_item_loc = undefined;
+                    }
 
-                let s_game_pos = this.game.player_ent.position.add(s_game_diff);
-                this.selected_ent = this.game.board.get_pos(s_game_pos);
+                    this.refresh_right_panel = true;
+                    console.log("asking for refresh right");
+                } else {
+                    if (!this.selected_tile) {
+                        this.refresh_right_panel = true;
+                        console.log("asking for refresh right");
+                    }
+    
+                    this.selected_tile = resolved_pos;
+    
+                    let s_normalised_pos = this.selected_tile.sub(new Vector2(this.left_menu_size.x, 0));
+                    s_normalised_pos = new Vector2(Math.floor(s_normalised_pos.x / 2) * 2, Math.floor(s_normalised_pos.y));
+    
+                    let s_player_screen_pos = this.game_view_size.div(2);
+                    let s_screen_diff = s_normalised_pos.sub(s_player_screen_pos);
+                    let s_game_diff = new Vector2(s_screen_diff.x / 2, s_screen_diff.y);
+    
+                    let s_game_pos = this.game.player_ent.position.add(s_game_diff);
+                    
+                    let new_ent = this.game.board.get_pos(s_game_pos);
+                    let old_ent_id = this.selected_ent ? this.selected_ent.id : null;
+                    let new_ent_id = new_ent ? new_ent.id : null;
+    
+                    if (old_ent_id != new_ent_id) {
+                        this.refresh_right_panel = true;
+                        console.log("asking for refresh right");
+                    }
+                    
+                    this.selected_ent = new_ent;
+                }
 
                 break;
             case 2:  // right panel
@@ -378,34 +458,96 @@ class Renderer {
         // convert that into game difference (x/2)
         // apply to player game position
         // we have our game position
-        if (game.is_player_turn()) {
-            let normalised_pos = resolved_pos.sub(new Vector2(this.left_menu_size.x, 0));
-            normalised_pos = new Vector2(Math.floor(normalised_pos.x / 2) * 2, Math.floor(normalised_pos.y));
+        switch (this.get_position_panel(resolved_pos)) {
+            case 0:
+                if (this.selected_full_spell != null) {
+                    game.select_player_spell(this.selected_full_spell);
+                }
+                break;
 
-            let player_screen_pos = this.game_view_size.div(2);
-            let screen_diff = normalised_pos.sub(player_screen_pos);
-            let game_diff = new Vector2(screen_diff.x / 2, screen_diff.y);
+            case 1:
+                if (this.game.inventory_open) {
+                    if (this.inventory_selected_spell_name != undefined) {
+                        if (this.inventory_editing_spell_name == this.inventory_selected_spell_name) {
+                            this.inventory_editing_spell_name = null;
+                        } else {
+                            this.inventory_editing_spell_name = this.inventory_selected_spell_name;
+                        }
 
-            let game_pos = game.player_ent.position.add(game_diff);
-
-            if (game.selected_player_primed_spell) {
-                game.player_cast_selected(game_pos);
-            } else {
-                // try to move towards the tile - use line again.
-                let path = pathfind(game.player_ent.position, game_pos);
-
-                if (path && path.length > 1) {
-                    let result = game.move_entity(game.player_ent, path[1], false);
-                    
-                    if (result) {
-                        this.move_particles(path[1].sub(game.player_ent.position).neg());
+                        this.inventory_editing_spell_frag = null;
+                    } else if (this.inventory_selected_spell != undefined) {
+                        if (this.inventory_editing_spell_frag) {
+                            let ss = this.inventory_selected_spell;
+                            let es = this.inventory_editing_spell_frag;
+                            if (ss.frag_id == es.frag_id && ss.spell_id == es.spell_id) {
+                                // same thing twice, so deselect
+                                this.inventory_editing_spell_frag = null;
+                            } else {
+                                // different, so tell game to swap them
+                                this.game.player_swap_spells(ss, es);
+                                this.inventory_editing_spell_frag = null;
+                                this.inventory_selected_spell = undefined;
+                            }
+                        } else {
+                            let ss = this.inventory_selected_spell;
+                            this.inventory_editing_spell_frag = {spell: ss.spell, frag_id: ss.frag_id, spell_id: ss.spell_id};
+                            this.inventory_editing_spell_name = null;
+                        }
+                    } else if (this.inventory_selected_spell_item != undefined) {
+                        if (this.inventory_editing_spell_frag) {
+                            let si = this.inventory_selected_spell_item;
+                            let ei = this.inventory_editing_spell_frag;
+                            if (si.inv_id == ei.inv_id) {
+                                // same thing twice, so deselect
+                                this.inventory_editing_spell_frag = null;
+                            } else {
+                                // different, so tell game to swap them
+                                this.game.player_swap_spells(si, ei);
+                                this.inventory_editing_spell_frag = null;
+                                this.inventory_selected_spell_item = undefined;
+                            }
+                        } else {
+                            let si = this.inventory_selected_spell_item;
+                            this.inventory_editing_spell_frag = {spell: si.spell, inv_id: si.inv_id};
+                            this.inventory_editing_spell_name = null;
+                        }
                     }
 
-                    game.end_turn();
-                } else if (game_pos.equals(game.player_ent.position)) {
-                    game.end_turn();
+                    this.refresh_right_panel = true;
+                    console.log("asking for refresh right");
+                } else {
+                    if (game.is_player_turn()) {
+                        let normalised_pos = resolved_pos.sub(new Vector2(this.left_menu_size.x, 0));
+                        normalised_pos = new Vector2(Math.floor(normalised_pos.x / 2) * 2, Math.floor(normalised_pos.y));
+            
+                        let player_screen_pos = this.game_view_size.div(2);
+                        let screen_diff = normalised_pos.sub(player_screen_pos);
+                        let game_diff = new Vector2(screen_diff.x / 2, screen_diff.y);
+            
+                        let game_pos = game.player_ent.position.add(game_diff);
+            
+                        if (game.selected_player_primed_spell) {
+                            game.player_cast_selected(game_pos);
+                        } else {
+                            // try to move towards the tile - use line again.
+                            let path = pathfind(game.player_ent.position, game_pos);
+            
+                            if (path && path.length > 1) {
+                                let result = game.move_entity(game.player_ent, path[1], false);
+                                
+                                if (result) {
+                                    this.move_particles(path[1].sub(game.player_ent.position).neg());
+                                }
+            
+                                game.end_turn();
+                            } else if (game_pos.equals(game.player_ent.position)) {
+                                game.end_turn();
+                            }
+                        }
+                    }
                 }
-            }
+
+                break;
         }
     }
 
@@ -659,6 +801,15 @@ class Renderer {
             2, 1
         );
 
+        if (this.refresh_left_panel) {
+            for (let y=1; y<this.left_menu_size.y-2; y++) {
+                this.set_pixel_text(left_mount_pos.add(new Vector2(0, y)), "\u00A0".repeat(clearance_x), null);
+            }
+
+            this.set_back_set(left_mount_pos, left_mount_pos.add(this.left_menu_size).sub(new Vector2(4, 2)), "black")
+            this.refresh_left_panel = false;
+        }
+
         let clearance_x = this.left_menu_size.x - 4;
 
         let p = this.game.player_ent;
@@ -705,6 +856,8 @@ class Renderer {
             this.pad_str(`[#8ff]${game.player_xp}/${game.get_xp_for_levelup(game.player_level)}[clear] XP`, bar_len + 2, 2)
         );
 
+        this.selectable_spells = {};
+
         // spells
         let current_spell_point = xp_mount_pos.add(new Vector2(0, 4));
         for (let i=0; i<game.player_spells.length; i++) {
@@ -725,17 +878,23 @@ class Renderer {
             );
 
             if (game.selected_id == i) {
-                this.set_back_set(current_spell_point, current_spell_point.add(new Vector2(clearance_x, 0)), "#444");
+                this.set_back_set(current_spell_point, current_spell_point.add(new Vector2(clearance_x-1, 0)), "#666");
+            } else if (this.selected_full_spell == i) {
+                this.set_back_set(current_spell_point, current_spell_point.add(new Vector2(clearance_x-1, 0)), "#333");
             } else {
-                this.set_back_set(current_spell_point, current_spell_point.add(new Vector2(clearance_x, 0)), "#000");
+                this.set_back_set(current_spell_point, current_spell_point.add(new Vector2(clearance_x-1, 0)), "#000");
             }
+
+            this.selectable_spells[current_spell_point.y] = i;
 
             current_spell_point = current_spell_point.add(new Vector2(0, 1));
 
             // show all the icons
             let spell_str = "";
             let num_spells = 0;
-            spells.forEach(spell => {
+            for (let j=0; j<game.player_max_spell_fragments; j++) {
+                let spell = j < spells.length ? spells[j] : null;
+
                 if (num_spells * 3 >= clearance_x - 11) {
                     this.set_pixel_text(
                         current_spell_point,
@@ -747,30 +906,40 @@ class Renderer {
                     num_spells = 0;
                 }
 
-                let icon = spell.icon;
-                let col = spell.col;
-                let back_col = spell.back_col;
-                if (this.selected_spell && this.selected_spell.id == spell.id) {
-                    if (this.selected_spell_loc.equals(current_spell_point.add(new Vector2(num_spells * 3, 0))) || this.selected_spell_loc.equals(current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)))) { 
-                        back_col = "white";
-                    } else {
-                        back_col = "#aaa";
+                if (spell) {
+                    let icon = spell.icon;
+                    let col = spell.col;
+                    let back_col = spell.back_col;
+                    if (this.selected_spell && this.selected_spell.id == spell.id) {
+                        if (this.selected_spell_loc.equals(current_spell_point.add(new Vector2(num_spells * 3, 0))) || this.selected_spell_loc.equals(current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)))) { 
+                            back_col = "white";
+                        } else {
+                            back_col = "#aaa";
+                        }
+                        col = "black";
                     }
-                    col = "black";
+
+                    spell_str += `[${col}]${icon} `;
+                    this.set_back_set(
+                        current_spell_point.add(new Vector2(num_spells * 3, 0)),
+                        current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)),
+                        back_col
+                    )
+
+                    this.selectable_spell_icons[current_spell_point.add(new Vector2(num_spells * 3, 0)).hash_code()] = spell;
+                    this.selectable_spell_icons[current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)).hash_code()] = spell;
+                } else {
+                    this.set_back_set(
+                        current_spell_point.add(new Vector2(num_spells * 3, 0)),
+                        current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)),
+                        "black"
+                    )
+
+                    spell_str += `\u00A0\u00A0 `;
                 }
 
-                spell_str += `[${col}]${icon} `;
-                this.set_back_set(
-                    current_spell_point.add(new Vector2(num_spells * 3, 0)),
-                    current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)),
-                    back_col
-                )
-
-                this.selectable_spell_icons[current_spell_point.add(new Vector2(num_spells * 3, 0)).hash_code()] = spell;
-                this.selectable_spell_icons[current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)).hash_code()] = spell;
-
                 num_spells++;
-            })
+            }
 
             this.set_pixel_text(
                 current_spell_point,
@@ -780,7 +949,11 @@ class Renderer {
             current_spell_point = current_spell_point.add(new Vector2(0, 2));
         }
 
-        // inventory
+        let bottom_anchor = new Vector2(left_mount_pos.x, this.left_menu_size.y - 2);
+        this.set_pixel_text(
+            bottom_anchor,
+            this.pad_str(`[${game.inventory_open ? "cyan" : "#fff"}]Inventory (R) { this is temporary lol }`, clearance_x-1, 0)
+        );
     }
 
     render_right_panel() {
@@ -801,124 +974,487 @@ class Renderer {
 
         let clearance_x = this.right_menu_size.x - 4;
 
-        let string_len = (this.right_menu_size.x - 4) * (this.right_menu_size.y - 2);
-        this.set_pixel_text(right_mount_pos, "\u00A0".repeat(string_len), null);
-        this.set_back_set(right_mount_pos, right_mount_pos.add(this.right_menu_size).sub(new Vector2(4, 2)), "black")
+        if (this.refresh_right_panel) {
+            let string_len = (this.right_menu_size.x - 4) * (this.right_menu_size.y - 2);
+            this.set_pixel_text(right_mount_pos, "\u00A0".repeat(string_len), null);
+            this.set_back_set(right_mount_pos, right_mount_pos.add(this.right_menu_size).sub(new Vector2(4, 2)), "black")
+        
+            this.refresh_right_panel = false;
 
-        if (this.selected_ent && !this.selected_ent.team_present([Teams.UNTARGETABLE, Teams.UNTARGETABLE_NO_LOS])) {
-            let ent = this.selected_ent;
-            
-            // name and icon
-            this.set_pixel_text(
-                right_mount_pos,
-                this.pad_str(ent.name, clearance_x),
-                "white"
-            );
+            if (this.selected_ent && !this.selected_ent.untargetable) {
+                let ent = this.selected_ent;
+                this.last_selected_ent = ent;
 
-            this.set_pixel_text(
-                right_mount_pos.add(new Vector2(clearance_x - 2, 0)),
-                `[${ent.col}]${ent.icon}`,
-                null
-            )
-
-            this.set_pixel_text(
-                right_mount_pos.add(new Vector2(0, 1)),
-                "\u00A0".repeat(clearance_x * 3),
-                null
-            );
-
-            // desc
-            let wraps = this.set_pixel_text(
-                right_mount_pos.add(new Vector2(0, 1)),
-                `[#aaa]${ent.desc}`,
-                null, clearance_x - 1
-            )
-
-            let stats_mount_point = right_mount_pos.add(new Vector2(0, 6));
-
-            // hp and mp
-            this.set_pixel_text(
-                stats_mount_point,
-                this.pad_str(`[red]${ent.hp}/${ent.max_hp}[clear] HP`, 4+1+4+3) // hp 4 digits twice, / (1), " HP" (3)
-            )
-
-            this.set_pixel_text(
-                stats_mount_point.add(new Vector2(0, 1)),
-                this.pad_str(`[cyan]${ent.mp}/${ent.max_mp}[clear] MP`, 4+1+4+3)
-            )
-
-            // affinities
-            for (let i=0; i<ent.affinities.length; i++) {
+                // name and icon
                 this.set_pixel_text(
-                    stats_mount_point.add(new Vector2(clearance_x - 10, i)),
-                    this.pad_str(`[${affinity_cols[ent.affinities[i]]}]${ent.affinities[i]}`, 10) // longest affinity is 10 i hope
+                    right_mount_pos,
+                    this.pad_str(`[white]${ent.name}`, clearance_x),
+                    "white"
+                );
+
+                this.set_pixel_text(
+                    right_mount_pos.add(new Vector2(clearance_x - 2, 0)),
+                    `[${ent.col}]${ent.icon}`,
+                    null
                 )
-            }
 
-            // weaknesses
-            let dmgtypes = Object.keys(DmgType);
-            let affinity_pos = stats_mount_point.add(new Vector2(clearance_x - 16, this.total_size.y - 18));
+                this.set_pixel_text(
+                    right_mount_pos.add(new Vector2(0, 1)),
+                    "\u00A0".repeat(clearance_x * 3),
+                    null
+                );
 
-            this.set_pixel_text(
-                affinity_pos.sub(new Vector2(0, 2)),
-                this.pad_str(`[clear]Weak / Resist:`, 16)
-            )
+                // desc
+                let wraps = this.set_pixel_text(
+                    right_mount_pos.add(new Vector2(0, 1)),
+                    `[#aaa]${ent.desc}`,
+                    null, clearance_x - 1
+                )
 
-            for (let i=0; i<dmgtypes.length; i++) {
-                let dmgtype = dmgtypes[i];
-                let dmg_mult = ent.get_damage_mult(dmgtype);
-                dmg_mult = Math.round(dmg_mult * 100) / 100;
+                let stats_mount_point = right_mount_pos.add(new Vector2(0, 6));
 
-                let col = `rgb(${Math.max(0, Math.min(255, (dmg_mult) * 256))}, ${Math.max(0, Math.min(255, (-dmg_mult+2) * 256))}, 0)`
+                // hp and mp
+                this.set_pixel_text(
+                    stats_mount_point,
+                    this.pad_str(`[red]${ent.hp}/${ent.max_hp}[clear] HP`, 4+1+4+3) // hp 4 digits twice, / (1), " HP" (3)
+                )
 
-                if (true) {
+                this.set_pixel_text(
+                    stats_mount_point.add(new Vector2(0, 1)),
+                    this.pad_str(`[cyan]${ent.mp}/${ent.max_mp}[clear] MP`, 4+1+4+3)
+                )
+
+                // affinities
+                for (let i=0; i<ent.affinities.length; i++) {
                     this.set_pixel_text(
-                        affinity_pos,
-                        this.pad_str(`[${col}]${this.pad_str(dmg_mult + "x", 5, true)} [${damage_type_cols[dmgtype]}]${dmgtype}`, 16)
-                    )
-                } else {
-                    this.set_pixel_text(
-                        affinity_pos,
-                        this.pad_str(``, 16)
+                        stats_mount_point.add(new Vector2(clearance_x - 10, i)),
+                        this.pad_str(`[${affinity_cols[ent.affinities[i]]}]${ent.affinities[i]}`, 10) // longest affinity is 10 i hope
                     )
                 }
 
-                affinity_pos = affinity_pos.add(new Vector2(0, 1));
-            }
+                // weaknesses
+                let dmgtypes = Object.keys(DmgType);
+                let affinity_pos = stats_mount_point.add(new Vector2(clearance_x - 16, this.total_size.y - 18));
 
-            // spells
-            // for each spell, show the spell list
-            let current_spell_point = stats_mount_point.add(new Vector2(0, 3));
-            for (let i=0; i<ent.innate_spells.length; i++) {
-                let spells = ent.innate_spells[i][0];
-                let cooldown = ent.innate_spells[i][1];
-                let name = ent.innate_spells[i][2];
-                let col = ent.innate_spells[i][3];
+                this.set_pixel_text(
+                    affinity_pos.sub(new Vector2(0, 2)),
+                    this.pad_str(`[clear]Weak / Resist:`, 16)
+                )
+
+                for (let i=0; i<dmgtypes.length; i++) {
+                    let dmgtype = dmgtypes[i];
+                    let dmg_mult = ent.get_damage_mult(dmgtype);
+                    dmg_mult = Math.round(dmg_mult * 100) / 100;
+
+                    let col = `rgb(${Math.max(0, Math.min(255, (dmg_mult) * 256))}, ${Math.max(0, Math.min(255, (-dmg_mult+2) * 256))}, 0)`
+
+                    if (true) {
+                        this.set_pixel_text(
+                            affinity_pos,
+                            this.pad_str(`[${col}]${this.pad_str(dmg_mult + "x", 5, true)} [${damage_type_cols[dmgtype]}]${dmgtype}`, 16)
+                        )
+                    } else {
+                        this.set_pixel_text(
+                            affinity_pos,
+                            this.pad_str(``, 16)
+                        )
+                    }
+
+                    affinity_pos = affinity_pos.add(new Vector2(0, 1));
+                }
+
+                // spells
+                // for each spell, show the spell list
+                let current_spell_point = stats_mount_point.add(new Vector2(0, 3));
+                for (let i=0; i<ent.innate_spells.length; i++) {
+                    let spells = ent.innate_spells[i][0];
+                    let cooldown = ent.innate_spells[i][1];
+                    let name = ent.innate_spells[i][2];
+                    let col = ent.innate_spells[i][3];
+
+                    this.set_pixel_text(
+                        current_spell_point,
+                        this.pad_str(`[${col}]${name}`, clearance_x - 18)
+                    )
+
+                    current_spell_point = current_spell_point.add(new Vector2(0, 1));
+
+                    let spell_str = "";
+                    let num_spells = 0;
+                    spells.forEach(spell => {
+                        if (num_spells * 3 >= clearance_x - 18) {
+                            this.set_pixel_text(
+                                current_spell_point,
+                                this.pad_str(spell_str, clearance_x)
+                            );
+
+                            current_spell_point = current_spell_point.add(new Vector2(0, 1));
+                            spell_str = "";
+                            num_spells = 0;
+                        }
+
+                        let icon = spell.icon;
+                        let col = spell.col;
+                        let back_col = spell.back_col;
+
+                        spell_str += `[${col}]${icon} `;
+                        this.set_back_set(
+                            current_spell_point.add(new Vector2(num_spells * 3, 0)),
+                            current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)),
+                            back_col
+                        )
+
+                        num_spells++;
+                    })
+
+                    this.set_pixel_text(
+                        current_spell_point,
+                        this.pad_str(spell_str, clearance_x)
+                    );
+
+                    current_spell_point = current_spell_point.add(new Vector2(0, 2));
+
+                    let pstats = ent.innate_primed_spells[i][0].root_spell.stats;
+                    this.set_pixel_text(
+                        current_spell_point,
+                        this.pad_str(`[#4df]${pstats.damage} [${damage_type_cols[pstats.damage_type]}]${pstats.damage_type}[clear] damage`, clearance_x - 18)
+                    )
+
+                    current_spell_point = current_spell_point.add(new Vector2(0, 1));
+
+                    this.set_pixel_text(
+                        current_spell_point,
+                        this.pad_str(`[#4df]${pstats.range}[clear] range`, clearance_x - 18)
+                    )
+
+                    current_spell_point = current_spell_point.add(new Vector2(0, 1));
+
+                    this.set_pixel_text(
+                        current_spell_point,
+                        this.pad_str(`[#4df]${ent.innate_primed_spells[i][0].manacost}[clear] MP cost`, clearance_x - 18)
+                    )
+
+                    current_spell_point = current_spell_point.add(new Vector2(0, 1));
+
+                    this.set_pixel_text(
+                        current_spell_point,
+                        this.pad_str(`[#4df]${cooldown}[clear] turn cooldown`, clearance_x - 18)
+                    )
+
+                    current_spell_point = current_spell_point.add(new Vector2(0, 1));
+
+                    let current_cd = ent.innate_primed_spells[i][1]
+                    if (current_cd > 0) {
+                        this.set_pixel_text(
+                            current_spell_point,
+                            this.pad_str(`(${current_cd} turn${current_cd == 1 ? "" : "s"} left)`, clearance_x - 18)
+                        )
+                    } else {
+                        this.set_pixel_text(
+                            current_spell_point,
+                            this.pad_str("", clearance_x - 18)
+                        )
+                    }
+
+                    current_spell_point = current_spell_point.add(new Vector2(0, 3));
+                }
+            } else if (this.selected_ent) {
+                this.set_pixel_text(
+                    right_mount_pos,
+                    this.pad_str(this.selected_ent.name, clearance_x),
+                    null
+                );
+            } else if (this.selected_spell || this.inventory_selected_spell || this.inventory_selected_spell_item || this.inventory_editing_spell_frag) {
+                // show spell information here instead.
+                let s = null;
+                if (this.selected_spell) {
+                    s = this.selected_spell;
+                } else if (this.inventory_selected_spell && this.inventory_selected_spell.spell) {
+                    s = this.inventory_selected_spell.spell;
+                } else if (this.inventory_selected_spell_item && this.inventory_selected_spell_item.spell) {
+                    s = this.inventory_selected_spell_item.spell;
+                } else if (this.inventory_editing_spell_frag && this.inventory_editing_spell_frag.spell) {
+                    s = this.inventory_editing_spell_frag.spell;
+                }
+
+                if (!s) {
+                    this.set_pixel_text(
+                        right_mount_pos,
+                        this.pad_str(`Empty`, clearance_x - 3),
+                        "white"
+                    );
+                } else {
+                    this.set_pixel_text(
+                        right_mount_pos,
+                        this.pad_str(`[${s.col}]${s.name}`, clearance_x - 3),
+                        "white"
+                    );
+    
+                    this.set_back_set(
+                        right_mount_pos,
+                        right_mount_pos.add(new Vector2(s.name.length - 1, 0)),
+                        s.back_col
+                    );
+    
+                    this.set_pixel_text(
+                        right_mount_pos.add(new Vector2(clearance_x - 2, 0)),
+                        this.pad_str(`[${s.col}]${s.icon}`, 3),
+                        "white"
+                    );
+    
+                    this.set_back_set(
+                        right_mount_pos.add(new Vector2(clearance_x - 2, 0)),
+                        right_mount_pos.add(new Vector2(clearance_x - 1, 0)),
+                        s.back_col
+                    );
+    
+                    let typ_col = {
+                        "Core": "#f00",
+                        "Modifier": "#0af" 
+                    }[s.typ];
+                    this.set_pixel_text(
+                        right_mount_pos.add(new Vector2(0, 2)),
+                        this.pad_str(`[${typ_col}]${s.typ}`, 3),
+                        "white"
+                    );
+    
+                    this.set_pixel_text(
+                        right_mount_pos.add(new Vector2(0, 4)),
+                        this.pad_str(s.desc, clearance_x),
+                        "white",
+                        clearance_x - 1
+                    );
+                }
+            } else if (this.selected_full_spell != undefined || this.game.selected_id != -1 || this.inventory_selected_spell_name != undefined || this.inventory_editing_spell_name != undefined) {
+                let current_spell_point = right_mount_pos;
+
+                let id = 0;
+                if (this.selected_full_spell != undefined) {
+                    id = this.selected_full_spell;
+                } else if (this.game.selected_id != -1) {
+                    id = this.game.selected_id;
+                } else if (this.inventory_selected_spell_name != undefined) {
+                    id = this.inventory_selected_spell_name;
+                } else if (this.inventory_editing_spell_name != undefined) {
+                    id = this.inventory_editing_spell_name;
+                }
+
+                //id = this.selected_full_spell != undefined ? this.selected_full_spell : this.game.selected_id;
+
+                let name = game.player_spells[id].name;
+
+                let spell_parse = game.player_ent.parse_spell(game.player_spells[id].spells, new Vector2(0, 0));
+                let spell = spell_parse.root_spell;
+                let pstats = spell.stats;
+                let manacost = spell_parse.manacost;
 
                 this.set_pixel_text(
                     current_spell_point,
-                    this.pad_str(`[${col}]${name}`, clearance_x - 18)
+                    this.pad_str(`[white]${name}`, clearance_x)
+                )
+
+                current_spell_point = current_spell_point.add(new Vector2(0, 2));
+
+                this.set_pixel_text(
+                    current_spell_point,
+                    this.pad_str(`[#4df]${pstats.range}[clear] range`, clearance_x - 18)
                 )
 
                 current_spell_point = current_spell_point.add(new Vector2(0, 1));
 
-                let spell_str = "";
-                let num_spells = 0;
-                spells.forEach(spell => {
-                    if (num_spells * 3 >= clearance_x - 18) {
+                this.set_pixel_text(
+                    current_spell_point,
+                    this.pad_str(`[#4df]${manacost}[clear] MP cost`, clearance_x - 18)
+                )
+
+                current_spell_point = current_spell_point.add(new Vector2(0, 2));
+
+                let diving = false;
+                let margin = 0;
+                while (diving) {
+                    this.set_pixel_text(
+                        current_spell_point,
+                        this.pad_str(`${"\u00A0".repeat(margin)}[#4df]${pstats.damage} [${damage_type_cols[pstats.damage_type]}]${pstats.damage_type}[clear] damage`, clearance_x)
+                    )
+
+                    current_spell_point = current_spell_point.add(new Vector2(0, 1));
+
+                    this.set_pixel_text(
+                        current_spell_point,
+                        this.pad_str(`${"\u00A0".repeat(margin)}[white]Affects tiles in a [#4df]${pstats.shape("whoami")}`, clearance_x)
+                    )
+
+                    current_spell_point = current_spell_point.add(new Vector2(0, 1));
+
+                    this.set_pixel_text(
+                        current_spell_point,
+                        this.pad_str(`${"\u00A0".repeat(margin)}[white]Effect radius: [#4df]${pstats.radius}`, clearance_x)
+                    )
+
+                    current_spell_point = current_spell_point.add(new Vector2(0, 2));
+
+                    if (spell.trigger && spell.trigger[0] != "none") {
                         this.set_pixel_text(
                             current_spell_point,
-                            this.pad_str(spell_str, clearance_x)
-                        );
+                            this.pad_str(`${"\u00A0".repeat(margin)}[#4df]${spell.trigger[0]}`, clearance_x)
+                        )
 
-                        current_spell_point = current_spell_point.add(new Vector2(0, 1));
-                        spell_str = "";
-                        num_spells = 0;
+                        this.set_pixel_text(
+                            current_spell_point.add(new Vector2(0, 1)),
+                            this.pad_str(`${"\u00A0".repeat(margin)}[white]-->`, clearance_x)
+                        )
+
+                        margin += 4;
+                        spell = spell.trigger[1];
+                        pstats = spell.stats;
+
+                        current_spell_point = current_spell_point.add(new Vector2(0, 2));
+                    } else {
+                        diving = false;
                     }
+                }
+            } else if (this.inventory_selected_spell) {
+                
+            } else if (this.inventory_selected_spell_item) {
+                
+            } else if (this.inventory_editing_spell_frag) {
+                
+            } else {
+                // need to clear the whole panel. can do this with a well-constructed string
+                // size of right panel is right panel size x - 4 (border margin) multiplied by y - 2
+                /*
+                let string_len = (this.right_menu_size.x - 4) * (this.right_menu_size.y - 2);
+                this.set_pixel_text(right_mount_pos, "\u00A0".repeat(string_len), null);
+                */
+            }
+        }
+    }
 
+    render_game_checkerboard(light_col) {
+        for (let x=0; x<this.game_view_size.x; x++) {
+            for (let y=0; y<this.game_view_size.y; y++) {
+                let pos = new Vector2(x + this.left_menu_size.x, y);
+                let light = Math.floor((x / 2) + y) % 2 == 0;
+
+                if (light) {
+                    this.set_back(pos, light_col);
+                } else {
+                    this.set_back(pos, "black");
+                }
+
+                this.set_pixel(pos, "\u00A0");
+            }
+        }
+    }
+
+    // this overwrites the game view
+    render_inventory_menu() {
+        this.inventory_spell_origins = {};
+        this.inventory_items_origins = {};
+        this.inventory_spell_names = {};
+
+        let mount_pos = new Vector2(
+            this.left_menu_size.x + 2, 2
+        );
+
+        let clearance_x = this.game_view_size.x - 4;
+
+        this.set_pixel_text(
+            mount_pos.sub(new Vector2(2, 2)),
+            "-".repeat(clearance_x + 4)
+        );
+
+        this.set_pixel_text(
+            mount_pos.add(new Vector2(-2, this.game_view_size.y - 3)),
+            "-".repeat(clearance_x + 4)
+        );
+
+        let current_line = mount_pos.copy();
+        let player_spells = this.game.player_spells_edit;
+        let inventory = this.game.player_inventory;
+
+        for (let j=0; j<player_spells.length; j++) {
+            let pspell = player_spells[j];
+
+            let spell_name = this.game.player_spells[j].name;
+
+            if (this.inventory_editing_spell_name == j) {
+                this.set_back_set(
+                    current_line,
+                    current_line.add(new Vector2(clearance_x - 1, 0)),
+                    "#666"
+                )
+                
+                spell_name += "_";
+            } else if (this.inventory_selected_spell_name == j) {
+                this.set_back_set(
+                    current_line,
+                    current_line.add(new Vector2(clearance_x - 9, 0)),
+                    "#333"
+                )
+            }
+            
+            let parsed = this.game.player_ent.parse_spell(game.player_spells[j].spells, new Vector2(0, 0));
+            this.set_pixel_text(
+                current_line,
+                this.pad_str(`[white](${j+1}) ${spell_name}`, clearance_x - 9) + this.pad_str(`[cyan]${parsed.manacost} MP`, 8, 1)
+            )
+
+            this.inventory_spell_names[current_line.y] = j;
+
+            current_line = current_line.add(new Vector2(0, 2));
+
+            let spell_str = "";
+            let num_spells = 0;
+            let current_spell_point = current_line.copy();
+
+            for (let i=0; i<game.player_max_spell_fragments; i++) {
+                let spell = i < pspell.length ? pspell[i] : null;
+
+                if (num_spells * 3 >= clearance_x) {
+                    this.set_pixel_text(
+                        current_spell_point,
+                        this.pad_str(spell_str, clearance_x)
+                    );
+
+                    current_spell_point = current_spell_point.add(new Vector2(0, 1));
+                    spell_str = "";
+                    num_spells = 0;
+                }
+
+                if (spell) {
                     let icon = spell.icon;
                     let col = spell.col;
                     let back_col = spell.back_col;
+
+                    if (this.inventory_selected_spell) {
+                        //console.log(this.inventory_selected_spell, i, j);
+                        if (this.inventory_selected_spell.frag_id == i && this.inventory_selected_spell.spell_id == j) {
+                            back_col = "white";
+                            col = "black";
+                        } else if (this.inventory_selected_spell.spell && this.inventory_selected_spell.spell.id == spell.id) {
+                            back_col = "#aaa";
+                            col = "black";
+                        }
+                    }
+
+                    if (this.inventory_selected_spell_item) {
+                        //console.log(this.inventory_selected_spell, i, j);
+                        if (this.inventory_selected_spell_item.spell && this.inventory_selected_spell_item.spell.id == spell.id) {
+                            back_col = "#aaa";
+                            col = "black";
+                        }
+                    }
+
+                    if (this.inventory_editing_spell_frag) {
+                        let fr = this.inventory_editing_spell_frag;
+                        if (fr.frag_id != undefined && fr.spell_id != undefined) {
+                            if (fr.frag_id == i && fr.spell_id == j) {
+                                back_col = "#0f0";
+                                col = "black";
+                            }
+                        }
+                    }
 
                     spell_str += `[${col}]${icon} `;
                     this.set_back_set(
@@ -926,112 +1462,155 @@ class Renderer {
                         current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)),
                         back_col
                     )
+                } else {
+                    let icon = "[]";
+                    let col = "#888";
+                    let back_col = "black";
 
-                    num_spells++;
-                })
+                    if (this.inventory_selected_spell) {
+                        if (this.inventory_selected_spell.frag_id == i && this.inventory_selected_spell.spell_id == j) {
+                            back_col = "#aaa";
+                            col = "black";
+                        }
+                    }
 
+                    if (this.inventory_editing_spell_frag) {
+                        let fr = this.inventory_editing_spell_frag;
+                        if (fr.frag_id != undefined && fr.spell_id != undefined) {
+                            if (fr.frag_id == i && fr.spell_id == j) {
+                                back_col = "#0f0";
+                                col = "black";
+                            }
+                        }
+                    }
+
+                    spell_str += `[${col}]${icon} `;
+                    this.set_back_set(
+                        current_spell_point.add(new Vector2(num_spells * 3, 0)),
+                        current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)),
+                        back_col
+                    )
+                }
+
+                this.inventory_spell_origins[current_spell_point.add(new Vector2(num_spells * 3, 0)).hash_code()] = {spell: spell, frag_id: i, spell_id: j};
+                this.inventory_spell_origins[current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)).hash_code()] = {spell: spell, frag_id: i, spell_id: j};
+
+                num_spells++;
+            };
+
+            this.set_pixel_text(
+                current_spell_point,
+                this.pad_str(spell_str, clearance_x)
+            );
+
+            current_line = new Vector2(mount_pos.x, current_spell_point.y + 2);
+        }
+
+        let spell_str = "";
+        let num_spells = 0;
+
+        this.set_pixel_text(
+            current_line.add(new Vector2(0, 5)),
+            this.pad_str("[white]- - - Inventory - - - ", clearance_x, 3)
+        );
+
+        current_line = current_line.add(new Vector2(0, 7));
+        let current_spell_point = current_line.copy();
+
+        for (let i=0; i<game.player_inventory_size; i++) {
+            let spell = game.player_inventory[i];
+
+            if (num_spells * 3 >= clearance_x) {
                 this.set_pixel_text(
                     current_spell_point,
                     this.pad_str(spell_str, clearance_x)
                 );
 
                 current_spell_point = current_spell_point.add(new Vector2(0, 2));
+                spell_str = "";
+                num_spells = 0;
+            }
 
-                let pstats = ent.innate_primed_spells[i][0].root_spell.stats;
-                this.set_pixel_text(
-                    current_spell_point,
-                    this.pad_str(`[clear]${pstats.damage} [${damage_type_cols[pstats.damage_type]}]${pstats.damage_type}[clear] damage`, clearance_x - 18)
-                )
+            if (spell) {
+                let icon = spell.icon;
+                let col = spell.col;
+                let back_col = spell.back_col;
 
-                current_spell_point = current_spell_point.add(new Vector2(0, 1));
-
-                this.set_pixel_text(
-                    current_spell_point,
-                    this.pad_str(`[clear]${pstats.range} range`, clearance_x - 18)
-                )
-
-                current_spell_point = current_spell_point.add(new Vector2(0, 1));
-
-                this.set_pixel_text(
-                    current_spell_point,
-                    this.pad_str(`[clear]${cooldown} turn cooldown`, clearance_x - 18)
-                )
-
-                current_spell_point = current_spell_point.add(new Vector2(0, 1));
-
-                let current_cd = ent.innate_primed_spells[i][1]
-                if (current_cd > 0) {
-                    this.set_pixel_text(
-                        current_spell_point,
-                        this.pad_str(`(${current_cd} turn${current_cd == 1 ? "" : "s"} left)`, clearance_x - 18)
-                    )
-                } else {
-                    this.set_pixel_text(
-                        current_spell_point,
-                        this.pad_str("", clearance_x - 18)
-                    )
+                if (this.inventory_selected_spell_item) {
+                    //console.log(this.inventory_selected_spell, i, j);
+                    if (this.inventory_selected_spell_item.inv_id == i) {
+                        back_col = "white";
+                        col = "black";
+                    } else if (this.inventory_selected_spell_item.spell && this.inventory_selected_spell_item.spell.id == spell.id) {
+                        back_col = "#aaa";
+                        col = "black";
+                    }
                 }
 
-                current_spell_point = current_spell_point.add(new Vector2(0, 3));
+                if (this.inventory_selected_spell) {
+                    //console.log(this.inventory_selected_spell, i, j);
+                    if (this.inventory_selected_spell.spell && this.inventory_selected_spell.spell.id == spell.id) {
+                        back_col = "#aaa";
+                        col = "black";
+                    }
+                }
+
+                if (this.inventory_editing_spell_frag) {
+                    let fr = this.inventory_editing_spell_frag;
+                    if (fr.inv_id != undefined) {
+                        if (fr.inv_id == i) {
+                            back_col = "#0f0";
+                            col = "black";
+                        }
+                    }
+                }
+
+                spell_str += `[${col}]${icon} `;
+                this.set_back_set(
+                    current_spell_point.add(new Vector2(num_spells * 3, 0)),
+                    current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)),
+                    back_col
+                )
+            } else {
+                let icon = "[]";
+                let col = "#888";
+                let back_col = "black";
+
+                if (this.inventory_selected_spell_item) {
+                    if (this.inventory_selected_spell_item.inv_id == i) {
+                        back_col = "#aaa";
+                        col = "black";
+                    }
+                }
+
+                if (this.inventory_editing_spell_frag) {
+                    let fr = this.inventory_editing_spell_frag;
+                    if (fr.inv_id != undefined) {
+                        if (fr.inv_id == i) {
+                            back_col = "#0f0";
+                            col = "black";
+                        }
+                    }
+                }
+
+                spell_str += `[${col}]${icon} `;
+                this.set_back_set(
+                    current_spell_point.add(new Vector2(num_spells * 3, 0)),
+                    current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)),
+                    back_col
+                )
             }
-        } else if (this.selected_ent) {
-            this.set_pixel_text(
-                right_mount_pos,
-                this.pad_str(this.selected_ent.name, clearance_x),
-                null
-            );
-        } else if (this.selected_spell) {
-            // show spell information here instead.
-            let s = this.selected_spell;
 
-            this.set_pixel_text(
-                right_mount_pos,
-                this.pad_str(`[${s.col}]${s.name}`, clearance_x - 3),
-                "white"
-            );
+            this.inventory_items_origins[current_spell_point.add(new Vector2(num_spells * 3, 0)).hash_code()] = {spell: spell, inv_id: i};
+            this.inventory_items_origins[current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)).hash_code()] = {spell: spell, inv_id: i};
 
-            this.set_back_set(
-                right_mount_pos,
-                right_mount_pos.add(new Vector2(s.name.length - 1, 0)),
-                s.back_col
-            );
+            num_spells++;
+        };
 
-            this.set_pixel_text(
-                right_mount_pos.add(new Vector2(clearance_x - 2, 0)),
-                this.pad_str(`[${s.col}]${s.icon}`, 3),
-                "white"
-            );
-
-            this.set_back_set(
-                right_mount_pos.add(new Vector2(clearance_x - 2, 0)),
-                right_mount_pos.add(new Vector2(clearance_x - 1, 0)),
-                s.back_col
-            );
-
-            let typ_col = {
-                "Core": "#f00",
-                "Modifier": "#0af" 
-            }[s.typ];
-            this.set_pixel_text(
-                right_mount_pos.add(new Vector2(0, 2)),
-                this.pad_str(`[${typ_col}]${s.typ}`, 3),
-                "white"
-            );
-
-            this.set_pixel_text(
-                right_mount_pos.add(new Vector2(0, 4)),
-                this.pad_str(s.desc, clearance_x),
-                "white",
-                clearance_x - 1
-            );
-        } else {
-            // need to clear the whole panel. can do this with a well-constructed string
-            // size of right panel is right panel size x - 4 (border margin) multiplied by y - 2
-            /*
-            let string_len = (this.right_menu_size.x - 4) * (this.right_menu_size.y - 2);
-            this.set_pixel_text(right_mount_pos, "\u00A0".repeat(string_len), null);
-            */
-        }
+        this.set_pixel_text(
+            current_spell_point,
+            this.pad_str(spell_str, clearance_x)
+        );
     }
 
     render_game_view() {
@@ -1099,7 +1678,7 @@ class Renderer {
 
                     //console.log("screen:", screen_pos, "game:", game_pos);
 
-                    if (ent) {
+                    if (ent && (!this.enable_fog || game.can_see(game.player_ent, game_pos))) {
                         this.set_pixel_pair(screen_pos, ent.icon, ent.col);
                     } else {
                         this.set_pixel_pair(screen_pos, "\u00A0\u00A0");
@@ -1175,6 +1754,10 @@ class Renderer {
                     }
                 }
 
+                if (this.enable_fog && !game.can_see(game.player_ent, game_pos)) {
+                    back_rgb = [0, 0, 0];
+                }
+                
                 this.set_back_pair(screen_pos, `rgb(${back_rgb[0]}, ${back_rgb[1]}, ${back_rgb[2]})`);
             }
         }
@@ -1292,7 +1875,7 @@ class Board {
 
 
 class EntityTemplate {
-    constructor(name, icon, col, desc, max_hp, max_mp, affinities, xp_value, innate_spells, ai_level) {
+    constructor(name, icon, col, desc, max_hp, max_mp, affinities, xp_value, innate_spells, ai_level, blocks_los, untargetable) {
         this.name = name
         this.icon = icon
         this.col = col
@@ -1303,6 +1886,8 @@ class EntityTemplate {
         this.xp_value = xp_value != undefined ? xp_value : 0
         this.innate_spells = innate_spells != undefined ? innate_spells : []
         this.ai_level = ai_level != undefined ? ai_level : 999
+        this.blocks_los = blocks_los;
+        this.untargetable = untargetable;
     }
 }
 
@@ -1332,6 +1917,10 @@ class Entity {
         this.xp_value = template.xp_value
 
         this.ai_level = template.ai_level;
+
+        this.blocks_los = template.blocks_los;
+        this.untargetable = template.untargetable;
+
         this.team = team;
         this.dead = false;
 
@@ -1369,34 +1958,40 @@ class Entity {
                 break;
             
             case 1:
-                // check if we can cast a spell
-                let cast_spell = false;
-                for (let i=0; i<this.innate_primed_spells.length; i++) {
-                    let primed_spell = this.innate_primed_spells[i][0];
-                    let cooldown = this.innate_primed_spells[i][1];
+                let target_ent = game.find_closest_enemy(this);
 
-                    if (cooldown <= 0) {
-                        if (primed_spell.manacost <= this.mp && primed_spell.root_spell.in_range(this, game.player_ent.position)) {
-                            //console.log("executing spell", primed_spell);
-                            this.execute_spell(primed_spell, game.player_ent.position)
-                            this.innate_primed_spells[i][1] = this.innate_spells[i][1];
-                            cast_spell = true;
-                            break;
+                if (target_ent) {
+                    // check if we can cast a spell
+                    let cast_spell = false;
+                    for (let i=0; i<this.innate_primed_spells.length; i++) {
+                        let primed_spell = this.innate_primed_spells[i][0];
+                        let cooldown = this.innate_primed_spells[i][1];
+
+                        if (cooldown <= 0) {
+                            if (primed_spell.manacost <= this.mp && primed_spell.root_spell.in_range(this, target_ent.position)) {
+                                //console.log("executing spell", primed_spell);
+                                this.execute_spell(primed_spell, target_ent.position)
+                                this.innate_primed_spells[i][1] = this.innate_spells[i][1];
+                                cast_spell = true;
+                                break;
+                            }
                         }
                     }
-                }
 
-                // for ai level 2+, the entity should stay at the range of their shortest range spell
-                // they should only move towards the player if they are out of range
-                // and move away otherwise
-                if (!cast_spell) {
-                    let path = pathfind(this.position, game.player_ent.position);
+                    // for ai level 2+, the entity should stay at the range of their shortest range spell
+                    // they should only move towards the player if they are out of range
+                    // and move away otherwise
+                    if (!cast_spell) {
+                        let path = pathfind(this.position, target_ent.position);
 
-                    //console.log(path, this.position, game.player_ent.position);
-                    if (path && path.length > 1) {
-                        let result = game.move_entity(this, path[1], false);
+                        //console.log(path, this.position, target_ent.position);
+                        if (path && path.length > 1) {
+                            let result = game.move_entity(this, path[1], false);
+                        }
+                            
+                        game.end_turn();
                     }
-                        
+                } else {
                     game.end_turn();
                 }
                 
@@ -1505,7 +2100,13 @@ class Entity {
         if (root_spell) {
             return {root_spell: root_spell, manacost: manacost};
         } else {
-            return null;
+            let backup_spell = this.parse_spell([
+                core_spell("backup spell", "!!", "white", "red", 
+                "This is a useless spell. You didn't add a core!",
+                0, DmgType.Physical, 0, 0, Shape.Diamond, 0)
+            ]).root_spell;
+
+            return {root_spell: backup_spell, manacost: 0};
         }
     }
 
@@ -1578,7 +2179,7 @@ class Entity {
         }
         */
 
-        if (died) {
+        if (died && this.team != Teams.PLAYER) {
             // spawn xp
             // even if not killed by the player
             // (because that encourages making enemies hit each other)
@@ -1683,8 +2284,7 @@ const SpellTargeting = {
 const Teams = {
     PLAYER: "Player",
     ENEMY: "Enemy",
-    UNTARGETABLE_NO_LOS: "Untargetable No LOS",
-    UNTARGETABLE: "Untargetable",
+    UNALIGNED: "Unaligned"
 }
 
 function make_square(target, radius, predicate) {
@@ -1847,7 +2447,7 @@ function make_line(a, b, radius, respect_los, just_one) {
 
             if (respect_los) {
                 let ent_raw = board.get_pos(coord);
-                if (ent_raw && ent_raw.has_team(Teams.UNTARGETABLE_NO_LOS)) {
+                if (ent_raw && ent_raw.blocks_los) {
                     // occupied so stop early
                     return coords;
                 }
@@ -1896,7 +2496,7 @@ function propagate_diamond(origin, radius, los) {
                     }
                 }
 
-                let ent_blocks_los = point_ent ? point_ent.has_team(Teams.UNTARGETABLE_NO_LOS) : false;
+                let ent_blocks_los = point_ent ? point_ent.blocks_los : false;
 
                 if ((!ent_blocks_los || !los) && !position_already_recorded) {
                     // the position is empty and has not been marked yet
@@ -1920,20 +2520,32 @@ function propagate_diamond(origin, radius, los) {
 const Shape = {
     Square: ["square shape", function(origin, target, radius, los) {
         if (origin == "whoami") {
-            return "Square";
+            return "square shape";
         }
 
         return make_square(target, radius);
     }],
     Circle: ["circle shape", function(origin, target, radius, los) {
+        if (origin == "whoami") {
+            return "circle shape";
+        }
+        
+        let pts = make_square(target, radius+1);
 
+        let filtered = pts.filter(
+            vec => {
+                return (vec.sub(target).magnitude() <= radius) && (target.equals(vec) || game.has_los_pos(target, vec))
+            }
+        );
+
+        return filtered
     }],
     Ring: ["ring shape", function(origin, target, radius, los) {
 
     }],
     Diamond: ["burst", function(origin, target, radius, los) {
         if (origin == "whoami") {
-            return "Diamond";
+            return "burst";
         }
 
         // make a square but filter it a little
@@ -1941,7 +2553,7 @@ const Shape = {
     }],
     Line: ["straight line", function(origin, target, radius, los) {
         if (origin == "whoami") {
-            return "Line";
+            return "straight line";
         }
 
         //console.log(origin, target);
@@ -2209,6 +2821,7 @@ class PrimedSpell {
         PrimedSpell.id_inc++;
 
         this.caster = caster
+        this.origin = null;
         this.spells = spells
         this.trigger = ["none", null];  // ["at_target"/..., PrimedSpell]
 
@@ -2265,7 +2878,7 @@ class PrimedSpell {
     cast(board, caster, position) {
         let self_target_safe = this.stats.target_type == SpellTargeting.SelfTarget;
 
-        let cast_locations = this.stats.shape(caster.position, position, this.stats.radius, this.stats.los);
+        let cast_locations = this.stats.shape(this.origin ? this.origin : caster.position, position, this.stats.radius, this.stats.los);
         //console.log(cast_locations);
 
         if (self_target_safe) {
@@ -2284,7 +2897,7 @@ class PrimedSpell {
             // if the location is LOS untargetable never do anything
             // unless we ignore LOS
             let ent_raw = board.get_pos(location);
-            if (this.stats.los && ent_raw && ent_raw.has_team(Teams.UNTARGETABLE_NO_LOS)) {
+            if (this.stats.los && ent_raw && ent_raw.blocks_los) {
                 return;
             }
 
@@ -2314,6 +2927,7 @@ class PrimedSpell {
             })
 
             if (sthis.trigger[0] == "on_affected_tiles") {
+                sthis.trigger[1].origin = position;
                 game.cast_primed_spell(sthis.trigger[1], location);
             }
         })
@@ -2326,6 +2940,7 @@ class PrimedSpell {
         })
 
         if (this.trigger[0] == "at_target") {
+            this.trigger[1].origin = position;
             game.cast_primed_spell(this.trigger[1], position);
         }
 
@@ -2347,6 +2962,7 @@ class PrimedSpell {
                 })
 
                 if (this.trigger[0] == "on_hit") {
+                    this.trigger[1].origin = position;
                     game.cast_primed_spell(this.trigger[1], ent.position);
                 }
             })
@@ -2370,6 +2986,23 @@ class Game {
         this.player_xp = 0;
         this.player_level = 1;
         this.player_skill_points = 0;
+        this.player_inventory = [];
+        this.player_spells_edit = [[], [], [], [], []];
+
+        this.player_max_spell_fragments = 20;
+        this.player_inventory_size = 60;
+
+        for (let i=0; i<this.player_max_spell_fragments; i++) {
+            this.player_spells_edit[0].push(null);
+            this.player_spells_edit[1].push(null);
+            this.player_spells_edit[2].push(null);
+            this.player_spells_edit[3].push(null);
+            this.player_spells_edit[4].push(null);
+        }
+
+        for (let i=0; i<this.player_inventory_size; i++) {
+            this.player_inventory.push(null);
+        }
 
         // current turn; pops spells off this stack one by one for the purposes of animation
         // anything that casts a spell goes through here first
@@ -2380,6 +3013,64 @@ class Game {
         this.spell_speed = 100;
 
         this.turn_index = 0  // index into entities
+
+        this.inventory_open = false;
+    }
+
+    player_discard_edits() {
+        for (let i=0; i<this.player_max_spell_fragments; i++) {
+            for (let t=0; t<5; t++) {
+                this.player_spells_edit[t][i] = i < this.player_spells[t].spells.length ? this.player_spells[t].spells[i] : null;
+            }
+        }
+    }
+
+    player_commit_edits() {
+        for (let t=0; t<5; t++) {
+            this.player_spells[t].spells = [];
+        }
+
+        for (let i=0; i<this.player_max_spell_fragments; i++) {
+            for (let t=0; t<5; t++) {
+                if (this.player_spells_edit[t][i]) {
+                    this.player_spells[t].spells.push(this.player_spells_edit[t][i]);
+                }
+            }
+        }
+    }
+
+    player_swap_spells(a, b) {
+        // spell_id, frag_id, inv_id
+        if (a.inv_id != undefined) {
+            this.player_inventory[a.inv_id] = b.spell;
+        } else if (a.spell_id != undefined && a.frag_id != undefined) {
+            this.player_spells_edit[a.spell_id][a.frag_id] = b.spell;
+        }
+
+        if (b.inv_id != undefined) {
+            this.player_inventory[b.inv_id] = a.spell;
+        } else if (b.spell_id != undefined && b.frag_id != undefined) {
+            this.player_spells_edit[b.spell_id][b.frag_id] = a.spell;
+        }
+
+        this.player_commit_edits();
+    }
+
+    player_add_spells_to_inv(spells) {
+        spells.forEach(spell => {
+            this.player_add_spell_to_inv(spell);
+        })
+    }
+
+    player_add_spell_to_inv(spell) {
+        for (let i=0; i<this.player_inventory_size; i++) {
+            if (!this.player_inventory[i]) {
+                this.player_inventory[i] = spell;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     begin_turn() {
@@ -2549,6 +3240,9 @@ class Game {
         let result = this.select_player_spell_list(this.player_spells[id].spells);
         
         if (result) {
+            renderer.refresh_right_panel = true;
+            console.log("game asked for right panel refresh");
+
             this.selected_id = id;
         } else {
             this.deselect_player_spell();
@@ -2577,6 +3271,9 @@ class Game {
         this.selected_id = -1;
         this.selected_player_spell = null;
         this.selected_player_primed_spell = null;
+
+        renderer.refresh_right_panel = true;
+        console.log("game asked for right panel refresh");
     }
 
     spawn_entity(ent_template, team, position, overwrite) {
@@ -2594,7 +3291,26 @@ class Game {
         this.player_ent = this.spawn_entity(player_ent, Teams.PLAYER, position);
     }
 
-    has_los(ent, position) {
+    has_los_pos(a, b) {
+        if (!this.board.position_valid(a) || !this.board.position_valid(b)) {
+            return false;
+        }
+
+        let line = make_line(a, b, 1, true);
+
+        // line stops at an LOS blocker,
+        // so to find out if we have LOS we just check if the line
+        // ends at the position we want
+        if (line.length > 0 && line[line.length - 1].equals(b)) {
+            return line;
+        } else {
+            return false;
+        }
+    }
+
+    can_see(ent, position) {
+        // slightly differs to has_los as it
+        // allows the final position if it's close
         if (!this.board.position_valid(position)) {
             return false;
         }
@@ -2604,11 +3320,17 @@ class Game {
         // line stops at an LOS blocker,
         // so to find out if we have LOS we just check if the line
         // ends at the position we want
-        if (line.length > 0 && line[line.length - 1].equals(position)) {
+        if (line.length > 0 && line[line.length - 1].sub(position).magnitude() < 2) {
             return line;
+        } else if (position.sub(ent.position).magnitude() < 2) {
+            return true;
         } else {
             return false;
         }
+    }
+
+    has_los(ent, position) {
+        return this.has_los_pos(ent.position, position);
     }
 
     find_random_space_in_los(caster, pos, radius, shape) {
@@ -2626,6 +3348,23 @@ class Game {
         }
 
         return null;
+    }
+
+    find_closest_enemy(ent) {
+        let closest_dist = Number.POSITIVE_INFINITY;
+        let closest_ent = null;
+
+        this.entities.forEach(other => {
+            let dist = other.position.distance(ent.position);
+            if (!other.untargetable && other.team != ent.team) {
+                if (dist < closest_dist) {
+                    closest_ent = other;
+                    closest_dist = dist;
+                }
+            }
+        })
+
+        return closest_ent;
     }
 
     move_entity(ent, new_pos, overwrite) {
@@ -2888,11 +3627,11 @@ spells_list = [
     ),
 
     core_spell(
-        "Gun", "%=", "white", "red", "", 5000, DmgType.Physical, 30, 1, Shape.Line, 50
+        "Gun", "%=", "white", "red", "", 5000, DmgType.Physical, 30, 1, Shape.Line, 50, SpellTargeting.Positional, [Teams.ENEMY]
     ).augment("at_target", function(user, spell, stats, location) {
         user.cast_spell([
             core_spell(
-                "gun explosion", "##", "white", "black", "", 25, DmgType.Fire, 1, 1, Shape.Diamond, 0
+                "gun explosion", "##", "white", "black", "", 25, DmgType.Fire, 1, 1, Shape.Diamond, 0, stats.target_type, stats.target_team
             )
         ], location);
     }),
@@ -2971,7 +3710,12 @@ spells_list = [
 
             game.cast_primed_spell(new_spell.root_spell, location, true);
         }
-    })
+    }),
+
+    core_spell(
+        "pea spell", "!!", "white", "red", "pea spell",
+        73, DmgType.Chaos, 10, 3, Shape.Circle, 2
+    )
 ]
 
 
@@ -2980,7 +3724,7 @@ entity_templates = [
         Affinity.Living, Affinity.Chaos, Affinity.Insect  // player is only living by default, can be changed by events
     ], 0, [
 
-    ], 0),
+    ], 0, false, false),
 
     new EntityTemplate("test enemy", "Gg", "#0f0", "idk goblin or smt", 100, 10, [
         Affinity.Ice, Affinity.Insect, Affinity.Living
@@ -2991,7 +3735,7 @@ entity_templates = [
                 Shape.Diamond, 0
             )
         ], 0, "Bite", "white"],
-    ], 1),
+    ], 1, false, false),
 
     new EntityTemplate("big guy", "#+", "#f00", "scary guy who tests the description line wrapping too. really long text", 500, 9999, [
         Affinity.Fire,
@@ -3011,13 +3755,13 @@ entity_templates = [
         Affinity.Order
     ], 2500, [
 
-    ], 1),
+    ], 1, false, false),
 
     new EntityTemplate("Wall", "[]", "#ccc", "Just a wall.", Number.POSITIVE_INFINITY, 0, [
         Affinity.Construct
     ], 0, [
 
-    ], 999),
+    ], 999, true, true),
 ]
 
 let dmg_type_particles = {
@@ -3032,16 +3776,54 @@ let dmg_type_particles = {
     "Psychic": new ParticleTemplate(["@@", "[]", "{}", "||", "::"], damage_type_cols["Psychic"], 1),
 }
 
+function get_spell_by_name(name) {
+    let matches = spells_list.filter(spell => {
+        return spell.name.toLowerCase().includes(name.toLowerCase());
+    });
+
+    // pick the shortest one
+    let shortest = null;
+    matches.forEach(st => {
+        if (!shortest || st.name.length < shortest.name.length) {
+            shortest = st;
+        }
+    });
+
+    return shortest;
+}
+
+function get_entity_by_name(name) {
+    let matches = entity_templates.filter(ent => {
+        return ent.name.toLowerCase().includes(name.toLowerCase());
+    });
+
+    // pick the shortest one
+    let shortest = null;
+    matches.forEach(st => {
+        if (!shortest || st.name.length < shortest.name.length) {
+            shortest = st;
+        }
+    });
+
+    return shortest;
+}
+
+function gen_spells(...names) {
+    return names.map(n => get_spell_by_name(n));
+}
+
 let num_enemy_spawns = 0;
 
 let board = new Board(new Vector2(64, 64));
 let game = new Game(board);
 let renderer = new Renderer(game, board, new Vector2(64, 36), 48, 48, 1/2);
 
-game.spawn_player(entity_templates[0], new Vector2(24, 32));
-game.spawn_entity(entity_templates[1], Teams.ENEMY, new Vector2(48, 48), true).name = "AAA enemy";
-game.spawn_entity(entity_templates[1], Teams.ENEMY, new Vector2(46, 48), true).name = "BBB enemy";
-let moving_ent = game.spawn_entity(entity_templates[1], Teams.ENEMY, new Vector2(20, 22), true);
+game.spawn_player(get_entity_by_name("Player"), new Vector2(24, 32));
+game.spawn_entity(get_entity_by_name("test enemy"), Teams.PLAYER, new Vector2(12, 20), true).name = "friendly friend ^w^";
+
+game.spawn_entity(get_entity_by_name("test enemy"), Teams.ENEMY, new Vector2(48, 48), true).name = "AAA enemy";
+game.spawn_entity(get_entity_by_name("test enemy"), Teams.ENEMY, new Vector2(46, 48), true).name = "BBB enemy";
+let moving_ent = game.spawn_entity(get_entity_by_name("test enemy"), Teams.ENEMY, new Vector2(20, 22), true);
 moving_ent.name = "moving guy";
 moving_ent.add_innate_spell([[
     core_spell(
@@ -3050,69 +3832,25 @@ moving_ent.add_innate_spell([[
     )
 ], 3, "Psycho-Laser", damage_type_cols["Psychic"]]);
 
-game.spawn_entity(entity_templates[2], Teams.ENEMY, new Vector2(14, 22), true);
+game.spawn_entity(get_entity_by_name("big guy"), Teams.ENEMY, new Vector2(14, 22), true);
 
 for (let xt=0; xt<game.board.dimensions.x; xt++) {
     for (let yt=0; yt<game.board.dimensions.y; yt++) {
         if (Math.random() < 0.01) {
-            game.spawn_entity(entity_templates[3], Teams.UNTARGETABLE_NO_LOS, new Vector2(xt, yt), false);
+            game.spawn_entity(get_entity_by_name("Wall"), Teams.UNALIGNED, new Vector2(xt, yt), false);
         }
     }
 }
 
 //let primed_spell_test = new PrimedSpell(game.player_ent, [spells_list[0],]);
-let target = new Vector2(20, 22);
-
-// Fireball
-let spell_simple = [spells_list[11], spells_list[1], spells_list[2]];  
-
-// Fireball, Ice Bolt (should ignore ice bolt)
-let spell_extra = [spells_list[0], spells_list[2]];
-
-// Damage Plus I, Fireball
-let spell_mod = [spells_list[3], spells_list[0]];
-
-// Damage Plus I, Damage Plus I, Fireball
-let spell_mod_2 = [spells_list[3], spells_list[3], spells_list[0]];
-
-// Fireball with Trigger, Damage Plus I, Ice Bolt
-// 10 fire dmg, 20 ice dmg
-let spell_complex = [spells_list[1], spells_list[3], spells_list[2]];
-
-let spell_trigger_target = [spells_list[4], spells_list[0], spells_list[2]];
-let spell_trigger_tile = [spells_list[3], spells_list[3], spells_list[5], spells_list[0], spells_list[2]];
-let spell_trigger_dmg = [spells_list[6], spells_list[0], spells_list[2]];
-
-let spell_crazy = [
-    spells_list[5], spells_list[0], spells_list[5], spells_list[0], spells_list[2]
-]
-
-let spell_lightning = [
-    spells_list[7]
-]
-
-let spell_all = [
-    spells_list[10], spells_list[4], spells_list[7], spells_list[8], spells_list[6], spells_list[0], spells_list[2]
-]
-
-let behind_back = [
-    spells_list[9], spells_list[7]
-]
-
-let gun = [
-    spells_list[12]
-]
-
-let machine_gun = [
-    spells_list[13], spells_list[12]
-]
+//let target = new Vector2(20, 22);
 
 game.player_spells = [
-    {spells: spell_simple, name: "proj fireball w/ trigger icicle"},
-    {spells: spell_trigger_tile, name: "Fireball with Ice Trigger"},
+    {spells: gen_spells("pea"), name: "pea spell"},
+    {spells: gen_spells("damage plus i", "damage plus i", "add tile trigger", "fireball", "icicle"), name: "Fireball with Ice Trigger"},
     {spells: [...spells_list], name: "Every Spell In The Spells List"},
-    {spells: spell_all, name: "a bunch of stuff"},
-    {spells: gun, name: "gun"}
+    {spells: gen_spells("multicast x4", "add target trigger", "lightning bolt", "radius plus i", "add damage trigger", "fireball", "icicle"), name: "a bunch of stuff"},
+    {spells: gen_spells("gun"), name: "gun"}
 ]
 
 game.begin_turn();
@@ -3190,6 +3928,10 @@ function xp_sparkle(xp, from) {
     }, (1000/30));
 }
 
+game.player_add_spells_to_inv([...spells_list].flatMap(i => [i,i,i]));
+game.player_discard_edits();
+game.inventory_open = true;
+
 let xp_flash = new ParticleTemplate(["++", "''"], "#ddd", 1);
 let lvl_flash = new ParticleTemplate(["**", "++", "\"\"", "''"], "#fff", 0.5);
 
@@ -3203,6 +3945,8 @@ renderer.setup();
 
 let last_frame_time = Date.now();
 let frame_times = [];
+
+renderer.render_game_checkerboard("black");
 
 function game_loop() {
     //renderer.add_particle(ppos, new Particle(tmp));
@@ -3228,7 +3972,13 @@ function game_loop() {
     // }
 
     renderer.render_left_panel();
-    renderer.render_game_view();
+
+    if (game.inventory_open) {
+        renderer.render_inventory_menu();
+    } else {
+        renderer.render_game_view();
+    }
+
     renderer.render_right_panel();
     renderer.advance_particles();
 
@@ -3255,6 +4005,18 @@ document.addEventListener("DOMContentLoaded", function() {
 
             case "Escape":
                 game.deselect_player_spell();
+                break;
+
+            case "r":
+                game.inventory_open = !game.inventory_open;
+                if (game.inventory_open) {
+                    renderer.render_game_checkerboard("black");
+                    renderer.render_inventory_menu();
+                } else {
+                    renderer.render_game_checkerboard("#222");
+                    renderer.render_game_view();
+                }
+
                 break;
 
             case "q":
