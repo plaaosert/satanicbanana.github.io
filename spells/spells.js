@@ -2948,14 +2948,16 @@ class PrimedSpell {
 
         let origin = this.origin ? this.origin : caster.position;
         let cast_locations = this.stats.shape(origin, position, this.stats.radius, this.stats.los);
-        if (!cast_locations.some(v => v.equals(origin))) {
-            //console.log("hello?")
-            // if the origin position is not targeted
-            // check the board to see if that position is the caster.
-            // if they're not the caster, add it
-            if (!game.board.get_pos(origin) || game.board.get_pos(origin).id != caster.id) {
-                cast_locations.unshift(origin.copy())
-            };
+        if (this.stats.shape("whoami") == Shape.Line[0]) {
+            if (!cast_locations.some(v => v.equals(origin))) {
+                //console.log("hello?")
+                // if the origin position is not targeted
+                // check the board to see if that position is the caster.
+                // if they're not the caster, add it
+                if (!game.board.get_pos(origin) || game.board.get_pos(origin).id != caster.id) {
+                    cast_locations.unshift(origin.copy())
+                };
+            }
         }
         
         //console.log(cast_locations);
@@ -3927,7 +3929,7 @@ for (let xt=0; xt<game.board.dimensions.x; xt++) {
 
 game.player_spells = [
     {spells: gen_spells("pea"), name: "pea spell"},
-    {spells: gen_spells("damage plus i", "damage plus i", "add tile trigger", "fireball", "behind the back", "lightning bolt"), name: "Fireball with Ice Trigger"},
+    {spells: gen_spells("damage plus i", "damage plus i", "add tile trigger", "fireball", "icicle"), name: "Fireball with Ice Trigger"},
     {spells: [...spells_list], name: "Every Spell In The Spells List"},
     {spells: gen_spells("multicast x4", "add target trigger", "lightning bolt", "radius plus i", "add damage trigger", "fireball", "icicle"), name: "a bunch of stuff"},
     {spells: gen_spells("gun"), name: "gun"}
