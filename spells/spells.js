@@ -3720,7 +3720,7 @@ spells_list = [
 
 
 entity_templates = [
-    new EntityTemplate("Player", "@=", "#0cf", "It's you.", 100+5000, 1000, [
+    new EntityTemplate("Player", "@=", "#0cf", "It's you.", 100+5000, 2500, [
         Affinity.Living, Affinity.Chaos, Affinity.Insect  // player is only living by default, can be changed by events
     ], 0, [
 
