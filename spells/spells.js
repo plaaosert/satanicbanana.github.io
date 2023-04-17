@@ -216,10 +216,6 @@ class Renderer {
 
         this.last_player_spell_state = null;
 
-        // TODO make the spells (not just the fragments) on the left panel clickable
-        // as well as showing an effect when you mouseover them
-        // selectable_spells is for this purpose
-        // after that, its probably content making time
         this.selectable_spells = {};
         this.selectable_spell_icons = {};
         this.selected_spell = null;
@@ -228,13 +224,6 @@ class Renderer {
 
         this.refresh_left_panel = false;
         this.refresh_right_panel = false;
-
-        // TODO:
-        // selected spell name (or editing spell name) should show on rightpanel
-        // selected / editing spell frag should also show on rightpanel
-        // order of precedence:
-        //    - selected name / frag [mutually exclusive]
-        //    - editing name / frag [mutex]
 
         this.inventory_spell_origins = {};  // {vec: {spell, frag_id, spell_id}}
         this.inventory_items_origins = {};  // {vec: {spell, inv_id}}
@@ -393,6 +382,12 @@ class Renderer {
                     this.selected_full_spell = this.selectable_spells[resolved_pos.y + 1];
                 }
                 */
+                this.inventory_selected_spell_name = undefined;
+                this.inventory_selected_spell = undefined
+                this.inventory_selected_spell_loc = undefined;
+                this.inventory_selected_spell_item = undefined;
+                this.inventory_selected_spell_item_loc = undefined;
+
                 break;
             case 1:  // game screen
                 // highlight current selected panel
@@ -825,15 +820,6 @@ class Renderer {
     }
 
     render_left_panel() {
-        /*
-        TODO:
-        - show player hp and mp
-        - show player xp bar and waiting skill points
-        - show affinities
-        - show list of all 5 spells
-        - show inventory and number of spells
-        */
-
         this.selectable_spell_icons = {};
 
         let left_mount_pos = new Vector2(
@@ -1261,7 +1247,7 @@ class Renderer {
                         right_mount_pos.add(new Vector2(0, 4)),
                         this.pad_str(s.desc, clearance_x),
                         "white",
-                        clearance_x - 1
+                        clearance_x - 2
                     );
                 }
             } else if (this.selected_full_spell != undefined || this.game.selected_id != -1 || this.inventory_selected_spell_name != undefined || this.inventory_editing_spell_name != undefined) {
@@ -2256,6 +2242,8 @@ class Entity {
                         xp_sparkle(xp_to_give, sthis.position);
                     })
                 }
+
+                game.roll_for_loot(this, this.xp_value);
             }
         }
 
@@ -2879,6 +2867,7 @@ class PrimedSpell {
 
         this.caster = caster
         this.origin = null;
+
         this.spells = spells
         this.trigger = ["none", null];  // ["at_target"/..., PrimedSpell]
 
@@ -2889,8 +2878,12 @@ class PrimedSpell {
     copy() {
         let new_primed = new PrimedSpell(this.caster, this.spells);
         new_primed.origin = this.origin;
+        if (this.trigger[0] != "none") {
+            new_primed.trigger = [this.trigger[0], this.trigger[1].copy()];
+        }
 
         new_primed.calculate();
+        new_primed.stats.mutable_info = structuredClone(this.stats.mutable_info);
 
         return new_primed;
     }
@@ -2907,6 +2900,12 @@ class PrimedSpell {
         this.stats.target_type = SpellTargeting.Positional;
         this.stats.radius = 0;
         this.stats.range = 0;
+        this.stats.multicasts = {
+            "normal": 0,
+            "unpredictable": 0,
+            "chain": 0,
+            "simultaneous": 0
+        }
         this.stats.shape = Shape.Diamond;
         this.stats.los = true;
 
@@ -3048,6 +3047,114 @@ class PrimedSpell {
                 }
             })
         }
+
+        // check multicasts
+        if (this.stats.multicasts["normal"] > 0) {
+            // place a copy of this spell on the casting stack but decrement the value
+            let new_pos = position;
+            let new_mc = this.stats.multicasts["normal"] - 1;
+            let new_spell = this.copy();
+            new_spell.stats.multicasts["normal"] = new_mc;
+
+            console.log(new_spell)
+            game.cast_primed_spell(new_spell, new_pos, true);
+        }
+        
+        else if (this.stats.multicasts["unpredictable"] > 0) {
+            // same as "normal" but set the position to a random one based on radius
+            let new_pos = game.find_random_space_in_los(caster, position, this.stats.radius + 1, Shape.Diamond[1]);
+            if (new_pos) {
+                let new_mc = this.stats.multicasts["unpredictable"] - 1;
+                let new_spell = this.copy();
+                new_spell.stats.multicasts["unpredictable"] = new_mc;
+
+                game.cast_primed_spell(new_spell, new_pos, true);
+            }
+        }
+        
+        else if (this.stats.multicasts["simultaneous"] > 0) {
+            while (this.stats.multicasts["simultaneous"] > 0) {
+                // same as chain but add them all right now
+                if (game.board.get_pos(location)) {
+                    if (this.stats.mutable_info["simultaneous_ents"]) {
+                        this.stats.mutable_info["simultaneous_ents"].push(game.board.get_pos(position).id)
+                    } else {
+                        this.stats.mutable_info["simultaneous_ents"] = [game.board.get_pos(position).id];
+                    }
+                } else if (!this.stats.mutable_info["simultaneous_ents"]) {
+                    this.stats.mutable_info["simultaneous_ents"] = [];
+                }
+
+                let positions = Shape.Circle[1](origin, position, this.stats.range)
+                //console.log(stats.mutable_info["chainspell"], stats.mutable_info["chainspell_ents"]);
+                let ents = game.board.check_shape(
+                    positions, this.stats.target_team, null, e => (e && e.id != caster.id && !this.stats.mutable_info["simultaneous_ents"].includes(e.id)) 
+                )
+
+                //console.log(ents, this.stats.mutable_info["simultaneous_ents"]);
+                ents = ents.filter(e => !this.stats.mutable_info["simultaneous_ents"].includes(e.id))
+
+                if (ents.length > 0) {
+                    let ent = ents[Math.floor(Math.random() * ents.length)];
+
+                    let new_mc = 0;
+                    this.stats.multicasts["simultaneous"] -= 1;
+                    this.stats.mutable_info["simultaneous_ents"].push(ent.id);
+
+                    let new_spell = this.copy();
+                    new_spell.stats.multicasts["simultaneous"] = new_mc;
+                    new_spell.stats.mutable_info["simultaneous_ents"].push(ent.id);
+
+                    new_spell.origin = position;
+
+                    let new_pos = ent.position;
+                    game.cast_primed_spell(new_spell, new_pos, true, true);
+                } else {
+                    this.stats.multicasts["simultaneous"] = 0;
+                }
+            }
+
+            this.stats.multicasts["simultaneous"] = 0;
+        }
+
+        else if (this.stats.multicasts["chain"] > 0) {
+            // target a random enemy in range and LOS
+            // add the target to a list and ensure they don't get chained to twice
+            if (game.board.get_pos(location)) {
+                if (this.stats.mutable_info["chainspell_ents"]) {
+                    this.stats.mutable_info["chainspell_ents"].push(game.board.get_pos(position).id)
+                } else {
+                    this.stats.mutable_info["chainspell_ents"] = [game.board.get_pos(position).id];
+                }
+            } else if (!this.stats.mutable_info["chainspell_ents"]) {
+                this.stats.mutable_info["chainspell_ents"] = [];
+            }
+
+            let positions = Shape.Circle[1](origin, position, this.stats.range)
+            //console.log(stats.mutable_info["chainspell"], stats.mutable_info["chainspell_ents"]);
+            let ents = game.board.check_shape(
+                positions, this.stats.target_team, null, e => (e && e.id != caster.id && !this.stats.mutable_info["chainspell_ents"].includes(e.id)) 
+            )
+
+            //console.log(ents, this.stats.mutable_info["chainspell_ents"]);
+            ents = ents.filter(e => !this.stats.mutable_info["chainspell_ents"].includes(e.id))
+
+            if (ents.length > 0) {
+                let ent = ents[Math.floor(Math.random() * ents.length)];
+
+                let new_mc = this.stats.multicasts["chain"] - 1;
+                this.stats.mutable_info["chainspell_ents"].push(ent.id);
+
+                let new_spell = this.copy();
+                new_spell.stats.multicasts["chain"] = new_mc;
+                new_spell.stats.mutable_info["chainspell_ents"].push(ent.id);
+
+                new_spell.origin = position;
+
+                let new_pos = ent.position;
+                game.cast_primed_spell(new_spell, new_pos, true);
+            }
+        }
     }
 }
 
@@ -3174,12 +3281,12 @@ class Game {
         }, this.spell_speed);
     }
 
-    cast_primed_spell(primed_spell, position_target, insert_at_bottom) {
+    cast_primed_spell(primed_spell, position_target, insert_at_bottom, do_not_wait) {
         //console.log("enqueued", primed_spell, "at", position_target);
         if (insert_at_bottom) {
-            this.casting_stack.unshift({spell: primed_spell, target: position_target});
+            this.casting_stack.unshift({spell: primed_spell, target: position_target, do_not_wait: do_not_wait});
         } else {
-            this.casting_stack.push({spell: primed_spell, target: position_target});
+            this.casting_stack.push({spell: primed_spell, target: position_target, do_not_wait: do_not_wait});
         }
     }
 
@@ -3189,9 +3296,17 @@ class Game {
         //console.log("checking spell stack");
         //console.log("casting stack:", this.casting_stack, "waiting:", this.waiting_for_spell);
         if (this.casting_stack.length > 0) {
-            let spell_to_cast = this.casting_stack.pop();
-            //console.log("popping spell off stack:", spell_to_cast, "for",  this.entities[this.turn_index]);
-            spell_to_cast.spell.cast(this.board, this.entities[this.turn_index], spell_to_cast.target);
+            let coalescing = true;
+            while (coalescing && this.casting_stack.length > 0) {
+                let spell_to_cast = this.casting_stack.pop();
+                //console.log("popping spell off stack:", spell_to_cast, "for",  this.entities[this.turn_index]);
+                spell_to_cast.spell.cast(this.board, this.entities[this.turn_index], spell_to_cast.target);
+            
+                if (!spell_to_cast.do_not_wait) {
+                    coalescing = false;
+                }
+            }
+
             this.waiting_for_spell = false;
 
             let me = this;
@@ -3233,8 +3348,8 @@ class Game {
         }
 
         if (Math.random() < (0.05 + (num_enemy_spawns / 100)) && this.entities[this.turn_index].id == this.player_ent.id) {
-            let loc = new Vector2(Math.floor(Math.random() * 64), Math.floor(Math.random() * 64));
-            let enemy = game.spawn_entity(entity_templates[1], Teams.ENEMY, loc, false);
+            let loc = new Vector2(Math.floor(Math.random() * game.board.dimensions.x), Math.floor(Math.random() * game.board.dimensions.y));
+            let enemy = game.spawn_entity(get_entity_by_name("test enemy"), Teams.ENEMY, loc, false);
             if (enemy) {
                 enemy.name = "spawned guy #" + num_enemy_spawns;
 
@@ -3317,6 +3432,59 @@ class Game {
         }
     }
 
+    roll_for_loot(entity_killed, xp_value, restrict_type, custom_pool) {
+        let drops = [];
+        let drop_count = 0;
+        // pick number of drops. xp_value / 500, max chance 75%, min 15%
+        // divide xp_value by 1.5 per additional drop
+        let drop_increase_chance = xp_value;
+        while (true) {
+            let roll = Math.floor(Math.random() * 500);
+            if (roll < (Math.max(500*0.15, Math.min(500*0.75, drop_increase_chance)))) {
+                drop_increase_chance /= 1.5;
+                drop_count++;
+            } else {
+                break;
+            }
+        }
+
+        for (let i=0; i<drop_count; i++) {
+            let pool = [];
+            if (custom_pool) {
+                pool = custom_pool;
+            } else {
+                // Start at tier 1
+                let tier = 1;
+
+                // Chance to increase in tier starts at (xp_value / 100),
+                // with a max of 80%.
+                // If chance is 300% or greater, this max is instead 100%
+                // If increase was successful, divide chance by 1.4
+                let chance = xp_value;
+                while (tier < 10) {
+                    let roll = Math.floor(Math.random() * 100);
+                    if (chance >= 300 || roll < Math.min(500*0.8, chance)) {
+                        chance /= 1.4;
+                        tier++;
+                    }
+                }
+
+                // TODO remove debug once we finish the loot table
+                tier = 1;
+
+                pool = spells_loot_table["Tier" + tier];
+            }
+
+            if (pool.length > 0) {
+                let item = pool[Math.floor(Math.random() * pool.length)];
+
+                setTimeout(function() {
+                    item_sparkle(item, entity_killed.position)
+                }, 100 + 50 * i)
+            }
+        }
+    }
+
     select_player_spell(id) {
         let result = this.select_player_spell_list(this.player_spells[id].spells);
         
@@ -3331,7 +3499,7 @@ class Game {
     }
 
     select_player_spell_list(spells) {
-        if (!game.is_player_turn()) {
+        if (!game.is_player_turn() || this.inventory_open) {
             return;
         }
 
@@ -3691,13 +3859,8 @@ spells_list = [
 
     modifier(
         "Multicast x4", ">4", "#0f0", "", "Casts a copy of the core four times.", 300,
-        no_stats, function(user, spell, stats, location) {
-            if (!stats.mutable_info["multicastx4"] || stats.mutable_info["multicastx4"] < 4) {
-                stats.mutable_info["multicastx4"] = stats.mutable_info["multicastx4"] ? stats.mutable_info["multicastx4"] + 1 : 1;
-                
-                let new_pos = location;
-                game.cast_primed_spell(spell, new_pos);
-            }
+        function(user, spell, stats) {
+            stats.multicasts["normal"] += 4;
         }
     ),
 
@@ -3720,15 +3883,8 @@ spells_list = [
 
     modifier(
         "Uncontrolled Multicast x16", "!F", "#0f0", "red", "Casts a copy of the core sixteen times, moving the target by a random number of tiles up to the core's final radius + 1 each time.", 200,
-        no_stats, function(user, spell, stats, location) {
-            if (!stats.mutable_info["unc_multicastx16"] || stats.mutable_info["unc_multicastx16"] < 16) {
-                stats.mutable_info["unc_multicastx16"] = stats.mutable_info["unc_multicastx16"] ? stats.mutable_info["unc_multicastx16"] + 1 : 1;
-                
-                let new_pos = game.find_random_space_in_los(user, location, stats.radius + 1, Shape.Diamond[1]);
-                if (new_pos) {
-                    game.cast_primed_spell(spell, new_pos, true);
-                }
-            }
+        function(user, spell, stats) {
+            stats.multicasts["unpredictable"] += 16;
         }
     ),
 
@@ -3797,8 +3953,45 @@ spells_list = [
     core_spell(
         "pea spell", "!!", "white", "red", "pea spell",
         73, DmgType.Chaos, 10, 3, Shape.Circle, 2
+    ),
+
+    modifier(
+        "Chain Spell", "/>", "white", "", "Makes the core recast a copy of itself on a single random valid target within the core's [#4df]range[clear] as many times as the spell's [#4df]chain[clear] value.\n\nAdds [#4df]4[clear] to the core's [#4df]chain[clear] value.",
+        350, function(user, spell, stats) {
+            stats.multicasts["chain"] += 4;
+        }
+    ),
+
+    modifier(
+        "Arc Spell", "*>", "yellow", "", "Makes the core recast a copy of itself on random valid targets within the core's [#4df]range[clear] up to the spell's [#4df]arc[clear] value.\n\nAdds [#4df]4[clear] to the core's [#4df]arc[clear] value.",
+        250, function(user, spell, stats) {
+            stats.multicasts["simultaneous"] += 4;
+        }
     )
 ]
+
+
+spells_loot_table = {
+    "Tier1": [...spells_list],
+    "Tier2": [],
+    "Tier3": [],
+    "Tier4": [],
+    "Tier5": [],
+    "Tier6": [],
+    "Tier7": [],
+    "Tier8": [],
+    "Tier9": [],
+    "Tier10": [],
+}
+
+for (let i=0; i<Object.keys(spells_loot_table).length; i++) {
+    let loot_group = Object.keys(spells_loot_table)[i];
+    console.log("Loot group " + loot_group + ": " + spells_loot_table[loot_group].length + " items");
+}
+
+console.log(spells_list.filter(s => s.back_col != "red").length + " non-red items")
+console.log(spells_list.filter(s => s.back_col == "red").length + " red items")
+console.log(spells_list.filter(s => s.back_col != "red" && !Object.keys(spells_loot_table).some(g => spells_loot_table[g].some(sc => sc.id != s.id))).length + " non-red items have no loot group assigned");
 
 
 entity_templates = [
@@ -3900,11 +4093,11 @@ let board = new Board(new Vector2(64, 64));
 let game = new Game(board);
 let renderer = new Renderer(game, board, new Vector2(64, 36), 48, 48, 1/2);
 
-game.spawn_player(get_entity_by_name("Player"), new Vector2(24, 32));
+game.spawn_player(get_entity_by_name("Player"), new Vector2(16, 18));
 game.spawn_entity(get_entity_by_name("test enemy"), Teams.PLAYER, new Vector2(12, 20), true).name = "friendly friend ^w^";
 
-game.spawn_entity(get_entity_by_name("test enemy"), Teams.ENEMY, new Vector2(48, 48), true).name = "AAA enemy";
-game.spawn_entity(get_entity_by_name("test enemy"), Teams.ENEMY, new Vector2(46, 48), true).name = "BBB enemy";
+game.spawn_entity(get_entity_by_name("test enemy"), Teams.ENEMY, new Vector2(24, 24), true).name = "AAA enemy";
+game.spawn_entity(get_entity_by_name("test enemy"), Teams.ENEMY, new Vector2(22, 24), true).name = "BBB enemy";
 let moving_ent = game.spawn_entity(get_entity_by_name("test enemy"), Teams.ENEMY, new Vector2(20, 22), true);
 moving_ent.name = "moving guy";
 moving_ent.add_innate_spell([[
@@ -3928,7 +4121,7 @@ for (let xt=0; xt<game.board.dimensions.x; xt++) {
 //let target = new Vector2(20, 22);
 
 game.player_spells = [
-    {spells: gen_spells("pea"), name: "pea spell"},
+    {spells: gen_spells("arc spell", "lightning bolt"), name: "arc bolt"},
     {spells: gen_spells("damage plus i", "damage plus i", "add tile trigger", "fireball", "icicle"), name: "Fireball with Ice Trigger"},
     {spells: [...spells_list], name: "Every Spell In The Spells List"},
     {spells: gen_spells("multicast x4", "add target trigger", "lightning bolt", "radius plus i", "add damage trigger", "fireball", "icicle"), name: "a bunch of stuff"},
@@ -3969,16 +4162,12 @@ let test = function(spells) {
 }
 */
 
-function xp_sparkle(xp, from) {
-    let random_256 = function() {
-        return Math.floor(Math.random() * 256);
-    }
-
+function general_sparkle(from, particle, col, info, on_hit_player) {
     let dat = {
         speed: random_on_circle((Math.random() * 1.5) + 1),
         pos: from.copy(),
-        col: "#8ff",
-        xp: xp
+        col: col,
+        info: info
     }
 
     dat.interval = setInterval(function() {
@@ -3986,35 +4175,46 @@ function xp_sparkle(xp, from) {
 
         for (let i=0; i<times; i++) {
             renderer.put_particle_from_game_loc(dat.pos.round(), new Particle(
-                xp_flash, null, null, dat.col
+                particle, null, null, dat.col
             ));
 
             dat.pos = dat.pos.add(dat.speed.div(times));
 
             if (dat.pos.round().equals(game.player_ent.position)) {
                 clearInterval(dat.interval);
-                game.player_gain_xp(dat.xp);
+                on_hit_player(dat.info);
                 return;
             }
         }
 
         let difference_vec = game.player_ent.position.sub(dat.pos);
-        dat.speed = dat.speed.add(difference_vec.normalize().mul(0.2));
+        dat.speed = dat.speed.add(difference_vec.normalize().mul(0.2 * particle.speed));
         if (difference_vec.magnitude() < 1) {
             clearInterval(dat.interval);
-            game.player_gain_xp(dat.xp);
+            on_hit_player(dat.info);
             return;
         }
 
-        dat.speed = dat.speed.mul(0.85);
+        dat.speed = dat.speed.mul(1 - (0.15 * particle.speed));
     }, (1000/30));
 }
 
-game.player_add_spells_to_inv([...spells_list].flatMap(i => [i,i,i]));
+function xp_sparkle(xp, from) {
+    let txp = xp;
+    general_sparkle(from, xp_flash, "#8ff", {xp: txp}, function(info) { game.player_gain_xp(info.xp) })
+}
+
+function item_sparkle(item, from) {
+    let titem = item;
+    general_sparkle(from, item_flash, item.typ == SpellType.Core ? "#fff" : "#4df", {item: titem}, function(info) { game.player_add_spell_to_inv(info.item) })
+}
+
+game.player_add_spells_to_inv([...spells_list].flatMap(i => []));
 game.player_discard_edits();
 game.inventory_open = true;
 
 let xp_flash = new ParticleTemplate(["++", "''"], "#ddd", 1);
+let item_flash = new ParticleTemplate(["@@", "&&", "##", "%%", "**", "++", "''"], "#fff", 0.5);
 let lvl_flash = new ParticleTemplate(["**", "++", "\"\"", "''"], "#fff", 0.5);
 
 let tmp = new ParticleTemplate(["@@", "##", "++", "--", ".."], "#f00", 1);
@@ -4092,6 +4292,7 @@ document.addEventListener("DOMContentLoaded", function() {
             } else {
                 if (name == "r") {
                     game.inventory_open = !game.inventory_open;
+                    game.deselect_player_spell();
                     if (game.inventory_open) {
                         renderer.render_game_checkerboard("black");
                         renderer.reset_selections();
@@ -4119,6 +4320,7 @@ document.addEventListener("DOMContentLoaded", function() {
     
                 case "r":
                     game.inventory_open = !game.inventory_open;
+                    game.deselect_player_spell();
                     if (game.inventory_open) {
                         renderer.render_game_checkerboard("black");
                         renderer.reset_selections();
@@ -4174,3 +4376,15 @@ document.addEventListener("DOMContentLoaded", function() {
 
     game_loop();
 })
+
+// TODO
+// ADD UI:
+// - Deleting / selling spells (space in the inventory for a trash slot?)
+// - Levelup dialog (pick between HP, MP, MP regen, random core, random modifier)
+// - highlight recently obtained spells 
+// GAME LOOP:
+// - enemy waves
+// - open inventory after beating all enemies
+// - world generation between waves
+// - hp/mp regen after beating wave
+// - spawn credits; waves get stronger each time etc etc
