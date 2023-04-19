@@ -194,6 +194,8 @@ class Renderer {
         this.game_view_size = game_view_size;
         this.default_text_col = "white"
 
+        this.position_optimisation = false;
+
         this.pixel_chars = [];
         this.left_menu_size = new Vector2(left_menu_len, game_view_size.y);
         this.right_menu_size = new Vector2(right_menu_len, game_view_size.y);
@@ -259,13 +261,16 @@ class Renderer {
         this.inventory_spell_names = {};    // {y: spellid}
 
         this.inventory_editing_spell_name = undefined;
-        this.inventory_editing_spell_frag = undefined;  // {frag_id, spell_id, inv_id} <- if inv_id present, ignores frag, spell
+        this.inventory_editing_spell_frag = undefined;  // {frag_id, spell_id, inv_id, trash} <- if inv_id present, ignores frag, spell
 
         this.inventory_selected_spell_name = undefined;
         this.inventory_selected_spell = undefined;
         this.inventory_selected_spell_loc = undefined;
         this.inventory_selected_spell_item = undefined;
         this.inventory_selected_spell_item_loc = undefined;
+
+        this.inventory_delete_spell_position = undefined;
+        this.inventory_delete_spell_selected = undefined;
     }
 
     change_size(game_view_size, left_menu_len, right_menu_len) {
@@ -302,6 +307,11 @@ class Renderer {
             for (let x=0; x<siz.x; x++) {
                 let c = document.createElement("span");
                 c.classList.add("gamepixel");
+
+                if (this.position_optimisation) {
+                    c.classList.add("gamepixel-abs");
+                }
+
                 c.classList.add("white");
                 if (x >= this.left_menu_size.x && x < this.left_menu_size.x + this.game_view_size.x) {
                     if ((Math.floor(x/2) + y) % 2 != 0) {
@@ -309,6 +319,16 @@ class Renderer {
                     } else {
                         c.classList.add("check-light");
                     }
+                }
+
+                c.style.gridColumn = x + 1;
+                c.style.gridRow = y + 1;
+
+                if (this.position_optimisation) {
+                    document.getElementById("game").style.left = "17%";
+
+                    c.style.top = `${y*16}px`;
+                    c.style.left = `${x*8}px`;
                 }
 
                 let text = "\u00A0";
@@ -343,7 +363,7 @@ class Renderer {
                 this.pixel_chars[y].push(c);
             }
 
-            parent.appendChild(document.createElement("br"));
+            //parent.appendChild(document.createElement("br"));
         }
     }
 
@@ -405,8 +425,21 @@ class Renderer {
                     this.inventory_selected_spell_item = this.inventory_items_origins[resolved_pos.hash_code()];
                     if (this.inventory_selected_spell_item) {
                         this.inventory_selected_spell_item_loc = resolved_pos;
+                        if (this.game.recent_spells_gained.indexOf(this.inventory_selected_spell_item.inv_id) != -1) {
+                            this.game.recent_spells_gained.splice(this.game.recent_spells_gained.indexOf(this.inventory_selected_spell_item.inv_id), 1);
+                        }
                     } else {
                         this.inventory_selected_spell_item_loc = undefined;
+                    }
+
+                    if (this.inventory_delete_spell_position) {
+                        if (resolved_pos.equals(this.inventory_delete_spell_position) || resolved_pos.add(new Vector2(1, 0)).equals(this.inventory_delete_spell_position)) {
+                            this.inventory_delete_spell_selected = true;
+                        } else {
+                            this.inventory_delete_spell_selected = false;
+                        }
+                    } else {
+                        this.inventory_delete_spell_selected = false;
                     }
 
                     this.refresh_right_panel = true;
@@ -513,7 +546,9 @@ class Renderer {
                                 // different, so tell game to swap them
                                 this.game.player_swap_spells(ss, es);
                                 this.inventory_editing_spell_frag = null;
-                                this.inventory_selected_spell = undefined;
+                                //this.inventory_selected_spell = undefined;
+                                this.render_inventory_menu();
+                                this.mouseover(null, flattened_id);
                             }
                         } else {
                             let ss = this.inventory_selected_spell;
@@ -531,12 +566,32 @@ class Renderer {
                                 // different, so tell game to swap them
                                 this.game.player_swap_spells(si, ei);
                                 this.inventory_editing_spell_frag = null;
-                                this.inventory_selected_spell_item = undefined;
+                                //this.inventory_selected_spell_item = undefined;
+                                this.render_inventory_menu();
+                                this.mouseover(null, flattened_id);
                             }
                         } else {
                             let si = this.inventory_selected_spell_item;
                             this.inventory_editing_spell_frag = {spell: si.spell, inv_id: si.inv_id};
                             this.inventory_editing_spell_name = null;
+                        }
+                    } else if (this.inventory_delete_spell_selected) {
+                        if (this.inventory_editing_spell_frag) {
+                            let si = {spell: null, trash: true};
+                            let ei = this.inventory_editing_spell_frag;
+                            if (si.trash && ei.trash) {
+                                // same thing twice, so deselect
+                                this.inventory_editing_spell_frag = null;
+                            } else {
+                                // different, so tell game to swap them
+                                this.game.player_swap_spells(si, ei);
+                                this.inventory_editing_spell_frag = null;
+                                //this.inventory_selected_spell_item = undefined;
+                                this.render_inventory_menu();
+                                this.mouseover(null, flattened_id);
+                            }
+                        } else {
+                            this.inventory_editing_spell_frag = {spell: null, trash: true};
                         }
                     }
 
@@ -1539,6 +1594,35 @@ class Renderer {
             current_line = new Vector2(mount_pos.x, current_spell_point.y + 2);
         }
 
+        let trash_col = "#aaa";
+        let trash_back_col = "black";
+        if (this.inventory_delete_spell_selected) {
+            trash_col = "black";
+            trash_back_col = "white";
+        }
+
+        if (this.inventory_editing_spell_frag && this.inventory_editing_spell_frag["trash"]) {
+            trash_col = "black";
+            trash_back_col = "#0f0";
+        }
+
+        let trash_pos = current_line.add(new Vector2(0, 2));
+
+        this.set_pixel_text(
+            trash_pos.add(new Vector2(clearance_x - 11, 0)),
+            this.pad_str(`[white]- Trash -`, 8, 3)
+        );
+
+        this.set_pixel_text(
+            trash_pos.add(new Vector2(clearance_x - 15, 0)),
+            this.pad_str(`[${trash_col}][]`, 2, 3)
+        );
+
+        this.set_back(trash_pos.add(new Vector2(clearance_x - 15, 0)), trash_back_col);
+        this.set_back(trash_pos.add(new Vector2(clearance_x - 14, 0)), trash_back_col);
+
+        this.inventory_delete_spell_position = trash_pos.add(new Vector2(clearance_x - 14, 0));
+
         let spell_str = "";
         let num_spells = 0;
 
@@ -1568,6 +1652,11 @@ class Renderer {
                 let icon = spell.icon;
                 let col = spell.col;
                 let back_col = spell.back_col;
+
+                if (this.game.recent_spells_gained.includes(i)) {
+                    back_col = spell.typ == SpellType.Core ? "#0ff" : "#f0f";
+                    col = "black";
+                }
 
                 if (this.inventory_selected_spell_item) {
                     //console.log(this.inventory_selected_spell, i, j);
@@ -1996,6 +2085,10 @@ class Entity {
                 if (target_ent) {
                     // check if we can cast a spell
                     let cast_spell = false;
+                    let spell_to_cast = [];
+                    let best_mp_cd = [0, 0];
+
+                    // prioritise castable spell with the highest max cooldown and manacost
                     for (let i=0; i<this.innate_primed_spells.length; i++) {
                         let primed_spell = this.innate_primed_spells[i][0];
                         let cooldown = this.innate_primed_spells[i][1];
@@ -2003,12 +2096,27 @@ class Entity {
                         if (cooldown <= 0) {
                             if (primed_spell.manacost <= this.mp && primed_spell.root_spell.in_range(this, target_ent.position)) {
                                 //console.log("executing spell", primed_spell);
-                                this.execute_spell(primed_spell, target_ent.position)
-                                this.innate_primed_spells[i][1] = this.innate_spells[i][1];
+                                if (this.innate_spells[i][1] == best_mp_cd[1] && primed_spell.manacost == best_mp_cd[0]) {
+                                    spell_to_cast.push([primed_spell, i])
+                                } else {
+                                    if (this.innate_spells[i][1] > best_mp_cd[1] || primed_spell.manacost > best_mp_cd[0]) {
+                                        spell_to_cast = [[primed_spell, i]];
+                                        best_mp_cd = [this.innate_spells[i][1], primed_spell.manacost];
+                                    }
+                                }
+
                                 cast_spell = true;
-                                break;
                             }
                         }
+                    }
+
+                    if (cast_spell) {
+                        let chosen = spell_to_cast[Math.floor(Math.random() * spell_to_cast.length)];
+                        let primed_spell = chosen[0];
+                        let innate_index = chosen[1];
+
+                        this.execute_spell(primed_spell, target_ent.position)
+                        this.innate_primed_spells[innate_index][1] = this.innate_spells[innate_index][1];
                     }
 
                     // for ai level 2+, the entity should stay at the range of their shortest range spell
@@ -2573,7 +2681,7 @@ const Shape = {
 
         let filtered = pts.filter(
             vec => {
-                return (vec.sub(target).magnitude() <= radius) && (target.equals(vec) || game.has_los_pos(target, vec))
+                return (vec.sub(target).magnitude() <= radius) && (target.equals(vec) || (!los || game.has_los_pos(target, vec)))
             }
         );
 
@@ -2857,6 +2965,33 @@ const affinity_weaknesses = {
     },
 };
 
+console.log(["Fire",
+"Ice",
+"Lightning",
+"Arcane",
+"Ghost",
+"Chaos",
+"Holy",
+"Dark",
+"Demon",
+"Undead",
+"Natural",
+"Living",
+"Insect",
+"Construct",
+"Order"].map(a => {
+    return [
+        "Fire",
+        "Ice",
+        "Lightning",
+        "Arcane",
+        "Physical",
+        "Dark",
+        "Chaos",
+        "Holy",
+        "Psychic"
+    ].map(t => affinity_weaknesses[a][t]).join("\t")
+}).join("\n"))
 
 class PrimedSpell {
     static id_inc = 0;
@@ -3008,7 +3143,7 @@ class PrimedSpell {
 
             if (sthis.trigger[0] == "on_affected_tiles") {
                 sthis.trigger[1].origin = position;
-                game.cast_primed_spell(sthis.trigger[1].copy(), location);
+                game.cast_primed_spell(sthis.trigger[1].copy(), location, true);
             }
         })
 
@@ -3021,7 +3156,7 @@ class PrimedSpell {
 
         if (this.trigger[0] == "at_target") {
             this.trigger[1].origin = position;
-            game.cast_primed_spell(this.trigger[1].copy(), position);
+            game.cast_primed_spell(this.trigger[1].copy(), position, true);
         }
 
         // get list of damaged entities from this spell
@@ -3043,7 +3178,7 @@ class PrimedSpell {
 
                 if (this.trigger[0] == "on_hit") {
                     this.trigger[1].origin = position;
-                    game.cast_primed_spell(this.trigger[1].copy(), ent.position);
+                    game.cast_primed_spell(this.trigger[1].copy(), ent.position, true);
                 }
             })
         }
@@ -3062,7 +3197,7 @@ class PrimedSpell {
         
         else if (this.stats.multicasts["unpredictable"] > 0) {
             // same as "normal" but set the position to a random one based on radius
-            let new_pos = game.find_random_space_in_los(caster, position, this.stats.radius + 1, Shape.Diamond[1]);
+            let new_pos = game.find_random_space_in_los(caster, position, this.stats.radius + 1, Shape.Diamond[1], !this.stats.los);
             if (new_pos) {
                 let new_mc = this.stats.multicasts["unpredictable"] - 1;
                 let new_spell = this.copy();
@@ -3085,7 +3220,7 @@ class PrimedSpell {
                     this.stats.mutable_info["simultaneous_ents"] = [];
                 }
 
-                let positions = Shape.Circle[1](origin, position, this.stats.range)
+                let positions = Shape.Circle[1](origin, position, this.stats.range, this.stats.los)
                 //console.log(stats.mutable_info["chainspell"], stats.mutable_info["chainspell_ents"]);
                 let ents = game.board.check_shape(
                     positions, this.stats.target_team, null, e => (e && e.id != caster.id && !this.stats.mutable_info["simultaneous_ents"].includes(e.id)) 
@@ -3108,7 +3243,9 @@ class PrimedSpell {
                     new_spell.origin = position;
 
                     let new_pos = ent.position;
-                    game.cast_primed_spell(new_spell, new_pos, true, true);
+
+                    let stop_wait = this.stats.multicasts["simultaneous"] > 0;
+                    game.cast_primed_spell(new_spell, new_pos, true, stop_wait);
                 } else {
                     this.stats.multicasts["simultaneous"] = 0;
                 }
@@ -3130,7 +3267,7 @@ class PrimedSpell {
                 this.stats.mutable_info["chainspell_ents"] = [];
             }
 
-            let positions = Shape.Circle[1](origin, position, this.stats.range)
+            let positions = Shape.Circle[1](origin, position, this.stats.range, this.stats.los)
             //console.log(stats.mutable_info["chainspell"], stats.mutable_info["chainspell_ents"]);
             let ents = game.board.check_shape(
                 positions, this.stats.target_team, null, e => (e && e.id != caster.id && !this.stats.mutable_info["chainspell_ents"].includes(e.id)) 
@@ -3200,9 +3337,14 @@ class Game {
 
         this.spell_speed = 100;
 
+        this.spells_this_turn = 0;
+        this.max_spell_speed = 100;
+        this.min_spell_speed = 10;
+
         this.turn_index = 0  // index into entities
 
         this.inventory_open = false;
+        this.recent_spells_gained = [];
     }
 
     player_discard_edits() {
@@ -3254,6 +3396,7 @@ class Game {
         for (let i=0; i<this.player_inventory_size; i++) {
             if (!this.player_inventory[i]) {
                 this.player_inventory[i] = spell;
+                this.recent_spells_gained.push(i);
                 return true;
             }
         }
@@ -3275,6 +3418,9 @@ class Game {
         // we then periodically check the casting stack to see if there's anything on there.
         // if there is, we cast it and set waiting_for_spell to true, which means
         // that once we clear out the casting stack the current entity's turn will end.
+        this.spell_speed = this.max_spell_speed;
+        this.spells_this_turn = 0;
+
         let me = this;
         this.checker_interval = setTimeout(function() {
             me.check_spell_stack();
@@ -3297,17 +3443,28 @@ class Game {
         //console.log("casting stack:", this.casting_stack, "waiting:", this.waiting_for_spell);
         if (this.casting_stack.length > 0) {
             let coalescing = true;
+            let spells_to_cast = [];
             while (coalescing && this.casting_stack.length > 0) {
                 let spell_to_cast = this.casting_stack.pop();
                 //console.log("popping spell off stack:", spell_to_cast, "for",  this.entities[this.turn_index]);
-                spell_to_cast.spell.cast(this.board, this.entities[this.turn_index], spell_to_cast.target);
+                spells_to_cast.push(spell_to_cast);
             
                 if (!spell_to_cast.do_not_wait) {
                     coalescing = false;
                 }
             }
 
+            for (let i=0; i<spells_to_cast.length; i++) {
+                let spell_to_cast = spells_to_cast[i];
+                spell_to_cast.spell.cast(this.board, this.entities[this.turn_index], spell_to_cast.target);
+            }
+
             this.waiting_for_spell = false;
+
+            this.spells_this_turn++;
+
+            let n = this.spells_this_turn / 50;
+            this.spell_speed = ((1-n) * this.max_spell_speed) + (n * this.min_spell_speed);
 
             let me = this;
             this.checker_interval = setTimeout(function() {
@@ -3332,6 +3489,9 @@ class Game {
 
     end_turn() {
         this.waiting_for_spell = false;
+        this.spell_speed = this.max_spell_speed;
+        this.spells_this_turn = 0;
+
         //console.log("ending turn for", this.entities[this.turn_index].name)
         
         this.entities[this.turn_index].do_end_turn();
@@ -3582,16 +3742,16 @@ class Game {
         return this.has_los_pos(ent.position, position);
     }
 
-    find_random_space_in_los(caster, pos, radius, shape) {
+    find_random_space_in_los(caster, pos, radius, shape, ignore_los) {
         let points = shape(
-            caster.position, pos, radius, false
+            caster.position, pos, radius, !ignore_los
         );
 
         points.sort(() => Math.random() - 0.5);
 
         for (let i=0; i<points.length; i++) {
             let point = points[i];
-            if (this.has_los(caster, point)) {
+            if (this.has_los(caster, point) || ignore_los) {
                 return point;
             }
         }
@@ -3904,7 +4064,8 @@ spells_list = [
         ].reverse();
 
         dmgtypes.forEach(t => {
-            game.spell_speed = 500;
+            game.max_spell_speed = 400;
+            game.min_spell_speed = 400;
     
             user.cast_spell([
                 core_spell(
@@ -3942,7 +4103,8 @@ spells_list = [
                 core_spell(
                     "t", "##", "white", "black", "", 1, DmgType.Physical, 1, 3, Shape.Line, 0
                 ).augment("at_target", function(_, _, _, _) { 
-                    game.spell_speed = 100
+                    game.max_spell_speed = 100;
+                    game.min_spell_speed = 10;
                 })
             ], location);
 
@@ -3967,7 +4129,14 @@ spells_list = [
         250, function(user, spell, stats) {
             stats.multicasts["simultaneous"] += 4;
         }
-    )
+    ),
+
+    core_spell(
+        "summon GUY", "@]", "white", "red", "Summon \"Guy\" at the target position.",
+        25, DmgType.Dark, 10, 5, Shape.Circle, 120
+    ).augment("at_target", function(user, spell, stats, location) {
+        game.spawn_entity(get_entity_by_name("Fuckn GUy"), Teams.PLAYER, location, true);
+    })
 ]
 
 
@@ -4032,6 +4201,24 @@ entity_templates = [
 
     ], 1, false, false),
 
+    new EntityTemplate("Fuckn GUy", "G#", "#480", "Stupid idiot", 150, 250, [
+        Affinity.Dark,
+        Affinity.Demon
+    ], 0, [
+        [gen_spells("damage plus i", "lightning bolt"), 0, "KIll You BOLT", "yellow"],
+        [[
+            get_spell_by_name("add target trigger"),
+            core_spell(
+                "EPXLODE", "@@", "red", "red", "", 25, DmgType.Holy, 40, 1,
+                Shape.Line, 100
+            ),
+            core_spell(
+                "EPXLODE 2", "@@", "red", "red", "", 100, DmgType.Psychic, 1, 2,
+                Shape.Diamond, 0
+            ),
+        ], 8, "EPXLODE", "red"]
+    ], 1, false, false),
+
     new EntityTemplate("Wall", "[]", "#ccc", "Just a wall.", Number.POSITIVE_INFINITY, 0, [
         Affinity.Construct
     ], 0, [
@@ -4045,7 +4232,7 @@ let dmg_type_particles = {
     "Lightning": new ParticleTemplate(["&&", "];", "!-", ".'", " ."], damage_type_cols["Lightning"], 1),
     "Arcane": new ParticleTemplate(["@@", "OO", "{}", "::", ".."], damage_type_cols["Arcane"], 1),
     "Physical": new ParticleTemplate(["%%", "XX", "**", "++", ".."], damage_type_cols["Physical"], 1),
-    "Dark": new ParticleTemplate(["##", "][", "}{", ";;", "::"], damage_type_cols["Dark"], 1),
+    "Dark": new ParticleTemplate(["##", "][", "}{", "++", "::"], damage_type_cols["Dark"], 1),
     "Chaos": new ParticleTemplate(["@#", "%#", "$]", "X<", "/;"], damage_type_cols["Chaos"], 1),
     "Holy": new ParticleTemplate(["@@", "##", ";;", "**", "''"], damage_type_cols["Holy"], 1),
     "Psychic": new ParticleTemplate(["@@", "[]", "{}", "||", "::"], damage_type_cols["Psychic"], 1),
@@ -4091,7 +4278,7 @@ let num_enemy_spawns = 0;
 
 let board = new Board(new Vector2(64, 64));
 let game = new Game(board);
-let renderer = new Renderer(game, board, new Vector2(64, 36), 48, 48, 1/2);
+let renderer = new Renderer(game, board, new Vector2(64, 36), 48, 48, 1/3);
 
 game.spawn_player(get_entity_by_name("Player"), new Vector2(16, 18));
 game.spawn_entity(get_entity_by_name("test enemy"), Teams.PLAYER, new Vector2(12, 20), true).name = "friendly friend ^w^";
@@ -4122,8 +4309,8 @@ for (let xt=0; xt<game.board.dimensions.x; xt++) {
 
 game.player_spells = [
     {spells: gen_spells("arc spell", "lightning bolt"), name: "arc bolt"},
-    {spells: gen_spells("damage plus i", "damage plus i", "add tile trigger", "fireball", "icicle"), name: "Fireball with Ice Trigger"},
-    {spells: [...spells_list], name: "Every Spell In The Spells List"},
+    {spells: [...spells_list.filter(s => s.back_col == "red")], name: "Every Dev Spell"},
+    {spells: [...spells_list.filter(s => s.back_col != "red")], name: "Every Real Spell"},
     {spells: gen_spells("multicast x4", "add target trigger", "lightning bolt", "radius plus i", "add damage trigger", "fireball", "icicle"), name: "a bunch of stuff"},
     {spells: gen_spells("gun"), name: "gun"}
 ]
@@ -4189,7 +4376,7 @@ function general_sparkle(from, particle, col, info, on_hit_player) {
 
         let difference_vec = game.player_ent.position.sub(dat.pos);
         dat.speed = dat.speed.add(difference_vec.normalize().mul(0.2 * particle.speed));
-        if (difference_vec.magnitude() < 1) {
+        if (difference_vec.magnitude() < 0.8) {
             clearInterval(dat.interval);
             on_hit_player(dat.info);
             return;
@@ -4266,10 +4453,60 @@ function game_loop() {
 
     let frame_duration = Date.now() - last_frame_time;
     //console.log("frame took", frame_duration, "so waiting", (1000/30) - frame_duration);
-    setTimeout(game_loop, (1000/30) - frame_duration);
+    setTimeout(game_loop, (1000/60) - frame_duration);
 }
 
+function vh(percent) {
+    // topbar, bottombar 128px + 64px
+
+    var h = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+    return (percent * (h - 128 - 64)) / 100;
+}
+
+function vw(percent) {
+    var w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+    return (percent * w) / 100;
+}
+
+function vmin(percent) {
+    return Math.min(vh(percent), vw(percent));
+}
+
+function vmax(percent) {
+    return Math.max(vh(percent), vw(percent));
+}
+
+function handle_resize(event) {
+    // scale font size such that total_size.x/y characters fit
+    
+    // remember x size coverage is half because the font is 8x16
+    // we also want to make sure it isnt way too big...
+    let fontsize_x = vw(180) / renderer.total_size.x;
+
+    // if screen is very long, the font might be too big.
+    // need to check for the smallest allowed font in both directions and pick the minimum
+    let fontsize_y = vh(90) / renderer.total_size.y;
+
+    let fontsize = Math.min(fontsize_x, fontsize_y);
+
+    console.log("fontsize before rounding:", fontsize, "after: ", Math.round(fontsize));
+
+    let fontsize_round = Math.floor(fontsize);
+
+    let gamelines = document.getElementById("gamelines");
+    let game = document.getElementById("game");
+
+    gamelines.style.setProperty("--fontsiz_noround", `${fontsize_round}px`);
+    gamelines.style.setProperty("--fontsiz_noround_half", `${fontsize_round / 2}px`);
+
+    game.style.setProperty("--fontsiz", `${fontsize_round}px`);
+}
+
+
+window.addEventListener("resize", handle_resize, true);
+
 document.addEventListener("DOMContentLoaded", function() {
+    handle_resize();
     document.addEventListener("keydown", (event) => {
         let name = event.key;
         let code = event.code;
@@ -4298,6 +4535,8 @@ document.addEventListener("DOMContentLoaded", function() {
                         renderer.reset_selections();
                         renderer.render_inventory_menu();
                     } else {
+                        game.recent_spells_gained = [];
+
                         renderer.render_game_checkerboard("#222");
                         renderer.reset_selections();
                         renderer.render_game_view();
@@ -4326,6 +4565,8 @@ document.addEventListener("DOMContentLoaded", function() {
                         renderer.reset_selections();
                         renderer.render_inventory_menu();
                     } else {
+                        game.recent_spells_gained = [];
+
                         renderer.render_game_checkerboard("#222");
                         renderer.reset_selections();
                         renderer.render_game_view();
@@ -4379,12 +4620,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // TODO
 // ADD UI:
-// - Deleting / selling spells (space in the inventory for a trash slot?)
 // - Levelup dialog (pick between HP, MP, MP regen, random core, random modifier)
-// - highlight recently obtained spells 
+// - work out a way to show the effect of the whole spell for enemies
 // GAME LOOP:
 // - enemy waves
 // - open inventory after beating all enemies
 // - world generation between waves
 // - hp/mp regen after beating wave
 // - spawn credits; waves get stronger each time etc etc
+/*
+https://docs.google.com/spreadsheets/d/1HZQqG0wqTs9oZUu4H4hqChqNRa-kj8lPe9Y93V5l_z8/edit?usp=sharing
+*/

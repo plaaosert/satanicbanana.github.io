@@ -85,7 +85,9 @@ body {
 	margin-right: -50%;
 	transform: translate(-50%, -50%);
 
-	font-size: calc(0.4vw + 1vh - 1px);
+	--fontsiz: 16px;
+	font-size: var(--fontsiz);
+
 	color: #fff;
 	
 	-moz-user-select: -moz-none;
@@ -99,9 +101,21 @@ body {
 
 .gamelines {
 	white-space: nowrap;
+
+	display: grid;
+
+	--fontsiz_noround: 16px;
+	--fontsiz_noround_half: 8px;
+	grid-auto-rows: var(--fontsiz_noround);
+	grid-auto-columns: var(--fontsiz_noround_half);
 }
 
 .gamepixel {
+	padding: 0px 0px 0px 0px;
+}
+
+.gamepixel-abs {
+	position: absolute;
 	height: 16px;
 	width: 8px;
 }
