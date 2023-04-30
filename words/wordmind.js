@@ -190,7 +190,8 @@ function pick_new_word(length) {
 
 
 function set_new_word(word) {
-	last_game_str = "Words | " + (words_guessed.length - 1) + " guess" + (words_guessed.length != 2 ? "es" : "") + "\n\n" + guess_history;
+	let link = preset_word ?  "" : ("\n" + "https://plaao.net/words/?l=" + target_length);
+	last_game_str = "Words | " + (words_guessed.length - 1) + " guess" + (words_guessed.length != 2 ? "es" : "") + link + "\n\n" + guess_history;
 	if (!preset_word) {
 		last_game_str += "\nWord was \"" + target_word + "\"";
 		

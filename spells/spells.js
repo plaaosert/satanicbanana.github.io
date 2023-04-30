@@ -2133,13 +2133,14 @@ class Entity {
                         game.end_turn();
                     }
                 } else {
-                    game.end_turn();
+                    // experimental "do not wait" if we don't do anything
+                    game.end_turn(true);
                 }
                 
                 break;
 
             default:
-                game.end_turn();
+                game.end_turn(true);
                 break;
         }
     }
@@ -2425,7 +2426,7 @@ const SpellTargeting = {
     Positional: 'a position on the ground',
     UnitTarget: 'a specific unit',      // includes teams for filtering
     SelfTarget: 'the area around the caster',    // cast location is self tile
-    SelfTargetPlusCasterTile: 'at the caster\'s position'  // self target implicitly removes caster tile but this doesn't
+    SelfTargetPlusCaster: 'at the caster\'s position'  // self target implicitly removes caster tile but this doesn't
 };
 
 const Teams = {
@@ -3054,7 +3055,7 @@ class PrimedSpell {
     }
 
     in_range(caster, position) {
-        if ([SpellTargeting.SelfTarget, SpellTargeting.SelfTargetPlusCasterTile].includes(this.stats.target_type)) {
+        if ([SpellTargeting.SelfTarget, SpellTargeting.SelfTargetPlusCaster].includes(this.stats.target_type)) {
             return caster.position.equals(position);
         }
 
@@ -3186,7 +3187,7 @@ class PrimedSpell {
         // check multicasts
         if (this.stats.multicasts["normal"] > 0) {
             // place a copy of this spell on the casting stack but decrement the value
-            let new_pos = position;
+            let new_pos = position.copy();
             let new_mc = this.stats.multicasts["normal"] - 1;
             let new_spell = this.copy();
             new_spell.stats.multicasts["normal"] = new_mc;
@@ -3404,27 +3405,33 @@ class Game {
         return false;
     }
 
-    begin_turn() {
+    begin_turn(do_not_wait) {
         // shout here for the current turn entity's AI or the player to pick a move to use
         let ent = this.entities[this.turn_index];
-        //console.log("beginning turn for", ent.name);
-        let sthis = this;
-        setTimeout(function() {
-            sthis.casting_stack = [];
-            sthis.waiting_for_spell = true;
-            ent.do_turn();
-        })
-
+        console.log("beginning turn for", ent.name, do_not_wait ? "(NOWAIT)" : "(WAIT)");
+        
         // we then periodically check the casting stack to see if there's anything on there.
         // if there is, we cast it and set waiting_for_spell to true, which means
         // that once we clear out the casting stack the current entity's turn will end.
         this.spell_speed = this.max_spell_speed;
         this.spells_this_turn = 0;
+        
+        this.casting_stack = [];
+        this.waiting_for_spell = true;
 
         let me = this;
         this.checker_interval = setTimeout(function() {
             me.check_spell_stack();
         }, this.spell_speed);
+
+        if (do_not_wait) {
+            ent.do_turn();
+        } else {
+            let sthis = this;
+            setTimeout(function() {
+                ent.do_turn();
+            })
+        }
     }
 
     cast_primed_spell(primed_spell, position_target, insert_at_bottom, do_not_wait) {
@@ -3463,7 +3470,7 @@ class Game {
 
             this.spells_this_turn++;
 
-            let n = this.spells_this_turn / 50;
+            let n = Math.min(1, (this.spells_this_turn * this.spells_this_turn) / 2000);
             this.spell_speed = ((1-n) * this.max_spell_speed) + (n * this.min_spell_speed);
 
             let me = this;
@@ -3487,7 +3494,7 @@ class Game {
         }
     }
 
-    end_turn() {
+    end_turn(do_not_wait) {
         this.waiting_for_spell = false;
         this.spell_speed = this.max_spell_speed;
         this.spells_this_turn = 0;
@@ -3507,7 +3514,7 @@ class Game {
             }
         }
 
-        if (Math.random() < (0.05 + (num_enemy_spawns / 100)) && this.entities[this.turn_index].id == this.player_ent.id) {
+        if (Math.random() < (0.25 + (num_enemy_spawns / 100)) && this.entities[this.turn_index].id == this.player_ent.id) {
             let loc = new Vector2(Math.floor(Math.random() * game.board.dimensions.x), Math.floor(Math.random() * game.board.dimensions.y));
             let enemy = game.spawn_entity(get_entity_by_name("test enemy"), Teams.ENEMY, loc, false);
             if (enemy) {
@@ -3524,10 +3531,14 @@ class Game {
             }
         }
 
-        let sthis = this;
-        setTimeout(function() {
-            sthis.begin_turn();
-        });
+        if (do_not_wait) {
+            this.begin_turn(true);
+        } else {
+            let sthis = this;
+            setTimeout(function() {
+                sthis.begin_turn();
+            });
+        }
     }
 
     is_player_turn() {
@@ -3687,6 +3698,20 @@ class Game {
 
     spawn_entity(ent_template, team, position, overwrite) {
         let ent = new Entity(ent_template, team);
+        let remove_index = -1;
+        if (overwrite && this.board.get_pos(position)) {
+            for (let i=0; i<this.entities.length; i++) {
+                let ent = this.entities[i];
+                if (ent.position.equals(position)) {
+                    remove_index = i;
+                }
+            }
+        }
+
+        if (remove_index != -1) {
+            this.entities.splice(remove_index, 1);
+        }
+
         if (this.board.set_pos(position, ent, overwrite)) {
             ent.position = position;
             this.entities.push(ent);
@@ -3926,15 +3951,14 @@ spell_cores = [
     ),
 
     core_spell(
-        "Fireball with Target Trigger", "@*", "red", "#440", "Triggers another core at the target position.", 
-        10, DmgType.Fire, 7, 3,
-        Shape.Diamond, 60
-    ).set_trigger("at_target"),
-
-    core_spell(
         "Icicle", "V^", "#A5F2F3", "", "", 15, DmgType.Ice, 8, 1,
         Shape.Diamond, 20
-    )
+    ),
+
+    core_spell(
+        "Lightning Bolt", "&>", "#ffff33", "", "", 17, DmgType.Lightning, 10, 1,
+        Shape.Line, 18
+    ),
 ];
 
 spell_mods_stats = [
@@ -3943,7 +3967,21 @@ spell_mods_stats = [
         function(_, _, s) {
             s.damage += 5;
         }
-    )
+    ),
+
+    modifier(
+        "Radius Plus I", "R+", "#4cf", "", "Increases the core's radius by [#4df]1[clear].", 30,
+        function(_, _, s) {
+            s.radius += 1;
+        }
+    ),
+
+    modifier(
+        "Projection", ">~", "white", "", "Allows the core to ignore line of sight for targeting and effects.", 40,
+        function(user, spell, stats) {
+            stats.los = false;
+        }
+    ),
 ];
 
 spell_mods_dmg = [
@@ -3956,19 +3994,19 @@ spell_mods_cosmetic = [
 
 spell_mods_triggers = [
     modifier(
-        "Add Target Trigger", "+*", "#990", "#26f",
+        "Add Target Trigger", "+*", "#aa0", "#26f",
         "Makes the core cast the next core at the point it was targeted.",
         25
     ).set_trigger("at_target"),
 
     modifier(
-        "Add Tile Trigger", "+x", "#990", "#26f",
+        "Add Tile Trigger", "+x", "#aa0", "#26f",
         "Makes the core cast a copy of the next core at every tile the core affected.",
         500
     ).set_trigger("on_affected_tiles"),
 
     modifier(
-        "Add Damage Trigger", "+;", "#990", "#26f",
+        "Add Damage Trigger", "+;", "#aa0", "#26f",
         "Makes the core cast a copy of the next core at every instance of damage the core caused.",
         400
     ).set_trigger("on_hit"),
@@ -3979,30 +4017,6 @@ spell_mods_shape = [
 ];
 
 spell_mods_multicast = [
-    
-];
-
-spell_mods_misc = [
-    
-];
-
-spells_list = [
-    ...spell_cores,
-    ...spell_mods_stats,
-    ...spell_mods_triggers,
-    // lightning and other stuff here temporarily
-    core_spell(
-        "Lightning Bolt", "&>", "#ffff33", "", "", 17, DmgType.Lightning, 10, 1,
-        Shape.Line, 18
-    ),
-
-    modifier(
-        "Radius Plus I", "R+", "#4cf", "", "Increases the core's radius by [#4df]1[clear].", 30,
-        function(_, _, s) {
-            s.radius += 1;
-        }
-    ),
-
     modifier(
         "Behind the Back", "<$", "white", "", "Casts a copy of the core behind the user.", 120,
         no_stats, function(user, spell, stats, location) {
@@ -4018,19 +4032,32 @@ spells_list = [
     ),
 
     modifier(
-        "Multicast x4", ">4", "#0f0", "", "Casts a copy of the core four times.", 300,
+        "Multicast x4", ">4", "#0f0", "", "Casts a copy of the core four times.", 350,
         function(user, spell, stats) {
             stats.multicasts["normal"] += 4;
         }
     ),
 
     modifier(
-        "Projection", ">~", "white", "", "Allows the core to ignore line of sight for targeting and effects.", 40,
-        function(user, spell, stats) {
-            stats.los = false;
+        "Chain Spell", "/>", "white", "", "Makes the core recast a copy of itself on a single random valid target within the core's [#4df]range[clear] as many times as the spell's [#4df]chain[clear] value.\n\nAdds [#4df]4[clear] to the core's [#4df]chain[clear] value.",
+        350, function(user, spell, stats) {
+            stats.multicasts["chain"] += 4;
         }
     ),
 
+    modifier(
+        "Arc Spell", "*>", "yellow", "", "Makes the core recast a copy of itself on random valid targets within the core's [#4df]range[clear] up to the spell's [#4df]arc[clear] value.\n\nAdds [#4df]4[clear] to the core's [#4df]arc[clear] value.",
+        250, function(user, spell, stats) {
+            stats.multicasts["simultaneous"] += 4;
+        }
+    )
+];
+
+spell_mods_misc = [
+    
+];
+
+spells_red = [
     core_spell(
         "Gun", "%=", "white", "red", "", 5000, DmgType.Physical, 30, 1, Shape.Line, 50, SpellTargeting.Positional, [Teams.ENEMY]
     ).augment("at_target", function(user, spell, stats, location) {
@@ -4064,8 +4091,8 @@ spells_list = [
         ].reverse();
 
         dmgtypes.forEach(t => {
-            game.max_spell_speed = 400;
-            game.min_spell_speed = 400;
+            game.max_spell_speed = 100;
+            game.min_spell_speed = 10;
     
             user.cast_spell([
                 core_spell(
@@ -4117,26 +4144,24 @@ spells_list = [
         73, DmgType.Chaos, 10, 3, Shape.Circle, 2
     ),
 
-    modifier(
-        "Chain Spell", "/>", "white", "", "Makes the core recast a copy of itself on a single random valid target within the core's [#4df]range[clear] as many times as the spell's [#4df]chain[clear] value.\n\nAdds [#4df]4[clear] to the core's [#4df]chain[clear] value.",
-        350, function(user, spell, stats) {
-            stats.multicasts["chain"] += 4;
-        }
-    ),
-
-    modifier(
-        "Arc Spell", "*>", "yellow", "", "Makes the core recast a copy of itself on random valid targets within the core's [#4df]range[clear] up to the spell's [#4df]arc[clear] value.\n\nAdds [#4df]4[clear] to the core's [#4df]arc[clear] value.",
-        250, function(user, spell, stats) {
-            stats.multicasts["simultaneous"] += 4;
-        }
-    ),
-
     core_spell(
         "summon GUY", "@]", "white", "red", "Summon \"Guy\" at the target position.",
         25, DmgType.Dark, 10, 5, Shape.Circle, 120
     ).augment("at_target", function(user, spell, stats, location) {
-        game.spawn_entity(get_entity_by_name("Fuckn GUy"), Teams.PLAYER, location, true);
+        game.spawn_entity(get_entity_by_name("Fuckn GUy"), Teams.PLAYER, location);
     })
+]
+
+spells_list = [
+    ...spell_cores,
+    ...spell_mods_stats,
+    ...spell_mods_dmg,
+    ...spell_mods_cosmetic,
+    ...spell_mods_triggers,
+    ...spell_mods_shape,
+    ...spell_mods_multicast,
+    ...spell_mods_misc,
+    ...spells_red,
 ]
 
 
@@ -4621,7 +4646,7 @@ document.addEventListener("DOMContentLoaded", function() {
 // TODO
 // ADD UI:
 // - Levelup dialog (pick between HP, MP, MP regen, random core, random modifier)
-// - work out a way to show the effect of the whole spell for enemies
+// - work out a way to show the effect of the whole spell for enemies (and you)
 // GAME LOOP:
 // - enemy waves
 // - open inventory after beating all enemies
@@ -4630,4 +4655,9 @@ document.addEventListener("DOMContentLoaded", function() {
 // - spawn credits; waves get stronger each time etc etc
 /*
 https://docs.google.com/spreadsheets/d/1HZQqG0wqTs9oZUu4H4hqChqNRa-kj8lPe9Y93V5l_z8/edit?usp=sharing
+*/
+
+/*
+TODO BUGS:
+- none!
 */
