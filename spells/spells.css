@@ -12,6 +12,13 @@
     font-style: normal;
 }
 
+@font-face {
+    font-family: "terminus";
+    src: url("Terminus.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
 html {
     touch-action: manipulation;
 }
@@ -34,7 +41,7 @@ img {
 body {
 	overflow: hidden;
 	width:100%;
-	font-family: "MS Gothic", "nec_apc";
+	font-family: "MS Gothic", "terminus", "nec_apc";
 	background-color:#000;
 	
 	font-smooth: never;

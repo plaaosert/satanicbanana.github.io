@@ -619,7 +619,7 @@ class Renderer {
                             let path = pathfind(game.player_ent.position, game_pos);
             
                             if (path && path.length > 1) {
-                                let result = game.move_entity(game.player_ent, path[1], false);
+                                let result = game.move_player(path[1]);
                                 
                                 if (result) {
                                     this.move_particles(path[1].sub(game.player_ent.position).neg());
@@ -804,7 +804,7 @@ class Renderer {
                 if (char == "[" && (i == wrapped_text.length - 1 || wrapped_text[i+1] != "]")) {
                     reading_new_col = true;
                 } else {
-                    char = char.replace("{", "[").replace("}", "]");
+                    char = char.replace("{!{", "[").replace("}!}", "]");
 
                     if (char != "\n") {
                         this.set_pixel(cur_pos, char, col);
@@ -3020,6 +3020,7 @@ class PrimedSpell {
 
         new_primed.calculate();
         new_primed.stats.mutable_info = structuredClone(this.stats.mutable_info);
+        new_primed.stats.multicasts = structuredClone(this.stats.multicasts);
 
         return new_primed;
     }
@@ -3078,6 +3079,8 @@ class PrimedSpell {
 
     cast(board, caster, position) {
         //console.log(this.origin);
+        // untested; added recently
+        this.caster = caster;
 
         let self_target_safe = this.stats.target_type == SpellTargeting.SelfTarget;
 
@@ -3101,7 +3104,7 @@ class PrimedSpell {
             cast_locations = cast_locations.filter(loc => !(loc.x == position.x && loc.y == position.y));
         }
         
-        game.reset_damage_count(this.id);
+        game.reset_damage_count(this.caster.id);
 
         let sthis = this;
         cast_locations.forEach(location => {
@@ -3130,7 +3133,7 @@ class PrimedSpell {
 
             if (ent) {
                 game.deal_damage(
-                    ent, sthis.caster, sthis.id,
+                    ent, sthis.caster, sthis.caster.id,
                     sthis.stats.damage, sthis.stats.damage_type
                 );
             }
@@ -3161,27 +3164,35 @@ class PrimedSpell {
         }
 
         // get list of damaged entities from this spell
-        let damaged_entities = game.get_damage_count(this.id);
-        // [{ent, dmg_amount, dmg_type}]
-        // each instance of damage is handled separately
+        let keep_triggering_damage = true;
+        while (keep_triggering_damage) {
+            keep_triggering_damage = false;
 
-        if (damaged_entities) {
-            damaged_entities.forEach(dmg_instance => {
-                let ent = dmg_instance.ent;
-                let amt = dmg_instance.amount;
-                let typ = dmg_instance.dmg_type;
+            let damaged_entities = game.get_damage_count(this.caster.id);
+            // [{ent, dmg_amount, dmg_type}]
+            // each instance of damage is handled separately
 
-                this.spells.forEach(spell => {
-                    if (spell.fns.on_hit) {
-                        spell.fns.on_hit(this.caster, this, this.stats, ent, amt, typ);
+            if (damaged_entities) {
+                keep_triggering_damage = true;
+                damaged_entities.forEach(dmg_instance => {
+                    let ent = dmg_instance.ent;
+                    let amt = dmg_instance.amount;
+                    let typ = dmg_instance.dmg_type;
+
+                    this.spells.forEach(spell => {
+                        if (spell.fns.on_hit) {
+                            spell.fns.on_hit(this.caster, this, this.stats, ent, amt, typ);
+                        }
+                    })
+
+                    if (this.trigger[0] == "on_hit") {
+                        this.trigger[1].origin = position;
+                        game.cast_primed_spell(this.trigger[1].copy(), ent.position, true);
                     }
                 })
 
-                if (this.trigger[0] == "on_hit") {
-                    this.trigger[1].origin = position;
-                    game.cast_primed_spell(this.trigger[1].copy(), ent.position, true);
-                }
-            })
+                game.reset_damage_count(this.caster.id);
+            }
         }
 
         // check multicasts
@@ -3346,6 +3357,8 @@ class Game {
 
         this.inventory_open = false;
         this.recent_spells_gained = [];
+
+        this.enabled = true;
     }
 
     player_discard_edits() {
@@ -3802,6 +3815,10 @@ class Game {
     }
 
     move_entity(ent, new_pos, overwrite) {
+        if (!this.enabled) {
+            return 0;
+        }
+
         if (this.board.set_pos(new_pos, ent, overwrite)) {
             this.board.clear_pos(ent.position);
             ent.position = new_pos;
@@ -3812,16 +3829,24 @@ class Game {
         return 0;
     }
 
+    move_player(new_pos) {
+        if (!this.enabled) {
+            return 0;
+        }
+
+        return this.move_entity(this.player_ent, new_pos, false);
+    }
+
     reset_recorded_damage() {
         this.recorded_damage = {};
     }
 
-    reset_damage_count(spell_id) {
-        delete this.damage_counts[spell_id];
+    reset_damage_count(user_id) {
+        delete this.damage_counts[user_id];
     }
 
-    get_damage_count(spell_id) {
-        return this.damage_counts[spell_id];
+    get_damage_count(user_id) {
+        return this.damage_counts[user_id];
     }
 
     setup_damage_count() {
@@ -3833,24 +3858,26 @@ class Game {
         return cnts;
     }
 
-    deal_damage(target, caster, spell_id, damage, damage_type) {
+    deal_damage(target, caster, user_id, damage, damage_type) {
         let dmg_taken = target.take_damage(caster, damage, damage_type);
 
-        if (!this.damage_counts[spell_id]) {
-            this.damage_counts[spell_id] = [];
-        }
+        if (dmg_taken > 0) {
+            if (!this.damage_counts[user_id]) {
+                this.damage_counts[user_id] = [];
+            }
 
-        this.damage_counts[spell_id].push({
-            ent: target,
-            amt: dmg_taken,
-            typ: damage_type
-        });
+            this.damage_counts[user_id].push({
+                ent: target,
+                amt: dmg_taken,
+                typ: damage_type
+            });
 
-        let record_name = caster.id.toString() + caster.name;
-        if (this.recorded_damage[record_name]) {
-            this.recorded_damage[record_name] += dmg_taken;
-        } else {
-            this.recorded_damage[record_name] = dmg_taken;
+            let record_name = caster.id.toString() + caster.name;
+            if (this.recorded_damage[record_name]) {
+                this.recorded_damage[record_name] += dmg_taken;
+            } else {
+                this.recorded_damage[record_name] = dmg_taken;
+            }
         }
     }
 
@@ -4162,6 +4189,7 @@ spells_list = [
     ...spell_mods_multicast,
     ...spell_mods_misc,
     ...spells_red,
+    modifier("Chromatic Convergence", "@}", "white", "", "Redeals any damage of the same type as this core's damage type from this core as the damage type the damaged unit is least resistant to. If that type is the same as the core's damage type, the second least resistant type will be used.", 999)
 ]
 
 
@@ -4625,10 +4653,8 @@ document.addEventListener("DOMContentLoaded", function() {
             }
     
             if (mov_pos && game.is_player_turn()) {
-                let result = game.move_entity(
-                    game.player_ent,
-                    game.player_ent.position.add(mov_pos),
-                    false
+                let result = game.move_player(
+                    game.player_ent.position.add(mov_pos)
                 );
     
                 if (result) {
