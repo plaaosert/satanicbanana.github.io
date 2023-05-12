@@ -1,7 +1,7 @@
 entity_templates = [
     new EntityTemplate(
         "Player", "@=", "#0cf", "It's you.",
-        100, 250, [
+        100, 5000, [
             Affinity.Living
         ], 0, -1,
         entities_spells["Player"],
