@@ -2154,7 +2154,7 @@ class Entity {
 
     do_end_turn() {
         // for now just give some mp regen
-        this.restore_mp(Math.min(this.max_mp, this.mp + Math.round(this.max_mp / 25)));
+        this.restore_mp(Math.min(Math.round(this.max_mp / 25)));
         this.spawn_protection = false;
     }
 
