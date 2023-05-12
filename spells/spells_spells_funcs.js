@@ -1265,7 +1265,7 @@ spells_funcs = {
 
     "Arc Spell": [
         function(user, spell, stats) {
-            stats.multicasts["arc"] += 4
+            stats.multicasts["simultaneous"] += 4
         },
         no_target,
         no_hit,
