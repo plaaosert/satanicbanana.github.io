@@ -862,11 +862,13 @@ spells_funcs = {
                     }
                 })
 
+                let final_typ = typ[0];
+
                 renderer.put_particle_from_game_loc(enemy.position, new Particle(
-                    dmg_type_particles[typ]
+                    dmg_type_particles[final_typ]
                 ));
 
-                game.deal_damage(enemy, caster, caster.id, Math.floor(damage * 0.5), typ, true)
+                game.deal_damage(enemy, caster, caster.id, Math.floor(damage * 0.5), final_typ, true)
             }
         },
         no_tiles
@@ -885,11 +887,13 @@ spells_funcs = {
                     }
                 })
 
+                let final_typ = typ[0];
+
                 renderer.put_particle_from_game_loc(enemy.position, new Particle(
-                    dmg_type_particles[typ]
+                    dmg_type_particles[final_typ]
                 ));
 
-                game.deal_damage(enemy, caster, caster.id, Math.floor(damage * 0.5), typ, true)
+                game.deal_damage(enemy, caster, caster.id, Math.floor(damage * 0.5), final_typ, true)
             }
         },
         no_tiles

@@ -342,12 +342,11 @@ document.addEventListener("DOMContentLoaded", function() {
 // ADD UI:
 // - Levelup dialog (pick between HP, MP, MP regen, random core, random modifier)
 // - work out a way to show the effect of the whole spell for enemies (and you)
+//   for enemies will probably rely on the desc written by me to show anything, then just show basic stats
 // GAME LOOP:
-// - enemy waves
+// - status effects - currently not implemented at all
 // - open inventory after beating all enemies
 // - world generation between waves
-// - hp/mp regen after beating wave
-// - spawn credits; waves get stronger each time etc etc
 /*
 https://docs.google.com/spreadsheets/d/1HZQqG0wqTs9oZUu4H4hqChqNRa-kj8lPe9Y93V5l_z8/edit?usp=sharing
 */
