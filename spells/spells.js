@@ -804,7 +804,7 @@ class Renderer {
                 if (char == "[" && (i == wrapped_text.length - 1 || wrapped_text[i+1] != "]")) {
                     reading_new_col = true;
                 } else {
-                    char = char.replace("{!{", "[").replace("}!}", "]");
+                    char = char.replace("«", "[").replace("»", "]");
 
                     if (char != "\n") {
                         this.set_pixel(cur_pos, char, col);
@@ -1997,7 +1997,7 @@ class Board {
 
 
 class EntityTemplate {
-    constructor(name, icon, col, desc, max_hp, max_mp, affinities, xp_value, innate_spells, ai_level, blocks_los, untargetable) {
+    constructor(name, icon, col, desc, max_hp, max_mp, affinities, xp_value, spawn_credits, innate_spells, ai_level, blocks_los, untargetable, on_death) {
         this.name = name
         this.icon = icon
         this.col = col
@@ -2005,11 +2005,13 @@ class EntityTemplate {
         this.max_hp = max_hp
         this.max_mp = max_mp
         this.affinities = affinities != undefined ? affinities : []
-        this.xp_value = xp_value != undefined ? xp_value : 0
+        this.xp_value = xp_value != undefined ? xp_value : 0;
+        this.spawn_credits = spawn_credits != undefined ? spawn_credits : -1;
         this.innate_spells = innate_spells != undefined ? innate_spells : []
         this.ai_level = ai_level != undefined ? ai_level : 999
         this.blocks_los = blocks_los;
         this.untargetable = untargetable;
+        this.on_death = on_death != undefined ? on_death : [];
     }
 }
 
@@ -2043,8 +2045,13 @@ class Entity {
         this.blocks_los = template.blocks_los;
         this.untargetable = template.untargetable;
 
+        this.spawn_credits = template.spawn_credits;
+        this.on_death = template.on_death;
+
         this.team = team;
         this.dead = false;
+
+        this.spawn_protection = true;
 
         this.calculate_primed_spells(new Vector2(0, 0));
     }
@@ -2147,7 +2154,8 @@ class Entity {
 
     do_end_turn() {
         // for now just give some mp regen
-        this.mp = Math.min(this.max_mp, this.mp + Math.round(this.max_mp / 25));
+        this.restore_mp(Math.min(this.max_mp, this.mp + Math.round(this.max_mp / 25)));
+        this.spawn_protection = false;
     }
 
     has_team(team) {
@@ -2243,7 +2251,7 @@ class Entity {
             return {root_spell: root_spell, manacost: manacost};
         } else {
             let backup_spell = this.parse_spell([
-                core_spell("backup spell", "!!", "white", "red", 
+                core_spell("backup spell", "!!", SpellSubtype.Core, "white", "red", 
                 "This is a useless spell. You didn't add a core!",
                 0, DmgType.Physical, 0, 0, Shape.Diamond, 0)
             ]).root_spell;
@@ -2269,8 +2277,19 @@ class Entity {
             //console.log(`not enough mana (req: ${manacost}, have: ${this.mp}`);
         } else {
             //console.log(`spent ${manacost} MP`);
-            this.mp -= manacost;
+            this.lose_mp(manacost);
             game.cast_primed_spell(root_spell, position_target);
+        }
+    }
+
+    cleanse_effects() {
+        // TODO something
+    }
+
+    refresh() {
+        if (!this.dead) {
+            this.hp = this.max_hp;
+            this.mp = this.max_mp;
         }
     }
 
@@ -2289,6 +2308,28 @@ class Entity {
         return false;
     }
 
+    change_mp(amount) {
+        this.mp += amount;
+        this.mp = Math.max(0, Math.min(this.max_mp, this.mp));
+    }
+
+    lose_mp(amount) {
+        this.change_mp(-amount);
+    }
+
+    restore_mp(amount) {
+        this.change_mp(amount);
+    }
+
+    get_damage_mults() {
+        let res = {};
+        Object.keys(DmgType).forEach(t => {
+            res[t] = this.get_damage_mult(DmgType[t]);
+        })
+
+        return res;
+    }
+
     get_damage_mult(damage_type) {
         let dmg_mult = 1;
         this.affinities.forEach(affinity => {
@@ -2299,7 +2340,7 @@ class Entity {
     }
 
     take_damage(caster, damage, damage_type) {
-        if (this.dead) {
+        if (this.dead || this.spawn_protection) {
             return 0;
         }
 
@@ -2364,7 +2405,7 @@ class Spell {
     static id_inc = 0;
 
     // inventory items use references to these single objects. do not edit them
-    constructor(name, icon, col, back_col, typ, desc, manacost, bonus_draws, trigger_type, to_stats_fn, at_target_fn, on_hit_fn, on_affected_tiles_fn) {
+    constructor(name, icon, col, back_col, typ, subtyp, desc, manacost, bonus_draws, trigger_type, to_stats_fn, at_target_fn, on_hit_fn, on_affected_tiles_fn) {
         this.id = Spell.id_inc;
         Spell.id_inc++;
         
@@ -2376,6 +2417,8 @@ class Spell {
         this.back_col = back_col;
         
         this.typ = typ;
+        this.subtyp = subtyp
+
         this.desc = desc;
         this.bonus_draws = bonus_draws;
         this.trigger_type = trigger_type;
@@ -2386,6 +2429,18 @@ class Spell {
             on_hit: on_hit_fn,                       // when damaging an enemy; (user, spell, stats, enemy, damage, type)
             on_affected_tiles: on_affected_tiles_fn  // called on every aoe location including direct target; (user, spell, stats, location)
         }
+    }
+
+    is_corrupt() {
+        return this.icon == "??";
+    }
+
+    is_red() {
+        return (!this.is_corrupt()) && (this.subtyp == SpellSubtype.Red || this.subtyp == SpellSubtype.RedModifier);
+    }
+
+    is_normal() { 
+        return (!this.is_corrupt()) && (!this.is_red());
     }
 
     augment(fn, new_fn) {
@@ -2422,6 +2477,19 @@ const SpellType = {
     Modifier: "Modifier"
 }
 
+const SpellSubtype = {
+    Core: "Core",
+    Stats: "Stats",
+    Damage: "Damage",
+    Cosmetic: "Cosmetic",
+    Trigger: "Trigger",
+    Shape: "Shape",
+    Multicast: "Multicast",
+    Misc: "Misc",
+    Red: "Red",
+    RedModifier: "Red Modifier",
+}
+
 const SpellTargeting = {
     Positional: 'a position on the ground',
     UnitTarget: 'a specific unit',      // includes teams for filtering
@@ -2434,6 +2502,293 @@ const Teams = {
     ENEMY: "Enemy",
     UNALIGNED: "Unaligned"
 }
+
+const DmgType = {
+    Fire: "Fire",
+    Ice: "Ice",
+    Lightning: "Lightning",
+    Arcane: "Arcane",
+    Physical: "Physical",
+    Dark: "Dark",
+    Chaos: "Chaos",
+    Holy: "Holy",
+    Psychic: "Psychic"
+}
+
+const damage_type_cols = {
+    "Fire": "#e25822",
+    "Ice": "#A5F2F3",
+    "Lightning": "#ffff33",
+    "Arcane": "#ff4d94",
+    "Physical": "#ddd",
+    "Dark": "#7a49a2",
+    "Chaos": "#e6970f",
+    "Holy": "#fef19a",
+    "Psychic": "#ff9eff"
+}
+
+const Affinity = {
+    Fire: "Fire",
+    Ice: "Ice",
+    Lightning: "Lightning",
+    Arcane: "Arcane",
+    Ghost: "Ghost",
+    Chaos: "Chaos",
+    Holy: "Holy",
+    Dark: "Dark",
+    Demon: "Demon",
+    Undead: "Undead",
+    Natural: "Natural",
+    Living: "Living",
+    Insect: "Insect",
+    Construct: "Construct",
+    Order: "Order"
+}
+
+const affinity_cols = {
+    "Fire": "#e25822",
+    "Ice": "#A5F2F3",
+    "Lightning": "#ffff33",
+    "Arcane": "#ff4d94",
+    "Ghost": "#ddd",
+    "Chaos": "#e6970f",
+    "Holy": "#fef19a",
+    "Dark": "#7a49a2",
+    "Demon": "#ff2812",
+    "Undead": "#888",
+    "Natural": "#4a4",
+    "Living": "#6f6",
+    "Insect": "#282",
+    "Construct": "#bbb",
+    "Order": "#D5C2A5"
+}
+
+// index 1: what type the defender is
+// index 2: what type the attacker is
+const affinity_weaknesses = {
+    "Fire": {
+        "Fire": 0.5,       // resistant
+        "Ice": 0.25,        // resistant
+        "Lightning": 1,  // neutral
+        "Arcane": 1,     // neutral
+        "Physical": 0.75,   // resistant
+        "Dark": 1.5,       // weak
+        "Chaos": 1.5,      // weak
+        "Holy": 1,       // neutral
+        "Psychic": 1.5,    // weak
+    },
+
+    "Ice": {
+        "Fire": 2,       // weak
+        "Ice": 0.5,        // resistant
+        "Lightning": 1,  // neutral
+        "Arcane": 0.75,     // resistant
+        "Physical": 1.5,   // weak
+        "Dark": 1,       // neutral
+        "Chaos": 1.5,      // weak
+        "Holy": 1,       // neutral
+        "Psychic": 1,    // neutral
+    },
+
+    "Lightning": {
+        "Fire": 1,       // neutral
+        "Ice": 1,        // neutral
+        "Lightning": 0.5,  // resistant
+        "Arcane": 1,     // neutral
+        "Physical": 0.75,   // resistant
+        "Dark": 1.5,       // weak
+        "Chaos": 1,      // neutral
+        "Holy": 1,       // neutral
+        "Psychic": 1.5,    // weak
+    },
+ 
+    "Arcane": {
+        "Fire": 1,       // neutral
+        "Ice": 0.75,        // resistant
+        "Lightning": 1,  // neutral
+        "Arcane": 1,     // neutral
+        "Physical": 1,   // neutral
+        "Dark": 1.5,       // weak
+        "Chaos": 1,      // neutral
+        "Holy": 1.25,       // weak
+        "Psychic": 1.5,    // weak
+    },
+ 
+    "Ghost": {
+        "Fire": 1,       // neutral
+        "Ice": 0.5,        // resistant
+        "Lightning": 1,  // neutral
+        "Arcane": 1.5,     // weak
+        "Physical": 0,   // immune
+        "Dark": 0.5,       // resistant
+        "Chaos": 1,      // neutral
+        "Holy": 2,       // weak
+        "Psychic": 1.5,    // weak
+    },
+ 
+    "Chaos": {
+        "Fire": 0.5,       // resistant
+        "Ice": 0.5,        // resistant
+        "Lightning": 0.5,  // resistant
+        "Arcane": 1.75,     // weak
+        "Physical": 1,   // neutral
+        "Dark": 1,       // neutral
+        "Chaos": 0.5,      // resistant
+        "Holy": 1,       // neutral
+        "Psychic": 1.5,    // weak
+    },
+ 
+    "Holy": {
+        "Fire": 0.5,       // resistant
+        "Ice": 1,        // neutral
+        "Lightning": 0.5,  // resistant
+        "Arcane": 1.5,     // weak
+        "Physical": 1,   // neutral
+        "Dark": 2,       // weak
+        "Chaos": 1,      // neutral
+        "Holy": 1,       // neutral
+        "Psychic": 1.5,    // weak
+    },
+ 
+    "Dark": {
+        "Fire": 1.5,       // weak
+        "Ice": 0.5,        // resistant
+        "Lightning": 1,  // neutral
+        "Arcane": 1.5,     // weak
+        "Physical": 1,   // neutral
+        "Dark": 0.5,       // resistant
+        "Chaos": 0.75,      // resistant
+        "Holy": 2,       // weak
+        "Psychic": 1.5,    // weak
+    },
+ 
+    "Demon": {
+        "Fire": 0.5,       // resistant
+        "Ice": 0.5,        // resistant
+        "Lightning": 1,  // neutral
+        "Arcane": 1,     // neutral
+        "Physical": 1,   // neutral
+        "Dark": 0.25,       // resistant
+        "Chaos": 0.5,      // resistant
+        "Holy": 2,       // weak
+        "Psychic": 1,    // neutral
+    },
+ 
+    "Undead": {
+        "Fire": 1.5,       // weak
+        "Ice": 0.5,        // resistant
+        "Lightning": 1,  // neutral
+        "Arcane": 1,     // neutral
+        "Physical": 1,   // neutral
+        "Dark": 0.25,       // resistant
+        "Chaos": 1,      // neutral
+        "Holy": 2,       // weak
+        "Psychic": 1,    // neutral
+    },
+ 
+    "Natural": {
+        "Fire": 1.5,       // weak (be aware many things will be natural and living)
+        "Ice": 1.5,        // weak
+        "Lightning": 1,  // neutral
+        "Arcane": 1,     // neutral
+        "Physical": 1,   // neutral
+        "Dark": 1,       // neutral
+        "Chaos": 1.25,      // weak
+        "Holy": 1,       // neutral
+        "Psychic": 1,    // neutral
+    },
+ 
+    "Living": {
+        "Fire": 1.5,       // weak
+        "Ice": 1,        // neutral
+        "Lightning": 1.5,  // weak
+        "Arcane": 1,     // neutral
+        "Physical": 1,   // neutral
+        "Dark": 1,       // neutral
+        "Chaos": 1,      // neutral
+        "Holy": 1,       // neutral
+        "Psychic": 1,    // neutral
+    },
+ 
+    "Insect": {
+        "Fire": 2,       // weak
+        "Ice": 1.5,        // weak
+        "Lightning": 1,  // neutral
+        "Arcane": 1,     // neutral
+        "Physical": 1,   // neutral
+        "Dark": 1,       // neutral
+        "Chaos": 1,      // neutral
+        "Holy": 1,       // neutral
+        "Psychic": 0.5,    // resistant
+    },
+ 
+    "Construct": {
+        "Fire": 0.25,       // resistant
+        "Ice": 0.25,        // resistant
+        "Lightning": 0.5,  // resistant
+        "Arcane": 1,     // neutral
+        "Physical": 1.5,   // weak
+        "Dark": 1,       // neutral
+        "Chaos": 1.5,      // weak
+        "Holy": 1,       // neutral
+        "Psychic": 0.25,    // resistant
+    },
+ 
+    "Order": {
+        "Fire": 1,       // neutral
+        "Ice": 1,        // neutral
+        "Lightning": 1,  // neutral
+        "Arcane": 0.5,     // resistant
+        "Physical": 1,   // neutral
+        "Dark": 0.5,       // resistant
+        "Chaos": 2,      // weak
+        "Holy": 1,       // neutral
+        "Psychic": 2,    // weak
+    },
+};
+
+console.log(["Fire",
+"Ice",
+"Lightning",
+"Arcane",
+"Ghost",
+"Chaos",
+"Holy",
+"Dark",
+"Demon",
+"Undead",
+"Natural",
+"Living",
+"Insect",
+"Construct",
+"Order"].map(a => {
+    return [
+        "Fire",
+        "Ice",
+        "Lightning",
+        "Arcane",
+        "Physical",
+        "Dark",
+        "Chaos",
+        "Holy",
+        "Psychic"
+    ].map(t => affinity_weaknesses[a][t]).join("\t")
+}).join("\n"))
+
+const StatusEffect = {
+    FREEZE: "Freeze",
+    SLEEP: "Sleep",
+    STUN: "Stun",
+    POISON: "Poison",
+    BULWARK: "Bulwark",
+    SHIELD: "Shield",
+    OVERCHARGE: "Overcharge"  // +50% lightning damage dealt and taken
+}
+
+Object.keys(DmgType).forEach(typ => {
+    StatusEffect["RESISTANCE_" + typ.toUpperCase()] = `Resistance (${DmgType[typ]})`;
+    StatusEffect["POLARITY_" + typ.toUpperCase()] = `Polarity (${DmgType[typ]})`;
+})
 
 function make_square(target, radius, predicate) {
     let positions = [];
@@ -2722,277 +3077,9 @@ const Shape = {
     }]
 }
 
-const DmgType = {
-    Fire: "Fire",
-    Ice: "Ice",
-    Lightning: "Lightning",
-    Arcane: "Arcane",
-    Physical: "Physical",
-    Dark: "Dark",
-    Chaos: "Chaos",
-    Holy: "Holy",
-    Psychic: "Psychic"
+const SpellSpecials = {
+    FLAMENOVA: "FLAMENOVA"
 }
-
-const damage_type_cols = {
-    "Fire": "#e25822",
-    "Ice": "#A5F2F3",
-    "Lightning": "#ffff33",
-    "Arcane": "#ff4d94",
-    "Physical": "#ddd",
-    "Dark": "#7a49a2",
-    "Chaos": "#e6970f",
-    "Holy": "#fef19a",
-    "Psychic": "#ff9eff"
-}
-
-const Affinity = {
-    Fire: "Fire",
-    Ice: "Ice",
-    Lightning: "Lightning",
-    Arcane: "Arcane",
-    Ghost: "Ghost",
-    Chaos: "Chaos",
-    Holy: "Holy",
-    Dark: "Dark",
-    Demon: "Demon",
-    Undead: "Undead",
-    Natural: "Natural",
-    Living: "Living",
-    Insect: "Insect",
-    Construct: "Construct",
-    Order: "Order"
-}
-
-const affinity_cols = {
-    "Fire": "#e25822",
-    "Ice": "#A5F2F3",
-    "Lightning": "#ffff33",
-    "Arcane": "#ff4d94",
-    "Ghost": "#ddd",
-    "Chaos": "#e6970f",
-    "Holy": "#fef19a",
-    "Dark": "#7a49a2",
-    "Demon": "#ff2812",
-    "Undead": "#888",
-    "Natural": "#4a4",
-    "Living": "#6f6",
-    "Insect": "#282",
-    "Construct": "#bbb",
-    "Order": "#D5C2A5"
-}
-
-// index 1: what type the defender is
-// index 2: what type the attacker is
-const affinity_weaknesses = {
-    "Fire": {
-        "Fire": 0.5,       // resistant
-        "Ice": 0.25,        // resistant
-        "Lightning": 1,  // neutral
-        "Arcane": 1,     // neutral
-        "Physical": 0.75,   // resistant
-        "Dark": 1.5,       // weak
-        "Chaos": 1.5,      // weak
-        "Holy": 1,       // neutral
-        "Psychic": 1.5,    // weak
-    },
-
-    "Ice": {
-        "Fire": 2,       // weak
-        "Ice": 0.5,        // resistant
-        "Lightning": 1,  // neutral
-        "Arcane": 0.75,     // resistant
-        "Physical": 1.5,   // weak
-        "Dark": 1,       // neutral
-        "Chaos": 1.5,      // weak
-        "Holy": 1,       // neutral
-        "Psychic": 1,    // neutral
-    },
-
-    "Lightning": {
-        "Fire": 1,       // neutral
-        "Ice": 1,        // neutral
-        "Lightning": 0.5,  // resistant
-        "Arcane": 1,     // neutral
-        "Physical": 0.75,   // resistant
-        "Dark": 1.5,       // weak
-        "Chaos": 1,      // neutral
-        "Holy": 1,       // neutral
-        "Psychic": 1.5,    // weak
-    },
- 
-    "Arcane": {
-        "Fire": 1,       // neutral
-        "Ice": 0.75,        // resistant
-        "Lightning": 1,  // neutral
-        "Arcane": 1,     // neutral
-        "Physical": 1,   // neutral
-        "Dark": 1.5,       // weak
-        "Chaos": 1,      // neutral
-        "Holy": 1.25,       // weak
-        "Psychic": 1.5,    // weak
-    },
- 
-    "Ghost": {
-        "Fire": 1,       // neutral
-        "Ice": 1,        // resistant
-        "Lightning": 1,  // neutral
-        "Arcane": 1,     // weak
-        "Physical": 1,   // immune
-        "Dark": 1,       // resistant
-        "Chaos": 1,      // neutral
-        "Holy": 1,       // weak
-        "Psychic": 1,    // weak
-    },
- 
-    "Chaos": {
-        "Fire": 0.5,       // resistant
-        "Ice": 0.5,        // resistant
-        "Lightning": 0.5,  // resistant
-        "Arcane": 1.75,     // weak
-        "Physical": 1,   // neutral
-        "Dark": 1,       // neutral
-        "Chaos": 0.5,      // resistant
-        "Holy": 1,       // neutral
-        "Psychic": 1.5,    // weak
-    },
- 
-    "Holy": {
-        "Fire": 0.5,       // resistant
-        "Ice": 1,        // neutral
-        "Lightning": 0.5,  // resistant
-        "Arcane": 1.5,     // weak
-        "Physical": 1,   // neutral
-        "Dark": 2,       // weak
-        "Chaos": 1,      // neutral
-        "Holy": 1,       // neutral
-        "Psychic": 1.5,    // weak
-    },
- 
-    "Dark": {
-        "Fire": 1.5,       // weak
-        "Ice": 0.5,        // resistant
-        "Lightning": 1,  // neutral
-        "Arcane": 1.5,     // weak
-        "Physical": 1,   // neutral
-        "Dark": 0.5,       // resistant
-        "Chaos": 0.75,      // resistant
-        "Holy": 2,       // weak
-        "Psychic": 1.5,    // weak
-    },
- 
-    "Demon": {
-        "Fire": 0.5,       // resistant
-        "Ice": 0.5,        // resistant
-        "Lightning": 1,  // neutral
-        "Arcane": 1,     // neutral
-        "Physical": 1,   // neutral
-        "Dark": 0.25,       // resistant
-        "Chaos": 0.5,      // resistant
-        "Holy": 2,       // weak
-        "Psychic": 1,    // neutral
-    },
- 
-    "Undead": {
-        "Fire": 1.5,       // weak
-        "Ice": 0.5,        // resistant
-        "Lightning": 1,  // neutral
-        "Arcane": 1,     // neutral
-        "Physical": 1,   // neutral
-        "Dark": 0.25,       // resistant
-        "Chaos": 1,      // neutral
-        "Holy": 2,       // weak
-        "Psychic": 1,    // neutral
-    },
- 
-    "Natural": {
-        "Fire": 1.5,       // weak (be aware many things will be natural and living)
-        "Ice": 1.5,        // weak
-        "Lightning": 1,  // neutral
-        "Arcane": 1,     // neutral
-        "Physical": 1,   // neutral
-        "Dark": 1,       // neutral
-        "Chaos": 1.25,      // weak
-        "Holy": 1,       // neutral
-        "Psychic": 1,    // neutral
-    },
- 
-    "Living": {
-        "Fire": 1.5,       // weak
-        "Ice": 1,        // neutral
-        "Lightning": 1.5,  // weak
-        "Arcane": 1,     // neutral
-        "Physical": 1,   // neutral
-        "Dark": 1,       // neutral
-        "Chaos": 1,      // neutral
-        "Holy": 1,       // neutral
-        "Psychic": 1,    // neutral
-    },
- 
-    "Insect": {
-        "Fire": 2,       // weak
-        "Ice": 1.5,        // weak
-        "Lightning": 1,  // neutral
-        "Arcane": 1,     // neutral
-        "Physical": 1,   // neutral
-        "Dark": 1,       // neutral
-        "Chaos": 1,      // neutral
-        "Holy": 1,       // neutral
-        "Psychic": 0.5,    // resistant
-    },
- 
-    "Construct": {
-        "Fire": 0.25,       // resistant
-        "Ice": 0.25,        // resistant
-        "Lightning": 0.5,  // resistant
-        "Arcane": 1,     // neutral
-        "Physical": 0.5,   // resistant
-        "Dark": 1,       // neutral
-        "Chaos": 1,      // neutral
-        "Holy": 1,       // neutral
-        "Psychic": 0.25,    // resistant
-    },
- 
-    "Order": {
-        "Fire": 1,       // neutral
-        "Ice": 1,        // neutral
-        "Lightning": 1,  // neutral
-        "Arcane": 0.5,     // resistant
-        "Physical": 1,   // neutral
-        "Dark": 0.5,       // resistant
-        "Chaos": 2,      // weak
-        "Holy": 1,       // neutral
-        "Psychic": 2,    // weak
-    },
-};
-
-console.log(["Fire",
-"Ice",
-"Lightning",
-"Arcane",
-"Ghost",
-"Chaos",
-"Holy",
-"Dark",
-"Demon",
-"Undead",
-"Natural",
-"Living",
-"Insect",
-"Construct",
-"Order"].map(a => {
-    return [
-        "Fire",
-        "Ice",
-        "Lightning",
-        "Arcane",
-        "Physical",
-        "Dark",
-        "Chaos",
-        "Holy",
-        "Psychic"
-    ].map(t => affinity_weaknesses[a][t]).join("\t")
-}).join("\n"))
 
 class PrimedSpell {
     static id_inc = 0;
@@ -3008,6 +3095,7 @@ class PrimedSpell {
         this.trigger = ["none", null];  // ["at_target"/..., PrimedSpell]
 
         this.stats = {};
+
         this.calculate();
     }
 
@@ -3041,10 +3129,20 @@ class PrimedSpell {
             "normal": 0,
             "unpredictable": 0,
             "chain": 0,
-            "simultaneous": 0
+            "simultaneous": 0,
+            "btb": 0
         }
         this.stats.shape = Shape.Diamond;
         this.stats.los = true;
+
+        this.stats.post_multipliers = {};
+        this.stats.specials = [];
+
+        Object.keys(this.stats).forEach(s => {
+            if (typeof(this.stats[s]) == "number") {
+                this.stats.post_multipliers[s] = 1;
+            }
+        });
 
         // REMEMBER: CORE ALWAYS FIRST, then modifiers
         // even though in the spell builder the core will be last
@@ -3053,6 +3151,26 @@ class PrimedSpell {
                 spell.fns.to_stats(this.caster, spell, this.stats);
             }
         })
+
+        Object.keys(this.stats.post_multipliers).forEach(s => {
+            if (typeof(this.stats[s]) == "number") {
+                this.stats[s] *= this.stats.post_multipliers[s];
+            }
+        });
+
+        // specials
+        this.stats.specials.forEach(special => {
+            switch (special) {
+                case SpellSpecials.FLAMENOVA:
+                    this.stats.damage += this.stats.radius * 5;
+                    break;
+            }
+        })
+
+        // clamps
+        this.stats.damage = Math.max(0, this.stats.damage);
+        this.stats.radius = Math.max(0, this.stats.radius);
+        this.stats.range = Math.max(0, this.stats.range);
     }
 
     in_range(caster, position) {
@@ -3098,6 +3216,8 @@ class PrimedSpell {
             }
         }
         
+        console.log(this.stats);
+
         //console.log(cast_locations);
 
         if (self_target_safe) {
@@ -3176,8 +3296,8 @@ class PrimedSpell {
                 keep_triggering_damage = true;
                 damaged_entities.forEach(dmg_instance => {
                     let ent = dmg_instance.ent;
-                    let amt = dmg_instance.amount;
-                    let typ = dmg_instance.dmg_type;
+                    let amt = dmg_instance.amt;
+                    let typ = dmg_instance.typ;
 
                     this.spells.forEach(spell => {
                         if (spell.fns.on_hit) {
@@ -3316,6 +3436,13 @@ class Game {
         this.recorded_damage = {};  // indexed by caster id and name
         this.damage_counts = {};    // indexed by spell id
 
+        this.wavecount = 0;
+        this.spawn_credits_base = 20;
+        this.spawn_credits_gain = 10;
+        this.spawn_credits_mult = 1.015;
+        
+        this.wave_entities = {};
+
         this.player_spells = [];
         this.selected_id = -1;
         this.selected_player_spell = null;
@@ -3418,10 +3545,117 @@ class Game {
         return false;
     }
 
+    progress_wave() {
+        this.wavecount++;
+
+        let spawn_credits = this.spawn_credits_base;
+        spawn_credits += this.spawn_credits_gain * this.wavecount;
+        spawn_credits *= Math.pow(this.spawn_credits_mult, this.wavecount);
+
+        let max_credits = spawn_credits;
+
+        console.log("spawn credits:", spawn_credits);
+
+        let picked_enemy_spawns = [];
+        let spawning = true;
+        while (spawning) {
+            spawning = false;
+
+            let lower_bound = Math.max(0, spawn_credits * 0.1);
+            let upper_bound = Math.min(spawn_credits, Math.max(max_credits * 0.1, spawn_credits * 0.6));
+
+            let possible_spawns = entity_templates.filter(
+                template => template.spawn_credits >= lower_bound && template.spawn_credits <= upper_bound
+            );
+
+            if (possible_spawns.length > 0) {
+                spawning = true;
+
+                let picked_ent = possible_spawns[Math.floor(Math.random() * possible_spawns.length)];
+                let num_to_spawn = 0;
+                let adding_enemy_count = true;
+                while (adding_enemy_count) {
+                    adding_enemy_count = false;
+
+                    let new_cost = picked_ent.spawn_credits * (num_to_spawn + 1);
+
+                    // if affordable
+                    if (new_cost < spawn_credits) {
+                        // if new cost is less than upper bound
+                        if (new_cost < upper_bound) {
+                            // if random chance (1 / (n+1)) is successful
+                            if (Math.random() < (1 / (num_to_spawn + 1))) {
+                                num_to_spawn++;
+                                adding_enemy_count = true;
+                            }
+                        }
+                    }
+
+                    spawn_credits -= new_cost;
+                }
+
+                picked_enemy_spawns.push({
+                    ent: picked_ent, cnt: num_to_spawn
+                });
+            }
+        }
+
+        picked_enemy_spawns.forEach(spawn => {
+            // try to spawn far from the player:
+            let last_spawn_pos = this.player_ent.position;
+
+            for (let i=0; i<spawn.cnt; i++) {
+                let position = null;
+
+                let radius = 33;
+                if (i != 0) {
+                    radius = 2;
+                }
+                let tries = 200;
+                while (!position && tries > 0) {
+                    radius += (i == 0 ? -1 : 1);
+                    tries -= 1;
+                    if (radius < 4) {
+                        radius = 32;
+                    }
+
+                    if (radius > 32) {
+                        radius = 2;
+                    }
+
+                    let circle_pos = random_on_circle(radius).round();
+                    let game_pos = last_spawn_pos.add(circle_pos);
+                    if (board.position_valid(game_pos)) {
+                        position = game_pos;
+                        last_spawn_pos = game_pos;
+                    }
+                }
+
+                //console.log("Spawning entity", spawn.ent);
+                let ent = this.spawn_entity(spawn.ent, Teams.ENEMY, position, false);
+                if (ent) {
+                    this.wave_entities[ent.id] = ent;
+                    ent.spawn_protection = false;  // wave enemies dont get spawn protection
+                }
+            }
+        });
+    }
+
+    check_wave_end() {
+        if (Object.keys(this.wave_entities).length <= 0) {
+            // do mid-wave stuff here too
+            this.player_ent.refresh();
+
+            console.log("new wave:     ", this.wavecount + 1);
+
+            this.progress_wave();
+        }
+    }
+
     begin_turn(do_not_wait) {
         // shout here for the current turn entity's AI or the player to pick a move to use
         let ent = this.entities[this.turn_index];
-        console.log("beginning turn for", ent.name, do_not_wait ? "(NOWAIT)" : "(WAIT)");
+        //console.log("beginning turn for", ent.name, do_not_wait ? "(NOWAIT)" : "(WAIT)");
         
         // we then periodically check the casting stack to see if there's anything on there.
         // if there is, we cast it and set waiting_for_spell to true, which means
@@ -3511,8 +3745,6 @@ class Game {
         this.waiting_for_spell = false;
         this.spell_speed = this.max_spell_speed;
         this.spells_this_turn = 0;
-
-        //console.log("ending turn for", this.entities[this.turn_index].name)
         
         this.entities[this.turn_index].do_end_turn();
 
@@ -3527,6 +3759,7 @@ class Game {
             }
         }
 
+        /*
         if (Math.random() < (0.25 + (num_enemy_spawns / 100)) && this.entities[this.turn_index].id == this.player_ent.id) {
             let loc = new Vector2(Math.floor(Math.random() * game.board.dimensions.x), Math.floor(Math.random() * game.board.dimensions.y));
             let enemy = game.spawn_entity(get_entity_by_name("test enemy"), Teams.ENEMY, loc, false);
@@ -3535,7 +3768,7 @@ class Game {
 
                 enemy.add_innate_spell([[
                     core_spell(
-                        "Laser", "??", "white", "red", "", 16, DmgType.Psychic, 6, 1,
+                        "Laser", "??", SpellSubtype.Core, "white", "red", "", 16, DmgType.Psychic, 6, 1,
                         Shape.Line, 0
                     )
                 ], 3, "Psycho-Laser", damage_type_cols["Psychic"]]);
@@ -3543,6 +3776,15 @@ class Game {
                 num_enemy_spawns++;
             }
         }
+        */
+
+        this.check_wave_end();
+
+        if (renderer.selected_ent) {
+            console.log("game asked for turn-end right panel refresh");
+            renderer.refresh_right_panel = true;
+        }
+
 
         if (do_not_wait) {
             this.begin_turn(true);
@@ -3584,6 +3826,11 @@ class Game {
             this.player_level++;
             this.player_skill_points++;
             this.player_xp -= xp_req;
+
+            // TEMPORARY: +25 hp, +50 mp per level
+            this.player_ent.max_hp += 25
+            this.player_ent.max_mp += 50
+            this.player_ent.refresh()
 
             return true;
         }
@@ -3780,10 +4027,16 @@ class Game {
         return this.has_los_pos(ent.position, position);
     }
 
-    find_random_space_in_los(caster, pos, radius, shape, ignore_los) {
+    find_random_space_in_los(caster, pos, radius, shape, ignore_los, consider_entities_solid) {
         let points = shape(
             caster.position, pos, radius, !ignore_los
         );
+
+        if (consider_entities_solid) {
+            points = points.filter(p => {
+                return !this.board.get_pos(p)
+            })
+        }
 
         points.sort(() => Math.random() - 0.5);
 
@@ -3858,19 +4111,21 @@ class Game {
         return cnts;
     }
 
-    deal_damage(target, caster, user_id, damage, damage_type) {
+    deal_damage(target, caster, user_id, damage, damage_type, do_not_count) {
         let dmg_taken = target.take_damage(caster, damage, damage_type);
 
         if (dmg_taken > 0) {
-            if (!this.damage_counts[user_id]) {
-                this.damage_counts[user_id] = [];
-            }
+            if (!do_not_count) {
+                if (!this.damage_counts[user_id]) {
+                    this.damage_counts[user_id] = [];
+                }
 
-            this.damage_counts[user_id].push({
-                ent: target,
-                amt: dmg_taken,
-                typ: damage_type
-            });
+                this.damage_counts[user_id].push({
+                    ent: target,
+                    amt: dmg_taken,
+                    typ: damage_type
+                });
+            }
 
             let record_name = caster.id.toString() + caster.name;
             if (this.recorded_damage[record_name]) {
@@ -3907,7 +4162,59 @@ class Game {
         this.turn_index = this.turn_index % this.entities.length;
 
         this.board.clear_pos(ent.position);
+
+        // if it has an on_death, spawn them here
+        if (ent.on_death) {
+            ent.on_death.forEach(d => {
+                for (let i=0; i<d.cnt; i++) {
+                    let r = 2;
+                    let pos = this.find_random_space_in_los(
+                        ent, ent.position, r, Shape.Circle[1], false, true
+                    );
+
+                    while (!pos && r < 16) {
+                        r += 1;
+                        pos = this.find_random_space_in_los(
+                            ent, ent.position, r, Shape.Circle[1], false, true
+                        );
+                    }
+
+                    console.log("ent:", get_entity_by_name(d.name));
+                    console.log("pos:", pos);
+
+                    if (pos) {
+                        let e = this.spawn_entity(get_entity_by_name(d.name), ent.team, pos);
+                        
+                        if (this.wave_entities[ent.id]) {
+                            this.wave_entities[e.id] = e;
+                        }
+                    }
+                }
+            });
+        }
+
+        delete this.wave_entities[ent.id];
     }
+}
+
+keywords = [
+    "Native", "native", "Chain", "chain", "Arc ", "arc ", "Multicast", "multicast"
+]
+
+function format_spell_desc(st) {
+    let desc_str = st;
+
+    desc_str = desc_str.replace(/([^#]|^)(-?\d+(?:\.\d+)?[%x]?)/g, `$1[#4df]$2[clear]`);
+
+    Object.values(DmgType).forEach(t => {
+        desc_str = desc_str.replace(t, `[${damage_type_cols[t]}]${t}[clear]`);
+    })
+
+    keywords.forEach(k => {
+        desc_str = desc_str.replace(k, `[#4df]${k}[clear]`);
+    })
+
+    return desc_str;
 }
 
 let no_stats = function(a, b, c) {return null};
@@ -3915,7 +4222,73 @@ let no_target = function(a, b, c, d) {return null};
 let no_hit = function(a, b, c, d, e, f) {return null};
 let no_tiles = function(a, b, c, d) {return null};
 
-function core_spell(name, icon, col, back_col, desc, damage, damage_type, range, radius, shape, manacost, target_type=SpellTargeting.Positional, teams=null) {
+function apply_status(caster, target, status, turns) {
+    // applying status effects should add to the status if already present or add it otherwise
+    // call a thing in the entity, though, since we might have status immunity stuff
+    console.log(`- UNIMPLEMENTED - Applying status ${status} to ${target.name} for ${turns} turns`);
+    return;
+}
+
+function apply_status_tile(caster, position, status, turns) {
+    let ent = game.baord.get_pos(position)
+
+    if (ent) {
+        apply_status(caster, ent, status, turns);
+    }
+}
+
+function instant_damage(caster, target, damage, damage_type) {
+    renderer.put_particle_from_game_loc(target.position, new Particle(
+        dmg_type_particles[damage_type]
+    ));
+
+    game.deal_damage(target, caster, caster.id, damage, damage_type)
+}
+
+function tile_damage(caster, position, damage, damage_type) {
+    let ent = game.board.get_pos(position)
+
+    if (ent) {
+        instant_damage(caster, ent, damage, damage_type);
+    }
+}
+
+function random_damage_type(excluding) {
+    let typs = Object.keys(DmgType);
+    if (excluding) {
+        typs = typs.filter(t => !excluding.includes(DmgType[t]))
+    }
+
+    return typs[Math.floor(Math.random() * typs.length)];
+}
+
+function half_redeal(of, to) {
+    return redeal_dmg([of], [to], 0.5);
+}
+
+function redeal_dmg(of_typs, as_typs, ratio) {
+    return function(caster, spell, stats, enemy, damage, dmgtype) {
+        if (of_typs.includes(dmgtype) || (of_typs == "native" && dmgtype == stats.damage_type)) {
+            let new_dmg = Math.floor(damage * ratio);
+
+            let as_t = as_typs;
+            if (as_t == "chromatic") {
+                as_t = Object.values(DmgType).filter(t => t != stats.dmg_type);
+            }
+
+            as_t.forEach(typ => {
+                renderer.put_particle_from_game_loc(enemy.position, new Particle(
+                    dmg_type_particles[typ]
+                ));
+
+                let should_ignore = typ == stats.dmg_type
+                game.deal_damage(enemy, caster, caster.id, new_dmg, typ, should_ignore)
+            });
+        }
+    }
+}
+
+function core_spell(name, icon, subtyp, col, back_col, desc, damage, damage_type, range, radius, shape, manacost, target_type=SpellTargeting.Positional, teams=null) {
     let dmg_string = "";
     if (damage == 0) {
         dmg_string += "Affects tiles ";
@@ -3933,13 +4306,13 @@ function core_spell(name, icon, col, back_col, desc, damage, damage_type, range,
 
     let mp_string = `MP cost: [#4df]${manacost}[clear]`;
 
-    let desc_computed = desc.length > 0 ? desc + "\n\n" : "";
+    let desc_computed = desc.length > 0 ? format_spell_desc(desc) + "\n\n" : "";
     let desc_str = `${desc_computed}${dmg_string}${shape_string}
 
 ${target_string}
 ${range_string}
 ${mp_string}`;
-    
+
     let stat_function = function(user, spell, stats) {
         stats.range = range;
         stats.damage = damage;
@@ -3952,15 +4325,35 @@ ${mp_string}`;
     }
 
     let back_col_checked = back_col.length > 0 ? back_col : "black";
-    return new Spell(name, icon, col, back_col_checked, SpellType.Core, desc_str, manacost, 0, null, stat_function, no_target, no_hit, no_tiles);
+    return new Spell(name, icon, col, back_col_checked, SpellType.Core, subtyp, desc_str, manacost, 0, null, stat_function, no_target, no_hit, no_tiles);
 }
 
-function modifier(name, icon, col, back_col, desc, manacost, to_stats, at_target, on_hit, on_affected_tiles) {
+function simple_enemy_core(cooldown, name, icon, col, back_col, desc, damage, damage_type, range, radius, shape, manacost, target_type=SpellTargeting.Positional, teams=null) {
+    let sp = core_spell(name, icon ? icon : "[]", SpellSubtype.Core, col ? col : damage_type_cols[damage_type], back_col, desc, damage, damage_type, range, radius, shape, manacost, target_type, teams);
+    return [
+        [sp], cooldown, name, col ? col : damage_type_cols[damage_type]
+    ];
+}
+
+function simple_enemy_line_core(cooldown, name, icon, col, damage, damage_type, range, manacost) {
+    return simple_enemy_core(
+        cooldown, name, icon, col, "black", "", damage, damage_type, range, 1, Shape.Line, manacost
+    )
+}
+
+function simple_enemy_burst_core(cooldown, name, icon, col, damage, damage_type, range, radius, manacost) {
+    return simple_enemy_core(
+        cooldown, name, icon, col, "black", "", damage, damage_type, range, radius, Shape.Diamond, manacost
+    )
+}
+
+
+function modifier(name, icon, subtyp, col, back_col, desc, manacost, to_stats, at_target, on_hit, on_affected_tiles) {
     let generated_desc = `\n\nMP cost: [#4df]${manacost}[clear]`;
 
     let back_col_checked = back_col.length > 0 ? back_col : "#03f";
     let spell_gen = new Spell(
-        name, icon, col, back_col_checked, SpellType.Modifier, desc + generated_desc, manacost,
+        name, icon, col, back_col_checked, SpellType.Modifier, subtyp, format_spell_desc(desc) + generated_desc, manacost,
         1, null, to_stats, at_target, on_hit, on_affected_tiles
     );
 
@@ -3971,40 +4364,41 @@ function modifier(name, icon, col, back_col, desc, manacost, to_stats, at_target
     return spell_gen;
 }
 
+/*
 spell_cores = [
     core_spell(
-        "Fireball", "@>", "red", "", "", 10, DmgType.Fire, 7, 3,
+        "Fireball", "@>", SpellSubtype.Core, "red", "", "", 10, DmgType.Fire, 7, 3,
         Shape.Diamond, 25
     ),
 
     core_spell(
-        "Icicle", "V^", "#A5F2F3", "", "", 15, DmgType.Ice, 8, 1,
+        "Icicle", "V^", SpellSubtype.Core, "#A5F2F3", "", "", 15, DmgType.Ice, 8, 1,
         Shape.Diamond, 20
     ),
 
     core_spell(
-        "Lightning Bolt", "&>", "#ffff33", "", "", 17, DmgType.Lightning, 10, 1,
+        "Lightning Bolt", SpellSubtype.Core, "&>", "#ffff33", "", "", 17, DmgType.Lightning, 10, 1,
         Shape.Line, 18
     ),
 ];
 
 spell_mods_stats = [
     modifier(
-        "Damage Plus I", "D+", "#c44", "", "Increase core damage by [#4df]5[clear].", 10,
+        "Damage Plus I", "D+", SpellSubtype.Modifier, "#c44", "", "Increase core damage by [#4df]5[clear].", 10,
         function(_, _, s) {
             s.damage += 5;
         }
     ),
 
     modifier(
-        "Radius Plus I", "R+", "#4cf", "", "Increases the core's radius by [#4df]1[clear].", 30,
+        "Radius Plus I", "R+", SpellSubtype.Modifier, "#4cf", "", "Increases the core's radius by [#4df]1[clear].", 30,
         function(_, _, s) {
             s.radius += 1;
         }
     ),
 
     modifier(
-        "Projection", ">~", "white", "", "Allows the core to ignore line of sight for targeting and effects.", 40,
+        "Projection", ">~", SpellSubtype.Modifier, "white", "", "Allows the core to ignore line of sight for targeting and effects.", 40,
         function(user, spell, stats) {
             stats.los = false;
         }
@@ -4021,19 +4415,19 @@ spell_mods_cosmetic = [
 
 spell_mods_triggers = [
     modifier(
-        "Add Target Trigger", "+*", "#aa0", "#26f",
+        "Add Target Trigger", "+*", SpellSubtype.Modifier, "#aa0", "#26f",
         "Makes the core cast the next core at the point it was targeted.",
         25
     ).set_trigger("at_target"),
 
     modifier(
-        "Add Tile Trigger", "+x", "#aa0", "#26f",
+        "Add Tile Trigger", "+x", SpellSubtype.Modifier, "#aa0", "#26f",
         "Makes the core cast a copy of the next core at every tile the core affected.",
         500
     ).set_trigger("on_affected_tiles"),
 
     modifier(
-        "Add Damage Trigger", "+;", "#aa0", "#26f",
+        "Add Damage Trigger", "+;", SpellSubtype.Modifier, "#aa0", "#26f",
         "Makes the core cast a copy of the next core at every instance of damage the core caused.",
         400
     ).set_trigger("on_hit"),
@@ -4045,7 +4439,7 @@ spell_mods_shape = [
 
 spell_mods_multicast = [
     modifier(
-        "Behind the Back", "<$", "white", "", "Casts a copy of the core behind the user.", 120,
+        "Behind the Back", "<$", SpellSubtype.Modifier, "white", "", "Casts a copy of the core behind the user.", 120,
         no_stats, function(user, spell, stats, location) {
             if (!stats.mutable_info["behind_the_back"]) {
                 console.log(spell.origin, location);
@@ -4059,21 +4453,21 @@ spell_mods_multicast = [
     ),
 
     modifier(
-        "Multicast x4", ">4", "#0f0", "", "Casts a copy of the core four times.", 350,
+        "Multicast x4", ">4", SpellSubtype.Modifier, "#0f0", "", "Casts a copy of the core four times.", 350,
         function(user, spell, stats) {
             stats.multicasts["normal"] += 4;
         }
     ),
 
     modifier(
-        "Chain Spell", "/>", "white", "", "Makes the core recast a copy of itself on a single random valid target within the core's [#4df]range[clear] as many times as the spell's [#4df]chain[clear] value.\n\nAdds [#4df]4[clear] to the core's [#4df]chain[clear] value.",
+        "Chain Spell", "/>", SpellSubtype.Modifier, "white", "", "Makes the core recast a copy of itself on a single random valid target within the core's [#4df]range[clear] as many times as the spell's [#4df]chain[clear] value.\n\nAdds [#4df]4[clear] to the core's [#4df]chain[clear] value.",
         350, function(user, spell, stats) {
             stats.multicasts["chain"] += 4;
         }
     ),
 
     modifier(
-        "Arc Spell", "*>", "yellow", "", "Makes the core recast a copy of itself on random valid targets within the core's [#4df]range[clear] up to the spell's [#4df]arc[clear] value.\n\nAdds [#4df]4[clear] to the core's [#4df]arc[clear] value.",
+        "Arc Spell", "*>", SpellSubtype.Modifier, "yellow", "", "Makes the core recast a copy of itself on random valid targets within the core's [#4df]range[clear] up to the spell's [#4df]arc[clear] value.\n\nAdds [#4df]4[clear] to the core's [#4df]arc[clear] value.",
         250, function(user, spell, stats) {
             stats.multicasts["simultaneous"] += 4;
         }
@@ -4086,24 +4480,24 @@ spell_mods_misc = [
 
 spells_red = [
     core_spell(
-        "Gun", "%=", "white", "red", "", 5000, DmgType.Physical, 30, 1, Shape.Line, 50, SpellTargeting.Positional, [Teams.ENEMY]
+        "Gun", "%=", SpellSubtype.Red, "white", "red", "", 5000, DmgType.Physical, 30, 1, Shape.Line, 50, SpellTargeting.Positional, [Teams.ENEMY]
     ).augment("at_target", function(user, spell, stats, location) {
         user.cast_spell([
             core_spell(
-                "gun explosion", "##", "white", "black", "", 25, DmgType.Fire, 1, 1, Shape.Diamond, 0, stats.target_type, stats.target_team
+                "gun explosion", "##", SpellSubtype.Core, "white", "black", "", 25, DmgType.Fire, 1, 1, Shape.Diamond, 0, stats.target_type, stats.target_team
             )
         ], location);
     }),
 
     modifier(
-        "Uncontrolled Multicast x16", "!F", "#0f0", "red", "Casts a copy of the core sixteen times, moving the target by a random number of tiles up to the core's final radius + 1 each time.", 200,
+        "Uncontrolled Multicast x16", "!F", SpellSubtype.RedModifier, "#0f0", "red", "Casts a copy of the core sixteen times, moving the target by a random number of tiles up to the core's final radius + 1 each time.", 200,
         function(user, spell, stats) {
             stats.multicasts["unpredictable"] += 16;
         }
     ),
 
     core_spell(
-        "All Elements", "!!", "white", "red", "all at once. testing", 99999, DmgType.Physical, 1, 40, Shape.Diamond, 0, SpellTargeting.SelfTarget
+        "All Elements", "!!", SpellSubtype.Red, "white", "red", "all at once. testing", 99999, DmgType.Physical, 1, 40, Shape.Diamond, 0, SpellTargeting.SelfTarget
     ).augment("at_target", function(user, spell, stats, location) {
         let dmgtypes = [
             "Fire",
@@ -4123,25 +4517,25 @@ spells_red = [
     
             user.cast_spell([
                 core_spell(
-                    t, "##", "white", "black", "", 100, DmgType[t], 1, 3, Shape.Diamond, 0
+                    t, "##", SpellSubtype.Red, "white", "black", "", 100, DmgType[t], 1, 3, Shape.Diamond, 0
                 ).augment("to_stats", function(_, _, s) { s.los = false; })
             ], location.add(new Vector2(0, -8)));
 
             user.cast_spell([
                 core_spell(
-                    t, "##", "white", "black", "", 100, DmgType[t], 1, 3, Shape.Diamond, 0
+                    t, "##", SpellSubtype.Red, "white", "black", "", 100, DmgType[t], 1, 3, Shape.Diamond, 0
                 ).augment("to_stats", function(_, _, s) { s.los = true; })
             ], location.add(new Vector2(-8, 0)));
 
             user.cast_spell([
                 core_spell(
-                    t, "##", "white", "black", "", 100, DmgType[t], 1, 3, Shape.Line, 0
+                    t, "##", SpellSubtype.Red, "white", "black", "", 100, DmgType[t], 1, 3, Shape.Line, 0
                 ).augment("to_stats", function(_, _, s) { s.los = false; })
             ], location.add(new Vector2(8, 0)));
 
             user.cast_spell([
                 core_spell(
-                    t, "##", "white", "black", "", 100, DmgType[t], 1, 3, Shape.Line, 0
+                    t, "##", SpellSubtype.Red, "white", "black", "", 100, DmgType[t], 1, 3, Shape.Line, 0
                 ).augment("to_stats", function(_, _, s) { s.los = true; }).augment("at_target", function(_, _, _, _) { 
                     console.log(t);
                     // document.getElementById("dmg-type-display").textContent = t;
@@ -4155,7 +4549,7 @@ spells_red = [
 
             let new_spell = user.parse_spell([
                 core_spell(
-                    "t", "##", "white", "black", "", 1, DmgType.Physical, 1, 3, Shape.Line, 0
+                    "t", "##", SpellSubtype.Core, "white", "black", "", 1, DmgType.Physical, 1, 3, Shape.Line, 0
                 ).augment("at_target", function(_, _, _, _) { 
                     game.max_spell_speed = 100;
                     game.min_spell_speed = 10;
@@ -4167,12 +4561,12 @@ spells_red = [
     }),
 
     core_spell(
-        "pea spell", "!!", "white", "red", "pea spell",
+        "pea spell", "!!", SpellSubtype.Red, "white", "red", "pea spell",
         73, DmgType.Chaos, 10, 3, Shape.Circle, 2
     ),
 
     core_spell(
-        "summon GUY", "@]", "white", "red", "Summon \"Guy\" at the target position.",
+        "summon GUY", "@]", SpellSubtype.Red, "white", "red", "Summon \"Guy\" at the target position.",
         25, DmgType.Dark, 10, 5, Shape.Circle, 120
     ).augment("at_target", function(user, spell, stats, location) {
         game.spawn_entity(get_entity_by_name("Fuckn GUy"), Teams.PLAYER, location);
@@ -4188,47 +4582,24 @@ spells_list = [
     ...spell_mods_shape,
     ...spell_mods_multicast,
     ...spell_mods_misc,
-    ...spells_red,
-    modifier("Chromatic Convergence", "@}", "white", "", "Redeals any damage of the same type as this core's damage type from this core as the damage type the damaged unit is least resistant to. If that type is the same as the core's damage type, the second least resistant type will be used.", 999)
+    ...spells_red
 ]
+*/
 
-
-spells_loot_table = {
-    "Tier1": [...spells_list],
-    "Tier2": [],
-    "Tier3": [],
-    "Tier4": [],
-    "Tier5": [],
-    "Tier6": [],
-    "Tier7": [],
-    "Tier8": [],
-    "Tier9": [],
-    "Tier10": [],
-}
-
-for (let i=0; i<Object.keys(spells_loot_table).length; i++) {
-    let loot_group = Object.keys(spells_loot_table)[i];
-    console.log("Loot group " + loot_group + ": " + spells_loot_table[loot_group].length + " items");
-}
-
-console.log(spells_list.filter(s => s.back_col != "red").length + " non-red items")
-console.log(spells_list.filter(s => s.back_col == "red").length + " red items")
-console.log(spells_list.filter(s => s.back_col != "red" && !Object.keys(spells_loot_table).some(g => spells_loot_table[g].some(sc => sc.id != s.id))).length + " non-red items have no loot group assigned");
-
-
+/*
 entity_templates = [
-    new EntityTemplate("Player", "@=", "#0cf", "It's you.", 100+5000, 2500, [
+    new EntityTemplate("Player", "@=", "#0cf", "It's you.", 100, 1000, [
         Affinity.Living, Affinity.Chaos, Affinity.Insect  // player is only living by default, can be changed by events
-    ], 0, [
+    ], 0, -1, [
 
     ], 0, false, false),
 
     new EntityTemplate("test enemy", "Gg", "#0f0", "idk goblin or smt", 100, 10, [
         Affinity.Ice, Affinity.Insect, Affinity.Living
-    ], 15, [
+    ], 15, 10, [
         [[
             core_spell(
-                "Bite", "??", "white", "red", "", 6, DmgType.Physical, 1, 1,
+                "Bite", "??", SpellSubtype.Core, "white", "red", "", 6, DmgType.Physical, 1, 1,
                 Shape.Diamond, 0
             )
         ], 0, "Bite", "white"],
@@ -4250,23 +4621,23 @@ entity_templates = [
         Affinity.Insect,
         Affinity.Construct,
         Affinity.Order
-    ], 2500, [
+    ], 2500, -1, [
 
     ], 1, false, false),
 
     new EntityTemplate("Fuckn GUy", "G#", "#480", "Stupid idiot", 150, 250, [
         Affinity.Dark,
         Affinity.Demon
-    ], 0, [
+    ], 0, -1, [
         [gen_spells("damage plus i", "lightning bolt"), 0, "KIll You BOLT", "yellow"],
         [[
             get_spell_by_name("add target trigger"),
             core_spell(
-                "EPXLODE", "@@", "red", "red", "", 25, DmgType.Holy, 40, 1,
+                "EPXLODE", "@@", SpellSubtype.Core, "red", "red", "", 25, DmgType.Holy, 40, 1,
                 Shape.Line, 100
             ),
             core_spell(
-                "EPXLODE 2", "@@", "red", "red", "", 100, DmgType.Psychic, 1, 2,
+                "EPXLODE 2", "@@", SpellSubtype.Core, "red", "red", "", 100, DmgType.Psychic, 1, 2,
                 Shape.Diamond, 0
             ),
         ], 8, "EPXLODE", "red"]
@@ -4274,10 +4645,11 @@ entity_templates = [
 
     new EntityTemplate("Wall", "[]", "#ccc", "Just a wall.", Number.POSITIVE_INFINITY, 0, [
         Affinity.Construct
-    ], 0, [
+    ], 0, -1, [
 
     ], 999, true, true),
 ]
+*/
 
 let dmg_type_particles = {
     "Fire": new ParticleTemplate(["@@", "##", "++", "\"\"", "''"], damage_type_cols["Fire"], 1),
@@ -4327,81 +4699,6 @@ function gen_spells(...names) {
     return names.map(n => get_spell_by_name(n));
 }
 
-let num_enemy_spawns = 0;
-
-let board = new Board(new Vector2(64, 64));
-let game = new Game(board);
-let renderer = new Renderer(game, board, new Vector2(64, 36), 48, 48, 1/3);
-
-game.spawn_player(get_entity_by_name("Player"), new Vector2(16, 18));
-game.spawn_entity(get_entity_by_name("test enemy"), Teams.PLAYER, new Vector2(12, 20), true).name = "friendly friend ^w^";
-
-game.spawn_entity(get_entity_by_name("test enemy"), Teams.ENEMY, new Vector2(24, 24), true).name = "AAA enemy";
-game.spawn_entity(get_entity_by_name("test enemy"), Teams.ENEMY, new Vector2(22, 24), true).name = "BBB enemy";
-let moving_ent = game.spawn_entity(get_entity_by_name("test enemy"), Teams.ENEMY, new Vector2(20, 22), true);
-moving_ent.name = "moving guy";
-moving_ent.add_innate_spell([[
-    core_spell(
-        "Laser", "??", "white", "red", "", 16, DmgType.Psychic, 6, 1,
-        Shape.Line, 0
-    )
-], 3, "Psycho-Laser", damage_type_cols["Psychic"]]);
-
-game.spawn_entity(get_entity_by_name("big guy"), Teams.ENEMY, new Vector2(14, 22), true);
-
-for (let xt=0; xt<game.board.dimensions.x; xt++) {
-    for (let yt=0; yt<game.board.dimensions.y; yt++) {
-        if (Math.random() < 0.01) {
-            game.spawn_entity(get_entity_by_name("Wall"), Teams.UNALIGNED, new Vector2(xt, yt), false);
-        }
-    }
-}
-
-//let primed_spell_test = new PrimedSpell(game.player_ent, [spells_list[0],]);
-//let target = new Vector2(20, 22);
-
-game.player_spells = [
-    {spells: gen_spells("arc spell", "lightning bolt"), name: "arc bolt"},
-    {spells: [...spells_list.filter(s => s.back_col == "red")], name: "Every Dev Spell"},
-    {spells: [...spells_list.filter(s => s.back_col != "red")], name: "Every Real Spell"},
-    {spells: gen_spells("multicast x4", "add target trigger", "lightning bolt", "radius plus i", "add damage trigger", "fireball", "icicle"), name: "a bunch of stuff"},
-    {spells: gen_spells("gun"), name: "gun"}
-]
-
-game.begin_turn();
-//game.player_ent.cast_spell(spell_simple, target);
-
-/*
-let test2 = function() {
-    //game.end_turn();
-    //game.turn_index = 0;
-    //game.begin_turn();
-
-    if (!game.is_player_turn()) {
-        game.deselect_player_spell();
-        return;
-    }
-
-    if (selected_spells.length > 0) {
-        if (game.player_spell_in_range(target)) {
-            game.player_ent.cast_spell(selected_spells, target);
-        }
-    }
-
-    game.deselect_player_spell();
-}
-
-let test = function(spells) {
-    if (!game.is_player_turn()) {
-        return;
-    }
-
-    selected_spells = spells ? spells : spell_simple;
-    game.select_player_spell(selected_spells);
-    //test2();
-}
-*/
-
 function general_sparkle(from, particle, col, info, on_hit_player) {
     let dat = {
         speed: random_on_circle((Math.random() * 1.5) + 1),
@@ -4449,66 +4746,6 @@ function item_sparkle(item, from) {
     general_sparkle(from, item_flash, item.typ == SpellType.Core ? "#fff" : "#4df", {item: titem}, function(info) { game.player_add_spell_to_inv(info.item) })
 }
 
-game.player_add_spells_to_inv([...spells_list].flatMap(i => []));
-game.player_discard_edits();
-game.inventory_open = true;
-
-let xp_flash = new ParticleTemplate(["++", "''"], "#ddd", 1);
-let item_flash = new ParticleTemplate(["@@", "&&", "##", "%%", "**", "++", "''"], "#fff", 0.5);
-let lvl_flash = new ParticleTemplate(["**", "++", "\"\"", "''"], "#fff", 0.5);
-
-let tmp = new ParticleTemplate(["@@", "##", "++", "--", ".."], "#f00", 1);
-let ppos = new Vector2(0, 0);
-let mov_dir = new Vector2(1, 0);
-
-let hitcount = 0;
-
-renderer.setup();
-
-let last_frame_time = Date.now();
-let frame_times = [];
-
-renderer.render_game_checkerboard("black");
-
-function game_loop() {
-    //renderer.add_particle(ppos, new Particle(tmp));
-    last_frame_time = Date.now();
-    frame_times.push(Date.now());
-    frame_times = frame_times.slice(-10);
-
-    ppos = ppos.add(new Vector2(2, 1));
-    ppos = ppos.wrap(new Vector2(48, 24));
-
-    // if (ppos.x % 16 == 0) {
-    //     if (Math.random() < 0.1) {
-    //         mov_dir = new Vector2(
-    //             Math.floor(Math.random() * 2) - 1,
-    //             Math.floor(Math.random() * 2) - 1
-    //         )
-    //     } 
-    //     
-    //     let moved = game.move_entity(moving_ent, moving_ent.position.add(mov_dir), false);
-    //     if (!moved) {
-    //         mov_dir = mov_dir.neg();
-    //     }
-    // }
-
-    renderer.render_left_panel();
-
-    if (game.inventory_open) {
-        renderer.render_inventory_menu();
-    } else {
-        renderer.render_game_view();
-    }
-
-    renderer.render_right_panel();
-    renderer.advance_particles();
-
-    let frame_duration = Date.now() - last_frame_time;
-    //console.log("frame took", frame_duration, "so waiting", (1000/30) - frame_duration);
-    setTimeout(game_loop, (1000/60) - frame_duration);
-}
-
 function vh(percent) {
     // topbar, bottombar 128px + 64px
 
@@ -4554,136 +4791,3 @@ function handle_resize(event) {
 
     game.style.setProperty("--fontsiz", `${fontsize_round}px`);
 }
-
-
-window.addEventListener("resize", handle_resize, true);
-
-document.addEventListener("DOMContentLoaded", function() {
-    handle_resize();
-    document.addEventListener("keydown", (event) => {
-        let name = event.key;
-        let code = event.code;
-
-        console.log(name, code);
-        let mov_pos = null;
-        if (game.inventory_open) {
-            if (renderer.inventory_editing_spell_name != undefined) {
-                let cur_name = game.player_spells[renderer.inventory_editing_spell_name].name;
-                if (code == "Backspace" && cur_name.length > 0) {
-                    game.player_spells[renderer.inventory_editing_spell_name].name = cur_name.slice(0, -1);
-                } else if (code == "Enter") {
-                    renderer.inventory_editing_spell_name = undefined;
-                } else if (name.match(/^[a-zA-Z0-9_\-\+\.!? ]$/i) && cur_name.length < 30) {
-                    if (name == " ") {
-                        name = "\u00A0";
-                    }
-                    game.player_spells[renderer.inventory_editing_spell_name].name += name;
-                }
-            } else {
-                if (name == "r") {
-                    game.inventory_open = !game.inventory_open;
-                    game.deselect_player_spell();
-                    if (game.inventory_open) {
-                        renderer.render_game_checkerboard("black");
-                        renderer.reset_selections();
-                        renderer.render_inventory_menu();
-                    } else {
-                        game.recent_spells_gained = [];
-
-                        renderer.render_game_checkerboard("#222");
-                        renderer.reset_selections();
-                        renderer.render_game_view();
-                    }
-                }
-            }
-        } else {
-            switch (name) {
-                case "1":
-                case "2":
-                case "3":
-                case "4":
-                case "5":
-                    game.select_player_spell(Number.parseInt(name) - 1);
-                    break;
-    
-                case "Escape":
-                    game.deselect_player_spell();
-                    break;
-    
-                case "r":
-                    game.inventory_open = !game.inventory_open;
-                    game.deselect_player_spell();
-                    if (game.inventory_open) {
-                        renderer.render_game_checkerboard("black");
-                        renderer.reset_selections();
-                        renderer.render_inventory_menu();
-                    } else {
-                        game.recent_spells_gained = [];
-
-                        renderer.render_game_checkerboard("#222");
-                        renderer.reset_selections();
-                        renderer.render_game_view();
-                    }
-    
-                    break;
-    
-                case "q":
-                    game.select_player_spell_list([spells_list[14]]);
-                    break;
-    
-                case "ArrowUp":
-                case "w":
-                    mov_pos = new Vector2(0, -1);
-                    break;
-    
-                case "ArrowDown":
-                case "s":
-                    mov_pos = new Vector2(0, 1);
-                    break;
-    
-                case "ArrowLeft":
-                case "a":
-                    mov_pos = new Vector2(-1, 0);
-                    break;
-    
-                case "ArrowRight":
-                case "d":
-                    mov_pos = new Vector2(1, 0);
-                    break;
-            }
-    
-            if (mov_pos && game.is_player_turn()) {
-                let result = game.move_player(
-                    game.player_ent.position.add(mov_pos)
-                );
-    
-                if (result) {
-                    renderer.move_particles(mov_pos.neg());
-                }
-    
-                game.end_turn();
-            }
-        }
-    });
-
-    game_loop();
-})
-
-// TODO
-// ADD UI:
-// - Levelup dialog (pick between HP, MP, MP regen, random core, random modifier)
-// - work out a way to show the effect of the whole spell for enemies (and you)
-// GAME LOOP:
-// - enemy waves
-// - open inventory after beating all enemies
-// - world generation between waves
-// - hp/mp regen after beating wave
-// - spawn credits; waves get stronger each time etc etc
-/*
-https://docs.google.com/spreadsheets/d/1HZQqG0wqTs9oZUu4H4hqChqNRa-kj8lPe9Y93V5l_z8/edit?usp=sharing
-*/
-
-/*
-TODO BUGS:
-- none!
-*/

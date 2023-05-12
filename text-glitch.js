@@ -25,6 +25,8 @@ let l5 = document.getElementById('5');
 l5.onmouseover = l5.onmouseout = handler;
 */
 
+glitch_enabled = true;
+
 // "alt strings" as a dict for every id
 aims = {
 	"1":">> time to learn about twitchpost!",
@@ -80,6 +82,10 @@ origs = {
 */
 
 function run_text_grow(el) {
+	if (!glitch_enabled) {
+		return;
+	}
+
 	// Attempt to repair incorrect chars with either another incorrect char or the correct char.
 	// Attempt to add chars to the string. If adding, add a block.
 	aim_string = aims[el.id]
@@ -118,6 +124,10 @@ function run_text_grow(el) {
 }
 
 function run_text_shrink(el) {
+	if (!glitch_enabled) {
+		return;
+	}
+
 	// Attempt to repair incorrect chars with either another incorrect char or the correct char (if in range)
 	// Remove chars from the string until it reaches original length.
 	aim_string = origs[el.id]

@@ -1,0 +1,183 @@
+Player	@=	#0cf	It's you.	100	250	Living			0	-1	None	0	None
+test enemy	Gg	#0f0	idk goblin or smt	100	10	Ice	Insect	Living	15	-1	Bite; 6 physical dmg; range 1	1	None
+big guy	#+	#f00	scary guy who tests the description line wrapping too. really long text	500	9999	Fire	Ice	Lightning	2500	-1	None	0	None
+Fuckn GUy	G#	#480	Stupid idiot	150	250	Dark	Demon		0	-1	"KIll You BOLT; damage plus i; lightning bolt
+EPXLODE; 40 holy dmg; line; range 40; trigger at target; 100 psychic dmg; burst radius 2; cooldown 8 turns"	1	None
+Wall	[]	#ccc	Just a wall.	Inf	Inf	Construct			0	-1	None	999	None
+Goblin	G.	#3d3	You didn't start the interdimensional goblin combat. But you will end it.	50	0	Living			10	10	Bite; 6 physical dmg; range 1	1	None
+Hobgoblin	G+	#3a3	Marginally stronger than a normal goblin. Measures up to about half your height.	75	0	Living			15	17	Claw; 7 physical dmg; range 1	1	None
+Gobbo	G'	#fc3	An absolutely tiny specimen with a piercing voice entirely unbecoming of its stature.	20	0	Living	Chaos		7	12	Scream; 4 chaos dmg; line; range 3	1	None
+Gremlin	g.	#080	While not technically goblins, gremlins and goblins live as one and the same.	35	0	Living			7	7	Bite; 5 physical dmg; range 1	1	None
+Alpha Goblin	G#	#3f3	The best of the bunch. Only goblins in peak condition could ever hope to become an Alpha.	100	0	Living			25	30	"Body Slam; 10 physical dmg; range 1
+Uppercut; 15 physical dmg; range 1; cooldown 4 turns"	1	None
+Flaming Goblin	G"	#d33	The mechanism by which these goblins remain alight remains a mystery to goblinologists to this day.	60	0	Living	Fire		20	25	"Tackle; 8 fire dmg; range 1
+Firebreathing; 4 fire dmg; cone; range 3"	1	None
+Esper Goblin	G=	#d9d	Dealing with goblins sounded fine until they developed the ability to cast Mind Spike.	150	50	Living	Arcane		50	60	Mind Spike; 12 psychic dmg; range 6; burst; radius 1; 15 MP	2	None
+Static Goblin	G;	#ff0	Delivering static shocks at will is a much more formidable power than it appears.	80	20	Living	Lightning		30	50	"Static Bolt; 8 lightning dmg; line; range 5; 5MP
+Spark Burst; 16 lightning dmg; selftarget; burst; radius 4; 20MP"	1	None
+Possessed Bat	Bd	#a4f	A regular bat posessed by forces beyond this world. Said forces will burst out when the bat dies.	15	15	Living	Demon		9	30	"Bite; 4 physical dmg; range 1
+Dark Bolt; 6 dark dmg; range 3; line; 5 MP"	1	"Restless Spirit x1
+Ghost x2"
+Goblin War Machine	]G	#898	A terrifying construct made from hewn together junk, piloted by a crack team of two Alpha goblins.	250	50	Construct			100	200	"Metal Bash; 10 physical dmg; range 1
+Shrapnel Salvo; unc.multicast x4 => 6 phys line; range 6; 15 MP
+Makeshift Gun; 14 physical dmg; line; range 10; 6 turn cooldown"	1	Alpha Goblin x2
+Goblin Gear	@G	#9a9	The most advanced war machine ever created by goblinkind, piloted by an Esper Goblin capable of directing it telepathically.	700	100	Construct			250	500	"Steel Strike; 18 physical dmg; range 1
+Missile Salvo; unc.multicast x4 => 12 fire dmg radius 3 burst; range 6; 25 MP
+Railcannon; 22 physical dmg; range 10; 50 MP; 3 turn cooldown"	2	Esper Goblin x1
+Giant Goblin	G!	#3d3	Through some aberration of nature, goblins can reach towering heights of two metres or more.	150	0	Living			40	100	Crush; 14 physical dmg; range 1	1	None
+Titanic Goblin	GG	#3d3	Due to their high susceptibility to magic, goblins in the vicinity of huge magical outflows can become truly gigantic beasts.	500	0	Living			120	150	Crush; 30 physical dmg; range 1	1	None
+Bat	b^	#84f											
+Giant Bat	B^	#84f											
+Ghost	o-	#ddd											
+Vengeful Ghost	o!	#f77											
+Wraith	O.	#444											
+Spirit Amalgam	oO	#ddd											
+Bucket of Ghosts	[o	#fff											
+Ghost Ghost	0O	#ddd											
+Demonic Spirit	$o	#e33											
+Spirit Caller	O<	#c77											
+Fire Spirit	"S	#d33											
+Fire Demon	$d	#f00											
+Flame Golem	#"	#d33											
+Flame Portal	()	#e00											
+Crazed Fire Demon	$D	#f08											
+Flame Rift	<>	#e00											
+Firebug	.,	#a00											
+Firebug Broodmother	B,	#c00											
+Goblin Fire Mage	G~	#f60											
+Ice Spirit	>S	#aff											
+Chilling Totem	n|	#8bb											
+Frozen Totem	N|	#8dd											
+Polar Bear	B*	#aff											
+Undead Viking Spearman	V-	#dff											
+Frozen Ghost	o>	#bdd											
+Ice Demon	$i	#fdf											
+Undead Viking Bowman	V}	#dff											
+Lightning Spirit	&S	#ff3											
+Spark Wraith	W&	#cc2											
+Charged Golem	&]	#cc7											
+Amphibious Eel	~&	#ce2											
+Goblin Stormcrafter	G&	#cd5											
+Arcane Aberration	$%	#f49											
+Living Wand	=@	#fac											
+Magishroom	|>	#8f9											
+Giant Magishroom	|]	#8f9											
+Demonic Arcanist	D=	#f26											
+Possessed Wand	=$	#f8c											
+Arcane Spirit	]S	#f49											
+Posessed Armour	U;	#aaa											
+Ghost Ghost Ghost	00	#ddd											
+Revenant	0!	#888											
+Restless Spirit	!o	#a8a											
+Ghastly Horseman	Ho	#fbb											
+Fallen Knight	Kv	#faa											
+Angel of Fire	a"	#e82											
+Angel of Lightning	a&	#dd3											
+Angel of Judgement	a*	#ffa											
+High Angel of Fire	A"	#f70											
+High Angel of Lightning	A&	#ff3											
+Archangel	A*	#ffa											
+Holy Avatar	!A	#ffa											
+Priest	p!	#ffd											
+Idol	[*	#ffd											
+Doomsayer	v!	#f70											
+High Priest	P!	#ffa											
+Necromancer	N,	#92c											
+Thrall	v>	#44c											
+Tormentor	@(												
+Dark Spirit	@S												
+Malicious Force	#>												
+Crow	c~												
+Corvid Abomination	C~												
+Flesh Golem	F]												
+Experiment	&]												
+Grand Experiment	$}												
+Imp	i-												
+Fire Imp	i"												
+Frost Imp	i>												
+Chaotic Imp	i%												
+Primal Demon	%D												
+Demon Mage	%-												
+Demon Wizard	%=												
+Brimstone Elemental	R!												
+Brimstone Demon	R$												
+Bone Shambler	b,												
+Bone Construct	b;												
+Bone Hulk	B,												
+Giant Bone Construct	B;												
+Mistake	$!	#93a	A terrifying amalgam of flesh, bone and magical energy. Clearly a failed experiment of a dark wizard, but the magic coursing through it still grants it immense strength.	400	0	Construct	Dark	Undead	800	20000	"Sweep; 40 physical dmg; range 1
+Life Drain; 32 dark dmg; range 1; heals user by damage dealt"	1	None
+Locust Swarm	:;												
+Giant Beetle	O\												
+Lamia	/O												
+Frost Tiger	Op												
+Voidtouched Lion	Op												
+Treant	/D												
+Stumpy Walker	F\												
+Giant Flytrap	FX												
+Vine Lasher	v/												
+Fire Flower	@"												
+Posessed Sunflower	@$												
+Chimera	H#												
+Minotaur	#R												
+Werewolf	W}												
+Basilisk	Ib												
+Kraken	K~												
+Ogre	o/												
+Giant Ogre	O/												
+Tiny Ogre	./												
+Gnome	:.												
+Hypergnome	|.												
+Centaur Courser	H=												
+Centaur Bowman	H}												
+Centaur Spearman	H-												
+Phoenix	\P												
+Ice Phoenix	\P												
+Hydra	!/												
+Scorpion	S_												
+Lightning Scorpion	&_												
+Acidic Scorpion	$_												
+Towering Isopod	#+												
+Giant Mantis	M}												
+Chaotic Construct	%]												
+Dark Idol	v]												
+Flesh Totem	K]												
+Bugbeast	B|		A towering entity comprised of many smaller swarm insects, all moving as one.										
+Spider	m^					Insect							
+Giant Spider	M^					Insect							
+Giant Enemy Spider	M%	#F04031	The giant enemy spider...	5000	0	Construct	Insect		2500	10000	Trample; 500 physical dmg; range 1	1	None
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													

@@ -1,0 +1,301 @@
+Fireball	@"	Core	Core	#e52	#000		25	10	Fire	7	3	Diamond	Positional	Player + Enemy
+Searing Touch	">	Core	Core	#f52	#000	Doubles this core's final damage value.	40	40	Fire	2	1	Diamond	Positional	Player + Enemy
+Flame Nova	X"	Core	Core	#e84	#000	Gains 5 times this core's radius as damage.	50	10	Fire	0	4	Diamond	SelfTarget	Player + Enemy
+Flarefrost Beam	=>	Core	Core	#e58	#000	Deals Ice damage equal to this core's damage value at every tile affected.	40	12	Fire	9	1	Line	Positional	Player + Enemy
+Cleansing Fire	!"	Core	Core	#fd4	#000	Half of all Fire damage caused by this core is redealt as Holy damage.	40	14	Fire	8	2	Diamond	Positional	Player + Enemy
+Ice Ball	@>	Core	Core	#aff	#000	Deals Physical damage equal to this core's damage value at every tile affected.	25	6	Ice	8	2	Diamond	Positional	Player + Enemy
+Snap Freeze	V^	Core	Core	#cff	#000	Applies Freeze for 3 turns to the unit at the target position.	20	6	Ice	10	1	Diamond	Positional	Player + Enemy
+Chilling Burst	[>	Core	Core	#aff	#000	Applies Freeze for 2 turns to any unit taking Ice damage from this core.	60	9	Ice	0	7	Diamond	SelfTarget	Player + Enemy
+Frostbite	<^	Core	Core	#9bf	#000	Any instance of Ice damage caused by this core causes Dark damage equal to the core's damage value at the same position.	50	6	Ice	7	1	Diamond	Positional	Player + Enemy
+Absolute Zero	^!	Core	Core	#bff	#000	Applies Freeze for 6 turns to the unit at the center of the burst.	250	20	Ice	0	12	Diamond	SelfTarget	Player + Enemy
+Lightning Bolt	&>	Core	Core	#ff3	#000		17	13	Lightning	10	1	Line	Positional	Player + Enemy
+Arc Lightning	&*	Core	Core	#ff3	#000	Has an arc value of 3.	35	12	Lightning	10	1	Line	Positional	Player + Enemy
+Chain Lightning	&/	Core	Core	#ff3	#000	Has a chain value of 4.	40	10	Lightning	10	1	Line	Positional	Player + Enemy
+Hypercharge	^&	Core	Core	#ff6	#000	All damaged units take and deal 50% more Lightning damage for 16 turns.	75	6	Lightning	6	3	Circle	Positional	Player + Enemy
+Spark	-*	Core	Core	#ff0	#127	Casts another core at the point this core was targeted.	-15	1	Lightning	12	1	Diamond	Positional	Player + Enemy
+15	##	Core	Core	#fff	#000									
+16	##	Core	Core	#fff	#000									
+17	##	Core	Core	#fff	#000									
+18	##	Core	Core	#fff	#000									
+19	##	Core	Core	#fff	#000									
+20	##	Core	Core	#fff	#000									
+21	##	Core	Core	#fff	#000									
+22	##	Core	Core	#fff	#000									
+23	##	Core	Core	#fff	#000									
+24	##	Core	Core	#fff	#000									
+25	##	Core	Core	#fff	#000									
+26	##	Core	Core	#fff	#000									
+27	##	Core	Core	#fff	#000									
+28	##	Core	Core	#fff	#000									
+29	##	Core	Core	#fff	#000									
+30	##	Core	Core	#fff	#000									
+31	##	Core	Core	#fff	#000									
+32	##	Core	Core	#fff	#000									
+33	##	Core	Core	#fff	#000									
+34	##	Core	Core	#fff	#000									
+35	##	Core	Core	#fff	#000									
+36	##	Core	Core	#fff	#000									
+37	##	Core	Core	#fff	#000									
+38	##	Core	Core	#fff	#000									
+39	##	Core	Core	#fff	#000									
+40	##	Core	Core	#fff	#000									
+41	##	Core	Core	#fff	#000									
+42	##	Core	Core	#fff	#000									
+43	##	Core	Core	#fff	#000									
+44	##	Core	Core	#fff	#000									
+45	##	Core	Core	#fff	#000									
+46	##	Core	Core	#fff	#000									
+47	##	Core	Core	#fff	#000									
+48	##	Core	Core	#fff	#000									
+49	##	Core	Core	#fff	#000									
+Damage Plus I	D+	Modifier	Stats	#c44	#03f	Increases the core's damage value by 5.	15							
+Damage Plus II	D*	Modifier	Stats	#c44	#03f	Increases the core's damage value by 15.	40							
+Damage Overcharge	D!	Modifier	Stats	#f44	#03f	Locks the radius of the core to 1. The core's damage value is increased by 5 times its radius before this reduction.	70							
+Radius Plus I	R+	Modifier	Stats	#4cf	#03f	Increases the core's radius by 1.	20							
+Radius Plus II	R*	Modifier	Stats	#4cf	#03f	Increases the core's radius by 2.	30							
+Range Plus I	N+	Modifier	Stats	#4d4	#03f	Increases the core's range by 2.	12							
+Range Plus II	N*	Modifier	Stats	#4d4	#03f	Increases the core's range by 5.	20							
+Orbital Mirroring	N!	Modifier	Stats	#2f2	#03f	Increases the core's range by 64.	160							
+Projection	>~	Modifier	Stats	#fff	#03f	Allows the core to ignore line of sight and collision for targeting and effects.	50							
+Undercharging I	P-	Modifier	Stats	#caa	#03f	Reduces the core's damage value by 7 and its radius by 1, but costs [#4df]negative mana[clear].	-25							
+Undercharging II	p.	Modifier	Stats	#caa	#03f	Reduces the core's damage value by 13 and its radius by 2, but costs [#4df]negative mana[clear].	-60							
+Power Focus	#!	Modifier	Stats	#e6e	#03f	Reduces the core's range by 6, but increases its damage value by 25.	25							
+Unbounded Energy	^M	Modifier	Stats	#6ff	#03f	Increases the core's damage value by 10% of the caster's current mana, but also makes it remove 10% of the caster's current mana on cast.	10							
+Synergistic Arcana	x+	Modifier	Stats	#e6e	#03f	Multiplies the effect of previous modifiers on the core's stats by 1.25x.	75							
+Antisynergy	x-	Modifier	Stats	#93f	#03f	Multiplies the effect of previous modifiers on the core's stats by 0.75x.	5							
+Random Damage	D?	Modifier	Stats	#fff	#03f	Increases the core's damage value by a random number from -100 to 100.	33							
+Zenith Arcana I	X*	Modifier	Stats	#0ef	#03f	Increases the core's damage value by 50, its radius by 3 and its range by 8.	600							
+Zenith Arcana II	X#	Modifier	Stats	#4ff	#03f	Increases the core's damage value by 150, its radius by 5 and its range by 12.	2000							
+68	##	Modifier	Stats	#fff	#03f									
+69	##	Modifier	Stats	#fff	#03f									
+70	##	Modifier	Stats	#fff	#03f									
+71	##	Modifier	Stats	#fff	#03f									
+72	##	Modifier	Stats	#fff	#03f									
+73	##	Modifier	Stats	#fff	#03f									
+74	##	Modifier	Stats	#fff	#03f									
+75	##	Modifier	Stats	#fff	#03f									
+76	##	Modifier	Stats	#fff	#03f									
+77	##	Modifier	Stats	#fff	#03f									
+78	##	Modifier	Stats	#fff	#03f									
+79	##	Modifier	Stats	#fff	#03f									
+Freezing Fire	"^	Modifier	Damage	#e52	#23f	Half of all Fire damage from the core is redealt as Ice damage.	100							
+Crystallized Flame	"[	Modifier	Damage	#e52	#23f	Half of all Fire damage from the core is redealt as Arcane damage.	100							
+Chaotic Immolation	"%	Modifier	Damage	#e52	#23f	Half of all Fire damage from the core is redealt as Chaos damage.	100							
+Sacred Flames	"*	Modifier	Damage	#e52	#23f	Half of all Fire damage from the core is redealt as Holy damage.	100							
+Charged Ice	^&	Modifier	Damage	#aff	#23f	Half of all Ice damage from the core is redealt as Lightning damage.	100							
+Crystalline Frost	^[	Modifier	Damage	#aff	#23f	Half of all Ice damage from the core is redealt as Arcane damage.	100							
+Stifling Frost	^#	Modifier	Damage	#aff	#23f	Half of all Ice damage from the core is redealt as Dark damage.	100							
+Arcane Conductance	&[	Modifier	Damage	#aff	#23f	Half of all Lightning damage from the core is redealt as Arcane damage.	100							
+Cracklevoid	&#	Modifier	Damage	#ff3	#23f	Half of all Lightning damage from the core is redealt as Dark damage.	100							
+Heavenstrike	&*	Modifier	Damage	#ff3	#23f	Half of all Lightning damage from the core is redealt as Holy damage.	100							
+Mind Bolts	&{	Modifier	Damage	#ff3	#23f	Half of all Lightning damage from the core is redealt as Psychic damage.	100							
+Crystallized Sorcery	]^	Modifier	Damage	#f49	#23f	Half of all Arcane damage from the core is redealt as Ice damage.	100							
+Dark Magic	]#	Modifier	Damage	#f49	#23f	Half of all Arcane damage from the core is redealt as Dark damage.	100							
+Mind Magic	]{	Modifier	Damage	#f49	#23f	Half of all Arcane damage from the core is redealt as Psychic damage.	100							
+Falcon Fist	="	Modifier	Damage	#ddd	#23f	Half of all Physical damage from the core is redealt as Fire damage.	100							
+Lightning Fist	=&	Modifier	Damage	#ddd	#23f	Half of all Physical damage from the core is redealt as Lightning damage.	100							
+Double Hit	=2	Modifier	Damage	#ddd	#23f	All Physical damage from the core is redealt as Physical damage. This damage cannot trigger further effects.	150							
+Shadow Strike	=#	Modifier	Damage	#ddd	#23f	Half of all Physical damage from the core is redealt as Dark damage.	100							
+Pure Strike	=*	Modifier	Damage	#ddd	#23f	Half of all Physical damage from the core is redealt as Holy damage.	100							
+Telekinesis	={	Modifier	Damage	#ddd	#23f	Half of all Physical damage from the core is redealt as Psychic damage.	100							
+Blackflame	#"	Modifier	Damage	#95a	#23f	Half of all Dark damage from the core is redealt as Fire damage.	100							
+Deathly Frost	#^	Modifier	Damage	#95a	#23f	Half of all Dark damage from the core is redealt as Ice damage.	100							
+Demonic Dark	#%	Modifier	Damage	#95a	#23f	Half of all Dark damage from the core is redealt as Chaos damage.	100							
+Sacred Magic	*[	Modifier	Damage	#ffa	#23f	Half of all Holy damage from the core is redealt as Arcane damage.	100							
+Apostasy	*#	Modifier	Damage	#ffa	#23f	Half of all Holy damage from the core is redealt as Dark damage.	100							
+Chromatic Catalyst	O)	Modifier	Damage	#fff	#23f	Redeals all native damage from the core as every other damage type, split equally between each type.	200							
+Null Magic	-)	Modifier	Damage	#80a	#23f	Deals [#4df]negative[clear] damage equivalent to every instance of damage the core caused.	25							
+Hand of Fate	O?	Modifier	Damage	#fff	#23f	Half of all native damage from the core is redealt as a random other damage type.	75							
+Chromatic Convergence	O>	Modifier	Damage	#fff	#23f	Redeals all native damage from the core as the damage type the damaged unit is least resistant to, not including the core's own damage type.	250							
+Chromatic Divergence	O<	Modifier	Damage	#fff	#23f	Redeals all native damage from the core as the damage type the damaged unit is most resistant to, not including the core's own damage type.	50							
+110	##	Modifier	Cosmetic	#fff	#61a									
+111	##	Modifier	Cosmetic	#fff	#61a									
+112	##	Modifier	Cosmetic	#fff	#61a									
+113	##	Modifier	Cosmetic	#fff	#61a									
+114	##	Modifier	Cosmetic	#fff	#61a									
+115	##	Modifier	Cosmetic	#fff	#61a									
+116	##	Modifier	Cosmetic	#fff	#61a									
+117	##	Modifier	Cosmetic	#fff	#61a									
+118	##	Modifier	Cosmetic	#fff	#61a									
+119	##	Modifier	Cosmetic	#fff	#61a									
+120	##	Modifier	Cosmetic	#fff	#61a									
+121	##	Modifier	Cosmetic	#fff	#61a									
+122	##	Modifier	Cosmetic	#fff	#61a									
+123	##	Modifier	Cosmetic	#fff	#61a									
+124	##	Modifier	Cosmetic	#fff	#61a									
+Add Target Trigger	+*	Modifier	Trigger	#aa0	#26f	Makes the core cast the next core at the point it was targeted.	25							
+Add Tile Trigger	+x	Modifier	Trigger	#aa0	#26f	Makes the core cast a copy of the next core at every tile the core affected.	500							
+Add Damage Trigger	+;	Modifier	Trigger	#aa0	#26f	Makes the core cast a copy of the next core at every instance of damage the core caused.	400							
+128	##	Modifier	Trigger	#fff	#26f									
+129	##	Modifier	Trigger	#fff	#26f									
+130	##	Modifier	Trigger	#fff	#26f									
+131	##	Modifier	Trigger	#fff	#26f									
+132	##	Modifier	Trigger	#fff	#26f									
+133	##	Modifier	Trigger	#fff	#26f									
+134	##	Modifier	Trigger	#fff	#26f									
+Positional	##	Modifier	Shape	#fff	#441	Allows the core to target [#4df]a position on the ground[clear].	90							
+Unit Target	##	Modifier	Shape	#fff	#441	Allows the core to target [#4df]a specific unit[clear].	50							
+Self Target	##	Modifier	Shape	#fff	#441	Allows the core to target [#4df]the area around the caster[clear].	25							
+Self Position	##	Modifier	Shape	#fff	#441	Allows the core to target [#4df]at the caster's position[clear].	10							
+139	##	Modifier	Shape	#fff	#441									
+140	##	Modifier	Shape	#fff	#441									
+141	##	Modifier	Shape	#fff	#441									
+142	##	Modifier	Shape	#fff	#441									
+143	##	Modifier	Shape	#fff	#441									
+144	##	Modifier	Shape	#fff	#441									
+Behind the Back	<$	Modifier	Multicast	#fff	#06b	Casts a copy of the core behind the user.	120							
+146	##	Modifier	Multicast	#fff	#06b									
+147	##	Modifier	Multicast	#fff	#06b									
+148	##	Modifier	Multicast	#fff	#06b									
+149	##	Modifier	Multicast	#fff	#06b									
+150	##	Modifier	Multicast	#fff	#06b									
+151	##	Modifier	Multicast	#fff	#06b									
+Multicast x4	>4	Modifier	Multicast	#6f6	#06b	Adds 4 to the core's multicast value.	350							
+153	##	Modifier	Multicast	#fff	#06b									
+154	##	Modifier	Multicast	#fff	#06b									
+155	##	Modifier	Multicast	#fff	#06b									
+156	##	Modifier	Multicast	#fff	#06b									
+157	##	Modifier	Multicast	#fff	#06b									
+158	##	Modifier	Multicast	#fff	#06b									
+Chain Spell	/>	Modifier	Multicast	#fff	#06b	Adds 4 to the core's chain value.	350							
+Arc Spell	*>	Modifier	Multicast	#ff0	#06b	Adds 4 to the core's arc value.	300							
+161	##	Modifier	Multicast	#fff	#06b									
+162	##	Modifier	Multicast	#fff	#06b									
+163	##	Modifier	Multicast	#fff	#06b									
+164	##	Modifier	Multicast	#fff	#06b									
+165	##	Modifier	Multicast	#fff	#06b									
+166	##	Modifier	Multicast	#fff	#06b									
+167	##	Modifier	Multicast	#fff	#06b									
+168	##	Modifier	Multicast	#fff	#06b									
+169	##	Modifier	Multicast	#fff	#06b									
+Conjure Mana	##	Modifier	Misc	#fff	#265	Restores 15 mana to the caster when the core is cast.	10							
+Hardening Enchantment	##	Modifier	Misc	#fff	#265	Native damage caused by the core applies 3 turns of Resistance (native damage type)	40							
+Intensifying Enchantment	##	Modifier	Misc	#fff	#265	Native damage caused by the core applies 4 turns of Polarity (native damage type)	75							
+Chromatic Impact	##	Modifier	Misc	#fff	#265	Any unit at the core's target position will receive Polarity of every damage type for 10 turns.	125							
+Cleanse	##	Modifier	Misc	#fff	#265	Any unit damaged by the core will have all active effects removed from it.	40							
+175	##	Modifier	Misc	#fff	#265									
+176	##	Modifier	Misc	#fff	#265									
+177	##	Modifier	Misc	#fff	#265									
+178	##	Modifier	Misc	#fff	#265									
+179	##	Modifier	Misc	#fff	#265									
+180	##	Modifier	Misc	#fff	#265									
+181	##	Modifier	Misc	#fff	#265									
+182	##	Modifier	Misc	#fff	#265									
+183	##	Modifier	Misc	#fff	#265									
+184	##	Modifier	Misc	#fff	#265									
+185	##	Modifier	Misc	#fff	#265									
+186	##	Modifier	Misc	#fff	#265									
+187	##	Modifier	Misc	#fff	#265									
+188	##	Modifier	Misc	#fff	#265									
+189	##	Modifier	Misc	#fff	#265									
+190	##	Modifier	Misc	#fff	#265									
+191	##	Modifier	Misc	#fff	#265									
+192	##	Modifier	Misc	#fff	#265									
+193	##	Modifier	Misc	#fff	#265									
+194	##	Modifier	Misc	#fff	#265									
+195	##	Modifier	Misc	#fff	#265									
+196	##	Modifier	Misc	#fff	#265									
+197	##	Modifier	Misc	#fff	#265									
+198	##	Modifier	Misc	#fff	#265									
+199	##	Modifier	Misc	#fff	#265									
+Gun	%=	Core	Red	#fff	#f00		50	5000	Physical	30	1	Line	Positional	Enemy
+Uncontrolled Multicast x16	!F	Modifier	Red Modifier	#fff	#f00	Casts a copy of the core sixteen times, moving the target by a random number of tiles up to the core's final radius + 1 each time.	200							
+All Elements	!!	Core	Red	#fff	#f00	all at once. testing	0	99999	Physical	1	40	Diamond	SelfTarget	Player + Enemy
+Pea Spell	!!	Core	Red	#fff	#f00	pea spell	2	73	Chaos	10	3	Circle	Positional	Player + Enemy
+summon GUY	@]	Core	Red	#fff	#f00	Summon "Guy" at the target position.	120	25	Dark	10	5	Circle	Positional	Player + Enemy
+205	##	Core	Core	#fff	#000									
+206	##	Core	Core	#fff	#000									
+207	##	Core	Core	#fff	#000									
+208	##	Core	Core	#fff	#000									
+209	##	Core	Core	#fff	#000									
+210	##	Core	Core	#fff	#000									
+211	##	Core	Core	#fff	#000									
+212	##	Core	Core	#fff	#000									
+213	##	Core	Core	#fff	#000									
+214	##	Core	Core	#fff	#000									
+215	##	Core	Core	#fff	#000									
+216	##	Core	Core	#fff	#000									
+217	##	Core	Core	#fff	#000									
+218	##	Core	Core	#fff	#000									
+219	##	Core	Core	#fff	#000									
+220	##	Core	Core	#fff	#000									
+221	##	Core	Core	#fff	#000									
+222	##	Core	Core	#fff	#000									
+223	##	Core	Core	#fff	#000									
+224	##	Core	Core	#fff	#000									
+225	##	Core	Core	#fff	#000									
+226	##	Core	Core	#fff	#000									
+227	##	Core	Core	#fff	#000									
+228	##	Core	Core	#fff	#000									
+229	##	Core	Core	#fff	#000									
+230	##	Core	Core	#fff	#000									
+231	##	Core	Core	#fff	#000									
+232	##	Core	Core	#fff	#000									
+233	##	Core	Core	#fff	#000									
+234	##	Core	Core	#fff	#000									
+235	##	Core	Core	#fff	#000									
+236	##	Core	Core	#fff	#000									
+237	##	Core	Core	#fff	#000									
+238	##	Core	Core	#fff	#000									
+239	##	Core	Core	#fff	#000									
+240	##	Core	Core	#fff	#000									
+241	##	Core	Core	#fff	#000									
+242	##	Core	Core	#fff	#000									
+243	##	Core	Core	#fff	#000									
+244	##	Core	Core	#fff	#000									
+245	##	Core	Core	#fff	#000									
+246	##	Core	Core	#fff	#000									
+247	##	Core	Core	#fff	#000									
+248	##	Core	Core	#fff	#000									
+249	##	Core	Core	#fff	#000									
+250	##	Core	Core	#fff	#000									
+251	##	Core	Core	#fff	#000									
+252	##	Core	Core	#fff	#000									
+253	##	Core	Core	#fff	#000									
+254	##	Core	Core	#fff	#000									
+255	##	Core	Core	#fff	#000									
+256	##	Core	Core	#fff	#000									
+257	##	Core	Core	#fff	#000									
+258	##	Core	Core	#fff	#000									
+259	##	Core	Core	#fff	#000									
+260	##	Core	Core	#fff	#000									
+261	##	Core	Core	#fff	#000									
+262	##	Core	Core	#fff	#000									
+263	##	Core	Core	#fff	#000									
+264	##	Core	Core	#fff	#000									
+265	##	Core	Core	#fff	#000									
+266	##	Core	Core	#fff	#000									
+267	##	Core	Core	#fff	#000									
+268	##	Core	Core	#fff	#000									
+269	##	Core	Core	#fff	#000									
+270	##	Core	Core	#fff	#000									
+271	##	Core	Core	#fff	#000									
+272	##	Core	Core	#fff	#000									
+273	##	Core	Core	#fff	#000									
+274	##	Core	Core	#fff	#000									
+275	##	Core	Core	#fff	#000									
+276	##	Core	Core	#fff	#000									
+277	##	Core	Core	#fff	#000									
+278	##	Core	Core	#fff	#000									
+279	##	Core	Core	#fff	#000									
+280	##	Core	Core	#fff	#000									
+281	##	Core	Core	#fff	#000									
+282	##	Core	Core	#fff	#000									
+283	##	Core	Core	#fff	#000									
+284	##	Core	Core	#fff	#000									
+285	##	Core	Core	#fff	#000									
+286	##	Core	Core	#fff	#000									
+287	##	Core	Core	#fff	#000									
+288	##	Core	Core	#fff	#000									
+289	##	Core	Core	#fff	#000									
+290	##	Core	Core	#fff	#000									
+291	##	Core	Core	#fff	#000									
+292	##	Core	Core	#fff	#000									
+293	##	Core	Core	#fff	#000									
+294	##	Core	Core	#fff	#000									
+295	##	Core	Core	#fff	#000									
+296	##	Core	Core	#fff	#000									
+297	##	Core	Core	#fff	#000									
+298	##	Core	Core	#fff	#000									
+299	##	Core	Core	#fff	#000									
+300	##	Core	Core	#fff	#000									

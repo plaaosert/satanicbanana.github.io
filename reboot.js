@@ -1,4 +1,6 @@
 function engage() {
+	glitch_enabled = false;
+
     // set the "// plaaosert //" banner to just show "// //"
     var banner = document.getElementById("banner");
     banner.textContent = "// //";
