@@ -133,8 +133,7 @@ entity_templates = [
         ], 9, 30,
         entities_spells["Possessed Bat"],
         1, false, false, [
-            {name: "Restless Spirit", cnt: 1},
-            {name: "Ghost", cnt: 2}
+            {name: "Restless Spirit x1\nGhost", cnt: 2}
         ]
     ),
 

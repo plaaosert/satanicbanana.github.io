@@ -12,8 +12,7 @@ entities_spells = {
     ],
 
     "Fuckn GUy": [
-        // KIll You BOLT; damage plus i; lightning bolt
-        // EPXLODE; 40 holy dmg; line; range 40; trigger at target; 100 psychic dmg; burst radius 2; cooldown 8 turns
+        // KIll You BOLT; damage plus i; lightning bolt\nEPXLODE; 40 holy dmg; line; range 40; trigger at target; 100 psychic dmg; burst radius 2; cooldown 8 turns
     ],
 
     "Wall": [
@@ -37,13 +36,11 @@ entities_spells = {
     ],
 
     "Alpha Goblin": [
-        // Body Slam; 10 physical dmg; range 1
-        // Uppercut; 15 physical dmg; range 1; cooldown 4 turns
+        // Body Slam; 10 physical dmg; range 1\nUppercut; 15 physical dmg; range 1; cooldown 4 turns
     ],
 
     "Flaming Goblin": [
-        // Tackle; 8 fire dmg; range 1
-        // Firebreathing; 4 fire dmg; cone; range 3
+        // Tackle; 8 fire dmg; range 1\nFirebreathing; 4 fire dmg; cone; range 3
     ],
 
     "Esper Goblin": [
@@ -51,25 +48,19 @@ entities_spells = {
     ],
 
     "Static Goblin": [
-        // Static Bolt; 8 lightning dmg; line; range 5; 5MP
-        // Spark Burst; 16 lightning dmg; selftarget; burst; radius 4; 20MP
+        // Static Bolt; 8 lightning dmg; line; range 5; 5MP\nSpark Burst; 16 lightning dmg; selftarget; burst; radius 4; 20MP
     ],
 
     "Possessed Bat": [
-        // Bite; 4 physical dmg; range 1
-        // Dark Bolt; 6 dark dmg; range 3; line; 5 MP
+        // Bite; 4 physical dmg; range 1\nDark Bolt; 6 dark dmg; range 3; line; 5 MP
     ],
 
     "Goblin War Machine": [
-        // Metal Bash; 10 physical dmg; range 1
-        // Shrapnel Salvo; unc.multicast x4 => 6 phys line; range 6; 15 MP
-        // Makeshift Gun; 14 physical dmg; line; range 10; 6 turn cooldown
+        // Metal Bash; 10 physical dmg; range 1\nShrapnel Salvo; unc.multicast x4 => 6 phys line; range 6; 15 MP\nMakeshift Gun; 14 physical dmg; line; range 10; 6 turn cooldown
     ],
 
     "Goblin Gear": [
-        // Steel Strike; 18 physical dmg; range 1
-        // Missile Salvo; unc.multicast x4 => 12 fire dmg radius 3 burst; range 6; 25 MP
-        // Railcannon; 22 physical dmg; range 10; 50 MP; 3 turn cooldown
+        // Steel Strike; 18 physical dmg; range 1\nMissile Salvo; unc.multicast x4 => 12 fire dmg radius 3 burst; range 6; 25 MP\nRailcannon; 22 physical dmg; range 10; 50 MP; 3 turn cooldown
     ],
 
     "Giant Goblin": [
@@ -397,8 +388,7 @@ entities_spells = {
     ],
 
     "Mistake": [
-        // Sweep; 40 physical dmg; range 1
-        // Life Drain; 32 dark dmg; range 1; heals user by damage dealt
+        // Sweep; 40 physical dmg; range 1\nLife Drain; 32 dark dmg; range 1; heals user by damage dealt
     ],
 
     "Locust Swarm": [

@@ -104,245 +104,245 @@ spells_funcs = {
         no_tiles
     ],
 
-    "15": [
+    "Magic Missile": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "16": [
+    "Arcane Crush": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "17": [
+    "Magical Explosion": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "18": [
+    "Void Laser": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "19": [
+    "Conjure Spear": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "20": [
+    "Conjure Bullet": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "21": [
+    "Sonic Boom": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "22": [
+    "Lacerate": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "23": [
+    "Magnetic Launcher": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "24": [
+    "Ball of Skulls": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "25": [
+    "Mass Haunting": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "26": [
+    "Reinforce": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "27": [
+    "Dark Bolt": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "28": [
+    "Turn Unwilling Dead": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "29": [
+    "Unknown Incantation": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "30": [
+    "Chromatic Shattering": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "31": [
+    "Cone of Chaos": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "32": [
+    "Demonic Summoning": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "33": [
+    "Sacred Bolt": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "34": [
+    "Shining Spear": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "35": [
+    "Angelic Chorus": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "36": [
+    "Consecrate": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "37": [
+    "Apotheosis": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "38": [
+    "Mind Spike": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "39": [
+    "Touch of Mindshattering": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "40": [
+    "Memetic Virus": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "41": [
+    "Overwhelm": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "42": [
+    "Blink": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "43": [
+    "Teleport": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "44": [
+    "Disperse": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "45": [
+    "Dimensional Rift": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "46": [
+    "Last Resort": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "47": [
+    "Fireball with Trigger": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "48": [
+    "Lightning Bolt with Trigger": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "49": [
+    "Magic Missile with Trigger": [
         no_stats,
         no_target,
         no_hit,
@@ -972,42 +972,42 @@ spells_funcs = {
         no_tiles
     ],
 
-    "139": [
+    "Circle": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "140": [
+    "Ring": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "141": [
+    "Line": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "142": [
+    "Burst": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "143": [
+    "Perpendicular Line": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "144": [
+    "Cone": [
         no_stats,
         no_target,
         no_hit,

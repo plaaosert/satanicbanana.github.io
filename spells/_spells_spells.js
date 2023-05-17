@@ -24,7 +24,7 @@ spells_list = [
     core_spell(
         "Flame Nova", "X\"", SpellSubtype.Core,
         "#e84", "#000",
-        "Gains 5 times this core's radius as damage.",
+        "Gains 5 times this core's final radius as damage.",
         10, DmgType.Fire,
         0, 4, Shape.Diamond,
         50,
@@ -68,7 +68,7 @@ spells_list = [
     core_spell(
         "Snap Freeze", "V^", SpellSubtype.Core,
         "#cff", "#000",
-        "Applies Freeze for 3 turns to the unit at the target position.",
+        "Applies Frozen for 3 turns to the unit at the target position.",
         6, DmgType.Ice,
         10, 1, Shape.Diamond,
         20,
@@ -79,7 +79,7 @@ spells_list = [
     core_spell(
         "Chilling Burst", "«>", SpellSubtype.Core,
         "#aff", "#000",
-        "Applies Freeze for 2 turns to any unit taking Ice damage from this core.",
+        "Applies Frozen for 2 turns to any unit taking Ice damage from this core.",
         9, DmgType.Ice,
         0, 7, Shape.Diamond,
         60,
@@ -90,7 +90,7 @@ spells_list = [
     core_spell(
         "Frostbite", "<^", SpellSubtype.Core,
         "#9bf", "#000",
-        "Any instance of Ice damage caused by this core causes Dark damage equal to the core's damage value at the same position.",
+        "Any instance of Ice damage caused by this core causes Dark damage equal to this core's damage value at the same position.",
         6, DmgType.Ice,
         7, 1, Shape.Diamond,
         50,
@@ -101,10 +101,10 @@ spells_list = [
     core_spell(
         "Absolute Zero", "^!", SpellSubtype.Core,
         "#bff", "#000",
-        "Applies Freeze for 6 turns to the unit at the target position.",
-        25, DmgType.Ice,
-        0, 32, Shape.Diamond,
-        250,
+        "Applies Freeze for 6 turns to the unit at the center of the burst.",
+        20, DmgType.Ice,
+        0, 12, Shape.Diamond,
+        140,
         SpellTargeting.SelfTarget,
         [Teams.ENEMY, Teams.PLAYER]
     ),
@@ -158,395 +158,395 @@ spells_list = [
         "#ff0", "#127",
         "Casts another core at the point this core was targeted.",
         1, DmgType.Lightning,
-        12, 0, Shape.Diamond,
+        12, 1, Shape.Diamond,
         -15,
         SpellTargeting.Positional,
         [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "15", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Magic Missile", "=»", SpellSubtype.Core,
+        "#f49", "#000",
+        "",
+        10, DmgType.Arcane,
+        12, 1, Shape.Line,
+        10,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "16", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Arcane Crush", "»«", SpellSubtype.Core,
+        "#c4c", "#000",
+        "Applies Stunned for 2 turns to any non-stunned unit taking damage from this core.",
+        16, DmgType.Arcane,
+        7, 1, Shape.Diamond,
+        35,
+        SpellTargeting.UnitTarget,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "17", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Magical Explosion", "«#", SpellSubtype.Core,
+        "#f49", "#000",
+        "Deals Physical damage equal to this core's damage value at every tile affected.",
+        22, DmgType.Arcane,
+        10, 4, Shape.Diamond,
+        30,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "18", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Void Laser", "»=", SpellSubtype.Core,
+        "#c26", "#000",
+        "Applies Polarity (Arcane) for 3 turns to any unit damaged by this core. This core is not restricted by line of sight.",
+        40, DmgType.Arcane,
+        10, 1, Shape.Line,
+        160,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "19", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Conjure Spear", "->", SpellSubtype.Core,
+        "#ddd", "#000",
+        "",
+        17, DmgType.Physical,
+        12, 1, Shape.Line,
+        25,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "20", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Conjure Bullet", "-=", SpellSubtype.Core,
+        "#ddd", "#000",
+        "Deals twice this core's damage value as Fire damage at the targeted location.",
+        26, DmgType.Physical,
+        14, 1, Shape.Line,
+        60,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "21", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Sonic Boom", ">)", SpellSubtype.Core,
+        "#ddd", "#000",
+        "Has an arc value of 2. Applies Stunned for 1 turn to any non-stunned units taking Physical damage from this core.",
+        4, DmgType.Physical,
+        9, 2, Shape.Cone,
+        80,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "22", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Lacerate", "X/", SpellSubtype.Core,
+        "#fdd", "#000",
+        "Every instance of damage to a unit caused by this core will also apply 1 turn of Bleed to that unit.",
+        6, DmgType.Physical,
+        7, 2, Shape.Circle,
+        75,
+        SpellTargeting.UnitTarget,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "23", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Magnetic Launcher", ">=", SpellSubtype.Core,
+        "#ddd", "#000",
+        "Any unit hit by this core will take Physical damage equal to 20% of this core's damage value per tile of distance between them and the caster.",
+        25, DmgType.Physical,
+        64, 1, Shape.Line,
+        200,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "24", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Ball of Skulls", "Q.", SpellSubtype.Core,
+        "#99a", "#000",
+        "Summons a Skeleton at the target position if it is empty.",
+        8, DmgType.Dark,
+        8, 2, Shape.Circle,
+        40,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "25", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Mass Haunting", "O^", SpellSubtype.Core,
+        "#99a", "#000",
+        "Summons a Ghost at every empty tile this core affected.",
+        12, DmgType.Dark,
+        6, 2, Shape.Diamond,
+        80,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "26", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Reinforce", "#!", SpellSubtype.Core,
+        "#74a", "#000",
+        "Any non-player unit with Dark affinity in this core's area of effect will be healed to full HP and gain access to Dark Bolt.",
+        0, DmgType.Dark,
+        8, 3, Shape.Diamond,
+        100,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "27", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Dark Bolt", "#>", SpellSubtype.Core,
+        "#74a", "#000",
+        "",
+        12, DmgType.Dark,
+        10, 1, Shape.Line,
+        20,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "28", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Turn Unwilling Dead", "#$", SpellSubtype.Core,
+        "#74a", "#000",
+        "If an enemy dies as a result of damage from this core, they will be reanimated on the caster's side. Their affinities are removed and replaced with Dark and Undead.",
+        20, DmgType.Dark,
+        3, 1, Shape.Circle,
+        200,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "29", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Unknown Incantation", "??", SpellSubtype.Core,
+        "#e90", "#000",
+        "\"This core will have a random bonus effect on cast that changes every time it is used by ANYONE.\nNext effect: [#4df]Nothing.[clear]\"",
+        0, DmgType.Chaos,
+        10, 2, Shape.Diamond,
+        30,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "30", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Chromatic Shattering", "&{", SpellSubtype.Core,
+        "#e90", "#000",
+        "This core's damage type will randomly change to another damage type every time it is cast by ANYONE.",
+        20, DmgType.Chaos,
+        10, 1, Shape.Line,
+        40,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "31", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Cone of Chaos", "%}", SpellSubtype.Core,
+        "#e90", "#000",
+        "Deals Fire or Lightning damage equal to this core's damage value at every tile affected.",
+        12, DmgType.Chaos,
+        8, 3, Shape.Cone,
+        50,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "32", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Demonic Summoning", "%*", SpellSubtype.Core,
+        "#b90", "#000",
+        "Summons one of four random Demons (Fire, Ice, Lightning, Chaos) at the target position if it is empty.",
+        20, DmgType.Chaos,
+        6, 3, Shape.Circle,
+        100,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "33", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Sacred Bolt", "*=", SpellSubtype.Core,
+        "#ff9", "#000",
+        "If the unit at the target position is Dark, Demon, Undead or Ghost, applies Stunned to them for 3 turns.",
+        10, DmgType.Holy,
+        12, 1, Shape.Line,
+        20,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "34", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Shining Spear", "*/", SpellSubtype.Core,
+        "#ff9", "#000",
+        "Deals Physical damage equal to this core's damage value at every tile affected, as well as Holy damage if the unit is Dark, Demon, Undead or Ghost.",
+        18, DmgType.Holy,
+        12, 1, Shape.Line,
+        60,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "35", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Angelic Chorus", "^*", SpellSubtype.Core,
+        "#ff9", "#000",
+        "All Holy units taking Holy damage from this core will be healed by an amount equal to twice this core's damage value.",
+        15, DmgType.Holy,
+        0, 5, Shape.Diamond,
+        50,
+        SpellTargeting.SelfTarget,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "36", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Consecrate", "*\"", SpellSubtype.Core,
+        "#fd9", "#000",
+        "All Dark, Demon, Undead or Ghost units taking Holy damage from this core will also take an equal amount of Fire damage.",
+        30, DmgType.Holy,
+        0, 5, Shape.Square,
+        100,
+        SpellTargeting.SelfTarget,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "37", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Apotheosis", "^^", SpellSubtype.Core,
+        "#ffc", "#000",
+        "Applies Invincible and Stunned for 10 turns to the caster, then summons two allied Seraphim and two allied Archangels in the closest available positions.",
+        0, DmgType.Holy,
+        0, 0, Shape.Diamond,
+        400,
+        SpellTargeting.SelfTarget,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "38", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Mind Spike", "=}", SpellSubtype.Core,
+        "#f9f", "#000",
+        "Cannot damage allied units.",
+        10, DmgType.Psychic,
+        14, 1, Shape.Line,
+        25,
+        SpellTargeting.Positional,
+        [Teams.ENEMY]
     ),
 
-    modifier(
-        "39", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Touch of Mindshattering", "}%", SpellSubtype.Core,
+        "#f9f", "#000",
+        "Applies Stunned for 5 turns to any unit taking Psychic damage from this core.",
+        8, DmgType.Psychic,
+        1, 1, Shape.Diamond,
+        75,
+        SpellTargeting.UnitTarget,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "40", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Memetic Virus", "}~", SpellSubtype.Core,
+        "#f9f", "#000",
+        "Has a chain value of 6. The damage value of this core is locked at 0. Cannot target or damage allied units.",
+        0, DmgType.Psychic,
+        7, 1, Shape.Line,
+        80,
+        SpellTargeting.UnitTarget,
+        [Teams.ENEMY]
     ),
 
-    modifier(
-        "41", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Overwhelm", "~{", SpellSubtype.Core,
+        "#f9f", "#000",
+        "Applies 3 turns of Sleeping to any unit taking Psychic damage from this core.",
+        12, DmgType.Psychic,
+        6, 3, Shape.Cone,
+        100,
+        SpellTargeting.UnitTarget,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "42", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Blink", ".-", SpellSubtype.Core,
+        "#fcf", "#000",
+        "Teleports the caster to the target position of this core after casting it.",
+        0, DmgType.Psychic,
+        6, 1, Shape.Diamond,
+        30,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "43", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Teleport", ".!", SpellSubtype.Core,
+        "#fcf", "#000",
+        "Teleports the caster to the target position of this core after casting it.",
+        0, DmgType.Psychic,
+        20, 1, Shape.Diamond,
+        80,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "44", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Disperse", ".?", SpellSubtype.Core,
+        "#fcf", "#000",
+        "All units taking Psychic damage from this core will be teleported to random positions within a 5 tile radius.",
+        5, DmgType.Psychic,
+        0, 4, Shape.Diamond,
+        50,
+        SpellTargeting.SelfTarget,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "45", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Dimensional Rift", ".%", SpellSubtype.Core,
+        "#f8b", "#000",
+        "Teleports any unit in this core's area of effect to a random location on the map.",
+        0, DmgType.Arcane,
+        10, 4, Shape.Circle,
+        70,
+        SpellTargeting.SelfTargetPlusCaster,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "46", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
+    core_spell(
+        "Last Resort", "!!", SpellSubtype.Core,
+        "#fff", "#000",
+        "Sets the caster's current HP to 1 and removes 10% of their max HP.",
+        200, DmgType.Physical,
+        12, 3, Shape.Diamond,
         0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "47", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Fireball with Trigger", "@\"", SpellSubtype.Core,
+        "#e52", "#127",
+        "Casts another core at the point this core was targeted.",
+        10, DmgType.Fire,
+        7, 3, Shape.Diamond,
+        50,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "48", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Lightning Bolt with Trigger", "&>", SpellSubtype.Core,
+        "#ff3", "#127",
+        "Casts another core at the point this core was targeted.",
+        13, DmgType.Lightning,
+        10, 1, Shape.Line,
+        42,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "49", "??", SpellSubtype.Red,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+    core_spell(
+        "Magic Missile with Trigger", "=»", SpellSubtype.Core,
+        "#f49", "#127",
+        "Casts another core at the point this core was targeted.",
+        10, DmgType.Arcane,
+        12, 1, Shape.Line,
+        35,
+        SpellTargeting.Positional,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
     modifier(
@@ -574,7 +574,7 @@ spells_list = [
     modifier(
         "Damage Overcharge", "D!", SpellSubtype.Stats,
         "#f44", "#03f",
-        "Locks the radius of the core to 1. The core's damage value is increased by 5 times its radius before this reduction.",
+        "Sets the radius of the core to 1. The core's damage value is increased by 5 times its radius before this reduction.",
         70,
         no_stats,
         no_target,
@@ -881,7 +881,7 @@ spells_list = [
 
     modifier(
         "Freezing Fire", "\"^", SpellSubtype.Damage,
-        "#e52", "#23f",
+        "#e52", "#32d",
         "Half of all Fire damage from the core is redealt as Ice damage.",
         100,
         no_stats,
@@ -892,7 +892,7 @@ spells_list = [
 
     modifier(
         "Crystallized Flame", "\"«", SpellSubtype.Damage,
-        "#e52", "#23f",
+        "#e52", "#32d",
         "Half of all Fire damage from the core is redealt as Arcane damage.",
         100,
         no_stats,
@@ -903,7 +903,7 @@ spells_list = [
 
     modifier(
         "Chaotic Immolation", "\"%", SpellSubtype.Damage,
-        "#e52", "#23f",
+        "#e52", "#32d",
         "Half of all Fire damage from the core is redealt as Chaos damage.",
         100,
         no_stats,
@@ -914,7 +914,7 @@ spells_list = [
 
     modifier(
         "Sacred Flames", "\"*", SpellSubtype.Damage,
-        "#e52", "#23f",
+        "#e52", "#32d",
         "Half of all Fire damage from the core is redealt as Holy damage.",
         100,
         no_stats,
@@ -925,7 +925,7 @@ spells_list = [
 
     modifier(
         "Charged Ice", "^&", SpellSubtype.Damage,
-        "#aff", "#23f",
+        "#aff", "#32d",
         "Half of all Ice damage from the core is redealt as Lightning damage.",
         100,
         no_stats,
@@ -936,7 +936,7 @@ spells_list = [
 
     modifier(
         "Crystalline Frost", "^«", SpellSubtype.Damage,
-        "#aff", "#23f",
+        "#aff", "#32d",
         "Half of all Ice damage from the core is redealt as Arcane damage.",
         100,
         no_stats,
@@ -947,7 +947,7 @@ spells_list = [
 
     modifier(
         "Stifling Frost", "^#", SpellSubtype.Damage,
-        "#aff", "#23f",
+        "#aff", "#32d",
         "Half of all Ice damage from the core is redealt as Dark damage.",
         100,
         no_stats,
@@ -958,7 +958,7 @@ spells_list = [
 
     modifier(
         "Arcane Conductance", "&«", SpellSubtype.Damage,
-        "#aff", "#23f",
+        "#ff3", "#32d",
         "Half of all Lightning damage from the core is redealt as Arcane damage.",
         100,
         no_stats,
@@ -969,7 +969,7 @@ spells_list = [
 
     modifier(
         "Cracklevoid", "&#", SpellSubtype.Damage,
-        "#ff3", "#23f",
+        "#ff3", "#32d",
         "Half of all Lightning damage from the core is redealt as Dark damage.",
         100,
         no_stats,
@@ -980,7 +980,7 @@ spells_list = [
 
     modifier(
         "Heavenstrike", "&*", SpellSubtype.Damage,
-        "#ff3", "#23f",
+        "#ff3", "#32d",
         "Half of all Lightning damage from the core is redealt as Holy damage.",
         100,
         no_stats,
@@ -991,7 +991,7 @@ spells_list = [
 
     modifier(
         "Mind Bolts", "&{", SpellSubtype.Damage,
-        "#ff3", "#23f",
+        "#ff3", "#32d",
         "Half of all Lightning damage from the core is redealt as Psychic damage.",
         100,
         no_stats,
@@ -1002,7 +1002,7 @@ spells_list = [
 
     modifier(
         "Crystallized Sorcery", "»^", SpellSubtype.Damage,
-        "#f49", "#23f",
+        "#f49", "#32d",
         "Half of all Arcane damage from the core is redealt as Ice damage.",
         100,
         no_stats,
@@ -1013,7 +1013,7 @@ spells_list = [
 
     modifier(
         "Dark Magic", "»#", SpellSubtype.Damage,
-        "#f49", "#23f",
+        "#f49", "#32d",
         "Half of all Arcane damage from the core is redealt as Dark damage.",
         100,
         no_stats,
@@ -1024,7 +1024,7 @@ spells_list = [
 
     modifier(
         "Mind Magic", "»{", SpellSubtype.Damage,
-        "#f49", "#23f",
+        "#f49", "#32d",
         "Half of all Arcane damage from the core is redealt as Psychic damage.",
         100,
         no_stats,
@@ -1035,7 +1035,7 @@ spells_list = [
 
     modifier(
         "Falcon Fist", "=\"", SpellSubtype.Damage,
-        "#ddd", "#23f",
+        "#ddd", "#32d",
         "Half of all Physical damage from the core is redealt as Fire damage.",
         100,
         no_stats,
@@ -1046,7 +1046,7 @@ spells_list = [
 
     modifier(
         "Lightning Fist", "=&", SpellSubtype.Damage,
-        "#ddd", "#23f",
+        "#ddd", "#32d",
         "Half of all Physical damage from the core is redealt as Lightning damage.",
         100,
         no_stats,
@@ -1057,7 +1057,7 @@ spells_list = [
 
     modifier(
         "Double Hit", "=2", SpellSubtype.Damage,
-        "#ddd", "#23f",
+        "#ddd", "#32d",
         "All Physical damage from the core is redealt as Physical damage. This damage cannot trigger further effects.",
         150,
         no_stats,
@@ -1068,7 +1068,7 @@ spells_list = [
 
     modifier(
         "Shadow Strike", "=#", SpellSubtype.Damage,
-        "#ddd", "#23f",
+        "#ddd", "#32d",
         "Half of all Physical damage from the core is redealt as Dark damage.",
         100,
         no_stats,
@@ -1079,7 +1079,7 @@ spells_list = [
 
     modifier(
         "Pure Strike", "=*", SpellSubtype.Damage,
-        "#ddd", "#23f",
+        "#ddd", "#32d",
         "Half of all Physical damage from the core is redealt as Holy damage.",
         100,
         no_stats,
@@ -1090,7 +1090,7 @@ spells_list = [
 
     modifier(
         "Telekinesis", "={", SpellSubtype.Damage,
-        "#ddd", "#23f",
+        "#ddd", "#32d",
         "Half of all Physical damage from the core is redealt as Psychic damage.",
         100,
         no_stats,
@@ -1101,7 +1101,7 @@ spells_list = [
 
     modifier(
         "Blackflame", "#\"", SpellSubtype.Damage,
-        "#95a", "#23f",
+        "#95a", "#32d",
         "Half of all Dark damage from the core is redealt as Fire damage.",
         100,
         no_stats,
@@ -1112,7 +1112,7 @@ spells_list = [
 
     modifier(
         "Deathly Frost", "#^", SpellSubtype.Damage,
-        "#95a", "#23f",
+        "#95a", "#32d",
         "Half of all Dark damage from the core is redealt as Ice damage.",
         100,
         no_stats,
@@ -1123,7 +1123,7 @@ spells_list = [
 
     modifier(
         "Demonic Dark", "#%", SpellSubtype.Damage,
-        "#95a", "#23f",
+        "#95a", "#32d",
         "Half of all Dark damage from the core is redealt as Chaos damage.",
         100,
         no_stats,
@@ -1134,7 +1134,7 @@ spells_list = [
 
     modifier(
         "Sacred Magic", "*«", SpellSubtype.Damage,
-        "#ffa", "#23f",
+        "#ffa", "#32d",
         "Half of all Holy damage from the core is redealt as Arcane damage.",
         100,
         no_stats,
@@ -1145,7 +1145,7 @@ spells_list = [
 
     modifier(
         "Apostasy", "*#", SpellSubtype.Damage,
-        "#ffa", "#23f",
+        "#ffa", "#32d",
         "Half of all Holy damage from the core is redealt as Dark damage.",
         100,
         no_stats,
@@ -1156,7 +1156,7 @@ spells_list = [
 
     modifier(
         "Chromatic Catalyst", "O)", SpellSubtype.Damage,
-        "#fff", "#23f",
+        "#fff", "#32d",
         "Redeals all native damage from the core as every other damage type, split equally between each type.",
         200,
         no_stats,
@@ -1167,7 +1167,7 @@ spells_list = [
 
     modifier(
         "Null Magic", "-)", SpellSubtype.Damage,
-        "#80a", "#23f",
+        "#80a", "#32d",
         "Deals [#4df]negative[clear] damage equivalent to every instance of damage the core caused.",
         25,
         no_stats,
@@ -1178,7 +1178,7 @@ spells_list = [
 
     modifier(
         "Hand of Fate", "O?", SpellSubtype.Damage,
-        "#fff", "#23f",
+        "#fff", "#32d",
         "Half of all native damage from the core is redealt as a random other damage type.",
         75,
         no_stats,
@@ -1189,8 +1189,8 @@ spells_list = [
 
     modifier(
         "Chromatic Convergence", "O>", SpellSubtype.Damage,
-        "#fff", "#23f",
-        "Redeals all native damage from the core as the damage type the damaged unit is least resistant to, not including the core's own damage type.",
+        "#fff", "#32d",
+        "Redeals half of the native damage from the core as the damage type the damaged unit is least resistant to, not including the core's own damage type.",
         250,
         no_stats,
         no_target,
@@ -1200,8 +1200,8 @@ spells_list = [
 
     modifier(
         "Chromatic Divergence", "O<", SpellSubtype.Damage,
-        "#fff", "#23f",
-        "Redeals all native damage from the core as the damage type the damaged unit is most resistant to, not including the core's own damage type.",
+        "#fff", "#32d",
+        "Redeals half of the native damage from the core as the damage type the damaged unit is most resistant to, not including the core's own damage type.",
         50,
         no_stats,
         no_target,
@@ -1376,7 +1376,7 @@ spells_list = [
 
     modifier(
         "Add Target Trigger", "+*", SpellSubtype.Trigger,
-        "#aa0", "#26f",
+        "#cc0", "#26f",
         "Makes the core cast the next core at the point it was targeted.",
         25,
         no_stats,
@@ -1387,7 +1387,7 @@ spells_list = [
 
     modifier(
         "Add Tile Trigger", "+x", SpellSubtype.Trigger,
-        "#aa0", "#26f",
+        "#cc0", "#26f",
         "Makes the core cast a copy of the next core at every tile the core affected.",
         500,
         no_stats,
@@ -1398,7 +1398,7 @@ spells_list = [
 
     modifier(
         "Add Damage Trigger", "+;", SpellSubtype.Trigger,
-        "#aa0", "#26f",
+        "#cc0", "#26f",
         "Makes the core cast a copy of the next core at every instance of damage the core caused.",
         400,
         no_stats,
@@ -1485,8 +1485,8 @@ spells_list = [
     ),
 
     modifier(
-        "Positional", "##", SpellSubtype.Shape,
-        "#fff", "#441",
+        "Positional", "=>", SpellSubtype.Shape,
+        "#fcf", "#441",
         "Allows the core to target [#4df]a position on the ground[clear].",
         90,
         no_stats,
@@ -1496,8 +1496,8 @@ spells_list = [
     ),
 
     modifier(
-        "Unit Target", "##", SpellSubtype.Shape,
-        "#fff", "#441",
+        "Unit Target", "=!", SpellSubtype.Shape,
+        "#fcf", "#441",
         "Allows the core to target [#4df]a specific unit[clear].",
         50,
         no_stats,
@@ -1507,8 +1507,8 @@ spells_list = [
     ),
 
     modifier(
-        "Self Target", "##", SpellSubtype.Shape,
-        "#fff", "#441",
+        "Self Target", "=O", SpellSubtype.Shape,
+        "#fcf", "#441",
         "Allows the core to target [#4df]the area around the caster[clear].",
         25,
         no_stats,
@@ -1518,8 +1518,8 @@ spells_list = [
     ),
 
     modifier(
-        "Self Position", "##", SpellSubtype.Shape,
-        "#fff", "#441",
+        "Self Position", "=X", SpellSubtype.Shape,
+        "#fcf", "#441",
         "Allows the core to target [#4df]at the caster's position[clear].",
         10,
         no_stats,
@@ -1529,10 +1529,10 @@ spells_list = [
     ),
 
     modifier(
-        "139", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Circle", "@@", SpellSubtype.Shape,
+        "#fff", "#441",
+        "Causes the core to affect tiles in a [#4df]circle shape[clear].",
+        140,
         no_stats,
         no_target,
         no_hit,
@@ -1540,10 +1540,10 @@ spells_list = [
     ),
 
     modifier(
-        "140", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Ring", "()", SpellSubtype.Shape,
+        "#fff", "#441",
+        "Causes the core to affect tiles in a [#4df]ring shape[clear].",
+        40,
         no_stats,
         no_target,
         no_hit,
@@ -1551,10 +1551,10 @@ spells_list = [
     ),
 
     modifier(
-        "141", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Line", "--", SpellSubtype.Shape,
+        "#fff", "#441",
+        "Causes the core to affect tiles in a [#4df]straight line[clear].",
+        60,
         no_stats,
         no_target,
         no_hit,
@@ -1562,10 +1562,10 @@ spells_list = [
     ),
 
     modifier(
-        "142", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Burst", "<>", SpellSubtype.Shape,
+        "#fff", "#441",
+        "Causes the core to affect tiles in a [#4df]burst[clear].",
+        100,
         no_stats,
         no_target,
         no_hit,
@@ -1573,10 +1573,10 @@ spells_list = [
     ),
 
     modifier(
-        "143", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Perpendicular Line", "-|", SpellSubtype.Shape,
+        "#fff", "#441",
+        "Causes the core to affect tiles in a [#4df]line perpendicular to the target[clear].",
+        50,
         no_stats,
         no_target,
         no_hit,
@@ -1584,10 +1584,10 @@ spells_list = [
     ),
 
     modifier(
-        "144", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Cone", "<=", SpellSubtype.Shape,
+        "#fff", "#441",
+        "Causes the core to affect tiles in a [#4df]cone shape[clear].",
+        80,
         no_stats,
         no_target,
         no_hit,
@@ -1870,7 +1870,7 @@ spells_list = [
     ),
 
     modifier(
-        "Conjure Mana", "##", SpellSubtype.Misc,
+        "Conjure Mana", "O^", SpellSubtype.Misc,
         "#fff", "#265",
         "Restores 15 mana to the caster when the core is cast.",
         10,
@@ -1881,9 +1881,9 @@ spells_list = [
     ),
 
     modifier(
-        "Hardening Enchantment", "##", SpellSubtype.Misc,
+        "Hardening Enchantment", "#-", SpellSubtype.Misc,
         "#fff", "#265",
-        "Native damage caused by the core applies 3 turns of Resistance (core damage type)",
+        "Native damage caused by the core applies 3 turns of Resistance (native damage type)",
         40,
         no_stats,
         no_target,
@@ -1892,9 +1892,9 @@ spells_list = [
     ),
 
     modifier(
-        "Intensifying Enchantment", "##", SpellSubtype.Misc,
+        "Intensifying Enchantment", "#+", SpellSubtype.Misc,
         "#fff", "#265",
-        "Native damage caused by the core applies 4 turns of Polarity (core damage type)",
+        "Native damage caused by the core applies 4 turns of Polarity (native damage type)",
         75,
         no_stats,
         no_target,
@@ -1903,7 +1903,7 @@ spells_list = [
     ),
 
     modifier(
-        "Chromatic Impact", "##", SpellSubtype.Misc,
+        "Chromatic Impact", "O+", SpellSubtype.Misc,
         "#fff", "#265",
         "Any unit at the core's target position will receive Polarity of every damage type for 10 turns.",
         125,
@@ -1914,7 +1914,7 @@ spells_list = [
     ),
 
     modifier(
-        "Cleanse", "##", SpellSubtype.Misc,
+        "Cleanse", "~-", SpellSubtype.Misc,
         "#fff", "#265",
         "Any unit damaged by the core will have all active effects removed from it.",
         40,

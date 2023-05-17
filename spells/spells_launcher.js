@@ -1,18 +1,29 @@
 // set up spells here one last time:
 // still need to link up the augment functions from spells_spells_funcs
 typs = ["to_stats", "at_target", "on_hit", "on_affected_tiles"];
+failed = [];
+
 spells_list.forEach(spell => {
     for (let i=0; i<typs.length; i++) {
-        spell.augment(typs[i], spells_funcs[spell.name][i])
+        if (spells_funcs[spell.name]) {
+            spell.augment(typs[i], spells_funcs[spell.name][i])
+        } else if (!failed.includes(spell.name)) {
+            failed.push(spell.name);
+        }
     }
 });
+
+if (failed.length > 0) {
+    throw new TypeError("Spells do not have linked functions: " + failed.join(", "));
+}
 
 // will also need to re-add trigger effects to specific spells here
 // (get them by name)
 // e.g. the trigger-type modifiers and other assorted cores
 trigger_spells = {
     "at_target": [
-        "Spark", "Add Target Trigger"
+        "Spark", "Add Target Trigger", "Fireball with Trigger",
+        "Lightning Bolt with Trigger", "Magic Missile with Trigger"
     ],
 
     "on_hit": [
@@ -41,7 +52,20 @@ let renderer = new Renderer(game, board, new Vector2(64, 36), 48, 48, 1/3);
 
 game.spawn_player(get_entity_by_name("Player"), new Vector2(16, 18));
 
-game.spawn_entity(get_entity_by_name("war machine"), Teams.ENEMY, new Vector2(12, 20), true).spawn_protection = false;
+let e1 = game.spawn_entity(get_entity_by_name("war machine"), Teams.ENEMY, new Vector2(12, 20), true)
+let e2 = game.spawn_entity(get_entity_by_name("war machine"), Teams.ENEMY, new Vector2(8, 20), true)
+let e3 = game.spawn_entity(get_entity_by_name("war machine"), Teams.ENEMY, new Vector2(12, 28), true)
+let e4 = game.spawn_entity(get_entity_by_name("war machine"), Teams.ENEMY, new Vector2(10, 24), true)
+
+e1.spawn_protection = false;
+e2.spawn_protection = false;
+e3.spawn_protection = false;
+e4.spawn_protection = false;
+
+game.wave_entities[e1.id] = e1;
+game.wave_entities[e2.id] = e2;
+game.wave_entities[e3.id] = e3;
+game.wave_entities[e4.id] = e4;
 
 /*
 game.spawn_entity(get_entity_by_name("test enemy"), Teams.PLAYER, new Vector2(12, 20), true).name = "friendly friend ^w^";
@@ -73,7 +97,7 @@ for (let xt=0; xt<game.board.dimensions.x; xt++) {
 //let target = new Vector2(20, 22);
 
 game.player_spells = [
-    {spells: [], name: "empty"},
+    {spells: [get_spell_by_name("fireball")], name: "empty"},
     {spells: [...spells_list.filter(s => !s.is_corrupt()).slice(0, 20)], name: "0-20"},
     {spells: [...spells_list.filter(s => !s.is_corrupt()).slice(20, 40)], name: "20-40"},
     {spells: [...spells_list.filter(s => !s.is_corrupt()).slice(40, 60)], name: "40-60"},
@@ -197,7 +221,6 @@ console.log(spells_list.filter(s => s.is_normal()).length + " non-red items")
 console.log(spells_list.filter(s => s.is_red()).length + " red items")
 console.log(spells_list.filter(s => s.is_corrupt()).length + " corrupted items")
 console.log(spells_list.filter(s => s.is_normal() && !Object.keys(spells_loot_table).some(g => spells_loot_table[g].some(sc => sc.id != s.id))).length + " non-red items have no loot group assigned");
-
 
 window.addEventListener("resize", handle_resize, true);
 

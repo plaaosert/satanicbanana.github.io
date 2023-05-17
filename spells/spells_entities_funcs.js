@@ -5,6 +5,7 @@ entities_spells = {
 
     "test enemy": [
         // Bite; 6 physical dmg; range 1
+        enemy_melee_core("Bite", 6, DmgType.Physical)
     ],
 
     "big guy": [
@@ -13,7 +14,27 @@ entities_spells = {
 
     "Fuckn GUy": [
         // KIll You BOLT; damage plus i; lightning bolt
+        enemy_spell_group(
+            0, "KIll You BOLT", "#fe5", gen_spells(
+                "damage plus i", "lightning bolt"
+            )
+        ),
+
         // EPXLODE; 40 holy dmg; line; range 40; trigger at target; 100 psychic dmg; burst radius 2; cooldown 8 turns
+        enemy_spell_group(
+            8, "EPXLODE", damage_type_cols[DmgType.Psychic], [
+                core_spell(
+                    "EPXLODE 1", "[]", SpellSubtype.Red, "#fff", "#f00",
+                    "FIRES A STUPID EXPLOSIVE, DEALING 40 HOLY DAMAGE TO ALL ENEMIES ON ITS PATH BEFORE EXPLODING FOR 100 PSYCHIC DAMAGE IN A 2 TILE BURST",
+                    40, DmgType.Holy, 40, 1, Shape.Line, 0
+                ).set_trigger("at_target"),
+
+                core_spell(
+                    "EPXLODE 2", "##", SpellSubtype.Red, "#fff", "#f00", "",
+                    100, DmgType.Psychic, 0, 2, Shape.Diamond, 0
+                )
+            ]
+        )
     ],
 
     "Wall": [
@@ -22,42 +43,71 @@ entities_spells = {
 
     "Goblin": [
         // Bite; 6 physical dmg; range 1
+        enemy_melee_core("Bite", 6, DmgType.Physical)
     ],
 
     "Hobgoblin": [
         // Claw; 7 physical dmg; range 1
+        enemy_melee_core("Claw", 7, DmgType.Physical)
     ],
 
     "Gobbo": [
         // Scream; 4 chaos dmg; line; range 3
+        simple_enemy_line_core(
+            0, "Scream", "", "",
+            4, DmgType.Chaos, 3, 0
+        )
     ],
 
     "Gremlin": [
         // Bite; 5 physical dmg; range 1
+        enemy_melee_core("Bite", 5, DmgType.Physical)
     ],
 
     "Alpha Goblin": [
         // Body Slam; 10 physical dmg; range 1
+        enemy_melee_core("Body Slam", 10, DmgType.Physical),
+
         // Uppercut; 15 physical dmg; range 1; cooldown 4 turns
+        enemy_melee_core("Uppercut", 15, DmgType.Physical, 4)
     ],
 
     "Flaming Goblin": [
         // Tackle; 8 fire dmg; range 1
+        enemy_melee_core("Tackle", 8, DmgType.Physical),
+
         // Firebreathing; 4 fire dmg; cone; range 3
+        simple_enemy_burst_core(
+            0, "Firebreathing", "", "", 4, DmgType.Fire, 3, 3, 0, Shape.Cone
+        )
     ],
 
     "Esper Goblin": [
-        // Mind Spike; 12 psychic dmg; range 6; burst; radius 1; 15 MP
+        // Mind Spike; 12 psychic dmg; range 6; line; 15 MP
+        simple_enemy_line_core(0, "Mind Spike", "", "", 12, DmgType.Psychic, 6, 15)
     ],
 
     "Static Goblin": [
         // Static Bolt; 8 lightning dmg; line; range 5; 5MP
+        simple_enemy_line_core(0, "Static Bolt", "", "", 8, DmgType.Lightning, 5, 5),
+
         // Spark Burst; 16 lightning dmg; selftarget; burst; radius 4; 20MP
+        enemy_spell_group(
+            0, "Spark Burst", damage_type_cols[DmgType.Lightning], [
+                core_spell(
+                    "Spark Burst", "[]", SpellSubtype.Core, damage_type_cols[DmgType.Lightning],
+                    "#000", "", 16, DmgType.Lightning, 4, 4, Shape.Diamond, 20, SpellTargeting.SelfTarget
+                )
+            ]
+        )
     ],
 
     "Possessed Bat": [
         // Bite; 4 physical dmg; range 1
+        enemy_melee_core("Bite", 4, DmgType.Physical),
+
         // Dark Bolt; 6 dark dmg; range 3; line; 5 MP
+        simple_enemy_line_core(0, "Dark Bolt", "", "", 6, DmgType.Dark, 3, 5)
     ],
 
     "Goblin War Machine": [

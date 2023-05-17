@@ -24,20 +24,20 @@ with open("entities.tsv", "r") as f:
     for index, sub in enumerate(subtabs):
         # constructor(name, icon, col, desc, max_hp, max_mp, affinities, xp_value, spawn_credits, innate_spells, ai_level, blocks_los, untargetable, on_death)
         # name	icon	colour	desc	hp	mp	affinity 1	affinity 2	affinity 3	xp value	spawn credits	spells	ai level	Spawns on death
-        name     = sub[0].replace("\\", "\\\\").replace("\"", "\\\"") if sub[0] else "Unnamed"
-        icon     = sub[1].replace("\\", "\\\\").replace("\"", "\\\"") if sub[1] else "??"
-        col      = sub[2].replace("\\", "\\\\").replace("\"", "\\\"") if sub[2] else "#f00"
-        desc     = sub[3].replace("\\", "\\\\").replace("\"", "\\\"") if sub[3] else "This entity is corrupted and should not be here!"
-        max_hp   = sub[4].replace("\\", "\\\\").replace("\"", "\\\"") if sub[4] else "1"
-        max_mp   = sub[5].replace("\\", "\\\\").replace("\"", "\\\"") if sub[5] else "1"
-        aff1     = sub[6].replace("\\", "\\\\").replace("\"", "\\\"") if sub[6] else "Living"
-        aff2     = sub[7].replace("\\", "\\\\").replace("\"", "\\\"") if sub[7] else ""
-        aff3     = sub[8].replace("\\", "\\\\").replace("\"", "\\\"") if sub[8] else ""
-        xp_value = sub[9].replace("\\", "\\\\").replace("\"", "\\\"") if sub[9] else "0"
-        screds   = sub[10].replace("\\", "\\\\").replace("\"", "\\\"") if sub[10] else "-1"
+        name     = sub[0].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[0] else "Unnamed"
+        icon     = sub[1].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[1] else "??"
+        col      = sub[2].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[2] else "#f00"
+        desc     = sub[3].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[3] else "This entity is corrupted and should not be here!"
+        max_hp   = sub[4].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[4] else "1"
+        max_mp   = sub[5].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[5] else "1"
+        aff1     = sub[6].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[6] else "Living"
+        aff2     = sub[7].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[7] else ""
+        aff3     = sub[8].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[8] else ""
+        xp_value = sub[9].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[9] else "0"
+        screds   = sub[10].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[10] else "-1"
         spells   = sub[11].replace("\\", "\\\\").replace("\"", "\\\"") if sub[11] else "None"
-        ai_lvl   = sub[12].replace("\\", "\\\\").replace("\"", "\\\"") if sub[12] else "1"
-        on_death = sub[13].replace("\\", "\\\\").replace("\"", "\\\"") if sub[13] else "None"
+        ai_lvl   = sub[12].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[12] else "1"
+        on_death = sub[13].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[13] else "None"
 
         max_hp = "Number.POSITIVE_INFINITY" if max_hp == "Inf" else max_hp
         max_mp = "Number.POSITIVE_INFINITY" if max_mp == "Inf" else max_mp
@@ -129,21 +129,23 @@ with open("spells.tsv", "r") as f:
     for index, sub in enumerate(subtabs):
         # constructor(name, icon, col, back_col, typ, desc, manacost, bonus_draws, trigger_type, to_stats_fn, at_target_fn, on_hit_fn, on_affected_tiles_fn)
         # name	icon	type	subtype	colour	bg colour	desc	manacost	damage	damage type	range	radius	shape	target type	target teams
-        name        = sub[0].replace("\\", "\\\\").replace("\"", "\\\"") if sub[0] else "Unknown"
-        icon        = sub[1].replace("\\", "\\\\").replace("\"", "\\\"") if sub[1] else "??"
-        typ         = sub[2].replace("\\", "\\\\").replace("\"", "\\\"") if sub[2] else "Modifier"
-        subtyp      = sub[3].replace("\\", "\\\\").replace("\"", "\\\"") if sub[3] else "Red Modifier"
-        colour      = sub[4].replace("\\", "\\\\").replace("\"", "\\\"") if sub[4] else "#fff"
-        back_col    = sub[5].replace("\\", "\\\\").replace("\"", "\\\"") if sub[5] else "#f00"
-        desc        = sub[6].replace("\\", "\\\\").replace("\"", "\\\"") if sub[6] else ""
-        manacost    = sub[7].replace("\\", "\\\\").replace("\"", "\\\"") if sub[7] else "0"
-        damage      = sub[8].replace("\\", "\\\\").replace("\"", "\\\"") if sub[8] else ""
-        dmg_type    = sub[9].replace("\\", "\\\\").replace("\"", "\\\"") if sub[9] else ""
-        range       = sub[10].replace("\\", "\\\\").replace("\"", "\\\"") if sub[10] else ""
-        radius      = sub[11].replace("\\", "\\\\").replace("\"", "\\\"") if sub[11] else ""
-        shape       = sub[12].replace("\\", "\\\\").replace("\"", "\\\"") if sub[12] else ""
-        target_typ  = sub[13].replace("\\", "\\\\").replace("\"", "\\\"") if sub[13] else ""
-        target_team = sub[14].replace("\\", "\\\\").replace("\"", "\\\"") if sub[14] else ""
+        name        = sub[0].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[0] else "Unknown"
+        icon        = sub[1].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[1] else "??"
+        typ         = sub[2].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[2] else "Modifier"
+        subtyp      = sub[3].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[3] else "Red Modifier"
+        colour      = sub[4].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[4] else "#fff"
+        back_col    = sub[5].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[5] else "#f00"
+        desc        = sub[6].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[6] else ""
+        manacost    = sub[7].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[7] else "0"
+        damage      = sub[8].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[8] else ""
+        dmg_type    = sub[9].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[9] else ""
+        range       = sub[10].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[10] else ""
+        radius      = sub[11].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[11] else ""
+        shape       = sub[12].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[12] else ""
+        target_typ  = sub[13].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[13] else ""
+        target_team = sub[14].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[14] else ""
+
+        desc = desc.strip("\"")
 
         subtyp = subtyp.replace(" ", "")
 

@@ -61,6 +61,8 @@ TODO:
 - spells should be clickable to select them, or bound to numbers 1-5
 */
 
+switch_checkerboard = 0;
+
 function in_bounds(val, lo, hi) {
     return val >= lo && val < hi;
 }
@@ -134,6 +136,13 @@ class Vector2 {
 
     wrap(bounds) {
         return new Vector2(this.x % bounds.x, this.y % bounds.y);
+    }
+
+    rotate(rad) {
+        return new Vector2(
+            this.x * Math.cos(rad) - this.y * Math.sin(rad),
+            this.x * Math.sin(rad) + this.y * Math.cos(rad),
+        )
     }
 }
 
@@ -314,7 +323,7 @@ class Renderer {
 
                 c.classList.add("white");
                 if (x >= this.left_menu_size.x && x < this.left_menu_size.x + this.game_view_size.x) {
-                    if ((Math.floor(x/2) + y) % 2 != 0) {
+                    if ((Math.floor(x/2) + y) % 2 != switch_checkerboard) {
                         c.classList.add("check-dark");
                     } else {
                         c.classList.add("check-light");
@@ -622,7 +631,7 @@ class Renderer {
                                 let result = game.move_player(path[1]);
                                 
                                 if (result) {
-                                    this.move_particles(path[1].sub(game.player_ent.position).neg());
+                                    //this.move_particles(path[1].sub(game.player_ent.position).neg());
                                 }
             
                                 game.end_turn();
@@ -912,10 +921,15 @@ class Renderer {
         )
 
         // affinities
-        for (let i=0; i<p.affinities.length; i++) {
+        for (let i=0; i<Math.max(3, p.affinities.length); i++) {
+            let st = "";
+            if (p.affinities[i]) {
+                st = `[${affinity_cols[p.affinities[i]]}]${p.affinities[i]}`
+            }
+
             this.set_pixel_text(
                 left_mount_pos.add(new Vector2(clearance_x - 10, i)),
-                this.pad_str(`[${affinity_cols[p.affinities[i]]}]${p.affinities[i]}`, 10)
+                this.pad_str(st, 10)
             )
         }
 
@@ -1414,7 +1428,7 @@ class Renderer {
         for (let x=0; x<this.game_view_size.x; x++) {
             for (let y=0; y<this.game_view_size.y; y++) {
                 let pos = new Vector2(x + this.left_menu_size.x, y);
-                let light = Math.floor((x / 2) + y) % 2 == 0;
+                let light = Math.floor((x / 2) + y) % 2 == switch_checkerboard;
 
                 if (light) {
                     this.set_back(pos, light_col);
@@ -1820,6 +1834,8 @@ class Renderer {
 
                 // can do some optimisation here since we overdraw the same stuff a lot
                 let back_rgb = [0, 0, 0];
+                let do_not_highlight = false;
+
                 if (true) {
                     let pos_in_bounds = true;
                     if (!this.board.position_valid(game_pos)) {
@@ -1828,32 +1844,46 @@ class Renderer {
                     } else {
                         if (game.selected_player_primed_spell) {
                             if (radius_vecs.some((v) => v.equals(game_pos))) {
-                                let effect_indicator_col = (Math.floor(game_pos.x) + game_pos.y) % 2 != 0 ? [32, 32, 64] : [24, 24, 64];
+                                let effect_indicator_col = (Math.floor(game_pos.x) + game_pos.y) % 2 != switch_checkerboard ? [32, 32, 64] : [24, 24, 64];
 
                                 back_rgb = effect_indicator_col;
 
                                 if (this.selected_tile && new Vector2(Math.floor(this.selected_tile.x / 2) * 2, this.selected_tile.y).equals(screen_pos)) {
                                     //console.log("changed");
-                                    selected_col = "#44a";
+                                    if (game.selected_player_primed_spell.root_spell.stats.target_type == SpellTargeting.UnitTarget) {
+                                        selected_col = "#66f";
+                                    } else {
+                                        selected_col = "#66f";
+                                    }
                                     //console.log(selected_col);
                                 }
-                            } else if (game.selected_player_primed_spell.root_spell.in_range(game.player_ent, game_pos)) {
-                                let range_indicator_col = (Math.floor(game_pos.x) + game_pos.y) % 2 != 0 ? [0, 64, 0] : [0, 80, 0];
+                            } else if (game.selected_player_primed_spell.root_spell.in_range(game.player_ent, game_pos, true)) {
+                                // using "hypothetical" range to show the range of unit target spells too
+                                let really_in_range = game.selected_player_primed_spell.root_spell.in_range(game.player_ent, game_pos);
+
+                                let range_indicator_col = (Math.floor(game_pos.x) + game_pos.y) % 2 != switch_checkerboard ? [32, 32, 32] : [48, 48, 48];
+                                if (really_in_range) {
+                                    range_indicator_col = (Math.floor(game_pos.x) + game_pos.y) % 2 != switch_checkerboard ? [0, 64, 0] : [0, 80, 0];
+                                }
 
                                 back_rgb = range_indicator_col;
 
                                 if (this.selected_tile && new Vector2(Math.floor(this.selected_tile.x / 2) * 2, this.selected_tile.y).equals(screen_pos)) {
                                     //console.log("changed");
-                                    selected_col = "#0a0";
+                                    if (game.selected_player_primed_spell.root_spell.stats.target_type == SpellTargeting.UnitTarget) {
+                                        selected_col = "#bbb";
+                                    } else {
+                                        selected_col = "#0a0";
+                                    }
                                     //console.log(selected_col);
                                 }
                             } else {
-                                let neutral_col = (Math.floor(game_pos.x) + game_pos.y) % 2 != 0 ? [0, 0, 0] : [16, 16, 16];
+                                let neutral_col = (Math.floor(game_pos.x) + game_pos.y) % 2 != switch_checkerboard ? [0, 0, 0] : [16, 16, 16];
 
                                 back_rgb = neutral_col;
                             }
                         } else {
-                            let neutral_col = (Math.floor(game_pos.x) + game_pos.y) % 2 != 0 ? [0, 0, 0] : [16, 16, 16];
+                            let neutral_col = (Math.floor(game_pos.x) + game_pos.y) % 2 != switch_checkerboard ? [0, 0, 0] : [16, 16, 16];
 
                             back_rgb = neutral_col;
                         }
@@ -1862,7 +1892,7 @@ class Renderer {
                     //this.last_player_spell_state = current_state;
                 }
 
-                if (this.board.get_pos(game_pos)) {
+                if (this.board.get_pos(game_pos) && !do_not_highlight) {
                     if (this.board.get_pos(game_pos).team == Teams.PLAYER) {
                         back_rgb[0] += 0;
                         back_rgb[1] += 32;
@@ -1926,6 +1956,8 @@ class Board {
         let y = size.y;
 
         this.dimensions = new Vector2(size.x, size.y);
+        this.num_tiles = size.x * size.y;
+
         this.cells = [];
         for (let yt=0; yt<y; yt++) {
             this.cells.push([]);
@@ -2046,12 +2078,12 @@ class Entity {
         this.untargetable = template.untargetable;
 
         this.spawn_credits = template.spawn_credits;
-        this.on_death = template.on_death;
+        this.on_death = template.on_death.slice();
 
         this.team = team;
         this.dead = false;
 
-        this.spawn_protection = true;
+        this.spawn_protection = false;
 
         this.calculate_primed_spells(new Vector2(0, 0));
     }
@@ -2106,7 +2138,10 @@ class Entity {
                                 if (this.innate_spells[i][1] == best_mp_cd[1] && primed_spell.manacost == best_mp_cd[0]) {
                                     spell_to_cast.push([primed_spell, i])
                                 } else {
-                                    if (this.innate_spells[i][1] > best_mp_cd[1] || primed_spell.manacost > best_mp_cd[0]) {
+                                    if (this.innate_spells[i][1] > best_mp_cd[0]) {
+                                        spell_to_cast = [[primed_spell, i]];
+                                        best_mp_cd = [this.innate_spells[i][1], primed_spell.manacost];
+                                    } else if (this.innate_spells[i][1] == best_mp_cd[0] && primed_spell.manacost > best_mp_cd[1]) {
                                         spell_to_cast = [[primed_spell, i]];
                                         best_mp_cd = [this.innate_spells[i][1], primed_spell.manacost];
                                     }
@@ -2282,6 +2317,11 @@ class Entity {
         }
     }
 
+    has_status(status) {
+        return false
+        // TODO this
+    }
+
     cleanse_effects() {
         // TODO something
     }
@@ -2298,8 +2338,22 @@ class Entity {
         game.kill(this);
     }
 
+    revive() {
+        this.dead = false;
+        this.restore_hp(Number.POSITIVE_INFINITY);
+    }
+
+    change_hp(amount) {
+        this.hp += amount;
+        this.hp = Math.max(0, Math.min(this.max_hp, this.hp));
+    }
+
+    restore_hp(amount) {
+        this.change_hp(amount);
+    }
+
     lose_hp(amount) {
-        this.hp -= amount;
+        this.change_hp(-amount);
         if (this.hp <= 0) {
             this.die();
             return true;
@@ -2456,6 +2510,11 @@ class Spell {
         return this;
     }
 
+    /**
+     * 
+     * @param {('at_target'|'on_hit'|'on_affected_tiles')} typ 
+     * @returns {Spell}
+     */
     set_trigger(typ) {
         this.trigger_type = typ;
 
@@ -2776,13 +2835,15 @@ console.log(["Fire",
 }).join("\n"))
 
 const StatusEffect = {
-    FREEZE: "Freeze",
-    SLEEP: "Sleep",
-    STUN: "Stun",
+    FREEZE: "Frozen",
+    SLEEP: "Sleeping",
+    STUN: "Stunned",
     POISON: "Poison",
     BULWARK: "Bulwark",
     SHIELD: "Shield",
-    OVERCHARGE: "Overcharge"  // +50% lightning damage dealt and taken
+    OVERCHARGE: "Overcharge",  // +50% lightning damage dealt and taken
+    BLEED: "Bleed",
+    INVULNERABLE: "Invulnerable",
 }
 
 Object.keys(DmgType).forEach(typ => {
@@ -3020,6 +3081,100 @@ function propagate_diamond(origin, radius, los) {
     return positions.reverse();
 }
 
+const Generator = {
+    RandomWalls: function(game, board, cvr) {
+        let coverage = cvr ? cvr : 0.1
+
+        let num_walls = (0.85 + (Math.random() * 0.3)) * board.num_tiles * coverage;
+        num_walls = Math.floor(num_walls);
+
+        let wall = get_entity_by_name("Wall");
+
+        let walls_placed = 0;
+
+        for (let i=0; i<num_walls; i++) {
+            let pos = new Vector2(
+                Math.floor(Math.random() * board.dimensions.x),
+                Math.floor(Math.random() * board.dimensions.y)
+            );
+
+            let result = game.spawn_entity(
+                wall, Teams.UNALIGNED, pos
+            )
+
+            if (result) {
+                walls_placed++;
+            }
+        }
+
+        // check every tile. if it is not reachable from the player tile,
+        // turn it into a wall.
+        let flood_set = {};
+        let expands = {};
+
+        let new_expands = {};
+        new_expands[game.player_ent.position.hash_code()] = game.player_ent.position;
+
+        while (Object.keys(new_expands).length > 0) {
+            expands = new_expands;
+            new_expands = {};
+
+            Object.keys(expands).forEach(p => {
+                let current = expands[p];
+                let neighbours = [
+                    current.add(new Vector2(0, 1)),
+                    current.add(new Vector2(0, -1)),
+                    current.add(new Vector2(-1, 0)),
+                    current.add(new Vector2(1, 0)),
+                    current.add(new Vector2(-1, -1)),
+                    current.add(new Vector2(1, -1)),
+                    current.add(new Vector2(-1, 1)),
+                    current.add(new Vector2(1, 1)),
+                ]
+
+                neighbours.forEach(n => {
+                    if (board.position_valid(n)) {
+                        let ent = board.get_pos(n);
+                        if (!ent || !ent.blocks_los) {
+                            if (!flood_set[n.hash_code()]) {
+                                new_expands[n.hash_code()] = n;
+                                flood_set[n.hash_code()] = n;
+                            }
+                        }
+                    }
+                })
+            })
+        }
+
+        for (let x=0; x<board.dimensions.x; x++) {
+            for (let y=0; y<board.dimensions.y; y++) {
+                let t = new Vector2(x, y);
+                if (!flood_set[t.hash_code()]) {
+                    let result = game.spawn_entity(
+                        wall, Teams.UNALIGNED, t
+                    )
+        
+                    if (result) {
+                        walls_placed++;
+                    }
+                }
+            }
+        }
+
+        // finally, reject the generation if over 2x the number of tiles
+        // that should be empty are now filled
+        let expected_empty = board.num_tiles - num_walls;
+        let actual_empty = board.num_tiles - walls_placed;
+        if (actual_empty * 2 < expected_empty) {
+            //console.log(actual_empty, expected_empty, "- worldgen fail");
+            return false;
+        }
+
+        //console.log(actual_empty, expected_empty, "- worldgen success");
+        return true;
+    }
+}
+
 const Shape = {
     Square: ["square shape", function(origin, target, radius, los) {
         if (origin == "whoami") {
@@ -3073,12 +3228,65 @@ const Shape = {
 
     }],
     Cone: ["cone shape", function(origin, target, radius, los) {
+        if (origin == "whoami") {
+            return "cone shape";
+        }
+        
+        let dist = origin.distance(target);
 
+        let pts = make_square(origin, 2 + dist * 2);
+
+        // the radius of the cone determines how long the circumference of the
+        // circle segment can be.
+        // radius 3 means it can be 3 long, etc.
+
+        let allowed_angle = Math.max(0, Math.min(Math.PI * 1, radius / dist));
+
+        //allowed_angle = (Math.PI / 180) * 30
+
+        // https://stackoverflow.com/questions/13652518/efficiently-find-points-inside-a-circle-sector
+        // so we need to verify if each point is ccw from the end and cw from the start.
+
+        let target_vector = target.sub(origin);
+
+        let start_vector = target_vector.rotate(-allowed_angle);
+        let end_vector = target_vector.rotate(allowed_angle);
+
+        //console.log("angle:", allowed_angle, `(${allowed_angle * (180 / Math.PI)} deg)`, target_vector, start_vector, end_vector)
+
+        function are_clockwise(v1, v2) {
+            return -v1.x*v2.y + v1.y*v2.x > 0;
+        }
+
+        let direct_line = make_line(origin, target, radius, los).map(p => p.hash_code())
+
+        let filtered = pts.filter(
+            vec => {
+                let normalised_vec = vec.sub(origin);
+
+                let start_ccw = !are_clockwise(start_vector, normalised_vec);
+                let end_cw = are_clockwise(end_vector, normalised_vec);
+
+                let in_range = origin.distance(vec) <= dist;
+
+                //console.log(start_vector, start_ccw, end_vector, end_cw);
+
+                let in_cone = (start_ccw && end_cw && in_range) && (!los || game.has_los_pos(origin, vec))
+                let in_line = direct_line.includes(vec.hash_code());
+
+                return in_cone || in_line;
+            }
+        );
+
+        return filtered
     }]
 }
 
 const SpellSpecials = {
-    FLAMENOVA: "FLAMENOVA"
+    FLAMENOVA: "FLAMENOVA",
+    TURNDEAD: "TURNDEAD",
+    CHAOSINCANT: "CHAOSINCANT",
+    NEVERDAMAGE: "NEVERDAMAGE"
 }
 
 class PrimedSpell {
@@ -3167,13 +3375,17 @@ class PrimedSpell {
             }
         })
 
+        if (this.stats.specials.includes(SpellSpecials.NEVERDAMAGE)) {
+            this.stats.damage = 0;
+        }
+
         // clamps
         this.stats.damage = Math.max(0, this.stats.damage);
         this.stats.radius = Math.max(0, this.stats.radius);
         this.stats.range = Math.max(0, this.stats.range);
     }
 
-    in_range(caster, position) {
+    in_range(caster, position, ignore_unit_target) {
         if ([SpellTargeting.SelfTarget, SpellTargeting.SelfTargetPlusCaster].includes(this.stats.target_type)) {
             return caster.position.equals(position);
         }
@@ -3191,7 +3403,23 @@ class PrimedSpell {
         let los_check = game.has_los(caster, position);
 
         if (los_check || !this.stats.los) {
-            return caster.position.distance(position) <= this.stats.range;
+            let in_range = caster.position.distance(position) <= this.stats.range;
+
+            if (in_range) {
+                if (this.stats.target_type == SpellTargeting.UnitTarget) {
+                    let ent = game.board.get_pos(position)
+                    if (ent && ent.team_present(this.stats.target_team)) {
+                        return true;
+                    }
+
+                    return ignore_unit_target ? true : false;
+                } else {
+                    return true;
+                }
+            } else {
+                // not in range means instant fail
+                return false;
+            }
         }
     }
 
@@ -3216,7 +3444,7 @@ class PrimedSpell {
             }
         }
         
-        console.log(this.stats);
+        //console.log(this.stats);
 
         //console.log(cast_locations);
 
@@ -3225,6 +3453,27 @@ class PrimedSpell {
         }
         
         game.reset_damage_count(this.caster.id);
+
+        // drop some particles indicating where the spell came from
+        let line_points = Shape.Line[1](origin, position, 1, false);
+        line_points.forEach(p => {
+            renderer.put_particle_from_game_loc(p, new Particle(
+                spell_projection_particle
+            ));
+        })
+
+        // we really want to sell the chaos effect so do chaos stuff here if needed
+        if (this.stats.specials.includes(SpellSpecials.CHAOSINCANT)) {
+            this.spells.forEach(s => {
+                //console.log(s, s.unknown_incant_dmgtype);
+                // basically force a recalc on every cast
+                if (s.name == "Unknown Incantation") {
+                    this.stats = {};
+
+                    this.calculate();
+                }
+            })
+        }
 
         let sthis = this;
         cast_locations.forEach(location => {
@@ -3285,6 +3534,8 @@ class PrimedSpell {
 
         // get list of damaged entities from this spell
         let keep_triggering_damage = true;
+        let entities_killed = {};
+
         while (keep_triggering_damage) {
             keep_triggering_damage = false;
 
@@ -3309,10 +3560,33 @@ class PrimedSpell {
                         this.trigger[1].origin = position;
                         game.cast_primed_spell(this.trigger[1].copy(), ent.position, true);
                     }
+
+                    if (ent.dead && !entities_killed[ent.id]) {
+                        entities_killed[ent.id] = ent;
+                    } 
                 })
 
                 game.reset_damage_count(this.caster.id);
             }
+        }
+
+        if (this.stats.specials.includes(SpellSpecials.TURNDEAD)) {
+            Object.keys(entities_killed).forEach(eid => {
+                // need to restore their hp, change their team and affinities, then manually re-add them
+                // this is so fucked
+                let ent = entities_killed[eid];
+
+                if (ent.team != this.caster.team) {
+                    ent.revive();
+                    ent.affinities = [
+                        Affinity.Dark, Affinity.Undead
+                    ]
+
+                    ent.team = this.caster.team;
+
+                    game.put_entity_obj_near(ent, ent.position);
+                }
+            })
         }
 
         // check multicasts
@@ -3323,7 +3597,19 @@ class PrimedSpell {
             let new_spell = this.copy();
             new_spell.stats.multicasts["normal"] = new_mc;
 
-            console.log(new_spell)
+            //console.log(new_spell)
+            game.cast_primed_spell(new_spell, new_pos, true);
+        }
+
+        else if (this.stats.multicasts["btb"] > 0) {
+            // place a copy of this spell on the casting stack but decrement the value
+            let new_pos = position.sub(position).neg().add(position);
+
+            let new_mc = this.stats.multicasts["btb"] - 1;
+            let new_spell = this.copy();
+            new_spell.stats.multicasts["btb"] = new_mc;
+
+            //console.log(new_spell)
             game.cast_primed_spell(new_spell, new_pos, true);
         }
         
@@ -3488,6 +3774,39 @@ class Game {
         this.enabled = true;
     }
 
+    reset_with_alg(alg) {
+        for (let x=0; x<this.board.dimensions.x; x++) {
+            for (let y=0; y<this.board.dimensions.y; y++) {
+                let p = new Vector2(x, y);
+                let e = this.board.get_pos(p);
+                if (e && e.id != this.player_ent.id) {
+                    this.kill(e, true);
+                }
+            }
+        }
+
+        this.move_player(new Vector2(
+            Math.floor(this.board.dimensions.x / 2),
+            Math.floor(this.board.dimensions.y / 2)
+        ));
+
+        this.turn_index = 0;
+
+        this.worldgen(alg);
+    }
+
+    worldgen(alg) {
+        let success = false;
+
+        for (let i=0; i<256; i++) {
+            console.log(`Attempting worldgen (try #${i+1})`)
+            success = alg(this, this.board);
+            if (success) {
+                break;
+            }
+        }
+    }
+
     player_discard_edits() {
         for (let i=0; i<this.player_max_spell_fragments; i++) {
             for (let t=0; t<5; t++) {
@@ -3644,11 +3963,30 @@ class Game {
     check_wave_end() {
         if (Object.keys(this.wave_entities).length <= 0) {
             // do mid-wave stuff here too
-            this.player_ent.refresh();
+            this.enabled = false;
 
-            console.log("new wave:     ", this.wavecount + 1);
+            let sthis = this;
+            setTimeout(function() {
+                sthis.player_ent.refresh();
 
-            this.progress_wave();
+                console.log("new wave:     ", sthis.wavecount + 1);
+
+                sthis.inventory_open = true;
+                sthis.deselect_player_spell();
+
+                renderer.render_game_checkerboard("black");
+                renderer.reset_selections();
+                renderer.render_inventory_menu();
+
+                setTimeout(function() {
+                    sthis.enabled = true;
+                    sthis.reset_with_alg(
+                        Generator.RandomWalls
+                    )
+
+                    sthis.progress_wave();
+                });
+            }, 2000);
         }
     }
 
@@ -3856,6 +4194,10 @@ class Game {
             return;
         }
 
+        if (!this.enabled) {
+            return;
+        }
+
         if (spells && spells.length > 0) {
             if (this.player_spell_in_range(at)) {
                 this.player_ent.cast_spell(spells, at);
@@ -3934,6 +4276,10 @@ class Game {
             return;
         }
 
+        if (!this.enabled) {
+            return;
+        }
+
         let parsed = this.player_ent.parse_spell(spells, new Vector2(0, 0));
 
         if (this.player_ent.mp >= parsed.manacost) {
@@ -3956,8 +4302,7 @@ class Game {
         console.log("game asked for right panel refresh");
     }
 
-    spawn_entity(ent_template, team, position, overwrite) {
-        let ent = new Entity(ent_template, team);
+    put_entity_obj(ent_obj, position, overwrite) {
         let remove_index = -1;
         if (overwrite && this.board.get_pos(position)) {
             for (let i=0; i<this.entities.length; i++) {
@@ -3972,13 +4317,30 @@ class Game {
             this.entities.splice(remove_index, 1);
         }
 
-        if (this.board.set_pos(position, ent, overwrite)) {
-            ent.position = position;
-            this.entities.push(ent);
-            return ent;
+        if (this.board.set_pos(position, ent_obj, overwrite)) {
+            ent_obj.position = position;
+            this.entities.push(ent_obj);
+            return ent_obj;
         }
 
         return null;
+    }
+
+    put_entity_obj_near(entity_object, position) {
+        // THIS IS FOR PREMADE ENTITIES, NOT TEMPLATES
+        let pos = this.find_closest_free_point(position);
+
+        this.put_entity_obj(entity_object, pos);
+    }
+
+    spawn_entity(ent_template, team, position, overwrite) {
+        let ent = new Entity(ent_template, team);
+        return this.put_entity_obj(ent, position, overwrite);
+    }
+
+    spawn_entity_near(ent_template, team, position) {
+        let pos = this.find_closest_free_point(position);
+        this.spawn_entity(ent_template, team, pos);
     }
 
     spawn_player(player_ent, position) {
@@ -4030,7 +4392,7 @@ class Game {
     find_random_space_in_los(caster, pos, radius, shape, ignore_los, consider_entities_solid) {
         let points = shape(
             caster.position, pos, radius, !ignore_los
-        );
+        ).filter(p => this.board.position_valid(p));
 
         if (consider_entities_solid) {
             points = points.filter(p => {
@@ -4044,6 +4406,46 @@ class Game {
             let point = points[i];
             if (this.has_los(caster, point) || ignore_los) {
                 return point;
+            }
+        }
+
+        return null;
+    }
+
+    find_closest_free_point(pos, rmax) {
+        // if the actual position is clear just do this now
+        if (this.board.position_valid(pos)) {
+            let ent = this.board.get_pos(pos);
+            if (!ent) {
+                return pos;
+            }
+        }
+
+        let vectors = [
+            new Vector2(1, -1),  // dr
+            new Vector2(-1, -1), // dl
+            new Vector2(-1, 1),  // ul
+            new Vector2(1, 1)    // ur
+        ];
+
+        for (let r=1; r<(rmax?rmax:64); r++) {
+            let start_point = new Vector2(0, r);
+            for (let v=0; v<4; v++) {
+                for (let i=0; i<r; i++) {
+                    // if this current point is empty, escape entirely and return the position
+                    let game_pos = start_point.add(pos);
+                    if (this.board.position_valid(game_pos)) {
+                        let ent = this.board.get_pos(game_pos);
+                        if (!ent) {
+                            return game_pos;
+                        }
+                    }
+
+                    let next_point = start_point.add(vectors[v]);
+
+                    // update point
+                    start_point = next_point;
+                }
             }
         }
 
@@ -4074,6 +4476,11 @@ class Game {
 
         if (this.board.set_pos(new_pos, ent, overwrite)) {
             this.board.clear_pos(ent.position);
+
+            if (ent.id == this.player_ent.id) {
+                renderer.move_particles(ent.position.sub(new_pos));
+            }
+
             ent.position = new_pos;
 
             return 1;
@@ -4136,7 +4543,7 @@ class Game {
         }
     }
 
-    kill(ent) {
+    kill(ent, ignore_ondeath) {
         let current_turn_entity = this.entities[this.turn_index];
         let new_entity_list = [];
         for (let i=0; i<this.entities.length; i++) {
@@ -4164,7 +4571,7 @@ class Game {
         this.board.clear_pos(ent.position);
 
         // if it has an on_death, spawn them here
-        if (ent.on_death) {
+        if (ent.on_death && !ignore_ondeath) {
             ent.on_death.forEach(d => {
                 for (let i=0; i<d.cnt; i++) {
                     let r = 2;
@@ -4179,8 +4586,8 @@ class Game {
                         );
                     }
 
-                    console.log("ent:", get_entity_by_name(d.name));
-                    console.log("pos:", pos);
+                    // console.log("ent:", get_entity_by_name(d.name));
+                    // console.log("pos:", pos);
 
                     if (pos) {
                         let e = this.spawn_entity(get_entity_by_name(d.name), ent.team, pos);
@@ -4188,6 +4595,8 @@ class Game {
                         if (this.wave_entities[ent.id]) {
                             this.wave_entities[e.id] = e;
                         }
+
+                        e.spawn_protection = false;
                     }
                 }
             });
@@ -4207,11 +4616,15 @@ function format_spell_desc(st) {
     desc_str = desc_str.replace(/([^#]|^)(-?\d+(?:\.\d+)?[%x]?)/g, `$1[#4df]$2[clear]`);
 
     Object.values(DmgType).forEach(t => {
-        desc_str = desc_str.replace(t, `[${damage_type_cols[t]}]${t}[clear]`);
+        desc_str = desc_str.split(t).join(`[${damage_type_cols[t]}]${t}[clear]`);
+    })
+
+    Object.values(Affinity).filter(t => !Object.values(DmgType).includes(t)).forEach(t => {
+        desc_str = desc_str.split(t).join(`[${affinity_cols[t]}]${t}[clear]`);
     })
 
     keywords.forEach(k => {
-        desc_str = desc_str.replace(k, `[#4df]${k}[clear]`);
+        desc_str = desc_str.split(k).join(`[#4df]${k}[clear]`);
     })
 
     return desc_str;
@@ -4230,7 +4643,7 @@ function apply_status(caster, target, status, turns) {
 }
 
 function apply_status_tile(caster, position, status, turns) {
-    let ent = game.baord.get_pos(position)
+    let ent = game.board.get_pos(position)
 
     if (ent) {
         apply_status(caster, ent, status, turns);
@@ -4328,8 +4741,20 @@ ${mp_string}`;
     return new Spell(name, icon, col, back_col_checked, SpellType.Core, subtyp, desc_str, manacost, 0, null, stat_function, no_target, no_hit, no_tiles);
 }
 
+function enemy_spell_group(cooldown, name, col, spells) {
+    return [
+        spells, cooldown, name, col
+    ];
+}
+
 function simple_enemy_core(cooldown, name, icon, col, back_col, desc, damage, damage_type, range, radius, shape, manacost, target_type=SpellTargeting.Positional, teams=null) {
-    let sp = core_spell(name, icon ? icon : "[]", SpellSubtype.Core, col ? col : damage_type_cols[damage_type], back_col, desc, damage, damage_type, range, radius, shape, manacost, target_type, teams);
+    let sp = core_spell(
+        name, icon ? icon : "[]", SpellSubtype.Core,
+        col ? col : damage_type_cols[damage_type], back_col,
+        desc, damage, damage_type, range, radius, shape,
+        manacost, target_type, teams
+    );
+
     return [
         [sp], cooldown, name, col ? col : damage_type_cols[damage_type]
     ];
@@ -4337,13 +4762,22 @@ function simple_enemy_core(cooldown, name, icon, col, back_col, desc, damage, da
 
 function simple_enemy_line_core(cooldown, name, icon, col, damage, damage_type, range, manacost) {
     return simple_enemy_core(
-        cooldown, name, icon, col, "black", "", damage, damage_type, range, 1, Shape.Line, manacost
+        cooldown, name, icon, col, "#000", "",
+        damage, damage_type, range, 1, Shape.Line, manacost
     )
 }
 
-function simple_enemy_burst_core(cooldown, name, icon, col, damage, damage_type, range, radius, manacost) {
+function simple_enemy_burst_core(cooldown, name, icon, col, damage, damage_type, range, radius, manacost, alt_shape) {
     return simple_enemy_core(
-        cooldown, name, icon, col, "black", "", damage, damage_type, range, radius, Shape.Diamond, manacost
+        cooldown, name, icon, col, "#000", "",
+        damage, damage_type, range, radius, alt_shape ? alt_shape : Shape.Diamond, manacost
+    )
+}
+
+function enemy_melee_core(name, damage, damage_type, cooldown, manacost) {
+    return simple_enemy_core(
+        cooldown ? cooldown : 0, name, "[]", damage_type_cols[damage_type], "#000", "",
+        damage, damage_type, 1, 1, Shape.Line, manacost ? manacost : 0
     )
 }
 
@@ -4662,6 +5096,10 @@ let dmg_type_particles = {
     "Holy": new ParticleTemplate(["@@", "##", ";;", "**", "''"], damage_type_cols["Holy"], 1),
     "Psychic": new ParticleTemplate(["@@", "[]", "{}", "||", "::"], damage_type_cols["Psychic"], 1),
 }
+
+let spell_projection_particle = new ParticleTemplate(
+    ["**", "++", ".."], "#bbb", 1
+);
 
 function get_spell_by_name(name) {
     let matches = spells_list.filter(spell => {

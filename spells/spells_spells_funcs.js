@@ -130,245 +130,604 @@ spells_funcs = {
         no_tiles
     ],
 
-    "15": [
+    "Magic Missile": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "16": [
+    "Arcane Crush": [
+        no_stats,
+        no_target,
+        function(caster, spell, stats, enemy, damage, dmgtype) {
+            if (!enemy.has_status(StatusEffect.STUN)) {
+                apply_status(caster, enemy, StatusEffect.STUN, 2)
+            }
+        },
+        no_tiles
+    ],
+
+    "Magical Explosion": [
+        no_stats,
+        no_target,
+        no_hit,
+        function(user, spell, stats, location) {
+            tile_damage(user, location, stats.damage, DmgType.Physical)
+        }
+    ],
+
+    "Void Laser": [
+        function(user, spell, stats) {
+            stats.los = false;
+        },
+        no_target,
+        function(caster, spell, stats, enemy, damage, dmgtype) {
+            apply_status(caster, enemy, StatusEffect.POLARITY_ARCANE, 16)
+        },
+        no_tiles
+    ],
+
+    "Conjure Spear": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "17": [
+    "Conjure Bullet": [
+        no_stats,
+        function(user, spell, stats, location) {
+            tile_damage(user, location, stats.damage * 2, DmgType.Fire)
+        },
+        no_hit,
+        no_tiles
+    ],
+
+    "Sonic Boom": [
+        function(user, spell, stats) {
+            stats.multicasts["simultaneous"] += 2;
+        },
+        no_target,
+        function(caster, spell, stats, enemy, damage, dmgtype) {
+            if (!enemy.has_status(StatusEffect.STUN)) {
+                apply_status(caster, enemy, StatusEffect.STUN, 1)
+            }
+        },
+        no_tiles
+    ],
+
+    "Lacerate": [
+        no_stats,
+        no_target,
+        function(caster, spell, stats, enemy, damage, dmgtype) {
+            apply_status(caster, enemy, StatusEffect.BLEED, 1)
+        },
+        no_tiles
+    ],
+
+    "Magnetic Launcher": [
+        no_stats,
+        no_target,
+        no_hit,
+        function(user, spell, stats, location) {
+            let dist = user.position.distance(location);
+            let dmg = Math.floor(stats.damage * 0.2 * dist);
+
+            tile_damage(user, location, dmg, DmgType.Physical)
+        }
+    ],
+
+    "Ball of Skulls": [
+        no_stats,
+        function(user, spell, stats, location) {
+            game.spawn_entity(get_entity_by_name("Skeleton"), user.team, location);
+        },
+        no_hit,
+        no_tiles
+    ],
+
+    "Mass Haunting": [
+        no_stats,
+        no_target,
+        no_hit,
+        function(user, spell, stats, location) {
+            game.spawn_entity(get_entity_by_name("Ghost"), user.team, location);
+        }
+    ],
+
+    "Reinforce": [
+        no_stats,
+        no_target,
+        no_hit,
+        function(user, spell, stats, location) {
+            let ent = game.board.get_pos(location);
+            if (ent && ent.id != game.player_ent.id && ent.has_affinity(Affinity.Dark)) {
+                ent.restore_hp(Number.POSITIVE_INFINITY);
+                if (!ent.innate_spells.some(s => s[2] == "Death Bolt")) {
+                    let sp = get_spell_by_name("Death Bolt");
+                    ent.add_innate_spell([
+                        [sp], 0, "Death Bolt", sp.col 
+                    ]);
+                }
+            }
+        }
+    ],
+
+    "Death Bolt": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "18": [
+    "Turn Unwilling Dead": [
+        function(user, spell, stats) {
+            stats.specials.push(SpellSpecials.TURNDEAD)
+        },
+        no_target,
+        no_hit,
+        no_tiles
+    ],
+
+    "Unknown Incantation": [
+        function(user, spell, stats) {
+            let spell_obj = get_spell_by_name("Unknown Incantation");
+            stats.damage_type = spell_obj.unknown_incant_dmgtype ? spell_obj.unknown_incant_dmgtype : DmgType.Chaos;
+        
+            stats.specials.push(SpellSpecials.CHAOSINCANT);
+        },
+        function(user, spell, stats, location) {
+            let spell_obj = get_spell_by_name("Unknown Incantation");
+
+            let current_incant = spell_obj.unknown_incant_val ? spell_obj.unknown_incant_val : 0;
+
+            let name_strings = [
+                "Nothing.",
+                "Nothing...",
+                "Change the damage type of this core to a random other damage type.",
+                "Add 10 to the damage value of this core.",
+                "Multiply this core's damage value by 0.8.",
+                "Set this core's damage value to 40.",
+                "Add a random affinity to the caster, or replace their third affinity if they have three already.",
+                "Apply Stunned for 3 turns to the caster.",
+                "Randomise the colour of this core.",
+                "Summon a copy of any unit damaged by this core with their original stats and spells.",
+                "Grant this core as a usable spell to any non-player unit damaged by this core.",
+                "Applies 10 turns of three random effects to any unit at the target position.",
+                "Removes all affinities from the caster.",
+                "Reduce the caster's max HP by 1.",
+                "Randomise this core's icon.",
+                "Deal damage to EVERY unit equal to 10% of their current HP.",
+                "Nothing...?"
+            ]
+
+            let old_dmg_val = null;
+            let new_dmg_val = null;
+
+            switch (current_incant) {
+                case 0:
+                case 1:
+                    break;
+
+                case 2:
+                    let old_dmgtype = spell_obj.unknown_incant_dmgtype ? spell_obj.unknown_incant_dmgtype : DmgType.Chaos;
+                    
+                    let dmgtypes = Object.keys(DmgType);
+                    let new_dmgtype = DmgType[dmgtypes[Math.floor(Math.random() * dmgtypes.length)]];
+
+                    spell_obj.desc = spell_obj.desc.replace(`[${damage_type_cols[old_dmgtype]}]${old_dmgtype}[clear]`, `[${damage_type_cols[new_dmgtype]}]${new_dmgtype}[clear]`);
+
+                    spell_obj.desc = spell_obj.desc.replace(old_dmgtype, new_dmgtype);
+                    
+                    spell_obj.unknown_incant_dmgtype = new_dmgtype;
+                    break;
+
+                case 3:
+                    old_dmg_val = spell_obj.unknown_incant_dmgval ? spell_obj.unknown_incant_dmgval : 20;
+                    new_dmg_val = old_dmg_val + 10;
+
+                    spell_obj.desc = spell_obj.desc.replace(`Deals [#4df]${old_dmg_val}`, `Deals [#4df]${new_dmg_val}`);
+                    
+                    spell_obj.unknown_incant_dmgval = new_dmg_val;
+                    break;
+
+                case 4:
+                    old_dmg_val = spell_obj.unknown_incant_dmgval ? spell_obj.unknown_incant_dmgval : 20;
+                    new_dmg_val = Math.round(old_dmg_val * 0.8);
+
+                    spell_obj.desc = spell_obj.desc.replace(`Deals [#4df]${old_dmg_val}`, `Deals [#4df]${new_dmg_val}`);
+                    
+                    spell_obj.unknown_incant_dmgval = new_dmg_val;
+                    break;
+
+                case 5:
+                    old_dmg_val = spell_obj.unknown_incant_dmgval ? spell_obj.unknown_incant_dmgval : 20;
+                    new_dmg_val = 40;
+
+                    spell_obj.desc = spell_obj.desc.replace(`Deals [#4df]${old_dmg_val}`, `Deals [#4df]${new_dmg_val}`);
+                    
+                    spell_obj.unknown_incant_dmgval = new_dmg_val;
+                    break;
+
+                case 6:
+                    let affinities = user.affinities;
+                    let possible_affs = Object.values(Affinity).filter(aff => {
+                        return !affinities.includes(aff);
+                    })
+
+                    let new_aff = possible_affs[Math.floor(Math.random() * possible_affs.length)];
+
+                    if (affinities.length >= 3) {
+                        affinities[2] = new_aff;
+                    } else {
+                        affinities.push(new_aff);
+                    }
+                    break;
+
+                case 7:
+                    apply_status(user, user, StatusEffect.STUN, 3);
+                    break;
+
+                case 8:
+                    let new_col = Math.floor(Math.random()*16777215).toString(16);
+
+                    spell_obj.col = "#" + new_col;
+                    break;
+
+                case 9:
+                    break;
+
+                case 10:
+                    break;
+
+                case 11:
+                    let ent = game.board.get_pos(location);
+
+                    if (ent) {
+                        let efc_list = Object.values(StatusEffect);
+                        for (let i=0; i<3; i++) {
+                            let efc = efc_list[Math.floor(Math.random() * efc_list.length)];
+
+                            apply_status(user, ent, efc, 10);
+                        }
+                    }
+
+                    break;
+
+                case 12:
+                    user.affinities = [];
+                    break;
+
+                case 13:
+                    user.max_hp -= 1
+                    user.change_hp(0)
+                    break;
+                
+                case 14:
+                    iconchars = "qwertyuiop[]asdfghjkl;'#zxcvbnm,./\\1234567890-=!\"£$%^&*()_+QWERTYUIOP{}ASDFGHJKL:@~ZXCVBNM<>?|";
+                    spell_obj.icon = "";
+                    for (let i=0; i<2; i++) {
+                        spell_obj.icon += iconchars[Math.floor(Math.random() * iconchars.length)];
+                    }
+
+                    break;
+
+                case 15:
+                    game.entities.forEach(ent => {
+                        let dmg = Math.floor(ent.hp * 0.1);
+                        if (dmg < Number.POSITIVE_INFINITY && !ent.untargetable) {
+                            ent.lose_hp(dmg);
+                        }
+                    })
+
+                    break;
+
+                case 16:
+                    if (Math.random() < 1/50) {
+                        switch_checkerboard = switch_checkerboard ? 0 : 1;
+                    }
+                    break;
+            }
+
+            let new_incant = Math.floor(Math.random() * 17);
+            if (current_incant == 0 && Math.random() < 0.5) {
+                new_incant = 1;
+            }
+
+            spell_obj.desc = spell_obj.desc.replace(
+                /Next effect: .*\n/,
+                `Next effect: [${damage_type_cols[DmgType.Chaos]}]${name_strings[new_incant]}[clear]\n`
+            )
+            
+            spell_obj.unknown_incant_val = new_incant;
+        },
+        function(caster, spell, stats, enemy, damage, dmgtype) {
+            let spell_obj = get_spell_by_name("Unknown Incantation");
+
+            let current_incant = spell_obj.unknown_incant_val ? spell_obj.unknown_incant_val : 0;
+
+            switch (current_incant) {
+                case 9:
+                    game.spawn_entity_near(enemy.template, enemy.team, enemy.position);
+                    break;
+
+                case 10:
+                    if (enemy.id != game.player_ent.id) {
+                        if (!enemy.innate_spells.some(s => s[2] == "Unknown Incantation")) {
+                            let sp = get_spell_by_name("Unknown Incantation");
+                            enemy.add_innate_spell([
+                                [sp], 0, "Unknown Incantation", sp.col 
+                            ]);
+                        }
+                    }
+                    break;
+            }
+        },
+        no_tiles
+    ],
+
+    "Chromatic Shattering": [
+        function(user, spell, stats) {
+            let spell_obj = get_spell_by_name("Chromatic Shattering");
+            stats.damage_type = spell_obj.unknown_incant_dmgtype ? spell_obj.unknown_incant_dmgtype : DmgType.Chaos;
+        
+            stats.specials.push(SpellSpecials.CHAOSINCANT);
+        },
+        function(user, spell, stats, location) {
+            let spell_obj = get_spell_by_name("Chromatic Shattering");
+
+            let old_dmgtype = spell_obj.unknown_incant_dmgtype ? spell_obj.unknown_incant_dmgtype : DmgType.Chaos;
+                    
+            let dmgtypes = Object.keys(DmgType);
+            let new_dmgtype = DmgType[dmgtypes[Math.floor(Math.random() * dmgtypes.length)]];
+
+            spell_obj.desc = spell_obj.desc.replace(`[${damage_type_cols[old_dmgtype]}]${old_dmgtype}[clear]`, `[${damage_type_cols[new_dmgtype]}]${new_dmgtype}[clear]`);
+
+            spell_obj.desc = spell_obj.desc.replace(old_dmgtype, new_dmgtype);
+            
+            spell_obj.unknown_incant_dmgtype = new_dmgtype;
+        },
+        no_hit,
+        no_tiles
+    ],
+
+    "Cone of Chaos": [
+        no_stats,
+        no_target,
+        no_hit,
+        function(user, spell, stats, location) {
+            let dmg = stats.damage;
+            if (Math.random() < 0.5) {
+                tile_damage(user, location, dmg, DmgType.Fire)
+            } else {
+                tile_damage(user, location, dmg, DmgType.Lightning)
+            }
+        }
+    ],
+
+    "Demonic Summoning": [
+        no_stats,
+        function(user, spell, stats, location) {
+            let demons = [
+                "Fire Demon",
+                "Ice Demon",
+                "Primal Demon",
+                "Brimstone Demon"
+            ]
+
+            let chosen_demon = demons[Math.floor(Math.random() * demons.length)];
+
+            game.spawn_entity(get_entity_by_name(chosen_demon), user.team, location);
+        },
+        no_hit,
+        no_tiles
+    ],
+
+    "Sacred Bolt": [
+        no_stats,
+        function(caster, spell, stats, position) {
+            let ent = game.board.get_pos(position);
+
+            if (ent) {
+                if (ent.affinity_present([
+                    Affinity.Dark, Affinity.Demon, Affinity.Undead, Affinity.Ghost
+                ])) {
+                    apply_status(caster, ent, StatusEffect.STUN, 3);
+                }
+            }
+        },
+        no_hit,
+        no_tiles
+    ],
+
+    "Shining Spear": [
+        no_stats,
+        no_target,
+        no_hit,
+        function(caster, spell, stats, position) {
+            tile_damage(caster, position, stats.damage, DmgType.Physical);
+
+            let ent = game.board.get_pos(position);
+
+            if (ent) {
+                if (ent.affinity_present([
+                    Affinity.Dark, Affinity.Demon, Affinity.Undead, Affinity.Ghost
+                ])) {
+                    tile_damage(caster, position, stats.damage, DmgType.Holy);
+                }
+            }
+        }
+    ],
+
+    "Angelic Chorus": [
+        no_stats,
+        no_target,
+        function(caster, spell, stats, enemy, damage, dmgtype) {
+            if (dmgtype == DmgType.Holy && enemy.has_affinity(Affinity.Holy)) {
+                enemy.restore_hp(stats.damage * 2);
+            }
+        },
+        no_tiles
+    ],
+
+    "Consecrate": [
+        no_stats,
+        no_target,
+        function(caster, spell, stats, enemy, damage, dmgtype) {
+            let weak = ent.affinity_present([
+                Affinity.Dark, Affinity.Demon, Affinity.Undead, Affinity.Ghost
+            ]);
+
+            if (dmgtype == DmgType.Holy && weak) {
+                let typ = DmgType.Fire;
+
+                renderer.put_particle_from_game_loc(enemy.position, new Particle(
+                    dmg_type_particles[typ]
+                ));
+    
+                game.deal_damage(enemy, caster, caster.id, damage, typ)
+            }
+        },
+        no_tiles
+    ],
+
+    "Apotheosis": [
+        no_stats,
+        function(caster, spell, stats, position) {
+            apply_status(caster, caster, StatusEffect.INVULNERABLE, 10);
+            apply_status(caster, caster, StatusEffect.STUN, 10);
+
+            game.spawn_entity_near(get_entity_by_name("Seraphim"), caster.team, position);
+            game.spawn_entity_near(get_entity_by_name("Seraphim"), caster.team, position);
+            game.spawn_entity_near(get_entity_by_name("Archangel"), caster.team, position);
+            game.spawn_entity_near(get_entity_by_name("Archangel"), caster.team, position);
+        },
+        no_hit,
+        no_tiles
+    ],
+
+    "Mind Spike": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "19": [
+    "Touch of Mindshattering": [
+        no_stats,
+        no_target,
+        function(caster, spell, stats, enemy, damage, dmgtype) {
+            if (dmgtype == DmgType.Psychic) {
+                if (!enemy.has_status(StatusEffect.STUN)) {
+                    apply_status(caster, enemy, StatusEffect.STUN, 4);
+                }
+            }
+        },
+        no_tiles
+    ],
+
+    "Memetic Virus": [
+        function(user, spell, stats) {
+            stats.specials.push(SpellSpecials.NEVERDAMAGE);
+        },
+        no_target,
+        no_hit,
+        no_tiles
+    ],
+
+    "Overwhelm": [
+        no_stats,
+        no_target,
+        function(caster, spell, stats, enemy, damage, dmgtype) {
+            if (dmgtype == DmgType.Psychic) {
+                apply_status(caster, enemy, StatusEffect.SLEEP, 3);
+            }
+        },
+        no_tiles
+    ],
+
+    "Blink": [
+        no_stats,
+        function(caster, spell, stats, position) {
+            let ent = game.board.get_pos(position);
+            if (!ent) {
+                game.move_entity(caster, position);
+            }
+        },
+        no_hit,
+        no_tiles
+    ],
+
+    "Teleport": [
+        no_stats,
+        function(caster, spell, stats, position) {
+            let ent = game.board.get_pos(position);
+            if (!ent) {
+                game.move_entity(caster, position);
+            }
+        },
+        no_hit,
+        no_tiles
+    ],
+
+    "Disperse": [
+        no_stats,
+        no_target,
+        function(caster, spell, stats, enemy, damage, dmgtype) {
+            if (dmgtype == DmgType.Psychic) {
+                let new_pos = game.find_random_space_in_los(enemy, enemy.position, 5, Shape.Circle[1], true, true);
+
+                if (new_pos) {
+                    game.move_entity(enemy, new_pos);
+                }
+            }
+        },
+        no_tiles
+    ],
+
+    "Dimensional Rift": [
+        no_stats,
+        no_target,
+        no_hit,
+        function(caster, spell, stats, location) {
+            let ent = game.board.get_pos(location);
+
+            if (ent && !ent.untargetable) {
+                let new_pos = game.find_random_space_in_los(ent, ent.position, 64, Shape.Circle[1], true, true);
+
+                if (new_pos) {
+                    game.move_entity(ent, new_pos);
+                }
+            }
+        }
+    ],
+
+    "Last Resort": [
+        no_stats,
+        function(caster, spell, stats, position) {
+            caster.hp = 1;
+            caster.max_hp = Math.round(caster.max_hp * 0.9);
+        },
+        no_hit,
+        no_tiles
+    ],
+
+    "Fireball with Trigger": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "20": [
+    "Lightning Bolt with Trigger": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "21": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "22": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "23": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "24": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "25": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "26": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "27": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "28": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "29": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "30": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "31": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "32": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "33": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "34": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "35": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "36": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "37": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "38": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "39": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "40": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "41": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "42": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "43": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "44": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "45": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "46": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "47": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "48": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "49": [
+    "Magic Missile with Trigger": [
         no_stats,
         no_target,
         no_hit,
@@ -829,7 +1188,7 @@ spells_funcs = {
                 dmg_type_particles[dmgtype]
             ));
 
-            game.deal_damage(enemy, caster, caster.id, -damage, dmgtype, true)
+            game.deal_damage(enemy, caster, caster.id, -damage, dmgtype, true);
         },
         no_tiles
     ],
@@ -844,7 +1203,7 @@ spells_funcs = {
                 dmg_type_particles[typ]
             ));
 
-            game.deal_damage(enemy, caster, caster.id, Math.floor(damage * 0.5), typ, true)
+            game.deal_damage(enemy, caster, caster.id, Math.floor(damage * 0.5), typ)
         },
         no_tiles
     ],
@@ -868,7 +1227,7 @@ spells_funcs = {
                     dmg_type_particles[final_typ]
                 ));
 
-                game.deal_damage(enemy, caster, caster.id, Math.floor(damage * 0.5), final_typ, true)
+                game.deal_damage(enemy, caster, caster.id, Math.floor(damage * 0.5), final_typ)
             }
         },
         no_tiles
@@ -893,7 +1252,7 @@ spells_funcs = {
                     dmg_type_particles[final_typ]
                 ));
 
-                game.deal_damage(enemy, caster, caster.id, Math.floor(damage * 0.5), final_typ, true)
+                game.deal_damage(enemy, caster, caster.id, Math.floor(damage * 0.5), final_typ)
             }
         },
         no_tiles
@@ -1110,42 +1469,42 @@ spells_funcs = {
         no_tiles
     ],
 
-    "139": [
+    "Circle": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "140": [
+    "Ring": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "141": [
+    "Line": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "142": [
+    "Burst": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "143": [
+    "Perpendicular Line": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "144": [
+    "Cone": [
         no_stats,
         no_target,
         no_hit,
