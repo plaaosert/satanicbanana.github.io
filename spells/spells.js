@@ -86,6 +86,10 @@ class Vector2 {
         return new Vector2((code-1) % 1000000, Math.floor((code-1) / 1000000));
     }
 
+    toString() {
+        return `(${this.x}, ${this.y})`;
+    }
+
     hash_code() {
         return (this.y * 1000000) + this.x + 1;
     }
@@ -196,6 +200,51 @@ class Particle {
     }
 }
 
+class MessageBoxTemplate {
+    constructor(title, text, options, option_background_cols, option_actions) {
+        this.title = title;
+        this.text = text;
+        this.options = options;
+        this.option_background_cols = option_background_cols;
+        this.option_actions = option_actions;
+    }
+
+    copy() {
+        return new MessageBoxTemplate(
+            this.title, this.text, [...this.options], [...this.option_background_cols], [...this.option_actions]
+        );
+    }
+
+    change_title(new_title) {
+        let new_template = this.copy();
+        new_template.title = new_title;
+
+        return new_template
+    }
+
+    change_text(new_text) {
+        let new_template = this.copy();
+        new_template.text = new_text;
+
+        return new_template
+    }
+}
+
+class MessageBox {
+    constructor(template) {
+        this.title = template.title;
+        this.text = template.text;
+        this.options = template.options;
+        this.option_background_cols = template.option_background_cols;
+        this.option_actions = template.option_actions;
+
+        this.need_to_calculate = true;
+        this.registered_option_positions = {}
+        this.tl = null;
+        this.br = null;
+    }
+}
+
 class Renderer {
     constructor(game, board, game_view_size, left_menu_len, right_menu_len, particle_speed) {
         this.game = game;
@@ -221,7 +270,14 @@ class Renderer {
             }
         }
 
+        this.current_frame = [];
+        this.previous_frame = [];
+
+        this.cur_mouse_flatid = null;
+
         this.selected_tile = null;
+        this.mousedown_selected_tile = null;
+
         this.selected_ent = null;
         this.last_selected_tiles = [];
 
@@ -248,6 +304,12 @@ class Renderer {
         this.inventory_selected_spell_loc = undefined;
         this.inventory_selected_spell_item = undefined;
         this.inventory_selected_spell_item_loc = undefined;
+
+        this.messagebox_open = null;
+        this.messagebox_queue = [];
+
+        this.selected_messagebox_option_nr = null;
+        this.selected_messagebox_option_fn = null;
     }
 
     reset_selections() {
@@ -282,6 +344,8 @@ class Renderer {
         this.inventory_delete_spell_selected = undefined;
     }
 
+
+
     change_size(game_view_size, left_menu_len, right_menu_len) {
         this.game_view_size = game_view_size;
         this.left_menu_size = new Vector2(left_menu_len, game_view_size.y);
@@ -292,6 +356,20 @@ class Renderer {
     }
     
     get_position_panel(pos) {
+        if (this.messagebox_open) {
+            return 3;
+        }
+
+        /*
+        if (this.messagebox_open && !this.messagebox_open.need_to_calculate) {
+            if (pos.x >= this.messagebox_open.tl.x && pos.x <= this.messagebox_open.br.x) {
+                if (pos.y >= this.messagebox_open.tl.y && pos.y <= this.messagebox_open.br.y) {
+                    return 3;
+                }
+            }
+        }
+        */
+        
         if (pos.x < this.left_menu_size.x) {
             return 0;
         } else if (pos.x >= this.left_menu_size.x && pos.x < this.left_menu_size.x + this.game_view_size.x) {
@@ -307,11 +385,18 @@ class Renderer {
         // make a span for every pixel for now. this might suck but i think
         // it's better than repainting the DOM heavily every frame
         this.pixel_chars = [];
+
+        this.current_frame = [];
+        this.previous_frame = [];
+
         let parent = document.getElementById("gamelines");
         parent.innerHTML = "";
 
         for (let y=0; y<siz.y; y++) {
             this.pixel_chars.push([]);
+
+            this.current_frame.push([]);
+            this.previous_frame.push([]);
 
             for (let x=0; x<siz.x; x++) {
                 let c = document.createElement("span");
@@ -356,12 +441,25 @@ class Renderer {
                     text = text == "|" ? "+" : "-";
                 }
 
+                text = "\u00A0";
+
                 c.textContent = text;
+
+                this.current_frame[y].push({txt: text, col: "", back_col: ""});
+                this.previous_frame[y].push({txt: text, col: "", back_col: ""});
                 
                 let flattened_id = (y * siz.x) + x;
                 let rdr = this;
                 c.addEventListener("mouseover", (event) => {
                     rdr.mouseover(event, flattened_id);
+                })
+
+                c.addEventListener("mousedown", (event) => {
+                    rdr.mousedown(event, flattened_id);
+                })
+
+                c.addEventListener("mouseup", (event) => {
+                    rdr.mouseup(event, flattened_id);
                 })
 
                 c.addEventListener("click", (event) => {
@@ -376,7 +474,69 @@ class Renderer {
         }
     }
 
+    paint_debug_info(display_text, display_col) {
+        if (display_text) {
+            let col = display_col ? display_col : "#fff";
+
+            for (let i=0; i<display_text.length; i++) {
+                this.set_pixel(new Vector2(this.total_size.x - display_text.length - 1 + i, this.total_size.y - 3), display_text[i], col)
+            }
+        }
+    }
+
+    request_new_frame(show_changes, show_fps) {
+        let num_changes = [0, 0, 0];
+        for (let yt=0; yt<this.total_size.y; yt++) {
+            for (let xt=0; xt<this.total_size.x; xt++) {
+                // check txt, col, back_col. if any differ, update with current_frame.
+                // at the same time, set the value of previous_frame to that to bring
+                // it up to date
+                let current = this.current_frame[yt][xt];
+                let prev = this.previous_frame[yt][xt];
+                let pix_char = this.pixel_chars[yt][xt];
+
+                if (current.txt != prev.txt) {
+                    this.previous_frame[yt][xt].txt = current.txt;
+                    pix_char.textContent = current.txt;
+                    num_changes[0]++;
+                }
+
+                if (current.col != prev.col) {
+                    this.previous_frame[yt][xt].col = current.col;
+                    pix_char.style.color = current.col;
+                    num_changes[1]++;
+                }
+
+                if (current.back_col != prev.back_col) {
+                    this.previous_frame[yt][xt].back_col = current.back_col;
+                    pix_char.style.backgroundColor = current.back_col;
+                    num_changes[2]++;
+                }
+            }
+        }
+
+        if (show_changes) {
+            let change_str = num_changes[0].toString().padStart(4, "\u00A0") + " text" + 
+                             num_changes[1].toString().padStart(4, "\u00A0") + " col" + 
+                             num_changes[2].toString().padStart(4, "\u00A0") + " bgcol";
+
+            if (show_fps) {
+                change_str += " | fps: " + (Math.round(show_fps * 100) / 100).toString().padStart(8, "\u00A0")
+            }
+
+            for (let i=0; i<change_str.length; i++) {
+                this.pixel_chars[this.total_size.y - 2][this.total_size.x - change_str.length - 1 + i].textContent = change_str[i];
+            }
+        }
+    }
+
     mouseover(event, flattened_id) {
+        if (flattened_id == null) {
+            return
+        }
+
+        this.cur_mouse_flatid = flattened_id;
+
         let resolved_pos = new Vector2(
             flattened_id % this.total_size.x,
             Math.floor(flattened_id / this.total_size.x)
@@ -395,7 +555,7 @@ class Renderer {
                 this.selected_tile = null;
                 this.selected_ent = null;
                 this.refresh_right_panel = true;
-                console.log("asking for refresh right");
+                //console.log("asking for refresh right");
                 this.selected_spell = this.selectable_spell_icons[resolved_pos.hash_code()];
                 if (this.selected_spell) {
                     this.selected_spell_loc = resolved_pos;
@@ -452,11 +612,11 @@ class Renderer {
                     }
 
                     this.refresh_right_panel = true;
-                    console.log("asking for refresh right");
+                    //console.log("asking for refresh right");
                 } else {
                     if (!this.selected_tile) {
                         this.refresh_right_panel = true;
-                        console.log("asking for refresh right");
+                        //console.log("asking for refresh right");
                     }
     
                     this.selected_tile = resolved_pos;
@@ -476,7 +636,7 @@ class Renderer {
     
                     if (old_ent_id != new_ent_id) {
                         this.refresh_right_panel = true;
-                        console.log("asking for refresh right");
+                        //console.log("asking for refresh right");
                     }
                     
                     this.selected_ent = new_ent;
@@ -484,6 +644,17 @@ class Renderer {
 
                 break;
             case 2:  // right panel
+                break;
+
+            case 3:  // messagebox
+                let button_result = this.messagebox_open.registered_option_positions[resolved_pos.hash_code()];
+                if (button_result) {
+                    this.selected_messagebox_option_nr = button_result[0];
+                    this.selected_messagebox_option_fn = button_result[1];
+                } else {
+                    this.selected_messagebox_option_nr = null;
+                    this.selected_messagebox_option_fn = null;
+                }
                 break;
         }
     }
@@ -512,7 +683,145 @@ class Renderer {
         this.particle_list = new_particle_list;
     }
 
+    mousedown(event, flattened_id) {
+        if (flattened_id == null) {
+            return
+        }
+
+        // always pass this through
+        console.log("mousedown: blocking", Math.round((flattened_id-1) / 2))
+        this.mousedown_selected_tile = Math.round((flattened_id-1) / 2)
+        this.mousedownup(event, flattened_id);
+    }
+
+    mouseup(event, flattened_id) {
+        if (flattened_id == null) {
+            return
+        }
+
+        // only pass this through if the selected tile changed since the mousedown
+        console.log("mouseup: checking", Math.round((flattened_id-1) / 2), "with block", this.mousedown_selected_tile)
+        if (this.mousedown_selected_tile != Math.round((flattened_id-1) / 2)) {
+            this.mousedownup(event, flattened_id);
+        }
+    }
+
+    mousedownup(event, flattened_id) {
+        if (flattened_id == null) {
+            return
+        }
+
+        let resolved_pos = new Vector2(
+            flattened_id % this.total_size.x,
+            Math.floor(flattened_id / this.total_size.x)
+        )
+
+        switch (this.get_position_panel(resolved_pos)) {
+            case 1:
+                if (this.game.inventory_open) {
+                    let added_name = false;
+                    let did_something_with_spells = false;
+
+                    if (this.inventory_selected_spell_name != undefined) {
+                        /*
+                        if (this.inventory_editing_spell_name == this.inventory_selected_spell_name) {
+                            this.inventory_editing_spell_name = null;
+                        } else {
+                            this.inventory_editing_spell_name = this.inventory_selected_spell_name;
+                            added_name = true;
+                        }
+
+                        this.inventory_editing_spell_frag = null;
+                        */
+                    } else if (this.inventory_selected_spell != undefined) {
+                        if (this.inventory_editing_spell_frag) {
+                            let ss = this.inventory_selected_spell;
+                            let es = this.inventory_editing_spell_frag;
+                            if (ss.frag_id == es.frag_id && ss.spell_id == es.spell_id) {
+                                // same thing twice, so deselect
+                                this.inventory_editing_spell_frag = null;
+                            } else {
+                                // different, so tell game to swap them
+                                this.game.player_swap_spells(ss, es);
+                                this.inventory_editing_spell_frag = null;
+                                //this.inventory_selected_spell = undefined;
+                                this.render_inventory_menu();
+                                this.mouseover(null, flattened_id);
+                                did_something_with_spells = true;
+                            }
+                        } else {
+                            let ss = this.inventory_selected_spell;
+                            this.inventory_editing_spell_frag = {spell: ss.spell, frag_id: ss.frag_id, spell_id: ss.spell_id};
+                            this.inventory_editing_spell_name = null;
+                            did_something_with_spells = true;
+                        }
+                    } else if (this.inventory_selected_spell_item != undefined) {
+                        if (this.inventory_editing_spell_frag) {
+                            let si = this.inventory_selected_spell_item;
+                            let ei = this.inventory_editing_spell_frag;
+                            if (si.inv_id == ei.inv_id) {
+                                // same thing twice, so deselect
+                                this.inventory_editing_spell_frag = null;
+                            } else {
+                                // different, so tell game to swap them
+                                this.game.player_swap_spells(si, ei);
+                                this.inventory_editing_spell_frag = null;
+                                //this.inventory_selected_spell_item = undefined;
+                                this.render_inventory_menu();
+                                this.mouseover(null, flattened_id);
+                                did_something_with_spells = true;
+                            }
+                        } else {
+                            let si = this.inventory_selected_spell_item;
+                            this.inventory_editing_spell_frag = {spell: si.spell, inv_id: si.inv_id};
+                            this.inventory_editing_spell_name = null;
+                            did_something_with_spells = true;
+                        }
+                    } else if (this.inventory_delete_spell_selected) {
+                        if (this.inventory_editing_spell_frag) {
+                            let si = {spell: null, trash: true};
+                            let ei = this.inventory_editing_spell_frag;
+                            if (si.trash && ei.trash) {
+                                // same thing twice, so deselect
+                                this.inventory_editing_spell_frag = null;
+                            } else {
+                                // different, so tell game to swap them
+                                this.game.player_swap_spells(si, ei);
+                                this.inventory_editing_spell_frag = null;
+                                //this.inventory_selected_spell_item = undefined;
+                                this.render_inventory_menu();
+                                this.mouseover(null, flattened_id);
+                                did_something_with_spells = true;
+                            }
+                        } else {
+                            this.inventory_editing_spell_frag = {spell: null, trash: true};
+                            did_something_with_spells = true;
+                        }
+                    }
+
+                    if (!did_something_with_spells) {
+                        this.inventory_editing_spell_frag = null;
+                    }
+
+                    /*
+                    if (!added_name) {
+                        this.inventory_editing_spell_name = null;
+                    }
+                    */
+
+                    this.refresh_right_panel = true;
+                    //console.log("asking for refresh right");
+                }
+
+                break;
+        }
+    }
+
     click(event, flattened_id) {
+        if (flattened_id == null) {
+            return
+        }
+
         let resolved_pos = new Vector2(
             flattened_id % this.total_size.x,
             Math.floor(flattened_id / this.total_size.x)
@@ -534,6 +843,22 @@ class Renderer {
 
             case 1:
                 if (this.game.inventory_open) {
+                    let added_name = false;
+                    if (this.inventory_selected_spell_name != undefined) {
+                        if (this.inventory_editing_spell_name == this.inventory_selected_spell_name) {
+                            this.inventory_editing_spell_name = null;
+                        } else {
+                            this.inventory_editing_spell_name = this.inventory_selected_spell_name;
+                            added_name = true;
+                        }
+
+                        this.inventory_editing_spell_frag = null;
+                    }
+
+                    if (!added_name) {
+                        this.inventory_editing_spell_name = null;
+                    }
+                    /*
                     let added_name = false;
                     if (this.inventory_selected_spell_name != undefined) {
                         if (this.inventory_editing_spell_name == this.inventory_selected_spell_name) {
@@ -609,7 +934,8 @@ class Renderer {
                     }
 
                     this.refresh_right_panel = true;
-                    console.log("asking for refresh right");
+                    //console.log("asking for refresh right");
+                    */
                 } else {
                     if (game.is_player_turn()) {
                         let normalised_pos = resolved_pos.sub(new Vector2(this.left_menu_size.x, 0));
@@ -645,6 +971,17 @@ class Renderer {
                 break;
             case 2:
                 this.inventory_editing_spell_name = null;
+                break;
+
+            case 3:  // messagebox
+                if (this.selected_messagebox_option_fn) {
+                    this.selected_messagebox_option_fn();
+
+                    this.selected_messagebox_option_nr = null;
+                    this.selected_messagebox_option_fn = null;
+
+                    this.cleanup_messageboxes();
+                }
                 break;
         }
     }
@@ -691,9 +1028,24 @@ class Renderer {
         this.active_particles[pos.y][pos.x / 2] = null;
     }
 
+    is_valid_render_pos(pos) {
+        return pos.x >= 0 &&
+               pos.x < this.total_size.x &&
+               pos.y >= 0 &&
+               pos.y < this.total_size.y;
+    }
+
     set_back(pos, col) {
+        if (!this.is_valid_render_pos(pos)) {
+            return;
+        }
+
+        this.current_frame[pos.y][pos.x].back_col = col;
+
+        /* old version before moving to a discrete frame-based method
         let p = this.pixel_chars[pos.y][pos.x];
         p.style.backgroundColor = col;
+        */
     }
 
     set_back_pair(pos, col) {
@@ -712,12 +1064,26 @@ class Renderer {
     }
 
     set_pixel(pos, char, col) {
+        if (!this.is_valid_render_pos(pos)) {
+            return;
+        }
+
+        if (char) {
+            this.current_frame[pos.y][pos.x].txt = char;
+        }
+
+        if (col) {
+            this.current_frame[pos.y][pos.x].col = col;
+        }
+
+        /* old version before moving to a discrete frame-based method
         let p = this.pixel_chars[pos.y][pos.x];
         p.textContent = char;
 
         if (col) {
             p.style.color = col;
         }
+        */
     }
 
     set_pixel_pair(pos, chars, col) {
@@ -904,7 +1270,7 @@ class Renderer {
         let p = this.game.player_ent;
 
         // hp/mp/level
-        let sp_str = game.player_skill_points > 0 ? ` [#f0f](+${game.player_skill_points})` : "";
+        let sp_str = game.player_skill_points > 0 ? ` [#f0f](+${game.player_skill_points})   ` : "              ";
         this.set_pixel_text(
             left_mount_pos.add(new Vector2(0, 0)),
             this.pad_str(`[clear]Player LV [#8ff]${game.player_level}[clear]${sp_str}`, 4+1+4+3)
@@ -986,7 +1352,7 @@ class Renderer {
             // show all the icons
             let spell_str = "";
             let num_spells = 0;
-            for (let j=0; j<game.player_max_spell_fragments; j++) {
+            for (let j=0; j<game.player_max_spell_shards; j++) {
                 let spell = j < spells.length ? spells[j] : null;
 
                 if (num_spells * 3 >= clearance_x - 11) {
@@ -1510,7 +1876,7 @@ class Renderer {
             let num_spells = 0;
             let current_spell_point = current_line.copy();
 
-            for (let i=0; i<game.player_max_spell_fragments; i++) {
+            for (let i=0; i<game.player_max_spell_shards; i++) {
                 let spell = i < pspell.length ? pspell[i] : null;
 
                 if (num_spells * 3 >= clearance_x) {
@@ -1737,9 +2103,14 @@ class Renderer {
                 )
             }
 
-            this.inventory_items_origins[current_spell_point.add(new Vector2(num_spells * 3, 0)).hash_code()] = {spell: spell, inv_id: i};
-            this.inventory_items_origins[current_spell_point.add(new Vector2(num_spells * 3 + 1, 0)).hash_code()] = {spell: spell, inv_id: i};
+            let collision_box_obj = {spell: spell, inv_id: i};
 
+            for (let x_delta=0; x_delta<2; x_delta++) {
+                for (let y_delta=0; y_delta<1; y_delta++) {
+                    this.inventory_items_origins[current_spell_point.add(new Vector2(num_spells * 3 + x_delta, y_delta)).hash_code()] = collision_box_obj;
+                }
+            }
+            
             num_spells++;
         };
 
@@ -1920,6 +2291,217 @@ class Renderer {
         }
     }
 
+    render_borders() {
+        let right_border_bound = this.left_menu_size.x + this.game_view_size.x;
+
+        for (let xn=0; xn<this.total_size.x; xn++) {
+            let char = null;
+            if (xn < this.left_menu_size.x || xn >= right_border_bound) {
+                char = "-";
+            }
+
+            if (xn == 0 || xn == this.left_menu_size.x-1 || xn == right_border_bound || xn == this.total_size.x-1) {
+                char = "+";
+            }
+
+            if (char) {
+                this.set_pixel(new Vector2(xn, 0), char, "#fff");
+                this.set_pixel(new Vector2(xn, this.total_size.y-1), char, "#fff");
+            }
+        }
+
+        let vertical_char = "|";
+        for (let yn=1; yn<this.total_size.y-1; yn++) {
+            this.set_pixel(new Vector2(0, yn), vertical_char, "#fff");
+            this.set_pixel(new Vector2(this.left_menu_size.x-1, yn), vertical_char, "#fff");
+            this.set_pixel(new Vector2(right_border_bound, yn), vertical_char, "#fff");
+            this.set_pixel(new Vector2(this.total_size.x-1, yn), vertical_char, "#fff");
+        }
+    }
+
+    render_custom_border(tl, br, horizontal_lines, vertical_lines) {
+        let lines_added = {};
+
+        // main border
+        for (let x=tl.x; x<=br.x; x++) {
+            let add_vec_tl = new Vector2(x, tl.y)
+            let add_vec_br = new Vector2(x, br.y)
+
+            this.set_pixel(add_vec_tl, lines_added[add_vec_tl.hash_code()] ? "+" : "-", "#fff");
+            this.set_pixel(add_vec_br, lines_added[add_vec_br.hash_code()] ? "+" : "-", "#fff");
+            
+            lines_added[add_vec_tl.hash_code()] = 1;
+            lines_added[add_vec_br.hash_code()] = 1;
+        }
+
+        for (let y=tl.y; y<=br.y; y++) {
+            let add_vec_tl = new Vector2(tl.x, y)
+            let add_vec_br = new Vector2(br.x, y)
+
+            this.set_pixel(add_vec_tl, lines_added[add_vec_tl.hash_code()] ? "+" : "|", "#fff");
+            this.set_pixel(add_vec_br, lines_added[add_vec_br.hash_code()] ? "+" : "|", "#fff");
+            
+            lines_added[add_vec_tl.hash_code()] = 1;
+            lines_added[add_vec_br.hash_code()] = 1;
+        }
+
+        // additional borders
+        if (horizontal_lines) {
+            for (let i=0; i<horizontal_lines.length; i++) {
+                let hline = horizontal_lines[i];
+                for (let x=tl.x; x<=br.x; x++) {
+                    let add_vec = new Vector2(x, hline + tl.y)
+                    
+                    this.set_pixel(add_vec, lines_added[add_vec.hash_code()] ? "+" : "-", "#fff");
+                    lines_added[add_vec.hash_code()] = 1;
+                }
+            }
+        }
+
+        if (vertical_lines) {
+            for (let i=0; i<vertical_lines.length; i++) {
+                let vline = vertical_lines[i];
+                for (let y=tl.y; y<=br.y; y++) {
+                    let add_vec = new Vector2(vline + tl.x, y)
+                    
+                    this.set_pixel(add_vec, lines_added[add_vec.hash_code()] ? "+" : "|", "#fff");
+                    lines_added[add_vec.hash_code()] = 1;
+                }
+            }
+        }
+
+        // fill with back col black and clear all other text
+        for (let x=tl.x; x<=br.x; x++) {
+            for (let y=tl.y; y<=br.y; y++) {
+                let vec = new Vector2(x, y)
+
+                if (!lines_added[vec.hash_code()]) {
+                    this.set_pixel(vec, "\u00A0", "#fff")
+                }
+
+                this.set_back(vec, "#000")
+            }
+        }
+    }
+
+    cleanup_messageboxes() {
+        let padx = 80;
+        let pady = 16;
+
+        let messagebox_size = this.total_size.sub(new Vector2(padx, pady))
+
+        let messagebox_tl = new Vector2(Math.floor(padx / 2), Math.ceil(pady / 2))
+        let messagebox_br = this.total_size.sub(messagebox_tl);
+
+        for (let x=messagebox_tl.x; x<=messagebox_br.x; x++) {
+            for (let y=messagebox_tl.y; y<=messagebox_br.y; y++) {
+                let pos = new Vector2(x, y);
+
+                this.set_pixel(pos, "\u00A0", "#fff");
+                this.set_back(pos, "#000")
+            }
+        }
+
+        this.messagebox_open = null;
+        this.selected_messagebox_option_nr = null;
+        this.selected_messagebox_option_fn = null;
+
+        this.check_messagebox_queue();
+    }
+
+    check_messagebox_queue() {
+        if (!this.messagebox_open && this.messagebox_queue.length > 0) {
+            this.messagebox_open = new MessageBox(this.messagebox_queue[0]);
+            this.messagebox_queue = this.messagebox_queue.slice(1);
+
+            this.render_messageboxes();
+
+            this.mouseover(null, this.cur_mouse_flatid);
+        }
+    }
+
+    render_messageboxes() {
+        if (this.messagebox_open) {
+            let padx = 80;
+            let pady = 16;
+
+            let messagebox_size = this.total_size.sub(new Vector2(padx, pady))
+
+            let messagebox_tl = new Vector2(Math.floor(padx / 2), Math.ceil(pady / 2))
+            let messagebox_br = this.total_size.sub(messagebox_tl);
+
+            if (this.messagebox_open.need_to_calculate) {
+                this.messagebox_open.tl = messagebox_tl;
+                this.messagebox_open.br = messagebox_br;
+            }
+
+            this.render_custom_border(
+                messagebox_tl,
+                messagebox_br,
+                [2], []
+            )
+
+            let clearance_x = messagebox_size.x - 3;
+            let mount_pos = messagebox_tl.add(new Vector2(1, 1));
+
+            let padded_title = this.pad_str(this.messagebox_open.title, clearance_x, 2)
+
+            this.set_pixel_text(mount_pos, padded_title)
+
+            mount_pos = mount_pos.add(new Vector2(1, 2))
+
+            this.set_pixel_text(
+                mount_pos, this.messagebox_open.text, "#fff", clearance_x
+            )
+
+            mount_pos = new Vector2(messagebox_tl.x + 3, messagebox_br.y - 2);
+
+            let option_spacing = 4;
+            let option_pad_pre = Math.floor(option_spacing / 2);
+            let option_pad_post = Math.ceil(option_spacing / 2);
+            
+            let available_option_spaces = (clearance_x - 2 - (this.messagebox_open.options.length * option_spacing));
+
+            let option_length_unrounded = available_option_spaces / this.messagebox_open.options.length;
+            let option_length = Math.floor(option_length_unrounded);
+            let remaining_option_length = Math.round((option_length_unrounded - option_length) * this.messagebox_open.options.length);
+
+            mount_pos = mount_pos.add(new Vector2(option_pad_pre, 0))
+
+            for (let i=0; i<this.messagebox_open.options.length; i++) {
+                let selected_option_length = option_length;
+                let back_col = this.selected_messagebox_option_nr == i ? "#fff" : this.messagebox_open.option_background_cols[i];
+                let text_col = this.selected_messagebox_option_nr == i ? "#000" : "#fff";
+
+                if (i < remaining_option_length) {
+                    selected_option_length++;
+                }
+
+                for (let x=0; x<selected_option_length; x++) {
+                    let vec = mount_pos.add(new Vector2(x, 0))
+
+                    this.set_back(vec, back_col);
+
+                    if (this.messagebox_open.need_to_calculate) {
+                        this.messagebox_open.registered_option_positions[vec.hash_code()] = [i, this.messagebox_open.option_actions[i]];
+                    }
+                }
+
+                let padded_option_txt = this.pad_str(this.messagebox_open.options[i], selected_option_length, 3)
+                this.set_pixel_text(mount_pos, padded_option_txt, text_col);
+
+                mount_pos = mount_pos.add(new Vector2(option_spacing + selected_option_length, 0))
+            }
+
+            this.messagebox_open.need_to_calculate = false;
+        }
+    }
+
+    add_messagebox(template) {
+        this.messagebox_queue.push(template);
+        this.check_messagebox_queue();
+    }
+
     test() {
         let cols = ["#fff", "#f00", "#0f0", "#00f", "#000"];
         let chars = ["#", "&", "+", "-", "\u00A0"];
@@ -2029,7 +2611,7 @@ class Board {
 
 
 class EntityTemplate {
-    constructor(name, icon, col, desc, max_hp, max_mp, affinities, xp_value, spawn_credits, innate_spells, ai_level, blocks_los, untargetable, on_death) {
+    constructor(name, icon, col, desc, max_hp, max_mp, affinities, xp_value, spawn_credits, innate_spells, specials, specials_text, ai_level, blocks_los, untargetable, on_death) {
         this.name = name
         this.icon = icon
         this.col = col
@@ -2040,6 +2622,8 @@ class EntityTemplate {
         this.xp_value = xp_value != undefined ? xp_value : 0;
         this.spawn_credits = spawn_credits != undefined ? spawn_credits : -1;
         this.innate_spells = innate_spells != undefined ? innate_spells : []
+        this.specials = specials != undefined ? specials : function(a, b, c) {}
+        this.specials_text = specials_text != undefined ? specials_text : "None"
         this.ai_level = ai_level != undefined ? ai_level : 999
         this.blocks_los = blocks_los;
         this.untargetable = untargetable;
@@ -2069,6 +2653,9 @@ class Entity {
         this.affinities = template.affinities.slice();
         this.innate_spells = template.innate_spells.slice();
         this.innate_primed_spells = [];
+
+        this.specials = template.specials;
+        this.specials_text = template.specials_text;
 
         this.xp_value = template.xp_value
 
@@ -2411,7 +2998,7 @@ class Entity {
         console.log(`${this.name} says "ow i took ${final_damage} ${damage_type} damage (multiplied by ${dmg_mult} from original ${damage}) from ${caster.name}`);
         
         renderer.refresh_right_panel = true;
-        console.log("game asked for right panel refresh");
+        //console.log("game asked for right panel refresh");
         
         /*
         if (this.name == "moving guy") {
@@ -2421,7 +3008,7 @@ class Entity {
         */
 
         if (died && this.team != Teams.PLAYER) {
-            // spawn xp
+            // spawn xp particles
             // even if not killed by the player
             // (because that encourages making enemies hit each other)
             if (this.xp_value > 0) {
@@ -2529,6 +3116,18 @@ class Spell {
             }
         );
     }
+}
+
+// TODO fire these events for every entity when something happens
+const GameEventType = {
+    SelfTurnBegan: "SelfTurnBegan",  // TODO
+    SelfTurnEnded: "SelfTurnEnded",  // TODO
+    AnyTurnBegan: "AnyTurnBegan",  // TODO
+    AnyTurnEnded: "AnyTurnEnded",  // TODO
+    SelfDamageTaken: "SelfDamageTaken",  // TODO
+    AnyDamageTaken: "AnyDamageTaken",  // TODO
+    SelfDied: "SelfDied",  // TODO
+    AnyDied: "AnyDied"  // TODO
 }
 
 const SpellType = {
@@ -2879,6 +3478,8 @@ function make_square(target, radius, predicate) {
 }
 
 function pathfind(start, goal) {
+    let gets = 0;
+
     function h(pos) {
         return goal.distance(pos);
     }
@@ -2891,8 +3492,8 @@ function pathfind(start, goal) {
 
     function reconstruct_path(cameFrom, current) {
         let total_path = [Vector2.from_hash_code(current)]
-        while (cameFrom[current]) {
-            current = cameFrom[current]
+        while (cameFrom.get(current)) {
+            current = cameFrom.get(current)
             total_path.push(Vector2.from_hash_code(current));
         }
 
@@ -2900,11 +3501,21 @@ function pathfind(start, goal) {
     }
 
     function get_or_inf(c, v) {
-        if (c[v] != undefined) {
-            return c[v];
-        }
+        gets++;
+        return c.has(v) ? c.get(v) : Number.POSITIVE_INFINITY;
+    }
 
-        return Number.POSITIVE_INFINITY;
+    function binarySearch(array) {
+        let lo = -1, hi = array.length;
+        while (1 + lo < hi) {
+            const mi = lo + ((hi - lo) >> 1);
+            if (array[mi]) {
+                hi = mi;
+            } else {
+                lo = mi;
+            }
+        }
+        return hi;
     }
 
     // oh god
@@ -2912,27 +3523,27 @@ function pathfind(start, goal) {
     // The set of discovered nodes that may need to be (re-)expanded.
     // Initially, only the start node is known.
     // This is usually implemented as a min-heap or priority queue rather than a hash-set.
-    let openSet = {};
-    openSet[start.hash_code()] = true;
+    let openSet = new Set();
+    openSet.add(start.hash_code());
 
     // For node n, cameFrom[n] is the node immediately preceding it on the cheapest path from the start
     // to n currently known.
-    let cameFrom = {};
+    let cameFrom = new Map();
 
     // For node n, gScore[n] is the cost of the cheapest path from start to n currently known.
-    let gScore = {};
-    gScore[start.hash_code()] = 0;
+    let gScore = new Map();
+    gScore.set(start.hash_code(), 0);
 
     // For node n, fScore[n] := gScore[n] + h(n). fScore[n] represents our current best guess as to
     // how cheap a path could be from start to finish if it goes through n.
-    let fScore = {};
-    fScore[start.hash_code()] = h(start)
+    let fScore = new Map();
+    fScore.set(start.hash_code(), h(start))
 
-    while (Object.keys(openSet).length > 0) {
+    while (openSet.size > 0) {
         // This operation can occur in O(Log(N)) time if openSet is a min-heap or a priority queue
         let current = null;
         let current_score = Number.POSITIVE_INFINITY;
-        Object.keys(openSet).forEach(pos => {
+        openSet.forEach(pos => {
             let score = get_or_inf(fScore, pos);
 
             if (score < current_score) {
@@ -2942,10 +3553,13 @@ function pathfind(start, goal) {
         })
 
         if (current.equals(goal)) {
+            //console.log("gets: ", gets)
             return reconstruct_path(cameFrom, current.hash_code())
         }
 
-        delete openSet[current.hash_code()];
+        openSet.delete(current.hash_code());
+
+        let current_hash = current.hash_code();
 
         let neighbours = [
             current.add(new Vector2(0, 1)),
@@ -2962,16 +3576,20 @@ function pathfind(start, goal) {
             let neighbor = neighbours[i];
 
             if (board.position_valid(neighbor) && (!board.get_pos(neighbor) || neighbor.equals(goal))) {
+                let neighbor_hash = neighbor.hash_code();
+
                 // d(current,neighbor) is the weight of the edge from current to neighbor
                 // tentative_gScore is the distance from start to the neighbor through current
-                let tentative_gScore = get_or_inf(gScore, current.hash_code()) + (current.distance(neighbor));
-                if (tentative_gScore < get_or_inf(gScore, neighbor.hash_code())) {
+                let tentative_gScore = get_or_inf(gScore, current_hash) + (1);
+                if (tentative_gScore < get_or_inf(gScore, neighbor_hash)) {
                     // This path to neighbor is better than any previous one. Record it!
-                    cameFrom[neighbor.hash_code()] = current.hash_code();
-                    gScore[neighbor.hash_code()] = tentative_gScore
-                    fScore[neighbor.hash_code()] = tentative_gScore + h(neighbor)
-                    if (!openSet[neighbor.hash_code()]) {
-                        openSet[neighbor.hash_code()] = true;
+                    let fscore_p = tentative_gScore + h(neighbor);
+
+                    cameFrom.set(neighbor_hash, current_hash);
+                    gScore.set(neighbor_hash, tentative_gScore);
+                    fScore.set(neighbor_hash, fscore_p);
+                    if (!openSet.has(neighbor_hash)) {
+                        openSet.add(neighbor_hash);
                     }
                 }
             }
@@ -2979,6 +3597,7 @@ function pathfind(start, goal) {
     }
 
     // Open set is empty but goal was never reached
+    //console.log("FAILED. gets: ", gets)
     return 0
 }
 
@@ -3083,7 +3702,7 @@ function propagate_diamond(origin, radius, los) {
 
 const Generator = {
     RandomWalls: function(game, board, cvr) {
-        let coverage = cvr ? cvr : 0.1
+        let coverage = cvr ? cvr : 0.02
 
         let num_walls = (0.85 + (Math.random() * 0.3)) * board.num_tiles * coverage;
         num_walls = Math.floor(num_walls);
@@ -3166,11 +3785,11 @@ const Generator = {
         let expected_empty = board.num_tiles - num_walls;
         let actual_empty = board.num_tiles - walls_placed;
         if (actual_empty * 2 < expected_empty) {
-            //console.log(actual_empty, expected_empty, "- worldgen fail");
+            console.log(actual_empty, expected_empty, "- worldgen fail");
             return false;
         }
 
-        //console.log(actual_empty, expected_empty, "- worldgen success");
+        console.log(actual_empty, expected_empty, "- worldgen success");
         return true;
     }
 }
@@ -3425,6 +4044,11 @@ class PrimedSpell {
 
     cast(board, caster, position) {
         //console.log(this.origin);
+
+        // before we start, drop spawn protection on enemies.
+        // TODO probably make this suck a lil less since it wastes a bunch of time rn
+        game.drop_spawn_protection();
+
         // untested; added recently
         this.caster = caster;
 
@@ -3739,10 +4363,10 @@ class Game {
         this.player_inventory = [];
         this.player_spells_edit = [[], [], [], [], []];
 
-        this.player_max_spell_fragments = 20;
+        this.player_max_spell_shards = 20;
         this.player_inventory_size = 60;
 
-        for (let i=0; i<this.player_max_spell_fragments; i++) {
+        for (let i=0; i<this.player_max_spell_shards; i++) {
             this.player_spells_edit[0].push(null);
             this.player_spells_edit[1].push(null);
             this.player_spells_edit[2].push(null);
@@ -3772,6 +4396,23 @@ class Game {
         this.recent_spells_gained = [];
 
         this.enabled = true;
+        this.turn_processing = true;
+    }
+
+    spawn(ent_name, at, team) {
+        let ent = get_entity_by_name(ent_name)
+        let pos = at ? at : this.select_far_position(this.player_ent.position, 16, 2, 8);
+
+        let ent_obj = null;
+        if (pos) {
+            ent_obj = this.spawn_entity(ent, team ? team : Teams.ENEMY, pos, false);
+        }
+
+        if (ent_obj) {
+            console.log("Spawned", ent_obj, "at", pos);
+        } else {
+            console.log("Spawning", ent, "failed (at pos:", pos, ")");
+        }
     }
 
     reset_with_alg(alg) {
@@ -3808,7 +4449,7 @@ class Game {
     }
 
     player_discard_edits() {
-        for (let i=0; i<this.player_max_spell_fragments; i++) {
+        for (let i=0; i<this.player_max_spell_shards; i++) {
             for (let t=0; t<5; t++) {
                 this.player_spells_edit[t][i] = i < this.player_spells[t].spells.length ? this.player_spells[t].spells[i] : null;
             }
@@ -3820,7 +4461,7 @@ class Game {
             this.player_spells[t].spells = [];
         }
 
-        for (let i=0; i<this.player_max_spell_fragments; i++) {
+        for (let i=0; i<this.player_max_spell_shards; i++) {
             for (let t=0; t<5; t++) {
                 if (this.player_spells_edit[t][i]) {
                     this.player_spells[t].spells.push(this.player_spells_edit[t][i]);
@@ -3862,6 +4503,51 @@ class Game {
         }
 
         return false;
+    }
+
+    drop_spawn_protection() {
+        this.entities.forEach(ent => {
+            ent.spawn_protection = false;
+        })
+    }
+
+    close_inventory() {
+        if (!this.inventory_open) {
+            return;
+        }
+
+        this.inventory_open = false;
+        this.recent_spells_gained = [];
+    }
+
+    open_inventory() {
+        if (this.inventory_open) {
+            return;
+        }
+
+        this.inventory_open = true;
+
+        if (this.player_skill_points > 0) {
+            let sp = this.player_skill_points;
+            for (let lvm=0; lvm<sp; lvm++) {
+                let lvl = this.player_level - this.player_skill_points + lvm + 1;
+
+                let msgbox = messagebox_templates.lvlup_normal;
+                let new_text = msgbox.text.replace("###", lvl.toString());
+
+                msgbox = msgbox.change_text(new_text);
+
+                renderer.add_messagebox(msgbox);
+            }
+        }
+    }
+
+    toggle_inventory() {
+        if (this.inventory_open) {
+            this.close_inventory();
+        } else {
+            this.open_inventory();
+        }
     }
 
     progress_wave() {
@@ -3944,7 +4630,7 @@ class Game {
 
                     let circle_pos = random_on_circle(radius).round();
                     let game_pos = last_spawn_pos.add(circle_pos);
-                    if (board.position_valid(game_pos)) {
+                    if (this.board.position_valid(game_pos) && !this.board.get_pos(game_pos)) {
                         position = game_pos;
                         last_spawn_pos = game_pos;
                     }
@@ -3960,18 +4646,45 @@ class Game {
         });
     }
 
+    // Might select null. Ensure we check if it does
+    select_far_position(from_pos, start_radius, tries_per_radius, min_radius) {
+        let min_r = min_radius ? min_radius : 4;
+        let tries_per_r = tries_per_radius ? tries_per_radius : 1;
+
+        let radius = start_radius + 1;
+        let tries = (start_radius - min_r) * 4;
+        while (tries > 0) {
+            tries -= 1;
+            for (let i=0; i<tries_per_r; i++) {
+                radius -= 1;
+                if (radius < min_r) {
+                    radius = start_radius;
+                }
+
+                let circle_pos = random_on_circle(radius).round();
+                let game_pos = from_pos.add(circle_pos);
+                if (this.board.position_valid(game_pos) && !this.board.get_pos(game_pos)) {
+                    return game_pos;
+                }
+            }
+        }
+
+        return null;
+    }
+
     check_wave_end() {
         if (Object.keys(this.wave_entities).length <= 0) {
             // do mid-wave stuff here too
             this.enabled = false;
+            this.turn_processing = false;
 
             let sthis = this;
             setTimeout(function() {
-                sthis.player_ent.refresh();
+                // sthis.player_ent.refresh();
 
                 console.log("new wave:     ", sthis.wavecount + 1);
 
-                sthis.inventory_open = true;
+                sthis.open_inventory();
                 sthis.deselect_player_spell();
 
                 renderer.render_game_checkerboard("black");
@@ -3980,6 +4693,11 @@ class Game {
 
                 setTimeout(function() {
                     sthis.enabled = true;
+
+                    // TODO this might be fucked up and broken :3
+                    sthis.turn_processing = true;
+                    sthis.begin_turn();
+
                     sthis.reset_with_alg(
                         Generator.RandomWalls
                     )
@@ -3991,6 +4709,10 @@ class Game {
     }
 
     begin_turn(do_not_wait) {
+        if (!this.turn_processing) {
+            return;
+        }
+
         // shout here for the current turn entity's AI or the player to pick a move to use
         let ent = this.entities[this.turn_index];
         //console.log("beginning turn for", ent.name, do_not_wait ? "(NOWAIT)" : "(WAIT)");
@@ -4080,6 +4802,10 @@ class Game {
     }
 
     end_turn(do_not_wait) {
+        // if (!this.enabled) {
+        //     return;
+        // }
+
         this.waiting_for_spell = false;
         this.spell_speed = this.max_spell_speed;
         this.spells_this_turn = 0;
@@ -4123,7 +4849,6 @@ class Game {
             renderer.refresh_right_panel = true;
         }
 
-
         if (do_not_wait) {
             this.begin_turn(true);
         } else {
@@ -4166,9 +4891,9 @@ class Game {
             this.player_xp -= xp_req;
 
             // TEMPORARY: +25 hp, +50 mp per level
-            this.player_ent.max_hp += 25
-            this.player_ent.max_mp += 50
-            this.player_ent.refresh()
+            // this.player_ent.max_hp += 25
+            // this.player_ent.max_mp += 50
+            // this.player_ent.refresh()
 
             return true;
         }
@@ -4205,13 +4930,16 @@ class Game {
         }
     }
 
-    roll_for_loot(entity_killed, xp_value, restrict_type, custom_pool) {
+    roll_for_loot(entity_killed, xp_value, restrict_type, custom_pool, max_number, max_rarity, start_number) {
         let drops = [];
-        let drop_count = 0;
+        let drop_count = start_number ? start_number : 0;
+
+        let max_tier = max_rarity ? max_rarity : 10;
+
         // pick number of drops. xp_value / 500, max chance 75%, min 15%
         // divide xp_value by 1.5 per additional drop
         let drop_increase_chance = xp_value;
-        while (true) {
+        while (!max_number || drop_count < max_number) {
             let roll = Math.floor(Math.random() * 500);
             if (roll < (Math.max(500*0.15, Math.min(500*0.75, drop_increase_chance)))) {
                 drop_increase_chance /= 1.5;
@@ -4234,11 +4962,13 @@ class Game {
                 // If chance is 300% or greater, this max is instead 100%
                 // If increase was successful, divide chance by 1.4
                 let chance = xp_value;
-                while (tier < 10) {
+                while (tier < max_tier) {
                     let roll = Math.floor(Math.random() * 100);
                     if (chance >= 300 || roll < Math.min(500*0.8, chance)) {
                         chance /= 1.4;
                         tier++;
+                    } else {
+                        break;
                     }
                 }
 
@@ -4251,9 +4981,15 @@ class Game {
             if (pool.length > 0) {
                 let item = pool[Math.floor(Math.random() * pool.length)];
 
-                setTimeout(function() {
-                    item_sparkle(item, entity_killed.position)
-                }, 100 + 50 * i)
+                if (entity_killed) {
+                    setTimeout(function() {
+                        item_sparkle(item, entity_killed.position)
+                    }, 100 + 50 * i)
+                } else {
+                    setTimeout(function() {
+                        item_sparkle(item, game.player_ent.position)
+                    }, 100 + 50 * i)
+                }
             }
         }
     }
@@ -4263,7 +4999,7 @@ class Game {
         
         if (result) {
             renderer.refresh_right_panel = true;
-            console.log("game asked for right panel refresh");
+            //console.log("game asked for right panel refresh");
 
             this.selected_id = id;
         } else {
@@ -4299,7 +5035,7 @@ class Game {
         this.selected_player_primed_spell = null;
 
         renderer.refresh_right_panel = true;
-        console.log("game asked for right panel refresh");
+        //console.log("game asked for right panel refresh");
     }
 
     put_entity_obj(ent_obj, position, overwrite) {
@@ -4330,7 +5066,7 @@ class Game {
         // THIS IS FOR PREMADE ENTITIES, NOT TEMPLATES
         let pos = this.find_closest_free_point(position);
 
-        this.put_entity_obj(entity_object, pos);
+        return this.put_entity_obj(entity_object, pos);
     }
 
     spawn_entity(ent_template, team, position, overwrite) {
@@ -4340,7 +5076,7 @@ class Game {
 
     spawn_entity_near(ent_template, team, position) {
         let pos = this.find_closest_free_point(position);
-        this.spawn_entity(ent_template, team, pos);
+        return this.spawn_entity(ent_template, team, pos);
     }
 
     spawn_player(player_ent, position) {
@@ -4596,7 +5332,7 @@ class Game {
                             this.wave_entities[e.id] = e;
                         }
 
-                        e.spawn_protection = false;
+                        e.spawn_protection = true;
                     }
                 }
             });
@@ -5206,18 +5942,20 @@ function vmax(percent) {
 
 function handle_resize(event) {
     // scale font size such that total_size.x/y characters fit
-    
+    let vn_factor = 180;
+    let font_upper_scale = 2;
+
     // remember x size coverage is half because the font is 8x16
     // we also want to make sure it isnt way too big...
-    let fontsize_x = vw(180) / renderer.total_size.x;
+    let fontsize_x = font_upper_scale * vw(vn_factor / 2) / renderer.total_size.x;
 
     // if screen is very long, the font might be too big.
     // need to check for the smallest allowed font in both directions and pick the minimum
-    let fontsize_y = vh(90) / renderer.total_size.y;
+    let fontsize_y = font_upper_scale * vh(vn_factor) / renderer.total_size.y;
 
     let fontsize = Math.min(fontsize_x, fontsize_y);
 
-    console.log("fontsize before rounding:", fontsize, "after: ", Math.round(fontsize));
+    console.log("fontsize before floor:", fontsize, "after: ", Math.floor(fontsize));
 
     let fontsize_round = Math.floor(fontsize);
 

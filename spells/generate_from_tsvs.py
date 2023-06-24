@@ -5,7 +5,7 @@ with open("entities.tsv", "r") as f:
     # every 14th element will be delimited by a "\n" instead
     new_tabs = []
     for i in range(len(tabs)):
-        if i % 13 == 0 and i != 0:
+        if i % 14 == 0 and i != 0:
             pre, _, post = tabs[i].rpartition("\n")
             new_tabs.append(pre)
             new_tabs.append(post)
@@ -15,11 +15,12 @@ with open("entities.tsv", "r") as f:
     tabs = new_tabs
 
     subtabs = list(
-        tabs[(i*14):(i*14)+14] for i in range(len(tabs) // 14) 
+        tabs[(i*15):(i*15)+15] for i in range(len(tabs) // 15) 
     )
 
     final_text = ""
     final_spells_text = ""
+    final_specials_text = ""
 
     for index, sub in enumerate(subtabs):
         # constructor(name, icon, col, desc, max_hp, max_mp, affinities, xp_value, spawn_credits, innate_spells, ai_level, blocks_los, untargetable, on_death)
@@ -35,9 +36,10 @@ with open("entities.tsv", "r") as f:
         aff3     = sub[8].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[8] else ""
         xp_value = sub[9].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[9] else "0"
         screds   = sub[10].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[10] else "-1"
-        spells   = sub[11].replace("\\", "\\\\").replace("\"", "\\\"") if sub[11] else "None"
-        ai_lvl   = sub[12].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[12] else "1"
-        on_death = sub[13].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[13] else "None"
+        specials = sub[11].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[11] else "None"
+        spells   = sub[12].replace("\\", "\\\\").replace("\"", "\\\"") if sub[12] else "None"
+        ai_lvl   = sub[13].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[13] else "1"
+        on_death = sub[14].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[14] else "None"
 
         max_hp = "Number.POSITIVE_INFINITY" if max_hp == "Inf" else max_hp
         max_mp = "Number.POSITIVE_INFINITY" if max_mp == "Inf" else max_mp
@@ -56,7 +58,7 @@ with open("entities.tsv", "r") as f:
                 ("            {" + "name: \"{}\", cnt: {}".format(
                     d.rpartition(" ")[0],
                     d.rpartition(" ")[2].split("x")[1],
-                ) + "}") for d in on_death.replace("\\\"", "").split("\n")
+                ) + "}") for d in on_death.replace("\\\"", "").split("\\n")
             ) + "\n        ]"
         else:
             on_death_parsed = ""
@@ -67,13 +69,16 @@ with open("entities.tsv", "r") as f:
             '{}\n' \
             '        ], {}, {},\n' \
             '        entities_spells["{}"],\n' \
+            '        entities_specials["{}"],\n' \
+            '        "{}",\n' \
             '        {}, {}, {}, {}\n' \
             '    ),\n\n'.format(
                 name, icon, col, desc,
                 max_hp, max_mp,
                 affinities,
                 xp_value, screds,
-                name,
+                name, name,
+                specials,
                 ai_lvl, blocks_los, untargetable,
                 on_death_parsed
             )
@@ -87,6 +92,14 @@ with open("entities.tsv", "r") as f:
              )
 
         final_spells_text += t2
+
+        t3 = '    "{}": function(game, ent, event_type) [[[\n' \
+             '        // {}\n' \
+             '    ]]],\n\n'.format(
+                name, specials
+             ).replace("[[[", "{").replace("]]]", "}")
+
+        final_specials_text += t3
         
     with open("_spells_entities.js", "w") as f:
         f.write(
@@ -97,7 +110,11 @@ with open("entities.tsv", "r") as f:
 
     with open("_spells_entities_funcs.js", "w", encoding="utf-8") as f:
         f.write(
-            "entities_spells = {\n" + final_spells_text + "\n}"
+            "entities_spells = {\n" + final_spells_text + "\n}\n\n"
+        )
+
+        f.write(
+            "entities_specials = {\n" + final_specials_text + "\n}\n"
         )
 
     print("written _spells_entities.js")

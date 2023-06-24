@@ -274,7 +274,8 @@ spells_funcs = {
         function(user, spell, stats) {
             let spell_obj = get_spell_by_name("Unknown Incantation");
             stats.damage_type = spell_obj.unknown_incant_dmgtype ? spell_obj.unknown_incant_dmgtype : DmgType.Chaos;
-        
+            stats.damage = spell_obj.unknown_incant_dmgval ? spell_obj.unknown_incant_dmgval : 20;
+
             stats.specials.push(SpellSpecials.CHAOSINCANT);
         },
         function(user, spell, stats, location) {
@@ -449,7 +450,19 @@ spells_funcs = {
 
             switch (current_incant) {
                 case 9:
-                    game.spawn_entity_near(enemy.template, enemy.team, enemy.position);
+                    console.log(`trying to spawn ${enemy.template}!`)
+                    let ent = game.spawn_entity_near(enemy.template, enemy.team, enemy.position);
+
+                    if (ent.ai_level == 0) {
+                        // it's the player. we need to do some funny business
+                        ent.ai_level = 1;
+
+                        game.player_spells.forEach(sp => {
+                            ent.add_innate_spell([
+                                [...sp.spells], 0, sp.name, "#fff"
+                            ])
+                        })
+                    }
                     break;
 
                 case 10:
@@ -575,7 +588,7 @@ spells_funcs = {
         no_stats,
         no_target,
         function(caster, spell, stats, enemy, damage, dmgtype) {
-            let weak = ent.affinity_present([
+            let weak = enemy.affinity_present([
                 Affinity.Dark, Affinity.Demon, Affinity.Undead, Affinity.Ghost
             ]);
 
@@ -630,6 +643,8 @@ spells_funcs = {
     "Memetic Virus": [
         function(user, spell, stats) {
             stats.specials.push(SpellSpecials.NEVERDAMAGE);
+
+            stats.multicasts["chain"] += 6;
         },
         no_target,
         no_hit,
@@ -913,85 +928,84 @@ spells_funcs = {
         no_hit,
         no_tiles
     ],
-
-    "68": [
+    "Pain Catalyst I": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "69": [
+    "Pain Catalyst II": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "70": [
+    "Last Stand": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "71": [
+    "Affinity Matching": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "72": [
+    "Sympathetic Damage": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "73": [
+    "Strange Shuffle": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "74": [
+    "Paradigm Shift": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "75": [
+    "Null": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "76": [
+    "Catch-up Damage": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "77": [
+    "Equalisation": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "78": [
+    "Vowel Lover": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "79": [
+    "Trigger Finger": [
         no_stats,
         no_target,
         no_hit,
@@ -1258,105 +1272,105 @@ spells_funcs = {
         no_tiles
     ],
 
-    "110": [
+    "Cosmetic Squares": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "111": [
+    "Cosmetic Arrows": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "112": [
+    "Alternate Fire": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "113": [
+    "Alternate Ice": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "114": [
+    "White Particles": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "115": [
+    "Orange Particles": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "116": [
+    "Alternate Physical": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "117": [
+    "Hide Particles": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "118": [
+    "Red Particles": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "119": [
+    "Yellow Particles": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "120": [
+    "Green Particles": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "121": [
+    "Cyan Particles": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "122": [
+    "Blue Particles": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "123": [
+    "Purple Particles": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "124": [
+    "Pink Particles": [
         no_stats,
         no_target,
         no_hit,
@@ -1384,49 +1398,49 @@ spells_funcs = {
         no_tiles
     ],
 
-    "128": [
+    "Chromatic Target Trigger": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "129": [
+    "Chromatic Tile Trigger": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "130": [
+    "Unfair Damage Trigger": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "131": [
+    "Unreliable Target Trigger": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "132": [
+    "Trigger Upgrade": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "133": [
+    "Unfair Tile Trigger": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "134": [
+    "Untrigger": [
         no_stats,
         no_target,
         no_hit,
@@ -1470,42 +1484,54 @@ spells_funcs = {
     ],
 
     "Circle": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.shape = Shape.Circle[1]
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Ring": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.shape = Shape.Ring[1]
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Line": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.shape = Shape.Line[1]
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Burst": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.shape = Shape.Burst[1]
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Perpendicular Line": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.shape = Shape.PerpLine[1]
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Cone": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.shape = Shape.Cone[1]
+        },
         no_target,
         no_hit,
         no_tiles
@@ -1520,43 +1546,55 @@ spells_funcs = {
         no_tiles
     ],
 
-    "146": [
-        no_stats,
+    "Triangle Formation": [
+        function(user, spell, stats) {
+            stats.multicasts["triangle"] += 1
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "147": [
-        no_stats,
+    "Square Formation": [
+        function(user, spell, stats) {
+            stats.multicasts["square"] += 1
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "148": [
-        no_stats,
+    "Chaotic Multicast x2": [
+        function(user, spell, stats) {
+            stats.multicasts["unpredictable"] += 2
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "149": [
-        no_stats,
+    "Chaotic Multicast x5": [
+        function(user, spell, stats) {
+            stats.multicasts["unpredictable"] += 5
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "150": [
-        no_stats,
+    "Multicast x1": [
+        function(user, spell, stats) {
+            stats.multicasts["normal"] += 1
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "151": [
-        no_stats,
+    "Multicast x2": [
+        function(user, spell, stats) {
+            stats.multicasts["normal"] += 2
+        },
         no_target,
         no_hit,
         no_tiles
@@ -1571,43 +1609,55 @@ spells_funcs = {
         no_tiles
     ],
 
-    "153": [
-        no_stats,
+    "Multicast x8": [
+        function(user, spell, stats) {
+            stats.multicasts["normal"] += 8
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "154": [
-        no_stats,
+    "Multicast x3 with Trigger": [
+        function(user, spell, stats) {
+            stats.multicasts["normal"] += 3
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "155": [
-        no_stats,
+    "Micro Chain Spell": [
+        function(user, spell, stats) {
+            stats.multicasts["chain"] += 1
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "156": [
-        no_stats,
+    "Micro Arc Spell": [
+        function(user, spell, stats) {
+            stats.multicasts["simultaneous"] += 1
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "157": [
-        no_stats,
+    "Mini Chain Spell": [
+        function(user, spell, stats) {
+            stats.multicasts["chain"] += 2
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "158": [
-        no_stats,
+    "Mini Arc Spell": [
+        function(user, spell, stats) {
+            stats.multicasts["simultaneous"] += 2
+        },
         no_target,
         no_hit,
         no_tiles
@@ -1631,63 +1681,63 @@ spells_funcs = {
         no_tiles
     ],
 
-    "161": [
+    "Chaos Intensifier": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "162": [
+    "Chain Refocus": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "163": [
+    "Arc Refocus": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "164": [
+    "Duplicator Consumption": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "165": [
+    "Blood Magic": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "166": [
+    "Death Chain": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "167": [
+    "Subsurface Chain": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "168": [
+    "Subsurface Arc": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "169": [
+    "Duplicator Amplification": [
         no_stats,
         no_target,
         no_hit,
@@ -1749,56 +1799,56 @@ spells_funcs = {
         no_tiles
     ],
 
-    "175": [
+    "Magic Flare": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "176": [
+    "Formed Magic": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "177": [
+    "Sanctity": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "178": [
+    "Familiarity": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "179": [
+    "Vengeance": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "180": [
+    "Affinity Attunement": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "181": [
+    "Heavy Impact": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "182": [
+    "Negative Space": [
         no_stats,
         no_target,
         no_hit,

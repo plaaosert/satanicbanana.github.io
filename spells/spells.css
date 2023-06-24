@@ -67,9 +67,15 @@ body {
     height: 128px;
     width: 100%;
 
+	pointer-events: none;
+
 	z-index: 1;
 
 	background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 66%, rgba(0,0,0,0) 100%);
+}
+
+.bottombar a {
+	pointer-events: all;
 }
 
 .topbar {
@@ -80,6 +86,8 @@ body {
     height: 64px;
     width: 100%;
 	
+	pointer-events: none;
+
 	z-index: 1;
 
 	background: linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 66%, rgba(0,0,0,0) 100%);
