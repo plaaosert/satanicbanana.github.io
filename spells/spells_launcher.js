@@ -22,16 +22,22 @@ if (failed.length > 0) {
 // e.g. the trigger-type modifiers and other assorted cores
 trigger_spells = {
     "at_target": [
-        "Spark", "Add Target Trigger", "Fireball with Trigger",
-        "Lightning Bolt with Trigger", "Magic Missile with Trigger"
+        "Spark", "Fireball with Trigger",
+        "Lightning Bolt with Trigger", "Magic Missile with Trigger",
+        "Add Target Trigger", "Chromatic Target Trigger",
+        "Unreliable Target Trigger"
     ],
 
     "on_hit": [
-        "Add Damage Trigger"
+        "Add Damage Trigger", "Unfair Damage Trigger"
     ],
 
     "on_affected_tiles": [
-        "Add Tile Trigger"
+        "Add Tile Trigger", "Chromatic Tile Trigger", "Zenith Tile Trigger", "Unfair Tile Trigger"
+    ],
+
+    "none": [
+        "Untrigger"
     ]
 }
 
@@ -40,6 +46,9 @@ for (let i=1; i<typs.length; i++) {
         let spell = get_spell_by_name(name);
 
         spell.set_trigger(typs[i]);
+        spell.augment("on_stats", function(user, spell, stats) {
+            stats.trigger_type = typs[i];
+        })
     })
 }
 
@@ -140,7 +149,8 @@ let test = function(spells) {
 */
 
 
-//game.player_add_spells_to_inv([...spells_list.filter(s => !s.is_corrupt()).slice(80, 80 + game.player_inventory_size)].flatMap(i => i));
+game.player_add_spells_to_inv([...spells_list.filter(s => s.subtyp == SpellSubtype.Cosmetic)].flatMap(i => i));
+
 game.player_add_spells_to_inv([...spells_list.filter(s => s.is_red())]);
 game.player_discard_edits();
 game.open_inventory();

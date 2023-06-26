@@ -1452,10 +1452,10 @@ spells_list = [
     ),
 
     modifier(
-        "Trigger Upgrade", "+^", SpellSubtype.Trigger,
+        "Zenith Tile Trigger", "+^", SpellSubtype.Trigger,
         "#fff", "#26f",
-        "Grants a [#4df]target trigger[clear] to the core. If it already has a trigger, instead replaces it with the next one in the chain: Target > Damage > Tile. If it already has a [#4df]tile trigger[close], instead adds 1 to the core's multicast value.",
-        50,
+        "Makes the core cast a copy of the next core at every tile the core affected, and doubles its radius.",
+        2400,
         no_stats,
         no_target,
         no_hit,
@@ -2004,8 +2004,8 @@ spells_list = [
     modifier(
         "Negative Space", "!O", SpellSubtype.Misc,
         "#fff", "#265",
-        "Causes the core to affect all tiles in its range [#4df] except the ones in its original effect shape.",
-        450,
+        "Causes the core to affect all tiles in its range [#4df]except[clear] the ones in its original effect shape.",
+        600,
         no_stats,
         no_target,
         no_hit,

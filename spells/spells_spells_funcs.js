@@ -928,85 +928,172 @@ spells_funcs = {
         no_hit,
         no_tiles
     ],
+
     "Pain Catalyst I": [
-        no_stats,
+        function(user, spell, stats) {
+            let hp_pct = user.hp / user.max_hp
+            let factor = 10;
+
+            let final_amt = (1-hp_pct) * factor;
+
+            stats.damage += Math.round(final_amt * 5);
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Pain Catalyst II": [
-        no_stats,
+        function(user, spell, stats) {
+            let hp_pct = user.hp / user.max_hp
+            let factor = 10;
+
+            let final_amt = (1-hp_pct) * factor;
+
+            stats.damage += Math.round(final_amt * 15);
+            stats.radius += Math.round(final_amt * 1);
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Last Stand": [
-        no_stats,
+        function(user, spell, stats) {
+            let hp_pct = user.hp / user.max_hp
+            if (hp_pct < 0.1) {
+                stats.damage *= 2
+                stats.radius *= 2
+                stats.range *= 2
+            }
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Affinity Matching": [
-        no_stats,
+        function(user, spell, stats) {
+            if (user.has_affinity(stats.damage_type)) {
+                stats.damage = Math.round(stats.damage * 1.5)
+            }
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Sympathetic Damage": [
-        no_stats,
+        function(user, spell, stats) {
+            let dmgmult = user.get_damage_mult(stats.damage_type);
+
+            stats.damage = Math.round(stats.damage * dmgmult);
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Strange Shuffle": [
-        no_stats,
+        function(user, spell, stats) {
+            let old_dmg = stats.damage
+
+            stats.damage = stats.radius
+            stats.radius = old_dmg
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Paradigm Shift": [
-        no_stats,
+        function(user, spell, stats) {
+            let old_rad = stats.radius
+
+            stats.radius = Math.round(stats.range / 2) 
+            stats.range = Math.round(old_rad * 2)
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Null": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.damage = 0;
+            stats.radius = 0;
+            stats.range = 0;
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Catch-up Damage": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.damage = 33;
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Equalisation": [
-        no_stats,
+        function(user, spell, stats) {
+            let orig_core = spell.spells.find(sp => sp.typ == SpellType.Core)
+            if (orig_core) {
+                let new_primed = new PrimedSpell(user, [orig_core]);
+                new_primed.calculate();
+
+                let stat_sum = new_primed.range + new_primed.damage + new_primed.radius;
+                let stat_ratios = [
+                    new_primed.range / stat_sum,
+                    new_primed.radius / stat_sum,
+                    new_primed.damage / stat_sum
+                ];
+
+                let spell_stat_sum = stats.range + stats.radius + stats.damage;
+
+                let new_stats = [
+                    Math.round(spell_stat_sum * stat_ratios[0]),
+                    Math.round(spell_stat_sum * stat_ratios[1]),
+                    Math.round(spell_stat_sum * stat_ratios[2]),
+                ]
+
+                stats.range = new_stats[0];
+                stats.radius = new_stats[1];
+                stats.damage = new_stats[2];
+            }
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Vowel Lover": [
-        no_stats,
+        function(user, spell, stats) {
+            let orig_core = spell.spells.find(sp => sp.typ == SpellType.Core)
+
+            if (orig_core) {
+                let m = orig_core.name.match(/[aeiou]/gi);
+                let num_vowels = m ? m.length : 0;
+
+                stats.damage += 5 * num_vowels;
+                stats.range += 2 * num_vowels;
+                stats.radius += 2 * num_vowels;
+            }
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Trigger Finger": [
-        no_stats,
+        function(user, spell, stats) {
+            if (user.took_damage_last_turn) {
+                stats.damage *= 2
+            }   
+        },
         no_target,
         no_hit,
         no_tiles
@@ -1273,105 +1360,141 @@ spells_funcs = {
     ],
 
     "Cosmetic Squares": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.custom_particles = cosmetic_particles["Squares"];
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Cosmetic Arrows": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.custom_particles = cosmetic_particles["Arrows"];
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Alternate Fire": [
-        no_stats,
+        function(user, spell, stats) {
+            if (stats.damage_type == DmgType.Fire) {
+                stats.custom_particles = cosmetic_particles["FireAlt"];
+            }
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Alternate Ice": [
-        no_stats,
+        function(user, spell, stats) {
+            if (stats.damage_type == DmgType.Ice) {
+                stats.custom_particles = cosmetic_particles["IceAlt"];
+            }
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "White Particles": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.custom_particle_colour = "#fff";
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Orange Particles": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.custom_particle_colour = "#fa0";
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Alternate Physical": [
-        no_stats,
+        function(user, spell, stats) {
+            if (stats.damage_type == DmgType.Physical) {
+                stats.custom_particles = cosmetic_particles["PhysicalAlt"];
+            }
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Hide Particles": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.enable_particles = false;
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Red Particles": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.custom_particle_colour = "#f00";
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Yellow Particles": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.custom_particle_colour = "#ff0";
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Green Particles": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.custom_particle_colour = "#0f0";
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Cyan Particles": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.custom_particle_colour = "#0ff";
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Blue Particles": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.custom_particle_colour = "#68f";
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Purple Particles": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.custom_particle_colour = "#c5c";
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Pink Particles": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.custom_particle_colour = "#f9f";
+        },
         no_target,
         no_hit,
         no_tiles
@@ -1399,49 +1522,83 @@ spells_funcs = {
     ],
 
     "Chromatic Target Trigger": [
-        no_stats,
+        function(user, spell, stats) {
+            let dmgtypes = Object.keys(DmgType);
+            let new_dmgtype = DmgType[dmgtypes[Math.floor(Math.random() * dmgtypes.length)]];
+
+            stats.damage_type = new_dmgtype;
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Chromatic Tile Trigger": [
-        no_stats,
+        function(user, spell, stats) {
+            let dmgtypes = Object.keys(DmgType);
+            let new_dmgtype = DmgType[dmgtypes[Math.floor(Math.random() * dmgtypes.length)]];
+
+            stats.damage_type = new_dmgtype;
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Unfair Damage Trigger": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.damage = 0;
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Unreliable Target Trigger": [
-        no_stats,
+        function(user, spell, stats) {
+            if (Math.random() < 0.5) {
+                stats.radius = 0;
+            }
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "Trigger Upgrade": [
-        no_stats,
+    "Zenith Tile Trigger": [
+        function(user, spell, stats) {
+            stats.radius *= 2
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Unfair Tile Trigger": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.radius = 0
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Untrigger": [
-        no_stats,
+        function(user, spell, stats) {
+            switch (stats.trigger_type) {
+                case "at_target":
+                    stats.range += 4
+                    break;
+
+                case "on_hit":
+                    stats.damage += 15
+                    break;
+
+                case "on_affected_tiles":
+                    stats.radius += 2
+                    break;
+            }
+        },
         no_target,
         no_hit,
         no_tiles
@@ -1682,63 +1839,115 @@ spells_funcs = {
     ],
 
     "Chaos Intensifier": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.multicasts["unpredictable"] += stats.multicasts["normal"];
+            stats.multicasts["normal"] = 0;
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Chain Refocus": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.multicasts["chain"] += Math.round(stats.multicasts["arc"] * 1.5);
+            stats.multicasts["arc"] = 0;
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Arc Refocus": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.multicasts["arc"] += Math.round(stats.multicasts["chain"] * 1.5);
+            stats.multicasts["chain"] = 0;
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Duplicator Consumption": [
-        no_stats,
-        no_target,
+        function(user, spell, stats) {
+            if (!stats.mutable_info["duplicator_consumption"]) {
+                stats.mutable_info["duplicator_consumption"] = 0
+            }
+
+            let total_multicasts = 0;
+
+            let multicast_types = Object.keys(stats.multicasts);
+            multicast_types.forEach(typ => {
+                total_multicasts += stats.multicasts[typ];
+                stats.multicasts[typ] = 0;
+            })
+
+            stats.mutable_info["duplicator_consumption"] += total_multicasts;
+        },
+        function(caster, spell, stats, position) {
+            caster.restore_mp(25 * stats.mutable_info["duplicator_consumption"])
+        },
         no_hit,
         no_tiles
     ],
 
     "Blood Magic": [
-        no_stats,
-        no_target,
+        function(user, spell, stats) {
+            let pct = user.hp / user.max_hp;
+            let amt = Math.floor(pct * 5);
+
+            stats.multicasts["normal"] += amt
+        },
+        function(caster, spell, stats, position) {
+            let amt_lose = Math.floor(caster.hp * 0.005);
+
+            caster.lose_hp(amt_lose);
+        },
         no_hit,
         no_tiles
     ],
 
     "Death Chain": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.specials.push(SpellSpecials.DEATHCHAIN)
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Subsurface Chain": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.specials.push(SpellSpecials.NEVERDAMAGE)
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Subsurface Arc": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.specials.push(SpellSpecials.NEVERDAMAGE)
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Duplicator Amplification": [
-        no_stats,
+        function(user, spell, stats) {
+            let total_multicasts = 0;
+
+            let multicast_types = Object.keys(stats.multicasts);
+            multicast_types.forEach(typ => {
+                total_multicasts += stats.multicasts[typ];
+                stats.multicasts[typ] = 0;
+            })
+
+            stats.radius += 1 * total_multicasts;
+            stats.range += 2 * total_multicasts;
+            stats.damage += 8 * total_multicasts;
+        },
         no_target,
         no_hit,
         no_tiles
@@ -1800,42 +2009,86 @@ spells_funcs = {
     ],
 
     "Magic Flare": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.damage_type = DmgType.Fire;
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Formed Magic": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.damage_type = DmgType.Physical;
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Sanctity": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.damage_type = DmgType.Holy;
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Familiarity": [
-        no_stats,
+        function(user, spell, stats) {
+            let resists = user.get_damage_mults();
+
+            let lowest = [null, Number.POSITIVE_INFINITY];
+            Object.keys(resists).forEach(r => {
+                let mul = resists[r];
+                if (mul < lowest[1]) {
+                    lowest = [r, mul];
+                }
+            })
+
+            stats.damage_type = lowest[0];
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Vengeance": [
-        no_stats,
+        function(user, spell, stats) {
+            let resists = user.get_damage_mults();
+
+            let highest = [null, Number.NEGATIVE_INFINITY];
+            Object.keys(resists).forEach(r => {
+                let mul = resists[r];
+                if (mul > highest[1]) {
+                    highest = [r, mul];
+                }
+            })
+
+            stats.damage_type = highest[0];
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Affinity Attunement": [
-        no_stats,
+        function(user, spell, stats) {
+            let chosen_typ = null;
+
+            let dmg_typ_strings = Object.keys(DmgType);
+
+            user.affinities.forEach(aff => {
+                if (!chosen_typ) {
+                    if (dmg_typ_strings.includes(aff)) {
+                        chosen_typ = DmgType[aff]
+                    }
+                }
+            })
+
+            stats.damage_type = chosen_typ
+        },
         no_target,
         no_hit,
         no_tiles
@@ -1845,11 +2098,24 @@ spells_funcs = {
         no_stats,
         no_target,
         no_hit,
-        no_tiles
+        function(user, spell, stats, location) {
+            let ent = game.board.get_pos(location);
+            if (ent) {
+                for (let i=0; i<2; i++) {
+                    let push_dir = location.sub(spell.origin).normalized();
+
+                    let new_pos = location.add(push_dir).round();
+
+                    game.move_entity(ent, new_pos, false);
+                }
+            }
+        }
     ],
 
     "Negative Space": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.specials.push(SpellSpecials.NEGATIVESPACE)
+        },
         no_target,
         no_hit,
         no_tiles

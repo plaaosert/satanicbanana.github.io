@@ -157,6 +157,12 @@ class ParticleTemplate {
         this.col = col;
         this.speed = speed;
     }
+
+    change_colour(to) {
+        return new ParticleTemplate(
+            this.frames, to, this.speed
+        )
+    }
 }
 
 class Particle {
@@ -684,6 +690,10 @@ class Renderer {
     }
 
     mousedown(event, flattened_id) {
+        if (event.button != 0) {
+            return
+        }
+
         if (flattened_id == null) {
             return
         }
@@ -695,6 +705,10 @@ class Renderer {
     }
 
     mouseup(event, flattened_id) {
+        if (event.button != 0) {
+            return
+        }
+
         if (flattened_id == null) {
             return
         }
@@ -707,6 +721,10 @@ class Renderer {
     }
 
     mousedownup(event, flattened_id) {
+        if (event.button != 0) {
+            return
+        }
+
         if (flattened_id == null) {
             return
         }
@@ -818,6 +836,10 @@ class Renderer {
     }
 
     click(event, flattened_id) {
+        if (event.button != 0) {
+            return
+        }
+
         if (flattened_id == null) {
             return
         }
@@ -1729,27 +1751,54 @@ class Renderer {
 
                 current_spell_point = current_spell_point.add(new Vector2(0, 2));
 
-                let diving = false;
+                let diving = true;
                 let margin = 0;
                 while (diving) {
+                    let core_spell = spell.spells.find(sp => sp.typ == SpellType.Core);
+
+                    let core_name = null;
+                    let core_col = null;
+
+                    if (core_spell) {
+                        core_name = core_spell.name;
+                        core_col = core_spell.col;
+                    } else {
+                        core_name = "???";
+                        core_col = "#fff";
+                    }
+
                     this.set_pixel_text(
                         current_spell_point,
-                        this.pad_str(`${"\u00A0".repeat(margin)}[#4df]${pstats.damage} [${damage_type_cols[pstats.damage_type]}]${pstats.damage_type}[clear] damage`, clearance_x)
+                        this.pad_str(`${"\u00A0".repeat(margin)}[${core_col}]${core_name}`, clearance_x)
                     )
 
                     current_spell_point = current_spell_point.add(new Vector2(0, 1));
 
-                    this.set_pixel_text(
-                        current_spell_point,
-                        this.pad_str(`${"\u00A0".repeat(margin)}[white]Affects tiles in a [#4df]${pstats.shape("whoami")}`, clearance_x)
-                    )
+                    if (core_name != "???") {
+                        this.set_pixel_text(
+                            current_spell_point,
+                            this.pad_str(`${"\u00A0".repeat(margin)}[#4df]${pstats.damage} [${damage_type_cols[pstats.damage_type]}]${pstats.damage_type}[clear] damage`, clearance_x)
+                        )
 
-                    current_spell_point = current_spell_point.add(new Vector2(0, 1));
+                        current_spell_point = current_spell_point.add(new Vector2(0, 1));
 
-                    this.set_pixel_text(
-                        current_spell_point,
-                        this.pad_str(`${"\u00A0".repeat(margin)}[white]Effect radius: [#4df]${pstats.radius}`, clearance_x)
-                    )
+                        this.set_pixel_text(
+                            current_spell_point,
+                            this.pad_str(`${"\u00A0".repeat(margin)}[white]Affects tiles in a [#4df]${pstats.shape("whoami")}`, clearance_x)
+                        )
+
+                        current_spell_point = current_spell_point.add(new Vector2(0, 1));
+
+                        this.set_pixel_text(
+                            current_spell_point,
+                            this.pad_str(`${"\u00A0".repeat(margin)}[white]Effect radius: [#4df]${pstats.radius}`, clearance_x)
+                        )
+                    } else {
+                        this.set_pixel_text(
+                            current_spell_point,
+                            this.pad_str(`${"\u00A0".repeat(margin)}[white]This spell block has no core!`, clearance_x)
+                        )
+                    }
 
                     current_spell_point = current_spell_point.add(new Vector2(0, 2));
 
@@ -2157,11 +2206,17 @@ class Renderer {
             let s_game_pos = game.player_ent.position.add(s_game_diff);
 
             if (game.selected_player_primed_spell.root_spell.in_range(game.player_ent, s_game_pos)) {
+                /*
                 radius_vecs = game.selected_player_primed_spell.root_spell.stats.shape(
                     game.player_ent.position, s_game_pos,
                     game.selected_player_primed_spell.root_spell.stats.radius,
                     game.selected_player_primed_spell.root_spell.stats.los
                 );
+                */
+
+                radius_vecs = game.selected_player_primed_spell.root_spell.get_affected_tiles(
+                    game.board, game.player_ent, s_game_pos
+                )
             }
         }
 
@@ -2671,6 +2726,7 @@ class Entity {
         this.dead = false;
 
         this.spawn_protection = false;
+        this.took_damage_last_turn = false;
 
         this.calculate_primed_spells(new Vector2(0, 0));
     }
@@ -2778,6 +2834,7 @@ class Entity {
         // for now just give some mp regen
         this.restore_mp(Math.min(Math.round(this.max_mp / 25)));
         this.spawn_protection = false;
+        this.took_damage_last_turn = false;
     }
 
     has_team(team) {
@@ -2873,7 +2930,7 @@ class Entity {
             return {root_spell: root_spell, manacost: manacost};
         } else {
             let backup_spell = this.parse_spell([
-                core_spell("backup spell", "!!", SpellSubtype.Core, "white", "red", 
+                core_spell("???", "!!", SpellSubtype.Core, "white", "red", 
                 "This is a useless spell. You didn't add a core!",
                 0, DmgType.Physical, 0, 0, Shape.Diamond, 0)
             ]).root_spell;
@@ -2994,6 +3051,10 @@ class Entity {
         // spell source might change damage but not right now
         let final_damage = Math.round(damage * dmg_mult);
 
+        if (final_damage == 0) {
+            return 0;
+        }
+
         let died = this.lose_hp(final_damage);
         console.log(`${this.name} says "ow i took ${final_damage} ${damage_type} damage (multiplied by ${dmg_mult} from original ${damage}) from ${caster.name}`);
         
@@ -3037,6 +3098,8 @@ class Entity {
                 game.roll_for_loot(this, this.xp_value);
             }
         }
+
+        this.took_damage_last_turn = true;
 
         return final_damage;
     }
@@ -3905,7 +3968,9 @@ const SpellSpecials = {
     FLAMENOVA: "FLAMENOVA",
     TURNDEAD: "TURNDEAD",
     CHAOSINCANT: "CHAOSINCANT",
-    NEVERDAMAGE: "NEVERDAMAGE"
+    NEVERDAMAGE: "NEVERDAMAGE",
+    DEATHCHAIN: "DEATHCHAIN",
+    NEGATIVESPACE: "NEGATIVESPACE"
 }
 
 class PrimedSpell {
@@ -3961,6 +4026,12 @@ class PrimedSpell {
         }
         this.stats.shape = Shape.Diamond;
         this.stats.los = true;
+
+        this.stats.enable_particles = true;
+        this.stats.custom_particles = null;
+        this.stats.custom_particle_colour = null;
+
+        this.stats.trigger_type = "none";
 
         this.stats.post_multipliers = {};
         this.stats.specials = [];
@@ -4042,6 +4113,22 @@ class PrimedSpell {
         }
     }
 
+    get_affected_tiles(board, caster, position) {
+        let origin = this.origin ? this.origin : caster.position;
+
+        let cast_locations = this.stats.shape(origin, position, this.stats.radius, this.stats.los);
+        if (this.stats.specials.includes(SpellSpecials.NEGATIVESPACE)) {
+            let new_cast_locations = Shape.Circle[1](origin, origin, this.stats.range, this.stats.los);
+            cast_locations = new_cast_locations.filter(pos => {
+                return !cast_locations.some(p => {
+                    return p.equals(pos)
+                })
+            });
+        }
+
+        return cast_locations;
+    }
+
     cast(board, caster, position) {
         //console.log(this.origin);
 
@@ -4055,7 +4142,9 @@ class PrimedSpell {
         let self_target_safe = this.stats.target_type == SpellTargeting.SelfTarget;
 
         let origin = this.origin ? this.origin : caster.position;
-        let cast_locations = this.stats.shape(origin, position, this.stats.radius, this.stats.los);
+        
+        let cast_locations = this.get_affected_tiles(board, caster, position);
+
         if (this.stats.shape("whoami") == Shape.Line[0]) {
             if (!cast_locations.some(v => v.equals(origin))) {
                 //console.log("hello?")
@@ -4099,6 +4188,19 @@ class PrimedSpell {
             })
         }
 
+        let particle_type = dmg_type_particles[this.stats.damage_type];
+        if (this.stats.custom_particles) {
+            particle_type = this.stats.custom_particles;
+        }
+
+        if (this.stats.custom_particle_colour) {
+            particle_type = particle_type.change_colour(this.stats.custom_particle_colour);
+        }
+
+        if (!particle_type.col) {
+            particle_type = particle_type.change_colour(damage_type_cols[this.stats.damage_type]);
+        }
+
         let sthis = this;
         cast_locations.forEach(location => {
             // if we're out of bounds, exit instantly
@@ -4114,9 +4216,11 @@ class PrimedSpell {
             }
 
             // by default we add a particle on every location affected
-            renderer.put_particle_from_game_loc(location, new Particle(
-                dmg_type_particles[sthis.stats.damage_type]
-            ));
+            if (this.stats.enable_particles) {
+                renderer.put_particle_from_game_loc(location, new Particle(
+                    particle_type
+                ));
+            }
 
             let targeting_predicate = sthis.stats.targeting_predicates.length > 0 ? function(e) { sthis.stats.targeting_predicates.every(p => p(e)) } : null;
             let ent = board.check_for_entity(
@@ -4211,6 +4315,12 @@ class PrimedSpell {
                     game.put_entity_obj_near(ent, ent.position);
                 }
             })
+        }
+
+        if (this.stats.specials.includes(SpellSpecials.DEATHCHAIN)) {
+            if (entities_killed.length > 0) {
+                this.stats.multicasts["chain"] += 1;
+            }
         }
 
         // check multicasts
@@ -4704,7 +4814,7 @@ class Game {
 
                     sthis.progress_wave();
                 });
-            }, 2000);
+            });
         }
     }
 
@@ -5831,6 +5941,15 @@ let dmg_type_particles = {
     "Chaos": new ParticleTemplate(["@#", "%#", "$]", "X<", "/;"], damage_type_cols["Chaos"], 1),
     "Holy": new ParticleTemplate(["@@", "##", ";;", "**", "''"], damage_type_cols["Holy"], 1),
     "Psychic": new ParticleTemplate(["@@", "[]", "{}", "||", "::"], damage_type_cols["Psychic"], 1),
+}
+
+let cosmetic_particles = {
+    "Squares": new ParticleTemplate(["[]", "[]", "[]", "[]", "[]", "[]", "[]", "[]", "[]", "[]", "[]", "[]", "[]", "[]", "[]", "[]", "[]", "[]", "[]"], "#fff", 1),
+    "Arrows": new ParticleTemplate([">>", "=>", "-=", "\u00A0-"], "", 1),
+    
+    "FireAlt": new ParticleTemplate(["@@", "{}", "++", "..", "."], damage_type_cols["Fire"], 1),
+    "IceAlt": new ParticleTemplate(["[]", "{}", "<>", "!!", "::"], damage_type_cols["Ice"], 1),
+    "PhysicalAlt": new ParticleTemplate(["XX", "++", "XX", "++", ".."], damage_type_cols["Physical"], 1),
 }
 
 let spell_projection_particle = new ParticleTemplate(
