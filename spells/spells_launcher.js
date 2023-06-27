@@ -41,12 +41,13 @@ trigger_spells = {
     ]
 }
 
-for (let i=1; i<typs.length; i++) {
+typs = ["none", "at_target", "on_hit", "on_affected_tiles"];
+for (let i=0; i<typs.length; i++) {
     trigger_spells[typs[i]].forEach(name => {
         let spell = get_spell_by_name(name);
 
         spell.set_trigger(typs[i]);
-        spell.augment("on_stats", function(user, spell, stats) {
+        spell.augment("to_stats", function(user, spell, stats) {
             stats.trigger_type = typs[i];
         })
     })
@@ -149,7 +150,7 @@ let test = function(spells) {
 */
 
 
-game.player_add_spells_to_inv([...spells_list.filter(s => s.subtyp == SpellSubtype.Cosmetic)].flatMap(i => i));
+game.player_add_spells_to_inv([...spells_list.filter(s => s.subtyp == SpellSubtype.Trigger || s.subtyp == SpellSubtype.Multicast)].flatMap(i => i));
 
 game.player_add_spells_to_inv([...spells_list.filter(s => s.is_red())]);
 game.player_discard_edits();

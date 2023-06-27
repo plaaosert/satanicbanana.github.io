@@ -1443,7 +1443,7 @@ spells_list = [
     modifier(
         "Unreliable Target Trigger", "?*", SpellSubtype.Trigger,
         "#fff", "#26f",
-        "Makes the core cast the next core at the point it was targeted, but only with a 50% chance.",
+        "Makes the core cast the next core at the point it was targeted, has a 50% chance to set the core's radius to 0.",
         -25,
         no_stats,
         no_target,
