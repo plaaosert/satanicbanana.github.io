@@ -1,301 +1,301 @@
-Fireball	@"	Core	Core	#e52	#000		25	10	Fire	7	3	Diamond	Positional	Player + Enemy
-Searing Touch	">	Core	Core	#f52	#000	Doubles this core's final damage value.	40	40	Fire	2	1	Diamond	Positional	Player + Enemy
-Flame Nova	X"	Core	Core	#e84	#000	Gains 5 times this core's final radius as damage.	50	10	Fire	0	4	Diamond	SelfTarget	Player + Enemy
-Flarefrost Beam	=>	Core	Core	#e58	#000	Deals Ice damage equal to this core's damage value at every tile affected.	40	12	Fire	9	1	Line	Positional	Player + Enemy
-Cleansing Fire	!"	Core	Core	#fd4	#000	Half of all Fire damage caused by this core is redealt as Holy damage.	40	14	Fire	8	2	Diamond	Positional	Player + Enemy
-Ice Ball	@>	Core	Core	#aff	#000	Deals Physical damage equal to this core's damage value at every tile affected.	25	6	Ice	8	2	Diamond	Positional	Player + Enemy
-Snap Freeze	V^	Core	Core	#cff	#000	Applies Frozen for 3 turns to the unit at the target position.	20	6	Ice	10	1	Diamond	Positional	Player + Enemy
-Chilling Burst	[>	Core	Core	#aff	#000	Applies Frozen for 2 turns to any unit taking Ice damage from this core.	60	9	Ice	0	7	Diamond	SelfTarget	Player + Enemy
-Frostbite	<^	Core	Core	#9bf	#000	Any instance of Ice damage caused by this core causes Dark damage equal to this core's damage value at the same position.	50	6	Ice	7	1	Diamond	Positional	Player + Enemy
-Absolute Zero	^!	Core	Core	#bff	#000	Applies Freeze for 6 turns to the unit at the center of the burst.	140	20	Ice	0	12	Diamond	SelfTarget	Player + Enemy
-Lightning Bolt	&>	Core	Core	#ff3	#000		17	13	Lightning	10	1	Line	Positional	Player + Enemy
-Arc Lightning	&*	Core	Core	#ff3	#000	Has an arc value of 3.	35	12	Lightning	10	1	Line	Positional	Player + Enemy
-Chain Lightning	&/	Core	Core	#ff3	#000	Has a chain value of 4.	40	10	Lightning	10	1	Line	Positional	Player + Enemy
-Hypercharge	^&	Core	Core	#ff6	#000	All damaged units take and deal 50% more Lightning damage for 16 turns.	75	6	Lightning	6	3	Circle	Positional	Player + Enemy
-Spark	-*	Core	Core	#ff0	#127	Casts another core at the point this core was targeted.	-15	1	Lightning	12	1	Diamond	Positional	Player + Enemy
-Magic Missile	=]	Core	Core	#f49	#000		10	10	Arcane	12	1	Line	Positional	Player + Enemy
-Arcane Crush	][	Core	Core	#c4c	#000	Applies Stunned for 2 turns to any non-stunned unit taking damage from this core.	35	16	Arcane	7	1	Diamond	UnitTarget	Player + Enemy
-Magical Explosion	[#	Core	Core	#f49	#000	Deals Physical damage equal to this core's damage value at every tile affected.	30	22	Arcane	10	4	Diamond	Positional	Player + Enemy
-Void Laser	]=	Core	Core	#c26	#000	Applies Polarity (Arcane) for 3 turns to any unit damaged by this core. This core is not restricted by line of sight.	160	40	Arcane	10	1	Line	Positional	Player + Enemy
-Conjure Spear	->	Core	Core	#ddd	#000		25	17	Physical	12	1	Line	Positional	Player + Enemy
-Conjure Bullet	-=	Core	Core	#ddd	#000	Deals twice this core's damage value as Fire damage at the targeted location.	60	26	Physical	14	1	Line	Positional	Player + Enemy
-Sonic Boom	>)	Core	Core	#ddd	#000	Has an arc value of 2. Applies Stunned for 1 turn to any non-stunned units taking Physical damage from this core.	80	4	Physical	9	2	Cone	Positional	Player + Enemy
-Lacerate	X/	Core	Core	#fdd	#000	Every instance of damage to a unit caused by this core will also apply 1 turn of Bleed to that unit.	75	6	Physical	7	2	Circle	UnitTarget	Player + Enemy
-Magnetic Launcher	>=	Core	Core	#ddd	#000	Any unit in the area of effect of this core will take Physical damage equal to 20% of this core's damage value per tile of distance between them and the caster.	200	25	Physical	64	1	Line	Positional	Player + Enemy
-Ball of Skulls	Q.	Core	Core	#99a	#000	Summons a Skeleton at the target position if it is empty.	40	8	Dark	8	2	Circle	Positional	Player + Enemy
-Mass Haunting	O^	Core	Core	#99a	#000	Summons a Ghost at every empty tile this core affected.	80	12	Dark	6	2	Diamond	Positional	Player + Enemy
-Reinforce	#!	Core	Core	#74a	#000	Any non-player unit with Dark affinity in this core's area of effect will be healed to full HP and gain access to Dark Bolt.	100	0	Dark	8	3	Diamond	Positional	Player + Enemy
-Death Bolt	#>	Core	Core	#74a	#000		20	12	Dark	10	1	Line	Positional	Player + Enemy
-Turn Unwilling Dead	#$	Core	Core	#74a	#000	If an enemy dies as a result of damage from this core, they will be reanimated on the caster's side. Their affinities are removed and replaced with Dark and Undead.	200	20	Dark	3	1	Circle	Positional	Player + Enemy
+Fireball	@"	Core	Core	#e52	#000		1,2,3	25	10	Fire	7	3	Diamond	Positional	Player + Enemy
+Searing Touch	">	Core	Core	#f52	#000	Doubles this core's final damage value.	3,4,5	40	40	Fire	2	1	Diamond	Positional	Player + Enemy
+Flame Nova	X"	Core	Core	#e84	#000	Gains 5 times this core's final radius as damage.	4,5	50	10	Fire	0	4	Diamond	SelfTarget	Player + Enemy
+Flarefrost Beam	=>	Core	Core	#e58	#000	Deals Ice damage equal to this core's damage value at every tile affected.	2,3,4	40	12	Fire	9	1	Line	Positional	Player + Enemy
+Cleansing Fire	!"	Core	Core	#fd4	#000	Half of all Fire damage caused by this core is redealt as Holy damage.	3,4	40	14	Fire	8	2	Diamond	Positional	Player + Enemy
+Ice Ball	@>	Core	Core	#aff	#000	Deals Physical damage equal to this core's damage value at every tile affected.	1,2,3	25	6	Ice	8	2	Diamond	Positional	Player + Enemy
+Snap Freeze	V^	Core	Core	#cff	#000	Applies Frozen for 3 turns to the unit at the target position.	2,3	20	6	Ice	10	1	Diamond	Positional	Player + Enemy
+Chilling Burst	[>	Core	Core	#aff	#000	Applies Frozen for 2 turns to any unit taking Ice damage from this core.	2,3,4	60	9	Ice	0	7	Diamond	SelfTarget	Player + Enemy
+Frostbite	<^	Core	Core	#9bf	#000	Any instance of Ice damage caused by this core causes Dark damage equal to this core's damage value at the same position.	4,5,6	50	6	Ice	7	1	Diamond	Positional	Player + Enemy
+Absolute Zero	^!	Core	Core	#bff	#000	Applies Freeze for 6 turns to the unit at the center of the burst.	3,4,5,6,7	140	20	Ice	0	12	Diamond	SelfTarget	Player + Enemy
+Lightning Bolt	&>	Core	Core	#ff3	#000		1,2,3	17	13	Lightning	10	1	Line	Positional	Player + Enemy
+Arc Lightning	&*	Core	Core	#ff3	#000	Has an arc value of 3.	3,4,5	35	12	Lightning	10	1	Line	Positional	Player + Enemy
+Chain Lightning	&/	Core	Core	#ff3	#000	Has a chain value of 4.	3,4,5	40	10	Lightning	10	1	Line	Positional	Player + Enemy
+Hypercharge	^&	Core	Core	#ff6	#000	All damaged units take and deal 50% more Lightning damage for 16 turns.	2,3,4	75	6	Lightning	6	3	Circle	Positional	Player + Enemy
+Spark	-*	Core	Core	#ff0	#127	Casts another core at the point this core was targeted.	2,3,4	-15	1	Lightning	12	1	Diamond	Positional	Player + Enemy
+Magic Missile	=]	Core	Core	#f49	#000		1,2,3	10	10	Arcane	12	1	Line	Positional	Player + Enemy
+Arcane Crush	][	Core	Core	#c4c	#000	Applies Stunned for 2 turns to any non-stunned unit taking damage from this core.	3,4,5	35	16	Arcane	7	1	Diamond	UnitTarget	Player + Enemy
+Magical Explosion	[#	Core	Core	#f49	#000	Deals Physical damage equal to this core's damage value at every tile affected.	3,4,5	30	22	Arcane	10	4	Diamond	Positional	Player + Enemy
+Void Laser	]=	Core	Core	#c26	#000	Applies Polarity (Arcane) for 3 turns to any unit damaged by this core. This core is not restricted by line of sight.	5,6	160	40	Arcane	10	1	Line	Positional	Player + Enemy
+Conjure Spear	->	Core	Core	#ddd	#000		2,3	25	17	Physical	12	1	Line	Positional	Player + Enemy
+Conjure Bullet	-=	Core	Core	#ddd	#000	Deals twice this core's damage value as Fire damage at the targeted location.	6,7	60	26	Physical	14	1	Line	Positional	Player + Enemy
+Sonic Boom	>)	Core	Core	#ddd	#000	Has an arc value of 2. Applies Stunned for 1 turn to any non-stunned units taking Physical damage from this core.	4,5,6	80	4	Physical	9	2	Cone	Positional	Player + Enemy
+Lacerate	X/	Core	Core	#fdd	#000	Every instance of damage to a unit caused by this core will also apply 1 turn of Bleed to that unit.	2,3,4	75	6	Physical	7	2	Circle	UnitTarget	Player + Enemy
+Magnetic Launcher	>=	Core	Core	#ddd	#000	Any unit in the area of effect of this core will take Physical damage equal to 20% of this core's damage value per tile of distance between them and the caster.	5,6,7	200	25	Physical	64	1	Line	Positional	Player + Enemy
+Ball of Skulls	Q.	Core	Core	#99a	#000	Summons a Skeleton at the target position if it is empty.	2,3	40	8	Dark	8	2	Circle	Positional	Player + Enemy
+Mass Haunting	O^	Core	Core	#99a	#000	Summons a Ghost at every empty tile this core affected.	3,4	80	12	Dark	6	2	Diamond	Positional	Player + Enemy
+Reinforce	#!	Core	Core	#74a	#000	Any non-player unit with Dark affinity in this core's area of effect will be healed to full HP and gain access to Death Bolt.	2,3,4	100	0	Dark	8	3	Diamond	Positional	Player + Enemy
+Death Bolt	#>	Core	Core	#74a	#000		1,2,3	20	12	Dark	10	1	Line	Positional	Player + Enemy
+Turn Unwilling Dead	#$	Core	Core	#74a	#000	If an enemy dies as a result of damage from this core, they will be reanimated on the caster's side. Their affinities are removed and replaced with Dark and Undead.	3,4,5,6	200	20	Dark	3	1	Circle	Positional	Player + Enemy
 Unknown Incantation	!?	Core	Core	#e90	#000	"This core will have a random bonus effect on cast that changes every time it is used by ANYONE.
-Next effect: [#4df]Nothing.[clear]"	30	20	Chaos	10	2	Diamond	Positional	Player + Enemy
-Chromatic Shattering	&{	Core	Core	#e90	#000	This core's damage type will randomly change to another damage type every time it is cast by ANYONE.	40	20	Chaos	10	1	Line	Positional	Player + Enemy
-Cone of Chaos	%}	Core	Core	#e90	#000	Deals Fire or Lightning damage equal to this core's damage value at every tile affected.	50	12	Chaos	8	3	Cone	Positional	Player + Enemy
-Demonic Summoning	%*	Core	Core	#b90	#000	Summons one of four random Demons (Fire, Ice, Primal, Brimstone) at the target position if it is empty.	300	20	Chaos	6	3	Circle	Positional	Player + Enemy
-Sacred Bolt	*=	Core	Core	#ff9	#000	If the unit at the target position is Dark, Demon, Undead or Ghost, applies Stunned to them for 3 turns.	20	10	Holy	12	1	Line	Positional	Player + Enemy
-Shining Spear	*/	Core	Core	#ff9	#000	Deals additional Physical damage equal to this core's damage value at every tile affected, as well as Holy damage if the unit is Dark, Demon, Undead or Ghost.	60	18	Holy	12	1	Line	Positional	Player + Enemy
-Angelic Chorus	^*	Core	Core	#ff9	#000	All Holy units taking Holy damage from this core will be healed by an amount equal to twice this core's damage value.	50	15	Holy	0	5	Diamond	SelfTarget	Player + Enemy
-Consecrate	*"	Core	Core	#fd9	#000	All Dark, Demon, Undead or Ghost units taking Holy damage from this core will also take an equal amount of Fire damage.	100	30	Holy	0	5	Square	SelfTarget	Player + Enemy
-Apotheosis	^^	Core	Core	#ffc	#000	Applies Invincible and Stunned for 10 turns to the caster, then summons two allied Seraphim and two allied Archangels in the closest available positions.	400	0	Holy	0	0	Diamond	SelfTarget	Player + Enemy
-Mind Spike	=}	Core	Core	#f9f	#000	Cannot damage allied units.	25	10	Psychic	14	1	Line	Positional	Enemy
-Touch of Mindshattering	}%	Core	Core	#f9f	#000	Applies Stunned for 4 turns to any non-stunned unit taking Psychic damage from this core.	140	8	Psychic	1	1	Diamond	UnitTarget	Player + Enemy
-Memetic Virus	}~	Core	Core	#f9f	#000	Has a chain value of 6. The damage value of this core is locked at 0. Cannot target or damage allied units.	80	0	Psychic	7	1	Line	UnitTarget	Enemy
-Overwhelm	~{	Core	Core	#f9f	#000	Applies 3 turns of Sleeping to any unit taking Psychic damage from this core.	100	12	Psychic	6	3	Cone	UnitTarget	Player + Enemy
-Blink	.-	Core	Core	#fcf	#000	Teleports the caster to the target position of this core after casting it, if it is empty.	30	0	Psychic	6	1	Diamond	Positional	Player + Enemy
-Teleport	.!	Core	Core	#fcf	#000	Teleports the caster to the target position of this core after casting it, if it is empty.	80	0	Psychic	20	1	Diamond	Positional	Player + Enemy
-Disperse	.?	Core	Core	#fcf	#000	All units taking Psychic damage from this core will be teleported to random empty positions within a 5 tile radius.	50	5	Psychic	0	4	Diamond	SelfTarget	Player + Enemy
-Dimensional Rift	.%	Core	Core	#f8b	#000	Teleports any unit in this core's area of effect to a random empty location on the map.	70	0	Arcane	10	4	Circle	SelfTargetPlusCaster	Player + Enemy
-Last Resort	!!	Core	Core	#fff	#000	Sets the caster's current HP to 1 and removes 10% of their max HP.	0	200	Physical	12	3	Diamond	Positional	Player + Enemy
-Fireball with Trigger	@"	Core	Core	#e52	#127	Casts another core at the point this core was targeted.	50	10	Fire	7	3	Diamond	Positional	Player + Enemy
-Lightning Bolt with Trigger	&>	Core	Core	#ff3	#127	Casts another core at the point this core was targeted.	42	13	Lightning	10	1	Line	Positional	Player + Enemy
-Magic Missile with Trigger	=]	Core	Core	#f49	#127	Casts another core at the point this core was targeted.	35	10	Arcane	12	1	Line	Positional	Player + Enemy
-Damage Plus I	D+	Modifier	Stats	#c44	#03f	Increases the core's damage value by 5.	15							
-Damage Plus II	D*	Modifier	Stats	#c44	#03f	Increases the core's damage value by 15.	40							
-Damage Overcharge	D!	Modifier	Stats	#f44	#03f	Sets the radius of the core to 1. The core's damage value is increased by 5 times its radius before this reduction.	70							
-Radius Plus I	R+	Modifier	Stats	#4cf	#03f	Increases the core's radius by 1.	20							
-Radius Plus II	R*	Modifier	Stats	#4cf	#03f	Increases the core's radius by 2.	30							
-Range Plus I	N+	Modifier	Stats	#4d4	#03f	Increases the core's range by 2.	12							
-Range Plus II	N*	Modifier	Stats	#4d4	#03f	Increases the core's range by 5.	20							
-Orbital Mirroring	N!	Modifier	Stats	#2f2	#03f	Increases the core's range by 64.	160							
-Projection	>~	Modifier	Stats	#fff	#03f	Allows the core to ignore line of sight and collision for targeting and effects.	50							
-Undercharging I	P-	Modifier	Stats	#caa	#03f	Reduces the core's damage value by 7 and its radius by 1, but costs [#4df]negative mana[clear].	-25							
-Undercharging II	p.	Modifier	Stats	#caa	#03f	Reduces the core's damage value by 13 and its radius by 2, but costs [#4df]negative mana[clear].	-60							
-Power Focus	#!	Modifier	Stats	#e6e	#03f	Reduces the core's range by 6, but increases its damage value by 25.	25							
-Unbounded Energy	^M	Modifier	Stats	#6ff	#03f	Increases the core's damage value by 10% of the caster's current mana, but also makes it remove 10% of the caster's current mana on cast.	10							
-Synergistic Arcana	x+	Modifier	Stats	#e6e	#03f	Multiplies the effect of previous modifiers on the core's stats by 1.25x.	75							
-Antisynergy	x-	Modifier	Stats	#93f	#03f	Multiplies the effect of previous modifiers on the core's stats by 0.75x.	5							
-Random Damage	D?	Modifier	Stats	#fff	#03f	Modifies the core's damage value by a random number from -100 to 100.	33							
-Zenith Arcana I	X*	Modifier	Stats	#0ef	#03f	Increases the core's damage value by 50, its radius by 3 and its range by 8.	600							
-Zenith Arcana II	X#	Modifier	Stats	#4ff	#03f	Increases the core's damage value by 150, its radius by 5 and its range by 12.	2000							
-Pain Catalyst I	#+	Modifier	Stats	#f00	#03f	Increases the core's damage value by 5 for every 10% HP the caster is missing.	20							
-Pain Catalyst II	#*	Modifier	Stats	#f00	#03f	Increases the core's damage value by 15 and its radius by 1 for every 10% HP the caster is missing.	80							
-Last Stand	#!	Modifier	Stats	#f00	#03f	If the caster has less than 10% HP remaining, doubles the core's damage value, radius and range.	120							
-Affinity Matching	@+	Modifier	Stats	#fff	#03f	If the core's damage type is also one of the caster's affinities, multiplies its damage value by 1.5x.	100							
-Sympathetic Damage	}+	Modifier	Stats	#d59	#03f	Multiplies the core's damage value by the caster's damage taken multiplier for the core's damage type.	240							
-Strange Shuffle	$?	Modifier	Stats	#e90	#03f	Swaps the core's radius and damage values...!	777							
-Paradigm Shift	$=	Modifier	Stats	#af0	#03f	Sets the core's radius to half its range value and its range value to twice its previous radius.	60							
-Null	0.	Modifier	Stats	#777	#03f	Sets the radius, range and damage value of the core to 0...!	0							
-Catch-up Damage	=3	Modifier	Stats	#faa	#03f	Sets the core's damage to 33.	50							
-Equalisation	$O	Modifier	Stats	#88f	#03f	Redistributes the core's range, radius and damage value into the same proportions as the original core's values.	160							
-Vowel Lover	A!	Modifier	Stats	#8f8	#03f	Grants the core +5 damage, +2 range and +1 radius for every vowel in its name.	99							
-Trigger Finger	%+	Modifier	Stats	#f66	#03f	Multiplies the core's damage value by 2x if the caster took damage last turn.	120							
-Freezing Fire	"^	Modifier	Damage	#e52	#32d	Half of all Fire damage from the core is redealt as Ice damage.	160							
-Crystallized Flame	"[	Modifier	Damage	#e52	#32d	Half of all Fire damage from the core is redealt as Arcane damage.	160							
-Chaotic Immolation	"%	Modifier	Damage	#e52	#32d	Half of all Fire damage from the core is redealt as Chaos damage.	160							
-Sacred Flames	"*	Modifier	Damage	#e52	#32d	Half of all Fire damage from the core is redealt as Holy damage.	160							
-Charged Ice	^&	Modifier	Damage	#aff	#32d	Half of all Ice damage from the core is redealt as Lightning damage.	160							
-Crystalline Frost	^[	Modifier	Damage	#aff	#32d	Half of all Ice damage from the core is redealt as Arcane damage.	160							
-Stifling Frost	^#	Modifier	Damage	#aff	#32d	Half of all Ice damage from the core is redealt as Dark damage.	160							
-Arcane Conductance	&[	Modifier	Damage	#ff3	#32d	Half of all Lightning damage from the core is redealt as Arcane damage.	160							
-Cracklevoid	&#	Modifier	Damage	#ff3	#32d	Half of all Lightning damage from the core is redealt as Dark damage.	160							
-Heavenstrike	&*	Modifier	Damage	#ff3	#32d	Half of all Lightning damage from the core is redealt as Holy damage.	160							
-Mind Bolts	&{	Modifier	Damage	#ff3	#32d	Half of all Lightning damage from the core is redealt as Psychic damage.	160							
-Crystallized Sorcery	]^	Modifier	Damage	#f49	#32d	Half of all Arcane damage from the core is redealt as Ice damage.	160							
-Dark Magic	]#	Modifier	Damage	#f49	#32d	Half of all Arcane damage from the core is redealt as Dark damage.	160							
-Mind Magic	]{	Modifier	Damage	#f49	#32d	Half of all Arcane damage from the core is redealt as Psychic damage.	160							
-Falcon Fist	="	Modifier	Damage	#ddd	#32d	Half of all Physical damage from the core is redealt as Fire damage.	160							
-Lightning Fist	=&	Modifier	Damage	#ddd	#32d	Half of all Physical damage from the core is redealt as Lightning damage.	160							
-Double Hit	=2	Modifier	Damage	#ddd	#32d	All Physical damage from the core is redealt as Physical damage. This damage cannot trigger further effects.	240							
-Shadow Strike	=#	Modifier	Damage	#ddd	#32d	Half of all Physical damage from the core is redealt as Dark damage.	160							
-Pure Strike	=*	Modifier	Damage	#ddd	#32d	Half of all Physical damage from the core is redealt as Holy damage.	160							
-Telekinesis	={	Modifier	Damage	#ddd	#32d	Half of all Physical damage from the core is redealt as Psychic damage.	160							
-Blackflame	#"	Modifier	Damage	#95a	#32d	Half of all Dark damage from the core is redealt as Fire damage.	160							
-Deathly Frost	#^	Modifier	Damage	#95a	#32d	Half of all Dark damage from the core is redealt as Ice damage.	160							
-Demonic Dark	#%	Modifier	Damage	#95a	#32d	Half of all Dark damage from the core is redealt as Chaos damage.	160							
-Sacred Magic	*[	Modifier	Damage	#ffa	#32d	Half of all Holy damage from the core is redealt as Arcane damage.	160							
-Apostasy	*#	Modifier	Damage	#ffa	#32d	Half of all Holy damage from the core is redealt as Dark damage.	160							
-Chromatic Catalyst	O)	Modifier	Damage	#fff	#32d	Redeals all native damage from the core as every other damage type, split equally between each type.	300							
-Null Magic	-)	Modifier	Damage	#80a	#32d	Deals [#4df]negative[clear] damage equivalent to every instance of damage the core caused.	25							
-Hand of Fate	O?	Modifier	Damage	#fff	#32d	Half of all native damage from the core is redealt as a random other damage type.	75							
-Chromatic Convergence	O>	Modifier	Damage	#fff	#32d	Redeals half of the native damage from the core as the damage type the damaged unit is least resistant to, not including the core's own damage type.	360							
-Chromatic Divergence	O<	Modifier	Damage	#fff	#32d	Redeals half of the native damage from the core as the damage type the damaged unit is most resistant to, not including the core's own damage type.	50							
-Cosmetic Squares	[]	Modifier	Cosmetic	#fff	#61a	Replaces the core's particle effect with white, long-lasting squares.	-25							
-Cosmetic Arrows	>>	Modifier	Cosmetic	#fff	#61a	Replaces the core's particle effect with arrows of the damage type's colour.	-25							
-Alternate Fire	"2	Modifier	Cosmetic	#e52	#61a	Replaces the core's Fire damage particle effect with an alternate particle effect.	-30							
-Alternate Ice	^2	Modifier	Cosmetic	#aff	#61a	Replaces the core's Ice damage particle effect with an alternate particle effect.	-30							
-White Particles	c/	Modifier	Cosmetic	#fff	#61a	Sets the colour of the core's particle effect to pure white.	-10							
-Orange Particles	c/	Modifier	Cosmetic	#fa0	#61a	Sets the colour of the core's particle effect to a delicious orange.	-10							
-Alternate Physical	-2	Modifier	Cosmetic	#ddd	#61a	Replaces the core's Physical damage particle effect with an alternate particle effect.	-30							
-Hide Particles	Xc	Modifier	Cosmetic	#fff	#61a	Disables the core's particle effect.	0							
-Red Particles	c/	Modifier	Cosmetic	#f00	#61a	Sets the colour of the core's particle effect to a deep red.	-30							
-Yellow Particles	c/	Modifier	Cosmetic	#ff0	#61a	Sets the colour of the core's particle effect to a shocking yellow.	-30							
-Green Particles	c/	Modifier	Cosmetic	#0f0	#61a	Sets the colour of the core's particle effect to a vibrant green.	-30							
-Cyan Particles	c/	Modifier	Cosmetic	#0ff	#61a	Sets the colour of the core's particle effect to a clear cyan.	-30							
-Blue Particles	c/	Modifier	Cosmetic	#68f	#61a	Sets the colour of the core's particle effect to a deep ocean blue.	-30							
-Purple Particles	c/	Modifier	Cosmetic	#c5c	#61a	Sets the colour of the core's particle effect to a regal purple.	-30							
-Pink Particles	c/	Modifier	Cosmetic	#f9f	#61a	Sets the colour of the core's particle effect to a cutesy pink.	-30							
-Add Target Trigger	+*	Modifier	Trigger	#ee0	#26f	Makes the core cast the next core at the point it was targeted.	25							
-Add Tile Trigger	+x	Modifier	Trigger	#ee0	#26f	Makes the core cast a copy of the next core at every tile the core affected.	500							
-Add Damage Trigger	+;	Modifier	Trigger	#ee0	#26f	Makes the core cast a copy of the next core at every instance of damage the core caused.	400							
-Chromatic Target Trigger	O*	Modifier	Trigger	#fff	#26f	Makes the core cast the next core at the point it was targeted, but also randomises the damage type of the core.	15							
-Chromatic Tile Trigger	Ox	Modifier	Trigger	#fff	#26f	Makes the core cast a copy of the next core at every tile the core affected, but also randomises the damage type of the core.	450							
-Unfair Damage Trigger	!;	Modifier	Trigger	#fff	#26f	Makes the core cast a copy of the next core at every instance of damage the core caused, but sets the damage value of the core to 0.	250							
-Unreliable Target Trigger	?*	Modifier	Trigger	#fff	#26f	Makes the core cast the next core at the point it was targeted, but only with a 50% chance.	-25							
-Trigger Upgrade	+^	Modifier	Trigger	#fff	#26f	Grants a [#4df]target trigger[clear] to the core. If it already has a trigger, instead replaces it with the next one in the chain: Target > Damage > Tile. If it already has a [#4df]tile trigger[close], instead adds 1 to the core's multicast value.	50							
-Unfair Tile Trigger	!x	Modifier	Trigger	#fff	#26f	Makes the core cast a copy of the next core at every every tile the core affected, but sets the radius of the core to 0.	250							
-Untrigger	-;	Modifier	Trigger	#fff	#26f	Removes the trigger from the core if there is one, applying a bonus based on the trigger type. [#4df]Target trigger[clear] grants +4 range, [#4df]damage trigger[clear] grants +15 damage value and [#4df]tile trigger[clear] grants +2 radius.	75							
-Positional	=>	Modifier	Shape	#fcf	#441	Allows the core to target [#4df]a position on the ground[clear].	90							
-Unit Target	=!	Modifier	Shape	#fcf	#441	Allows the core to target [#4df]a specific unit[clear].	50							
-Self Target	=O	Modifier	Shape	#fcf	#441	Allows the core to target [#4df]the area around the caster[clear].	25							
-Self Position	=X	Modifier	Shape	#fcf	#441	Allows the core to target [#4df]at the caster's position[clear].	10							
-Circle	@@	Modifier	Shape	#fff	#441	Causes the core to affect tiles in a [#4df]circle shape[clear].	140							
-Ring	()	Modifier	Shape	#fff	#441	Causes the core to affect tiles in a [#4df]ring shape[clear].	40							
-Line	--	Modifier	Shape	#fff	#441	Causes the core to affect tiles in a [#4df]straight line[clear].	60							
-Burst	<>	Modifier	Shape	#fff	#441	Causes the core to affect tiles in a [#4df]burst[clear].	100							
-Perpendicular Line	-|	Modifier	Shape	#fff	#441	Causes the core to affect tiles in a [#4df]line perpendicular to the target[clear].	50							
-Cone	<=	Modifier	Shape	#fff	#441	Causes the core to affect tiles in a [#4df]cone shape[clear].	80							
-Behind the Back	<$	Modifier	Multicast	#fff	#06b	Casts a copy of the core behind the user.	100							
-Triangle Formation	V$	Modifier	Multicast	#fff	#06b	Casts two more copies of the core to form an equilateral triangle shape.	200							
-Square Formation	X$	Modifier	Multicast	#fff	#06b	Casts three more copies of the core to form a square shape.	300							
-Chaotic Multicast x2	!2	Modifier	Multicast	#faa	#06b	Adds 2 to the core's chaoscast value.	225							
-Chaotic Multicast x5	!5	Modifier	Multicast	#faa	#06b	Adds 5 to the core's chaoscast value.	400							
-Multicast x1	>1	Modifier	Multicast	#6f6	#06b	Adds 1 to the core's multicast value.	125							
-Multicast x2	>2	Modifier	Multicast	#6f6	#06b	Adds 2 to the core's multicast value.	275							
-Multicast x4	>4	Modifier	Multicast	#6f6	#06b	Adds 4 to the core's multicast value.	350							
-Multicast x8	>8	Modifier	Multicast	#6f6	#06b	Adds 8 to the core's multicast value.	600							
-Multicast x3 with Trigger	;3	Modifier	Multicast	#4fc	#06b	Adds 3 to the core's multicast value and makes the core cast the next core at the point it was targeted.	350							
-Micro Chain Spell	/.	Modifier	Multicast	#fff	#06b	Adds 1 to the core's chain value.	125							
-Micro Arc Spell	*.	Modifier	Multicast	#ff0	#06b	Adds 1 to the core's arc value.	115							
-Mini Chain Spell	/-	Modifier	Multicast	#fff	#06b	Adds 2 to the core's chain value.	250							
-Mini Arc Spell	*-	Modifier	Multicast	#ff0	#06b	Adds 2 to the core's arc value.	230							
-Chain Spell	/>	Modifier	Multicast	#fff	#06b	Adds 4 to the core's chain value.	350							
-Arc Spell	*>	Modifier	Multicast	#ff0	#06b	Adds 4 to the core's arc value.	320							
-Chaos Intensifier	%+	Modifier	Multicast	#fcc	#06b	Sets the core's multicast value to 0. Increases the core's chaoscast value by the amount removed.	35							
-Chain Refocus	/<	Modifier	Multicast	#aff	#06b	Sets the core's arc value to 0. Increases the core's chain value by 1.5x the amount removed.	120							
-Arc Refocus	*<	Modifier	Multicast	#af0	#06b	Sets the core's chain value to 0. Increases the core's arc value by 1.5x the amount removed.	120							
-Duplicator Consumption	>X	Modifier	Multicast	#9f9	#06b	Removes all forms of multicast from the core. Causes the core to restore the caster's mana by 25 on cast for each value removed.	50							
-Blood Magic	&+	Modifier	Multicast	#f44	#06b	Increases the core's multicast value by +1 per 20% HP the caster has. Causes the core to remove 0.5% of the caster's current HP when cast.	150							
-Death Chain	X/	Modifier	Multicast	#c8f	#06b	If a unit dies as a result of damage from the core, allows it to chain one more time.	130							
-Subsurface Chain	/~	Modifier	Multicast	#faf	#06b	Adds 6 to the core's chain value. Locks the damage value of the core to 0.	300							
-Subsurface Arc	*~	Modifier	Multicast	#f8c	#06b	Adds 6 to the core's arc value. Locks the damage value of the core to 0.	300							
-Duplicator Amplification	>+	Modifier	Multicast	#9f9	#06b	Removes all forms of multicast from the core. For each value removed, raises the core's radius by 1, its range by 2 and its damage value by 8.	250							
-Conjure Mana	O^	Modifier	Misc	#fff	#265	Restores 15 mana to the caster when the core is cast.	10							
-Hardening Enchantment	#-	Modifier	Misc	#fff	#265	Native damage caused by the core applies 3 turns of Resistance (native damage type)	40							
-Intensifying Enchantment	#+	Modifier	Misc	#fff	#265	Native damage caused by the core applies 4 turns of Polarity (native damage type)	75							
-Chromatic Impact	O+	Modifier	Misc	#fff	#265	Any unit at the core's target position will receive Polarity of every damage type for 10 turns.	125							
-Cleanse	~-	Modifier	Misc	#fff	#265	Any unit damaged by the core will have all active effects removed from it.	40							
-Magic Flare	>"	Modifier	Misc	#fff	#265	Changes the core's damage type to Fire.	240							
-Formed Magic	>=	Modifier	Misc	#fff	#265	Changes the core's damage type to Physical.	240							
-Sanctity	>*	Modifier	Misc	#fff	#265	Changes the core's damage type to Holy.	240							
-Familiarity	>@	Modifier	Misc	#fff	#265	Changes the core's damage type to the damage type the caster is most resistant against.	160							
-Vengeance	>!	Modifier	Misc	#fff	#265	Changes the core's damage type to the damage type the caster is most weak against.	160							
-Affinity Attunement	>A	Modifier	Misc	#fff	#265	Changes the core's damage type to the caster's first affinity which is also a damage type. If there are none, this does nothing.	300							
-Heavy Impact	#]	Modifier	Misc	#fff	#265	Any units on tiles affected by this core are pushed up to 2 tiles away from the core's cast position.	60							
-Negative Space	!O	Modifier	Misc	#fff	#265	Causes the core to affect all tiles in its range [#4df] except the ones in its original effect shape.	450							
-183	##	Modifier	Misc	#fff	#265									
-184	##	Modifier	Misc	#fff	#265									
-185	##	Modifier	Misc	#fff	#265									
-186	##	Modifier	Misc	#fff	#265									
-187	##	Modifier	Misc	#fff	#265									
-188	##	Modifier	Misc	#fff	#265									
-189	##	Modifier	Misc	#fff	#265									
-190	##	Modifier	Misc	#fff	#265									
-191	##	Modifier	Misc	#fff	#265									
-192	##	Modifier	Misc	#fff	#265									
-193	##	Modifier	Misc	#fff	#265									
-194	##	Modifier	Misc	#fff	#265									
-195	##	Modifier	Misc	#fff	#265									
-196	##	Modifier	Misc	#fff	#265									
-197	##	Modifier	Misc	#fff	#265									
-198	##	Modifier	Misc	#fff	#265									
-199	##	Modifier	Misc	#fff	#265									
-Gun	%=	Core	Red	#fff	#f00		50	5000	Physical	30	1	Line	Positional	Enemy
-Uncontrolled Multicast x16	!F	Modifier	Red Modifier	#fff	#f00	Adds 16 to the core's chaoscast value.	200							
-All Elements	!!	Core	Red	#fff	#f00	all at once. testing	0	99999	Physical	1	40	Diamond	SelfTarget	Player + Enemy
-Pea Spell	!!	Core	Red	#fff	#f00	pea spell	2	73	Chaos	10	3	Circle	Positional	Player + Enemy
-summon GUY	@]	Core	Red	#fff	#f00	Summon "Guy" at the target position.	120	25	Dark	10	5	Circle	Positional	Player + Enemy
-205	##	Core	Core	#fff	#000									
-206	##	Core	Core	#fff	#000									
-207	##	Core	Core	#fff	#000									
-208	##	Core	Core	#fff	#000									
-209	##	Core	Core	#fff	#000									
-210	##	Core	Core	#fff	#000									
-211	##	Core	Core	#fff	#000									
-212	##	Core	Core	#fff	#000									
-213	##	Core	Core	#fff	#000									
-214	##	Core	Core	#fff	#000									
-215	##	Core	Core	#fff	#000									
-216	##	Core	Core	#fff	#000									
-217	##	Core	Core	#fff	#000									
-218	##	Core	Core	#fff	#000									
-219	##	Core	Core	#fff	#000									
-220	##	Core	Core	#fff	#000									
-221	##	Core	Core	#fff	#000									
-222	##	Core	Core	#fff	#000									
-223	##	Core	Core	#fff	#000									
-224	##	Core	Core	#fff	#000									
-225	##	Core	Core	#fff	#000									
-226	##	Core	Core	#fff	#000									
-227	##	Core	Core	#fff	#000									
-228	##	Core	Core	#fff	#000									
-229	##	Core	Core	#fff	#000									
-230	##	Core	Core	#fff	#000									
-231	##	Core	Core	#fff	#000									
-232	##	Core	Core	#fff	#000									
-233	##	Core	Core	#fff	#000									
-234	##	Core	Core	#fff	#000									
-235	##	Core	Core	#fff	#000									
-236	##	Core	Core	#fff	#000									
-237	##	Core	Core	#fff	#000									
-238	##	Core	Core	#fff	#000									
-239	##	Core	Core	#fff	#000									
-240	##	Core	Core	#fff	#000									
-241	##	Core	Core	#fff	#000									
-242	##	Core	Core	#fff	#000									
-243	##	Core	Core	#fff	#000									
-244	##	Core	Core	#fff	#000									
-245	##	Core	Core	#fff	#000									
-246	##	Core	Core	#fff	#000									
-247	##	Core	Core	#fff	#000									
-248	##	Core	Core	#fff	#000									
-249	##	Core	Core	#fff	#000									
-250	##	Core	Core	#fff	#000									
-251	##	Core	Core	#fff	#000									
-252	##	Core	Core	#fff	#000									
-253	##	Core	Core	#fff	#000									
-254	##	Core	Core	#fff	#000									
-255	##	Core	Core	#fff	#000									
-256	##	Core	Core	#fff	#000									
-257	##	Core	Core	#fff	#000									
-258	##	Core	Core	#fff	#000									
-259	##	Core	Core	#fff	#000									
-260	##	Core	Core	#fff	#000									
-261	##	Core	Core	#fff	#000									
-262	##	Core	Core	#fff	#000									
-263	##	Core	Core	#fff	#000									
-264	##	Core	Core	#fff	#000									
-265	##	Core	Core	#fff	#000									
-266	##	Core	Core	#fff	#000									
-267	##	Core	Core	#fff	#000									
-268	##	Core	Core	#fff	#000									
-269	##	Core	Core	#fff	#000									
-270	##	Core	Core	#fff	#000									
-271	##	Core	Core	#fff	#000									
-272	##	Core	Core	#fff	#000									
-273	##	Core	Core	#fff	#000									
-274	##	Core	Core	#fff	#000									
-275	##	Core	Core	#fff	#000									
-276	##	Core	Core	#fff	#000									
-277	##	Core	Core	#fff	#000									
-278	##	Core	Core	#fff	#000									
-279	##	Core	Core	#fff	#000									
-280	##	Core	Core	#fff	#000									
-281	##	Core	Core	#fff	#000									
-282	##	Core	Core	#fff	#000									
-283	##	Core	Core	#fff	#000									
-284	##	Core	Core	#fff	#000									
-285	##	Core	Core	#fff	#000									
-286	##	Core	Core	#fff	#000									
-287	##	Core	Core	#fff	#000									
-288	##	Core	Core	#fff	#000									
-289	##	Core	Core	#fff	#000									
-290	##	Core	Core	#fff	#000									
-291	##	Core	Core	#fff	#000									
-292	##	Core	Core	#fff	#000									
-293	##	Core	Core	#fff	#000									
-294	##	Core	Core	#fff	#000									
-295	##	Core	Core	#fff	#000									
-296	##	Core	Core	#fff	#000									
-297	##	Core	Core	#fff	#000									
-298	##	Core	Core	#fff	#000									
-299	##	Core	Core	#fff	#000									
+Next effect: [#4df]Nothing.[clear]"	5	30	20	Chaos	10	2	Diamond	Positional	Player + Enemy
+Chromatic Shattering	&{	Core	Core	#e90	#000	This core's damage type will randomly change to another damage type every time it is cast by ANYONE.	2	40	20	Chaos	10	1	Line	Positional	Player + Enemy
+Cone of Chaos	%}	Core	Core	#e90	#000	Deals Fire or Lightning damage equal to this core's damage value at every tile affected.	2,3,4	50	12	Chaos	8	3	Cone	Positional	Player + Enemy
+Demonic Summoning	%*	Core	Core	#b90	#000	Summons one of four random Demons (Fire, Ice, Primal, Brimstone) at the target position if it is empty.	6,7,8	300	20	Chaos	6	3	Circle	Positional	Player + Enemy
+Sacred Bolt	*=	Core	Core	#ff9	#000	If the unit at the target position is Dark, Demon, Undead or Ghost, applies Stunned to them for 3 turns.	2,3	20	10	Holy	12	1	Line	Positional	Player + Enemy
+Shining Spear	*/	Core	Core	#ff9	#000	Deals additional Physical damage equal to this core's damage value at every tile affected, as well as Holy damage if the unit is Dark, Demon, Undead or Ghost.	3,4	60	18	Holy	12	1	Line	Positional	Player + Enemy
+Angelic Chorus	^*	Core	Core	#ff9	#000	All Holy units taking Holy damage from this core will be healed by an amount equal to twice this core's damage value.	4,5	50	15	Holy	0	5	Diamond	SelfTarget	Player + Enemy
+Consecrate	*"	Core	Core	#fd9	#000	All Dark, Demon, Undead or Ghost units taking Holy damage from this core will also take an equal amount of Fire damage.	5,6	100	30	Holy	0	5	Square	SelfTarget	Player + Enemy
+Apotheosis	^^	Core	Core	#ffc	#000	Applies Invincible and Stunned for 10 turns to the caster, then summons two allied Seraphim and two allied Archangels in the closest available positions.	7,8	400	0	Holy	0	0	Diamond	SelfTarget	Player + Enemy
+Mind Spike	=}	Core	Core	#f9f	#000	Cannot damage allied units.	1,2,3	25	10	Psychic	14	1	Line	Positional	Enemy
+Touch of Mindshattering	}%	Core	Core	#f9f	#000	Applies Stunned for 4 turns to any non-stunned unit taking Psychic damage from this core.	3,4,5	140	8	Psychic	1	1	Diamond	UnitTarget	Player + Enemy
+Memetic Virus	}~	Core	Core	#f9f	#000	Has a chain value of 6. The damage value of this core is locked at 0. Cannot target or damage allied units.	3,4,5	80	0	Psychic	7	1	Line	UnitTarget	Enemy
+Overwhelm	~{	Core	Core	#f9f	#000	Applies 3 turns of Sleeping to any unit taking Psychic damage from this core.	2,3,4	100	12	Psychic	6	3	Cone	UnitTarget	Player + Enemy
+Blink	.-	Core	Core	#fcf	#000	Teleports the caster to the target position of this core after casting it, if it is empty.	2,3,4	30	0	Psychic	6	1	Diamond	Positional	Player + Enemy
+Teleport	.!	Core	Core	#fcf	#000	Teleports the caster to the target position of this core after casting it, if it is empty.	4,5,6	80	0	Psychic	20	1	Diamond	Positional	Player + Enemy
+Disperse	.?	Core	Core	#fcf	#000	All units taking Psychic damage from this core will be teleported to random empty positions within a 5 tile radius.	2,3	50	5	Psychic	0	4	Diamond	SelfTarget	Player + Enemy
+Dimensional Rift	.%	Core	Core	#f8b	#000	Teleports any unit in this core's area of effect to a random empty location on the map.	4,5	70	0	Arcane	10	4	Circle	SelfTargetPlusCaster	Player + Enemy
+Last Resort	!!	Core	Core	#fff	#000	Sets the caster's current HP to 1 and removes 10% of their max HP.	4,5,6	0	200	Physical	12	3	Diamond	Positional	Player + Enemy
+Fireball with Trigger	@"	Core	Core	#e52	#127	Casts another core at the point this core was targeted.	2,3	50	10	Fire	7	3	Diamond	Positional	Player + Enemy
+Lightning Bolt with Trigger	&>	Core	Core	#ff3	#127	Casts another core at the point this core was targeted.	2,3	42	13	Lightning	10	1	Line	Positional	Player + Enemy
+Magic Missile with Trigger	=]	Core	Core	#f49	#127	Casts another core at the point this core was targeted.	2,3	35	10	Arcane	12	1	Line	Positional	Player + Enemy
+Damage Plus I	D+	Modifier	Stats	#c44	#03f	Increases the core's damage value by 5.	1,2	15							
+Damage Plus II	D*	Modifier	Stats	#c44	#03f	Increases the core's damage value by 15.	3,4	40							
+Damage Overcharge	D!	Modifier	Stats	#f44	#03f	Sets the radius of the core to 1. The core's damage value is increased by 5 times its radius before this reduction.	5,6	70							
+Radius Plus I	R+	Modifier	Stats	#4cf	#03f	Increases the core's radius by 1.	1,2,3	20							
+Radius Plus II	R*	Modifier	Stats	#4cf	#03f	Increases the core's radius by 2.	4,5,6	30							
+Range Plus I	N+	Modifier	Stats	#4d4	#03f	Increases the core's range by 2.	1,2	12							
+Range Plus II	N*	Modifier	Stats	#4d4	#03f	Increases the core's range by 5.	3,4	20							
+Orbital Mirroring	N!	Modifier	Stats	#2f2	#03f	Increases the core's range by 64.	6,7,8	160							
+Projection	>~	Modifier	Stats	#fff	#03f	Allows the core to ignore line of sight and collision for targeting and effects.	2,3,4,5	50							
+Undercharging I	P-	Modifier	Stats	#caa	#03f	Reduces the core's damage value by 7 and its radius by 1, but costs [#4df]negative mana[clear].	2,3,4	-25							
+Undercharging II	p.	Modifier	Stats	#caa	#03f	Reduces the core's damage value by 13 and its radius by 2, but costs [#4df]negative mana[clear].	4,5	-60							
+Power Focus	#!	Modifier	Stats	#e6e	#03f	Reduces the core's range by 6, but increases its damage value by 25.	2,3,4,5	25							
+Unbounded Energy	^M	Modifier	Stats	#6ff	#03f	Increases the core's damage value by 10% of the caster's current mana, but also makes it remove 10% of the caster's current mana on cast.	6,7,8,9	10							
+Synergistic Arcana	x+	Modifier	Stats	#e6e	#03f	Multiplies the effect of previous modifiers on the core's stats by 1.25x.	5,6,7	75							
+Antisynergy	x-	Modifier	Stats	#93f	#03f	Multiplies the effect of previous modifiers on the core's stats by 0.75x.	5,6,7	5							
+Random Damage	D?	Modifier	Stats	#fff	#03f	Modifies the core's damage value by a random number from -100 to 100.	6,7,8,9	33							
+Zenith Arcana I	X*	Modifier	Stats	#0ef	#03f	Increases the core's damage value by 50, its radius by 3 and its range by 8.	6,7,8	600							
+Zenith Arcana II	X#	Modifier	Stats	#4ff	#03f	Increases the core's damage value by 150, its radius by 5 and its range by 12.	8,9,10	2000							
+Pain Catalyst I	#+	Modifier	Stats	#f00	#03f	Increases the core's damage value by 5 for every 10% HP the caster is missing.	2,3,4	20							
+Pain Catalyst II	#*	Modifier	Stats	#f00	#03f	Increases the core's damage value by 15 and its radius by 1 for every 10% HP the caster is missing.	4,5,6	80							
+Last Stand	#!	Modifier	Stats	#f00	#03f	If the caster has less than 10% HP remaining, doubles the core's damage value, radius and range.	4,5,6	120							
+Affinity Matching	@+	Modifier	Stats	#fff	#03f	If the core's damage type is also one of the caster's affinities, multiplies its damage value by 1.5x.	5,6,7,8,9	100							
+Sympathetic Damage	}+	Modifier	Stats	#d59	#03f	Multiplies the core's damage value by the caster's damage taken multiplier for the core's damage type.	7,8,9,10	240							
+Strange Shuffle	$?	Modifier	Stats	#e90	#03f	Swaps the core's radius and damage values...!	9,10	777							
+Paradigm Shift	$=	Modifier	Stats	#af0	#03f	Sets the core's radius to half its range value and its range value to twice its previous radius.	7,8,9	60							
+Null	0.	Modifier	Stats	#777	#03f	Sets the radius, range and damage value of the core to 0...!	7,8,9,10	0							
+Catch-up Damage	=3	Modifier	Stats	#faa	#03f	Sets the core's damage to 33.	4,5,6	50							
+Equalisation	$O	Modifier	Stats	#88f	#03f	Redistributes the core's range, radius and damage value into the same proportions as the original core's values.	7,8,9	160							
+Vowel Lover	A!	Modifier	Stats	#8f8	#03f	Grants the core +5 damage, +2 range and +1 radius for every vowel in its name.	3,4,5	99							
+Trigger Finger	%+	Modifier	Stats	#f66	#03f	Multiplies the core's damage value by 2x if the caster took damage last turn.	3,4,5,6,7	120							
+Freezing Fire	"^	Modifier	Damage	#e52	#32d	Half of all Fire damage from the core is redealt as Ice damage.	4,5,6,7,8	160							
+Crystallized Flame	"[	Modifier	Damage	#e52	#32d	Half of all Fire damage from the core is redealt as Arcane damage.	4,5,6,7,8	160							
+Chaotic Immolation	"%	Modifier	Damage	#e52	#32d	Half of all Fire damage from the core is redealt as Chaos damage.	4,5,6,7,8	160							
+Sacred Flames	"*	Modifier	Damage	#e52	#32d	Half of all Fire damage from the core is redealt as Holy damage.	4,5,6,7,8	160							
+Charged Ice	^&	Modifier	Damage	#aff	#32d	Half of all Ice damage from the core is redealt as Lightning damage.	4,5,6,7,8	160							
+Crystalline Frost	^[	Modifier	Damage	#aff	#32d	Half of all Ice damage from the core is redealt as Arcane damage.	4,5,6,7,8	160							
+Stifling Frost	^#	Modifier	Damage	#aff	#32d	Half of all Ice damage from the core is redealt as Dark damage.	4,5,6,7,8	160							
+Arcane Conductance	&[	Modifier	Damage	#ff3	#32d	Half of all Lightning damage from the core is redealt as Arcane damage.	4,5,6,7,8	160							
+Cracklevoid	&#	Modifier	Damage	#ff3	#32d	Half of all Lightning damage from the core is redealt as Dark damage.	4,5,6,7,8	160							
+Heavenstrike	&*	Modifier	Damage	#ff3	#32d	Half of all Lightning damage from the core is redealt as Holy damage.	4,5,6,7,8	160							
+Mind Bolts	&{	Modifier	Damage	#ff3	#32d	Half of all Lightning damage from the core is redealt as Psychic damage.	4,5,6,7,8	160							
+Crystallized Sorcery	]^	Modifier	Damage	#f49	#32d	Half of all Arcane damage from the core is redealt as Ice damage.	4,5,6,7,8	160							
+Dark Magic	]#	Modifier	Damage	#f49	#32d	Half of all Arcane damage from the core is redealt as Dark damage.	4,5,6,7,8	160							
+Mind Magic	]{	Modifier	Damage	#f49	#32d	Half of all Arcane damage from the core is redealt as Psychic damage.	4,5,6,7,8	160							
+Falcon Fist	="	Modifier	Damage	#ddd	#32d	Half of all Physical damage from the core is redealt as Fire damage.	4,5,6,7,8	160							
+Lightning Fist	=&	Modifier	Damage	#ddd	#32d	Half of all Physical damage from the core is redealt as Lightning damage.	4,5,6,7,8	160							
+Double Hit	=2	Modifier	Damage	#ddd	#32d	All Physical damage from the core is redealt as Physical damage. This damage cannot trigger further effects.	5,6,7,8	240							
+Shadow Strike	=#	Modifier	Damage	#ddd	#32d	Half of all Physical damage from the core is redealt as Dark damage.	4,5,6,7,8	160							
+Pure Strike	=*	Modifier	Damage	#ddd	#32d	Half of all Physical damage from the core is redealt as Holy damage.	4,5,6,7,8	160							
+Telekinesis	={	Modifier	Damage	#ddd	#32d	Half of all Physical damage from the core is redealt as Psychic damage.	4,5,6,7,8	160							
+Blackflame	#"	Modifier	Damage	#95a	#32d	Half of all Dark damage from the core is redealt as Fire damage.	4,5,6,7,8	160							
+Deathly Frost	#^	Modifier	Damage	#95a	#32d	Half of all Dark damage from the core is redealt as Ice damage.	4,5,6,7,8	160							
+Demonic Dark	#%	Modifier	Damage	#95a	#32d	Half of all Dark damage from the core is redealt as Chaos damage.	4,5,6,7,8	160							
+Sacred Magic	*[	Modifier	Damage	#ffa	#32d	Half of all Holy damage from the core is redealt as Arcane damage.	4,5,6,7,8	160							
+Apostasy	*#	Modifier	Damage	#ffa	#32d	Half of all Holy damage from the core is redealt as Dark damage.	4,5,6,7,8	160							
+Chromatic Catalyst	O)	Modifier	Damage	#fff	#32d	Redeals all native damage from the core as every other damage type, split equally between each type.	6,7,8,9	300							
+Null Magic	-)	Modifier	Damage	#80a	#32d	Deals [#4df]negative[clear] damage equivalent to every instance of damage the core caused.	5,6,7	25							
+Hand of Fate	O?	Modifier	Damage	#fff	#32d	Half of all native damage from the core is redealt as a random other damage type.	5,6,7,8	75							
+Chromatic Convergence	O>	Modifier	Damage	#fff	#32d	Redeals half of the native damage from the core as the damage type the damaged unit is least resistant to, not including the core's own damage type.	7,8,9,10	360							
+Chromatic Divergence	O<	Modifier	Damage	#fff	#32d	Redeals half of the native damage from the core as the damage type the damaged unit is most resistant to, not including the core's own damage type.	6,7,8	50							
+Cosmetic Squares	[]	Modifier	Cosmetic	#fff	#61a	Replaces the core's particle effect with white, long-lasting squares.	6,7	-25							
+Cosmetic Arrows	>>	Modifier	Cosmetic	#fff	#61a	Replaces the core's particle effect with arrows of the damage type's colour.	6,7	-25							
+Alternate Fire	"2	Modifier	Cosmetic	#e52	#61a	Replaces the core's Fire damage particle effect with an alternate particle effect.	6,7	-30							
+Alternate Ice	^2	Modifier	Cosmetic	#aff	#61a	Replaces the core's Ice damage particle effect with an alternate particle effect.	6,7	-30							
+White Particles	c/	Modifier	Cosmetic	#fff	#61a	Sets the colour of the core's particle effect to pure white.	6,7	-10							
+Orange Particles	c/	Modifier	Cosmetic	#fa0	#61a	Sets the colour of the core's particle effect to a delicious orange.	6,7	-10							
+Alternate Physical	-2	Modifier	Cosmetic	#ddd	#61a	Replaces the core's Physical damage particle effect with an alternate particle effect.	6,7	-30							
+Hide Particles	Xc	Modifier	Cosmetic	#fff	#61a	Disables the core's particle effect.	6,7	0							
+Red Particles	c/	Modifier	Cosmetic	#f00	#61a	Sets the colour of the core's particle effect to a deep red.	6,7	-30							
+Yellow Particles	c/	Modifier	Cosmetic	#ff0	#61a	Sets the colour of the core's particle effect to a shocking yellow.	6,7	-30							
+Green Particles	c/	Modifier	Cosmetic	#0f0	#61a	Sets the colour of the core's particle effect to a vibrant green.	6,7	-30							
+Cyan Particles	c/	Modifier	Cosmetic	#0ff	#61a	Sets the colour of the core's particle effect to a clear cyan.	6,7	-30							
+Blue Particles	c/	Modifier	Cosmetic	#68f	#61a	Sets the colour of the core's particle effect to a deep ocean blue.	6,7	-30							
+Purple Particles	c/	Modifier	Cosmetic	#c5c	#61a	Sets the colour of the core's particle effect to a regal purple.	6,7	-30							
+Pink Particles	c/	Modifier	Cosmetic	#f9f	#61a	Sets the colour of the core's particle effect to a cutesy pink.	6,7	-30							
+Add Target Trigger	+*	Modifier	Trigger	#ee0	#26f	Makes the core cast the next core at the point it was targeted.	4,5,6,7,8	25							
+Add Tile Trigger	+x	Modifier	Trigger	#ee0	#26f	Makes the core cast a copy of the next core at every tile the core affected.	6,7,8	500							
+Add Damage Trigger	+;	Modifier	Trigger	#ee0	#26f	Makes the core cast a copy of the next core at every instance of damage the core caused.	6,7,8	400							
+Chromatic Target Trigger	O*	Modifier	Trigger	#fff	#26f	Makes the core cast the next core at the point it was targeted, but also randomises the damage type of the core.	5,6,7	15							
+Chromatic Tile Trigger	Ox	Modifier	Trigger	#fff	#26f	Makes the core cast a copy of the next core at every tile the core affected, but also randomises the damage type of the core.	7,8	450							
+Unfair Damage Trigger	!;	Modifier	Trigger	#fff	#26f	Makes the core cast a copy of the next core at every instance of damage the core caused, but sets the damage value of the core to 0.	7,8	250							
+Unreliable Target Trigger	?*	Modifier	Trigger	#fff	#26f	Makes the core cast the next core at the point it was targeted, has a 50% chance to set the core's radius to 0.	5,6,7,8	-25							
+Zenith Tile Trigger	#x	Modifier	Trigger	#fff	#26f	Makes the core cast a copy of the next core at every tile the core affected, and doubles its radius.	8,9,10	2400							
+Unfair Tile Trigger	!x	Modifier	Trigger	#fff	#26f	Makes the core cast a copy of the next core at every every tile the core affected, but sets the radius of the core to 0.	7,8	250							
+Untrigger	-;	Modifier	Trigger	#fff	#26f	Removes the trigger from the core if there is one, applying a bonus based on the trigger type. [#4df]Target trigger[clear] grants +4 range, [#4df]damage trigger[clear] grants +15 damage value and [#4df]tile trigger[clear] grants +2 radius.	4,5,6,7	75							
+Positional	=>	Modifier	Shape	#fcf	#441	Allows the core to target [#4df]a position on the ground[clear].	5,6,7,8	90							
+Unit Target	=!	Modifier	Shape	#fcf	#441	Allows the core to target [#4df]a specific unit[clear].	5,6,7,8	50							
+Self Target	=O	Modifier	Shape	#fcf	#441	Allows the core to target [#4df]the area around the caster[clear].	5,6,7,8	25							
+Self Position	=X	Modifier	Shape	#fcf	#441	Allows the core to target [#4df]at the caster's position[clear].	5,6,7,8	10							
+Circle	@@	Modifier	Shape	#fff	#441	Causes the core to affect tiles in a [#4df]circle shape[clear].	6,7,8,9	140							
+Ring	()	Modifier	Shape	#fff	#441	Causes the core to affect tiles in a [#4df]ring shape[clear].	6,7,8,9	40							
+Line	--	Modifier	Shape	#fff	#441	Causes the core to affect tiles in a [#4df]straight line[clear].	6,7,8,9	60							
+Burst	<>	Modifier	Shape	#fff	#441	Causes the core to affect tiles in a [#4df]burst[clear].	6,7,8,9	100							
+Perpendicular Line	-|	Modifier	Shape	#fff	#441	Causes the core to affect tiles in a [#4df]line perpendicular to the target[clear].	6,7,8,9	50							
+Cone	<=	Modifier	Shape	#fff	#441	Causes the core to affect tiles in a [#4df]cone shape[clear].	6,7,8,9	80							
+Behind the Back	<$	Modifier	Multicast	#fff	#06b	Casts a copy of the core behind the user.	4,5,6	100							
+Triangle Formation	V$	Modifier	Multicast	#fff	#06b	Casts two more copies of the core to form an equilateral triangle shape.	5,6,7	200							
+Square Formation	X$	Modifier	Multicast	#fff	#06b	Casts three more copies of the core to form a square shape.	7,8,9	300							
+Chaotic Multicast x2	!2	Modifier	Multicast	#faa	#06b	Adds 2 to the core's chaoscast value.	4,5,6	225							
+Chaotic Multicast x5	!5	Modifier	Multicast	#faa	#06b	Adds 5 to the core's chaoscast value.	6,7,8	400							
+Multicast x1	>1	Modifier	Multicast	#6f6	#06b	Adds 1 to the core's multicast value.	4,5,6	125							
+Multicast x2	>2	Modifier	Multicast	#6f6	#06b	Adds 2 to the core's multicast value.	5,6,7	275							
+Multicast x4	>4	Modifier	Multicast	#6f6	#06b	Adds 4 to the core's multicast value.	6,7,8	350							
+Multicast x8	>8	Modifier	Multicast	#6f6	#06b	Adds 8 to the core's multicast value.	8,9,10	600							
+Multicast x3 with Trigger	;3	Modifier	Multicast	#4fc	#06b	Adds 3 to the core's multicast value and makes the core cast the next core at the point it was targeted.	6,7,8	350							
+Micro Chain Spell	/.	Modifier	Multicast	#fff	#06b	Adds 1 to the core's chain value.	4,5,6	125							
+Micro Arc Spell	*.	Modifier	Multicast	#ff0	#06b	Adds 1 to the core's arc value.	4,5,6	115							
+Mini Chain Spell	/-	Modifier	Multicast	#fff	#06b	Adds 2 to the core's chain value.	5,6,7	250							
+Mini Arc Spell	*-	Modifier	Multicast	#ff0	#06b	Adds 2 to the core's arc value.	5,6,7	230							
+Chain Spell	/>	Modifier	Multicast	#fff	#06b	Adds 4 to the core's chain value.	6,7,8,9	350							
+Arc Spell	*>	Modifier	Multicast	#ff0	#06b	Adds 4 to the core's arc value.	6,7,8,9	320							
+Chaos Intensifier	%+	Modifier	Multicast	#fcc	#06b	Sets the core's multicast value to 0. Increases the core's chaoscast value by the amount removed.	5,6,7,8	35							
+Chain Refocus	/<	Modifier	Multicast	#aff	#06b	Sets the core's arc value to 0. Increases the core's chain value by 1.5x the amount removed.	5,6,7,8	120							
+Arc Refocus	*<	Modifier	Multicast	#af0	#06b	Sets the core's chain value to 0. Increases the core's arc value by 1.5x the amount removed.	5,6,7,8	120							
+Duplicator Consumption	>X	Modifier	Multicast	#9f9	#06b	Removes all forms of multicast from the core. Causes the core to restore the caster's mana by 25 on cast for each value removed.	6,7,8,9	50							
+Blood Magic	&+	Modifier	Multicast	#f44	#06b	Increases the core's multicast value by +1 per 20% HP the caster has. Causes the core to remove 0.5% of the caster's current HP when cast.	6,7,8,9	150							
+Death Chain	X/	Modifier	Multicast	#c8f	#06b	If a unit dies as a result of damage from the core, allows it to chain one more time.	5,6,7	130							
+Subsurface Chain	/~	Modifier	Multicast	#faf	#06b	Adds 6 to the core's chain value. Locks the damage value of the core to 0.	5,6,7	300							
+Subsurface Arc	*~	Modifier	Multicast	#f8c	#06b	Adds 6 to the core's arc value. Locks the damage value of the core to 0.	5,6,7	300							
+Duplicator Amplification	>+	Modifier	Multicast	#9f9	#06b	Removes all forms of multicast from the core. For each value removed, raises the core's radius by 1, its range by 2 and its damage value by 8.	6,7,8,9,10	250							
+Conjure Mana	O^	Modifier	Misc	#fff	#265	Restores 15 mana to the caster when the core is cast.	5	10							
+Hardening Enchantment	#-	Modifier	Misc	#fff	#265	Native damage caused by the core applies 3 turns of Resistance (native damage type)	3,4,5,6	40							
+Intensifying Enchantment	#+	Modifier	Misc	#fff	#265	Native damage caused by the core applies 4 turns of Polarity (native damage type)	3,4,5,6	75							
+Chromatic Impact	O+	Modifier	Misc	#fff	#265	Any unit at the core's target position will receive Polarity of every damage type for 10 turns.	6,7,8	125							
+Cleanse	~-	Modifier	Misc	#fff	#265	Any unit damaged by the core will have all active effects removed from it.	2,3,4	40							
+Magic Flare	>"	Modifier	Misc	#fff	#265	Changes the core's damage type to Fire.	5,7,9	240							
+Formed Magic	>=	Modifier	Misc	#fff	#265	Changes the core's damage type to Physical.	5,7,9	240							
+Sanctity	>*	Modifier	Misc	#fff	#265	Changes the core's damage type to Holy.	5,7,9	240							
+Familiarity	>@	Modifier	Misc	#fff	#265	Changes the core's damage type to the damage type the caster is most resistant against.	7,9	160							
+Vengeance	>!	Modifier	Misc	#fff	#265	Changes the core's damage type to the damage type the caster is most weak against.	7,9	160							
+Affinity Attunement	>A	Modifier	Misc	#fff	#265	Changes the core's damage type to the caster's first affinity which is also a damage type. If there are none, this does nothing.	6,7,8,9	300							
+Heavy Impact	#]	Modifier	Misc	#fff	#265	Any units on tiles affected by this core are pushed up to 2 tiles away from the core's cast position.	3,4,6,8	60							
+Negative Space	!O	Modifier	Misc	#fff	#265	Causes the core to affect all tiles in its range [#4df]except[clear] the ones in its original effect shape.	9,10	600							
+183	##	Modifier	Misc	#fff	#265										
+184	##	Modifier	Misc	#fff	#265										
+185	##	Modifier	Misc	#fff	#265										
+186	##	Modifier	Misc	#fff	#265										
+187	##	Modifier	Misc	#fff	#265										
+188	##	Modifier	Misc	#fff	#265										
+189	##	Modifier	Misc	#fff	#265										
+190	##	Modifier	Misc	#fff	#265										
+191	##	Modifier	Misc	#fff	#265										
+192	##	Modifier	Misc	#fff	#265										
+193	##	Modifier	Misc	#fff	#265										
+194	##	Modifier	Misc	#fff	#265										
+195	##	Modifier	Misc	#fff	#265										
+196	##	Modifier	Misc	#fff	#265										
+197	##	Modifier	Misc	#fff	#265										
+198	##	Modifier	Misc	#fff	#265										
+199	##	Modifier	Misc	#fff	#265										
+Gun	%=	Core	Red	#fff	#f00			50	5000	Physical	30	1	Line	Positional	Enemy
+Uncontrolled Multicast x16	!F	Modifier	Red Modifier	#fff	#f00	Adds 16 to the core's chaoscast value.		200							
+All Elements	!!	Core	Red	#fff	#f00	all at once. testing		0	99999	Physical	1	40	Diamond	SelfTarget	Player + Enemy
+Pea Spell	!!	Core	Red	#fff	#f00	pea spell		2	73	Chaos	10	3	Circle	Positional	Player + Enemy
+summon GUY	@]	Core	Red	#fff	#f00	Summon "Guy" at the target position.		120	25	Dark	10	5	Circle	Positional	Player + Enemy
+Goop	%;	Core	Red	#fff	#f00	Applies 999 turns of Poison to all units (all of them)		57	1	Psychic	0	1	Diamond	SelfTarget	Player + Enemy
+206	##	Core	Core	#fff	#000										
+207	##	Core	Core	#fff	#000										
+208	##	Core	Core	#fff	#000										
+209	##	Core	Core	#fff	#000										
+210	##	Core	Core	#fff	#000										
+211	##	Core	Core	#fff	#000										
+212	##	Core	Core	#fff	#000										
+213	##	Core	Core	#fff	#000										
+214	##	Core	Core	#fff	#000										
+215	##	Core	Core	#fff	#000										
+216	##	Core	Core	#fff	#000										
+217	##	Core	Core	#fff	#000										
+218	##	Core	Core	#fff	#000										
+219	##	Core	Core	#fff	#000										
+220	##	Core	Core	#fff	#000										
+221	##	Core	Core	#fff	#000										
+222	##	Core	Core	#fff	#000										
+223	##	Core	Core	#fff	#000										
+224	##	Core	Core	#fff	#000										
+225	##	Core	Core	#fff	#000										
+226	##	Core	Core	#fff	#000										
+227	##	Core	Core	#fff	#000										
+228	##	Core	Core	#fff	#000										
+229	##	Core	Core	#fff	#000										
+230	##	Core	Core	#fff	#000										
+231	##	Core	Core	#fff	#000										
+232	##	Core	Core	#fff	#000										
+233	##	Core	Core	#fff	#000										
+234	##	Core	Core	#fff	#000										
+235	##	Core	Core	#fff	#000										
+236	##	Core	Core	#fff	#000										
+237	##	Core	Core	#fff	#000										
+238	##	Core	Core	#fff	#000										
+239	##	Core	Core	#fff	#000										
+240	##	Core	Core	#fff	#000										
+241	##	Core	Core	#fff	#000										
+242	##	Core	Core	#fff	#000										
+243	##	Core	Core	#fff	#000										
+244	##	Core	Core	#fff	#000										
+245	##	Core	Core	#fff	#000										
+246	##	Core	Core	#fff	#000										
+247	##	Core	Core	#fff	#000										
+248	##	Core	Core	#fff	#000										
+249	##	Core	Core	#fff	#000										
+250	##	Core	Core	#fff	#000										
+251	##	Core	Core	#fff	#000										
+252	##	Core	Core	#fff	#000										
+253	##	Core	Core	#fff	#000										
+254	##	Core	Core	#fff	#000										
+255	##	Core	Core	#fff	#000										
+256	##	Core	Core	#fff	#000										
+257	##	Core	Core	#fff	#000										
+258	##	Core	Core	#fff	#000										
+259	##	Core	Core	#fff	#000										
+260	##	Core	Core	#fff	#000										
+261	##	Core	Core	#fff	#000										
+262	##	Core	Core	#fff	#000										
+263	##	Core	Core	#fff	#000										
+264	##	Core	Core	#fff	#000										
+265	##	Core	Core	#fff	#000										
+266	##	Core	Core	#fff	#000										
+267	##	Core	Core	#fff	#000										
+268	##	Core	Core	#fff	#000										
+269	##	Core	Core	#fff	#000										
+270	##	Core	Core	#fff	#000										
+271	##	Core	Core	#fff	#000										
+272	##	Core	Core	#fff	#000										
+273	##	Core	Core	#fff	#000										
+274	##	Core	Core	#fff	#000										
+275	##	Core	Core	#fff	#000										
+276	##	Core	Core	#fff	#000										
+277	##	Core	Core	#fff	#000										
+278	##	Core	Core	#fff	#000										
+279	##	Core	Core	#fff	#000										
+280	##	Core	Core	#fff	#000										
+281	##	Core	Core	#fff	#000										
+282	##	Core	Core	#fff	#000										
+283	##	Core	Core	#fff	#000										
+284	##	Core	Core	#fff	#000										
+285	##	Core	Core	#fff	#000										
+286	##	Core	Core	#fff	#000										
+287	##	Core	Core	#fff	#000										
+288	##	Core	Core	#fff	#000										
+289	##	Core	Core	#fff	#000										
+290	##	Core	Core	#fff	#000										
+291	##	Core	Core	#fff	#000										
+292	##	Core	Core	#fff	#000										
+293	##	Core	Core	#fff	#000										
+294	##	Core	Core	#fff	#000										
+295	##	Core	Core	#fff	#000										
+296	##	Core	Core	#fff	#000										
+297	##	Core	Core	#fff	#000										
+298	##	Core	Core	#fff	#000										
+299	##	Core	Core	#fff	#000										

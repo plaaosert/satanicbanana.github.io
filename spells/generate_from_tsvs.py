@@ -124,10 +124,13 @@ with open("spells.tsv", "r") as f:
     content = f.read()
     tabs = content.split("	")
 
+    num_tabs = 15
+    nt1 = num_tabs + 1
+
     # every 15th element will be delimited by a "\n" instead
     new_tabs = []
     for i in range(len(tabs)):
-        if i % 14 == 0 and i != 0:
+        if i % num_tabs == 0 and i != 0:
             pre, _, post = tabs[i].rpartition("\n")
             new_tabs.append(pre)
             new_tabs.append(post)
@@ -137,11 +140,13 @@ with open("spells.tsv", "r") as f:
     tabs = new_tabs
 
     subtabs = list(
-        tabs[(i*15):(i*15)+15] for i in range(len(tabs) // 15) 
+        tabs[(i*nt1):(i*nt1)+nt1] for i in range(len(tabs) // nt1) 
     )
 
     final_text = ""
     funcs_text = ""
+
+    spell_tiers = [[] for _ in range(10)]
 
     for index, sub in enumerate(subtabs):
         # constructor(name, icon, col, back_col, typ, desc, manacost, bonus_draws, trigger_type, to_stats_fn, at_target_fn, on_hit_fn, on_affected_tiles_fn)
@@ -153,14 +158,15 @@ with open("spells.tsv", "r") as f:
         colour      = sub[4].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[4] else "#fff"
         back_col    = sub[5].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[5] else "#f00"
         desc        = sub[6].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[6] else ""
-        manacost    = sub[7].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[7] else "0"
-        damage      = sub[8].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[8] else ""
-        dmg_type    = sub[9].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[9] else ""
-        range       = sub[10].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[10] else ""
-        radius      = sub[11].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[11] else ""
-        shape       = sub[12].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[12] else ""
-        target_typ  = sub[13].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[13] else ""
-        target_team = sub[14].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[14] else ""
+        tiers       = sub[7].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[7] else ""
+        manacost    = sub[8].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[8] else "0"
+        damage      = sub[9].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[9] else ""
+        dmg_type    = sub[10].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[10] else ""
+        range       = sub[11].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[11] else ""
+        radius      = sub[12].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[12] else ""
+        shape       = sub[13].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[13] else ""
+        target_typ  = sub[14].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[14] else ""
+        target_team = sub[15].replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") if sub[15] else ""
 
         desc = desc.strip("\"")
 
@@ -174,6 +180,10 @@ with open("spells.tsv", "r") as f:
             subtyp = "Red" if typ == "Core" else "RedModifier"
 
         icon = icon.replace("[", "«").replace("]", "»")
+
+        if tiers:
+            for tier in tiers.replace(" ", "").split(","):
+                spell_tiers[int(tier)-1].append(name) 
 
         if typ == "Core" and damage:
             # core_spell(
@@ -245,6 +255,15 @@ with open("spells.tsv", "r") as f:
     with open("_spells_spells_funcs.js", "w", encoding="utf-8") as f:
         f.write(
             "spells_funcs = {\n" + funcs_text + "\n}"
+        )
+
+    with open("_spells_tiers.js", "w", encoding="utf-8") as f:
+        f.write(
+            "spells_loot_table = {\n" + ("\n".join(
+                "    \"Tier{}\": [{}],".format(
+                    idx+1, ", ".join("get_spell_by_name(\"{}\")".format(s) for s in tier)
+                ) for idx, tier in enumerate(spell_tiers)
+            )) + "\n}"
         )
 
     print("written _spells_spells.js")

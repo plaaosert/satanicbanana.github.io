@@ -288,7 +288,7 @@ spells_list = [
     core_spell(
         "Reinforce", "#!", SpellSubtype.Core,
         "#74a", "#000",
-        "Any non-player unit with Dark affinity in this core's area of effect will be healed to full HP and gain access to Dark Bolt.",
+        "Any non-player unit with Dark affinity in this core's area of effect will be healed to full HP and gain access to Death Bolt.",
         0, DmgType.Dark,
         8, 3, Shape.Diamond,
         100,
@@ -321,7 +321,7 @@ spells_list = [
     core_spell(
         "Unknown Incantation", "!?", SpellSubtype.Core,
         "#e90", "#000",
-        "\"This core will have a random bonus effect on cast that changes every time it is used by ANYONE.\nNext effect: [#4df]Nothing.[clear]\"",
+        "\"This core will have a random bonus effect on cast that changes every time it is used by ANYONE.\nNext effect: [#4df]Nothing.[clear]\",
         20, DmgType.Chaos,
         10, 2, Shape.Diamond,
         30,
@@ -1443,7 +1443,7 @@ spells_list = [
     modifier(
         "Unreliable Target Trigger", "?*", SpellSubtype.Trigger,
         "#fff", "#26f",
-        "Makes the core cast the next core at the point it was targeted, but only with a 50% chance.",
+        "Makes the core cast the next core at the point it was targeted, has a 50% chance to set the core's radius to 0.",
         -25,
         no_stats,
         no_target,
@@ -1452,10 +1452,10 @@ spells_list = [
     ),
 
     modifier(
-        "Trigger Upgrade", "+^", SpellSubtype.Trigger,
+        "Zenith Tile Trigger", "#x", SpellSubtype.Trigger,
         "#fff", "#26f",
-        "Grants a [#4df]target trigger[clear] to the core. If it already has a trigger, instead replaces it with the next one in the chain: Target > Damage > Tile. If it already has a [#4df]tile trigger[close], instead adds 1 to the core's multicast value.",
-        50,
+        "Makes the core cast a copy of the next core at every tile the core affected, and doubles its radius.",
+        2400,
         no_stats,
         no_target,
         no_hit,
@@ -2004,8 +2004,8 @@ spells_list = [
     modifier(
         "Negative Space", "!O", SpellSubtype.Misc,
         "#fff", "#265",
-        "Causes the core to affect all tiles in its range [#4df] except the ones in its original effect shape.",
-        450,
+        "Causes the core to affect all tiles in its range [#4df]except[clear] the ones in its original effect shape.",
+        600,
         no_stats,
         no_target,
         no_hit,
@@ -2254,15 +2254,15 @@ spells_list = [
         [Teams.ENEMY, Teams.PLAYER]
     ),
 
-    modifier(
-        "205", "??", SpellSubtype.Red,
+    core_spell(
+        "Goop", "%;", SpellSubtype.Red,
         "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+        "Applies 999 turns of Poison to all units (all of them)",
+        1, DmgType.Psychic,
+        0, 1, Shape.Diamond,
+        57,
+        SpellTargeting.SelfTarget,
+        [Teams.ENEMY, Teams.PLAYER]
     ),
 
     modifier(

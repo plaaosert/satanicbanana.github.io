@@ -25,7 +25,7 @@ trigger_spells = {
         "Spark", "Fireball with Trigger",
         "Lightning Bolt with Trigger", "Magic Missile with Trigger",
         "Add Target Trigger", "Chromatic Target Trigger",
-        "Unreliable Target Trigger"
+        "Unreliable Target Trigger", "Multicast x3 with Trigger"
     ],
 
     "on_hit": [
@@ -109,12 +109,28 @@ for (let xt=0; xt<game.board.dimensions.x; xt++) {
 //let target = new Vector2(20, 22);
 
 game.player_spells = [
-    {spells: [get_spell_by_name("fireball")], name: "empty"},
+    {spells: [get_spell_by_name("fireball")], name: "Fireball"},
+    {spells: [get_spell_by_name("lightning bolt")], name: "Lightning Bolt"},
+    {spells: [], name: "Spell 3"},
+    {spells: [], name: "Spell 4"},
+    {spells: [], name: "Spell 5"},
+    /*
     {spells: [...spells_list.filter(s => !s.is_corrupt()).slice(0, 20)], name: "0-20"},
     {spells: [...spells_list.filter(s => !s.is_corrupt()).slice(20, 40)], name: "20-40"},
     {spells: [...spells_list.filter(s => !s.is_corrupt()).slice(40, 60)], name: "40-60"},
     {spells: [...spells_list.filter(s => !s.is_corrupt()).slice(60, 80)], name: "60-80"}
+    */
 ]
+
+game.player_add_spells_to_inv([
+    get_spell_by_name("magic missile"),
+    get_spell_by_name("damage plus i"),
+    get_spell_by_name("damage plus i"),
+    get_spell_by_name("range plus i"),
+    get_spell_by_name("radius plus i"),
+])
+
+game.recent_spells_gained = [];
 
 //game.player_ent.cast_spell(spell_simple, target);
 
@@ -150,14 +166,70 @@ let test = function(spells) {
 */
 
 
-game.player_add_spells_to_inv([...spells_list.filter(s => s.subtyp == SpellSubtype.Trigger || s.subtyp == SpellSubtype.Multicast)].flatMap(i => i));
+// game.player_add_spells_to_inv([...spells_list.filter(s => s.subtyp == SpellSubtype.Trigger || s.subtyp == SpellSubtype.Multicast)].flatMap(i => i));
 
-game.player_add_spells_to_inv([...spells_list.filter(s => s.is_red())]);
+// game.player_add_spells_to_inv([...spells_list.filter(s => s.is_red())]);
+
 game.player_discard_edits();
 game.open_inventory();
 
 let xp_flash = new ParticleTemplate(["++", "''"], "#ddd", 1);
-let item_flash = new ParticleTemplate(["@@", "&&", "##", "%%", "**", "++", "''"], "#fff", 0.5);
+
+let generic_item_flash = new ParticleTemplate(["@@", "&&", "##", "%%", "**", "++", "''"], "#fff", 0.5);
+
+let item_tier_flashes = {
+    "Tier1": {
+        part: new ParticleTemplate(["@@", "##", "%%", "++", "''"], "#fff", 0.5),
+        col_core: "#bbb",
+        col_mod: "#28a"
+    },
+    "Tier2": {
+        part: new ParticleTemplate(["@@", "##", "%%", "++", "''"], "#fff", 0.5),
+        col_core: "#bbb",
+        col_mod: "#28a"
+    },
+    "Tier3": {
+        part: new ParticleTemplate(["@@", "##", "%%", "++", "''"], "#fff", 0.5),
+        col_core: "#bbb",
+        col_mod: "#28a"
+    },
+    "Tier4": {
+        part: new ParticleTemplate(["@@", "&&", "##", "%%", "**", "++", "''"], "#fff", 0.5),
+        col_core: "#fff",
+        col_mod: "#4df"
+    },
+    "Tier5": {
+        part: new ParticleTemplate(["@@", "&&", "##", "%%", "**", "++", "''"], "#fff", 0.5),
+        col_core: "#fff",
+        col_mod: "#4df"
+    },
+    "Tier6": {
+        part: new ParticleTemplate(["@@", "&&", "##", "%%", "**", "++", "::"], "#fff", 0.5),
+        col_core: "#afa",
+        col_mod: "#0fa"
+    },
+    "Tier7": {
+        part: new ParticleTemplate(["@@", "&&", "##", "%%", "**", "++", "::"], "#fff", 0.5),
+        col_core: "#afa",
+        col_mod: "#0fa"
+    },
+    "Tier8": {
+        part: new ParticleTemplate(["@@", "&&", "##", "%%", "**", "++", "::"], "#fff", 0.5),
+        col_core: "#afa",
+        col_mod: "#0fa"
+    },
+    "Tier9": {
+        part: new ParticleTemplate(["[]", "@@", "&&", "##", "%%", "!!", "**", "++", "''"], "#fff", 0.5),
+        col_core: "#72f",
+        col_mod: "#41f"
+    },
+    "Tier10": {
+        part: new ParticleTemplate(["[]", "@@", "&&", "##", "%%", "!!", "**", "++", "''"], "#fff", 0.5),
+        col_core: "#f8f",
+        col_mod: "#a5f"
+    }
+}
+
 let lvl_flash = new ParticleTemplate(["**", "++", "\"\"", "''"], "#fff", 0.5);
 
 let tmp = new ParticleTemplate(["@@", "##", "++", "--", ".."], "#f00", 1);
@@ -336,8 +408,8 @@ p                      - pong! echo command+args back to you
                 if (data) {
                     let tier = data;
 
-                    if (spells_loot_table[tier]) {
-                        game.roll_for_loot(null, 0, null, spells_loot_table[tier], 1, null, 1);
+                    if (spells_loot_table[tier] || spells_loot_table["Tier" + tier]) {
+                        game.roll_for_loot(null, 0, null, spells_loot_table[tier] ? spells_loot_table[tier] : spells_loot_table["Tier" + tier], 1, null, 1, "Tier" + tier);
                         debug_response = `#0f0spawned spell from loot table \"${data}\"`;
                     } else {
                         debug_response = `#f00couldn't find a loot table \"${data}\"`
@@ -626,6 +698,7 @@ messagebox_templates = {
     lvlup_normal: lvlup_msgbox_normal,
 }
 
+/*
 spells_loot_table = {
     "Tier1": [...spells_list.filter(s => s.is_normal())],
     "Tier2": [],
@@ -638,6 +711,7 @@ spells_loot_table = {
     "Tier9": [],
     "Tier10": [],
 }
+*/
 
 for (let i=0; i<Object.keys(spells_loot_table).length; i++) {
     let loot_group = Object.keys(spells_loot_table)[i];

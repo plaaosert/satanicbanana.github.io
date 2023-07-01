@@ -923,7 +923,7 @@ spells_funcs = {
         no_tiles
     ],
 
-    "Trigger Upgrade": [
+    "Zenith Tile Trigger": [
         no_stats,
         no_target,
         no_hit,
@@ -1064,9 +1064,7 @@ spells_funcs = {
     ],
 
     "Multicast x4": [
-        function(user, spell, stats) {
-            stats.multicasts["normal"] += 4
-        },
+        no_stats,
         no_target,
         no_hit,
         no_tiles
@@ -1436,7 +1434,7 @@ spells_funcs = {
         no_tiles
     ],
 
-    "205": [
+    "Goop": [
         no_stats,
         no_target,
         no_hit,

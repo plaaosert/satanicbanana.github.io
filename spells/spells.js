@@ -4457,9 +4457,9 @@ class Game {
         this.damage_counts = {};    // indexed by spell id
 
         this.wavecount = 0;
-        this.spawn_credits_base = 20;
-        this.spawn_credits_gain = 10;
-        this.spawn_credits_mult = 1.015;
+        this.spawn_credits_base = 30;
+        this.spawn_credits_gain = 20;
+        this.spawn_credits_mult = 1.001;
         
         this.wave_entities = {};
 
@@ -4666,6 +4666,7 @@ class Game {
         let spawn_credits = this.spawn_credits_base;
         spawn_credits += this.spawn_credits_gain * this.wavecount;
         spawn_credits *= Math.pow(this.spawn_credits_mult, this.wavecount);
+        spawn_credits = Math.floor(spawn_credits);
 
         let max_credits = spawn_credits;
 
@@ -4692,7 +4693,7 @@ class Game {
                 while (adding_enemy_count) {
                     adding_enemy_count = false;
 
-                    let new_cost = picked_ent.spawn_credits * (num_to_spawn + 1);
+                    let new_cost = picked_ent.spawn_credits * ((num_to_spawn * 0.1) + 1);
 
                     // if affordable
                     if (new_cost < spawn_credits) {
@@ -5040,7 +5041,7 @@ class Game {
         }
     }
 
-    roll_for_loot(entity_killed, xp_value, restrict_type, custom_pool, max_number, max_rarity, start_number) {
+    roll_for_loot(entity_killed, xp_value, restrict_type, custom_pool, max_number, max_rarity, start_number, custom_pool_name) {
         let drops = [];
         let drop_count = start_number ? start_number : 0;
 
@@ -5061,8 +5062,10 @@ class Game {
 
         for (let i=0; i<drop_count; i++) {
             let pool = [];
+            let pool_name = "";
             if (custom_pool) {
                 pool = custom_pool;
+                pool_name = custom_pool_name
             } else {
                 // Start at tier 1
                 let tier = 1;
@@ -5082,22 +5085,22 @@ class Game {
                     }
                 }
 
-                // TODO remove debug once we finish the loot table
-                tier = 1;
-
                 pool = spells_loot_table["Tier" + tier];
+                pool_name = "Tier" + tier;
             }
+
+            console.log(pool_name);
 
             if (pool.length > 0) {
                 let item = pool[Math.floor(Math.random() * pool.length)];
 
                 if (entity_killed) {
                     setTimeout(function() {
-                        item_sparkle(item, entity_killed.position)
+                        item_sparkle(item, entity_killed.position, pool_name)
                     }, 100 + 50 * i)
                 } else {
                     setTimeout(function() {
-                        item_sparkle(item, game.player_ent.position)
+                        item_sparkle(item, game.player_ent.position, pool_name)
                     }, 100 + 50 * i)
                 }
             }
@@ -6034,9 +6037,19 @@ function xp_sparkle(xp, from) {
     general_sparkle(from, xp_flash, "#8ff", {xp: txp}, function(info) { game.player_gain_xp(info.xp) })
 }
 
-function item_sparkle(item, from) {
+function item_sparkle(item, from, drop_pool) {
     let titem = item;
-    general_sparkle(from, item_flash, item.typ == SpellType.Core ? "#fff" : "#4df", {item: titem}, function(info) { game.player_add_spell_to_inv(info.item) })
+
+    console.log(drop_pool)
+
+    let particle_col = item.typ == SpellType.Core ? "#fff" : "#4df"
+    let particle = generic_item_flash
+    if (drop_pool && item_tier_flashes[drop_pool]) {
+        particle = item_tier_flashes[drop_pool].part
+        particle_col = item.typ == SpellType.Core ? item_tier_flashes[drop_pool].col_core : item_tier_flashes[drop_pool].col_mod
+    }
+
+    general_sparkle(from, particle, particle_col, {item: titem}, function(info) { game.player_add_spell_to_inv(info.item) })
 }
 
 function vh(percent) {

@@ -288,7 +288,7 @@ spells_list = [
     core_spell(
         "Reinforce", "#!", SpellSubtype.Core,
         "#74a", "#000",
-        "Any non-player unit with Dark affinity in this core's area of effect will be healed to full HP and gain access to Dark Bolt.",
+        "Any non-player unit with Dark affinity in this core's area of effect will be healed to full HP and gain access to Death Bolt.",
         0, DmgType.Dark,
         8, 3, Shape.Diamond,
         100,
