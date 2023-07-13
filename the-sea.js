@@ -40,10 +40,13 @@ function get_ocean_slice(xr) {
 }
 
 
+let mutation_add = 0
+
+
 function mutate_text(txt) {
 	for (var i=0; i<txt.length; i++) {
 		ch = txt[i];
-		if (("#. ").includes(ch) && Math.random() <= (0.0002 + ((ocean_time % 1200) / 1200000))) {
+		if (("#. ").includes(ch) && Math.random() <= (0.0002 + ((ocean_time % 1200) / 1200000) + mutation_add)) {
 			txt = txt.replace_at(i, alphabet[Math.floor(Math.random() * alphabet.length)]);
 		}
 	}

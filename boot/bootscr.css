@@ -1,3 +1,10 @@
+@font-face {
+    font-family: "nec_apc";
+    src: url("Web437_NEC_APC3_8x16.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
 * {
     margin: 0px;
     padding: 0px;
@@ -7,7 +14,7 @@
 body {
     color: white;
     background-color: black;
-    font-family: "Courier New", Courier, monospace;
+    font-family: "nec_apc";
     overflow: hidden;
 }
 
@@ -15,8 +22,8 @@ body {
     position:absolute;
     background-color: #000000;
     color: #FFFFFF;
-    font-family: "Courier New", Courier, monospace;
-    font-size: 12pt;
+    font-family: "nec_apc";
+    font-size: 16px;
     font-weight: normal;
     top:0px;
     left:0px;

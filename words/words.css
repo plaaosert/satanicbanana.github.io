@@ -124,7 +124,6 @@ a:hover {
 	padding-left: 32px;
 	color: white;
 	font-size: 72px;
-	font-family: "MS Gothic", "Droid Sans Mono", "Courier";
 	letter-spacing: 54px;
 	
 	border-style: none;
@@ -274,12 +273,10 @@ a:hover {
 	
 	padding-top: 2.705px;
 	padding-bottom: 2.705px;
-	font-family: "MS Gothic", "Droid Sans Mono", "Courier";
 }
 
 h1 {
 	font-size: 72px;
-	font-family: "MS Gothic", "Droid Sans Mono", "Courier";
 }
 
 #input-box {
@@ -301,18 +298,18 @@ input {
 	background-color: black;
 	padding-left: 32px;
 	font-size: 72px;
-	font-family: "MS Gothic", "Droid Sans Mono", "Courier";
 	letter-spacing: 54px;
 	
 	border-style: none;
 	outline: none;
 	font-weight: bold;
+
+	font-family: "MS Gothic", "Droid Sans Mono", "Courier";;
 }
 
 .hints {
 	color: white;
 	font-size: 18px;
-	font-family: "MS Gothic", "Droid Sans Mono", "Courier";
 	
 	position: absolute;
 	top: 102px;

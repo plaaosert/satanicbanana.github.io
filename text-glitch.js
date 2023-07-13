@@ -30,12 +30,12 @@ glitch_enabled = true;
 // "alt strings" as a dict for every id
 aims = {
 	"1":">> time to learn about twitchpost!",
-	"2":">> the battlepost information repository",
+	"2":">> down for maintenance",
 	"3":">> infinite match-3 game",
 	"4":">> a \"unique\" word-guessing game",
 	"5":">> select another style for the ocean",
 	"6":">> drwxr-xr-x 8 plaao plaao 4096 Nov 06 03:40 ..",
-	"7":"plaaosert#6386",
+	"7":"@plaaosert",
 	"8":">> a game about matching words in a box",
 	"9":">> not complete just yet!",
 	"banner":"// \u00A0hello!\u00A0\u00A0 //"

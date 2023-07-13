@@ -1918,6 +1918,7 @@ spells_funcs = {
 
     "Subsurface Chain": [
         function(user, spell, stats) {
+            stats.multicasts["chain"] += 6
             stats.specials.push(SpellSpecials.NEVERDAMAGE)
         },
         no_target,
@@ -1927,6 +1928,7 @@ spells_funcs = {
 
     "Subsurface Arc": [
         function(user, spell, stats) {
+            stats.multicasts["simultaneous"] += 6
             stats.specials.push(SpellSpecials.NEVERDAMAGE)
         },
         no_target,

@@ -74,7 +74,7 @@ entity_templates = [
         "Hobgoblin", "G+", "#3a3", "Marginally stronger than a normal goblin. Measures up to about half your height.",
         75, 0, [
             Affinity.Living
-        ], 15, 17,
+        ], 15, 35,
         entities_spells["Hobgoblin"],
         entities_specials["Hobgoblin"],
         "None",
@@ -86,7 +86,7 @@ entity_templates = [
         20, 0, [
             Affinity.Living,
             Affinity.Chaos
-        ], 7, 12,
+        ], 7, 20,
         entities_spells["Gobbo"],
         entities_specials["Gobbo"],
         "None",
@@ -108,7 +108,7 @@ entity_templates = [
         "Alpha Goblin", "G#", "#3f3", "The best of the bunch. Only goblins in peak condition could ever hope to become an Alpha.",
         100, 0, [
             Affinity.Living
-        ], 25, 30,
+        ], 25, 70,
         entities_spells["Alpha Goblin"],
         entities_specials["Alpha Goblin"],
         "None",
@@ -120,7 +120,7 @@ entity_templates = [
         60, 0, [
             Affinity.Living,
             Affinity.Fire
-        ], 20, 25,
+        ], 20, 80,
         entities_spells["Flaming Goblin"],
         entities_specials["Flaming Goblin"],
         "None",
@@ -132,7 +132,7 @@ entity_templates = [
         150, 50, [
             Affinity.Living,
             Affinity.Arcane
-        ], 50, 60,
+        ], 50, 120,
         entities_spells["Esper Goblin"],
         entities_specials["Esper Goblin"],
         "None",
@@ -144,7 +144,7 @@ entity_templates = [
         80, 20, [
             Affinity.Living,
             Affinity.Lightning
-        ], 30, 50,
+        ], 30, 90,
         entities_spells["Static Goblin"],
         entities_specials["Static Goblin"],
         "None",
@@ -156,7 +156,7 @@ entity_templates = [
         15, 15, [
             Affinity.Living,
             Affinity.Dark
-        ], 9, 30,
+        ], 9, 75,
         entities_spells["Possessed Bat"],
         entities_specials["Possessed Bat"],
         "None",
@@ -170,7 +170,7 @@ entity_templates = [
         "Goblin War Machine", "]G", "#898", "A terrifying construct made from hewn together junk, piloted by a crack team of two Alpha goblins.",
         250, 50, [
             Affinity.Construct
-        ], 100, 200,
+        ], 100, 250,
         entities_spells["Goblin War Machine"],
         entities_specials["Goblin War Machine"],
         "None",
@@ -183,7 +183,7 @@ entity_templates = [
         "Goblin Gear", "@G", "#9a9", "The most advanced war machine ever created by goblinkind, piloted by an Esper Goblin capable of directing it telepathically.",
         700, 100, [
             Affinity.Construct
-        ], 250, 500,
+        ], 250, 1000,
         entities_spells["Goblin Gear"],
         entities_specials["Goblin Gear"],
         "None",
@@ -196,7 +196,7 @@ entity_templates = [
         "Giant Goblin", "G!", "#3d3", "Through some aberration of nature, goblins can reach towering heights of two metres or more.",
         150, 0, [
             Affinity.Living
-        ], 40, 100,
+        ], 40, 200,
         entities_spells["Giant Goblin"],
         entities_specials["Giant Goblin"],
         "Regenerates 5 HP per turn.",
@@ -207,7 +207,7 @@ entity_templates = [
         "Titanic Goblin", "GG", "#3d3", "Due to their high susceptibility to magic, goblins in the vicinity of huge magical outflows can become truly gigantic beasts.",
         500, 0, [
             Affinity.Living
-        ], 120, 150,
+        ], 120, 700,
         entities_spells["Titanic Goblin"],
         entities_specials["Titanic Goblin"],
         "Regenerates 12 HP per turn.",
@@ -219,7 +219,7 @@ entity_templates = [
         30, 0, [
             Affinity.Living,
             Affinity.Dark
-        ], 5, 5,
+        ], 5, 10,
         entities_spells["Bat"],
         entities_specials["Bat"],
         "None",
@@ -231,7 +231,7 @@ entity_templates = [
         120, 0, [
             Affinity.Living,
             Affinity.Dark
-        ], 30, 30,
+        ], 30, 70,
         entities_spells["Giant Bat"],
         entities_specials["Giant Bat"],
         "None",
@@ -254,7 +254,7 @@ entity_templates = [
         60, 25, [
             Affinity.Ghost,
             Affinity.Dark
-        ], 48, 30,
+        ], 48, 70,
         entities_spells["Vengeful Ghost"],
         entities_specials["Vengeful Ghost"],
         "Deals 2 Dark damage every turn to adjacent units.",
@@ -267,7 +267,7 @@ entity_templates = [
             Affinity.Ghost,
             Affinity.Undead,
             Affinity.Dark
-        ], 40, 50,
+        ], 40, 60,
         entities_spells["Wraith"],
         entities_specials["Wraith"],
         "None",
@@ -278,7 +278,7 @@ entity_templates = [
         "Spirit Amalgam", "oO", "#ddd", "Often found around areas of great conflict, spirits may amalgamate into a single being before they are able to congeal into ghosts.",
         60, 60, [
             Affinity.Ghost
-        ], 12, 40,
+        ], 12, 60,
         entities_spells["Spirit Amalgam"],
         entities_specials["Spirit Amalgam"],
         "None",
@@ -292,7 +292,7 @@ entity_templates = [
         160, 0, [
             Affinity.Ghost,
             Affinity.Construct
-        ], 10, 25,
+        ], 10, 250,
         entities_spells["Bucket of Ghosts"],
         entities_specials["Bucket of Ghosts"],
         "None",
@@ -306,7 +306,7 @@ entity_templates = [
         100, 50, [
             Affinity.Ghost,
             Affinity.Ghost
-        ], 20, 30,
+        ], 20, 50,
         entities_spells["Ghost Ghost"],
         entities_specials["Ghost Ghost"],
         "None",
@@ -320,7 +320,7 @@ entity_templates = [
         60, 40, [
             Affinity.Ghost,
             Affinity.Demon
-        ], 30, 30,
+        ], 30, 120,
         entities_spells["Demonic Spirit"],
         entities_specials["Demonic Spirit"],
         "If alive for 16 turns, explodes in a 3 tile burst for 16 Fire damage. (Turns remaining: [[explosion_turns_left]])",
@@ -332,7 +332,7 @@ entity_templates = [
         80, 200, [
             Affinity.Living,
             Affinity.Dark
-        ], 60, 70,
+        ], 60, 140,
         entities_spells["Spirit Caller"],
         entities_specials["Spirit Caller"],
         "None",
@@ -343,7 +343,7 @@ entity_templates = [
         "Fire Spirit", "\"S", "#d33", "More a force of nature than a spirit, these beings have just one goal: to burn away everything around them.",
         60, 50, [
             Affinity.Fire
-        ], 30, 35,
+        ], 30, 80,
         entities_spells["Fire Spirit"],
         entities_specials["Fire Spirit"],
         "If witnessing any Fire damage, heals 2 HP.",
@@ -355,7 +355,7 @@ entity_templates = [
         200, 100, [
             Affinity.Demon,
             Affinity.Fire
-        ], 120, 110,
+        ], 120, 260,
         entities_spells["Fire Demon"],
         entities_specials["Fire Demon"],
         "None",
@@ -367,7 +367,7 @@ entity_templates = [
         160, 40, [
             Affinity.Fire,
             Affinity.Construct
-        ], 70, 90,
+        ], 70, 220,
         entities_spells["Flame Golem"],
         entities_specials["Flame Golem"],
         "None",
@@ -379,7 +379,7 @@ entity_templates = [
         300, 0, [
             Affinity.Fire,
             Affinity.Construct
-        ], 120, 200,
+        ], 120, 400,
         entities_spells["Flame Portal"],
         entities_specials["Flame Portal"],
         "None",
@@ -391,7 +391,7 @@ entity_templates = [
         600, 200, [
             Affinity.Demon,
             Affinity.Fire
-        ], 200, 250,
+        ], 200, 600,
         entities_spells["Crazed Fire Demon"],
         entities_specials["Crazed Fire Demon"],
         "If witnessing any Fire damage, gains 2 Shield.",
@@ -403,7 +403,7 @@ entity_templates = [
         1000, 0, [
             Affinity.Fire,
             Affinity.Construct
-        ], 250, 500,
+        ], 250, 1000,
         entities_spells["Flame Rift"],
         entities_specials["Flame Rift"],
         "None",
@@ -429,10 +429,10 @@ entity_templates = [
             Affinity.Living,
             Affinity.Fire,
             Affinity.Insect
-        ], 280, 600,
+        ], 280, 1000,
         entities_spells["Firebug Broodmother"],
         entities_specials["Firebug Broodmother"],
-        "None",
+        "Summons a Firebug on an adjacent empty tile every turn.",
         2, false, false, 
     ),
 
@@ -1743,237 +1743,6 @@ entity_templates = [
         ], 0, -1,
         entities_spells["Master of Order"],
         entities_specials["Master of Order"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
         "None",
         1, false, false, 
     ),

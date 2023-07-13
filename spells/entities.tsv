@@ -5,54 +5,55 @@ Fuckn GUy	G#	#480	Stupid idiot	150	250	Dark	Demon		0	-1	None	"KIll You BOLT; dam
 EPXLODE; 40 holy dmg; line; range 40; trigger at target; 100 psychic dmg; burst radius 2; cooldown 8 turns"	1	None
 Wall	[]	#ccc	Just a wall.	Inf	Inf	Construct			0	-1	None	None	999	None
 Goblin	G.	#3d3	You didn't start the interdimensional goblin combat. But you will end it.	50	0	Living			10	10	None	Bite; 6 physical dmg; range 1	1	None
-Hobgoblin	G+	#3a3	Marginally stronger than a normal goblin. Measures up to about half your height.	75	0	Living			15	17	None	Claw; 7 physical dmg; range 1	1	None
-Gobbo	G'	#fc3	An absolutely tiny specimen with a piercing voice entirely unbecoming of its stature.	20	0	Living	Chaos		7	12	None	Scream; 4 chaos dmg; line; range 3	1	None
+Hobgoblin	G+	#3a3	Marginally stronger than a normal goblin. Measures up to about half your height.	75	0	Living			15	35	None	Claw; 7 physical dmg; range 1	1	None
+Gobbo	G'	#fc3	An absolutely tiny specimen with a piercing voice entirely unbecoming of its stature.	20	0	Living	Chaos		7	20	None	Scream; 4 chaos dmg; line; range 3	1	None
 Gremlin	g.	#080	While not technically goblins, gremlins and goblins live as one and the same.	35	0	Living			7	7	None	Bite; 5 physical dmg; range 1	1	None
-Alpha Goblin	G#	#3f3	The best of the bunch. Only goblins in peak condition could ever hope to become an Alpha.	100	0	Living			25	30	None	"Body Slam; 10 physical dmg; range 1
+Alpha Goblin	G#	#3f3	The best of the bunch. Only goblins in peak condition could ever hope to become an Alpha.	100	0	Living			25	70	None	"Body Slam; 10 physical dmg; range 1
 Uppercut; 15 physical dmg; range 1; cooldown 4 turns"	1	None
-Flaming Goblin	G"	#d33	The mechanism by which these goblins remain alight remains a mystery to goblinologists to this day.	60	0	Living	Fire		20	25	None	"Tackle; 8 fire dmg; range 1
+Flaming Goblin	G"	#d33	The mechanism by which these goblins remain alight remains a mystery to goblinologists to this day.	60	0	Living	Fire		20	80	None	"Tackle; 8 fire dmg; range 1
 Firebreathing; 4 fire dmg; cone; range 3"	1	None
-Esper Goblin	G=	#d9d	Dealing with goblins sounded fine until they developed the ability to cast Mind Spike.	150	50	Living	Arcane		50	60	None	Mind Spike; 12 psychic dmg; range 6; line; 15 MP	2	None
-Static Goblin	G;	#ff0	Delivering static shocks at will is a much more formidable power than it appears.	80	20	Living	Lightning		30	50	None	"Static Bolt; 8 lightning dmg; line; range 5; 5MP
+Esper Goblin	G=	#d9d	Dealing with goblins sounded fine until they developed the ability to cast Mind Spike.	150	50	Living	Arcane		50	120	None	Mind Spike; 12 psychic dmg; range 6; line; 15 MP	2	None
+Static Goblin	G;	#ff0	Delivering static shocks at will is a much more formidable power than it appears.	80	20	Living	Lightning		30	90	None	"Static Bolt; 8 lightning dmg; line; range 5; 5MP
 Spark Burst; 16 lightning dmg; selftarget; burst; radius 4; 20MP"	1	None
-Possessed Bat	Bd	#a4f	A regular bat posessed by forces beyond this world. Said forces will burst out when the bat dies.	15	15	Living	Dark		9	30	None	"Bite; 4 physical dmg; range 1
+Possessed Bat	Bd	#a4f	A regular bat posessed by forces beyond this world. Said forces will burst out when the bat dies.	15	15	Living	Dark		9	75	None	"Bite; 4 physical dmg; range 1
 Dark Bolt; 6 dark dmg; range 3; line; 5 MP"	1	"Restless Spirit x1
 Ghost x2"
-Goblin War Machine	]G	#898	A terrifying construct made from hewn together junk, piloted by a crack team of two Alpha goblins.	250	50	Construct			100	200	None	"Metal Bash; 10 physical dmg; range 1
+Goblin War Machine	]G	#898	A terrifying construct made from hewn together junk, piloted by a crack team of two Alpha goblins.	250	50	Construct			100	250	None	"Metal Bash; 10 physical dmg; range 1
 Shrapnel Salvo; unc.multicast x4 => 6 phys line; range 6; 15 MP
 Makeshift Gun; 14 physical dmg; line; range 10; 6 turn cooldown"	1	Alpha Goblin x2
-Goblin Gear	@G	#9a9	The most advanced war machine ever created by goblinkind, piloted by an Esper Goblin capable of directing it telepathically.	700	100	Construct			250	500	None	"Steel Strike; 18 physical dmg; range 1
+Goblin Gear	@G	#9a9	The most advanced war machine ever created by goblinkind, piloted by an Esper Goblin capable of directing it telepathically.	700	100	Construct			250	1000	None	"Steel Strike; 18 physical dmg; range 1
 Missile Salvo; unc.multicast x4 => 12 fire dmg radius 3 burst; range 6; 25 MP
 Railcannon; 22 physical dmg; range 10; 50 MP; 3 turn cooldown"	2	Esper Goblin x1
-Giant Goblin	G!	#3d3	Through some aberration of nature, goblins can reach towering heights of two metres or more.	150	0	Living			40	100	Regenerates 5 HP per turn.	Crush; 14 physical dmg; range 1	1	None
-Titanic Goblin	GG	#3d3	Due to their high susceptibility to magic, goblins in the vicinity of huge magical outflows can become truly gigantic beasts.	500	0	Living			120	150	Regenerates 12 HP per turn.	Crush; 30 physical dmg; range 1	1	None
-Bat	b^	#84f	Annoying flappy things with a nasty bite.	30	0	Living	Dark		5	5	None	Bite; 6 physical dmg; range 1	1	None
-Giant Bat	B^	#84f	Bats should not be this big.	120	0	Living	Dark		30	30	None	Bite; 18 physical dmg; range 1	1	None
+Giant Goblin	G!	#3d3	Through some aberration of nature, goblins can reach towering heights of two metres or more.	150	0	Living			40	200	Regenerates 5 HP per turn.	Crush; 14 physical dmg; range 1	1	None
+Titanic Goblin	GG	#3d3	Due to their high susceptibility to magic, goblins in the vicinity of huge magical outflows can become truly gigantic beasts.	500	0	Living			120	700	Regenerates 12 HP per turn.	Crush; 30 physical dmg; range 1	1	None
+Bat	b^	#84f	Annoying flappy things with a nasty bite.	30	0	Living	Dark		5	10	None	Bite; 6 physical dmg; range 1	1	None
+Giant Bat	B^	#84f	Bats should not be this big.	120	0	Living	Dark		30	70	None	Bite; 18 physical dmg; range 1	1	None
 Ghost	o-	#ddd	A restless spirit unable to pass away from the world.	10	0	Ghost			3	6	None	Dark Touch; 3 dark dmg; range 1	1	None
-Vengeful Ghost	o!	#f77	When a being dies with great hatred in their heart, they may refuse to pass on and instead exact vengeance on the living.	60	25	Ghost	Dark		48	30	Deals 2 Dark damage every turn to adjacent units.	"Fire Bolt; 5 fire dmg; range 3; 10 MP
+Vengeful Ghost	o!	#f77	When a being dies with great hatred in their heart, they may refuse to pass on and instead exact vengeance on the living.	60	25	Ghost	Dark		48	70	Deals 2 Dark damage every turn to adjacent units.	"Fire Bolt; 5 fire dmg; range 3; 10 MP
 Soul Sucker; 12 dark dmg; range 1; -5 MP"	1	None
-Wraith	O.	#444	If a ghost remains near dark energy sources long enough, they can regain a semblance of corporeality.	80	20	Ghost	Undead	Dark	40	50	None	Terror; 8 dark dmg; radius 2 burst; selftarget; 15 MP	1	None
-Spirit Amalgam	oO	#ddd	Often found around areas of great conflict, spirits may amalgamate into a single being before they are able to congeal into ghosts.	60	60	Ghost			12	40	None	"Dark Touch; 6 dark dmg; range 1
+Wraith	O.	#444	If a ghost remains near dark energy sources long enough, they can regain a semblance of corporeality.	80	20	Ghost	Undead	Dark	40	60	None	Terror; 8 dark dmg; radius 2 burst; selftarget; 15 MP	1	None
+Spirit Amalgam	oO	#ddd	Often found around areas of great conflict, spirits may amalgamate into a single being before they are able to congeal into ghosts.	60	60	Ghost			12	60	None	"Dark Touch; 6 dark dmg; range 1
 Haunt; teleport up to 3 tiles towards target; range 64; 3 turn cooldown"	1	Ghost x4
-Bucket of Ghosts	[o	#fff	If you ask too many questions, you won't like the answers. Just kill it.	160	0	Ghost	Construct		10	25	None	"Launch Ghost; spawn ghost near to target; range 8; 3 turn cooldown
+Bucket of Ghosts	[o	#fff	If you ask too many questions, you won't like the answers. Just kill it.	160	0	Ghost	Construct		10	250	None	"Launch Ghost; spawn ghost near to target; range 8; 3 turn cooldown
 Ghost Spillage; spawn ghosts on every tile; selftarget radius 1 burst"	1	Ghost x2
-Ghost Ghost	0O	#ddd	Even ghosts may die, after all.	100	50	Ghost	Ghost		20	30	None	Dark Touch; 7 dark dmg; range 1	1	Ghost x1
-Demonic Spirit	$o	#e33	Souls claimed by demons can retain this taint even through death of the body.	60	40	Ghost	Demon		30	30	If alive for 16 turns, explodes in a 3 tile burst for 16 Fire damage. (Turns remaining: [[explosion_turns_left]])	Energy Lance; 8 chaos dmg; line; range 6; 20 MP	1	None
-Spirit Caller	O<	#c77	Through mysticism and a little magic, some mages can commune with, or even bring back, spirits of the departed.	80	200	Living	Dark		60	70	None	"Summon Ghost; spawn ghost near target; selftarget radius 0; 30 MP
+Ghost Ghost	0O	#ddd	Even ghosts may die, after all.	100	50	Ghost	Ghost		20	50	None	Dark Touch; 7 dark dmg; range 1	1	Ghost x1
+Demonic Spirit	$o	#e33	Souls claimed by demons can retain this taint even through death of the body.	60	40	Ghost	Demon		30	120	If alive for 16 turns, explodes in a 3 tile burst for 16 Fire damage. (Turns remaining: [[explosion_turns_left]])	Energy Lance; 8 chaos dmg; line; range 6; 20 MP	1	None
+Spirit Caller	O<	#c77	Through mysticism and a little magic, some mages can commune with, or even bring back, spirits of the departed.	80	200	Living	Dark		60	140	None	"Summon Ghost; spawn ghost near target; selftarget radius 0; 30 MP
 Summon Vengeful Ghost; same but with venge ghost; 100 MP; 4 turn cd"	1	None
-Fire Spirit	"S	#d33	More a force of nature than a spirit, these beings have just one goal: to burn away everything around them.	60	50	Fire			30	35	If witnessing any Fire damage, heals 2 HP.	"Flame Detonation; 8 fire dmg; 2 radius self burst; 10 MP
+Fire Spirit	"S	#d33	More a force of nature than a spirit, these beings have just one goal: to burn away everything around them.	60	50	Fire			30	80	If witnessing any Fire damage, heals 2 HP.	"Flame Detonation; 8 fire dmg; 2 radius self burst; 10 MP
 Fireball; 6 fire dmg; 1 radius burst; range 6; 6 MP; 2 turn cd"	1	None
-Fire Demon	$d	#f00	Demons generally have a natural affinity to a single element. Can you guess this one's affinity?	200	100	Demon	Fire		120	110	None	"Infernal Beam; 5 fire dmg; line; ignores los; range 8; 40 MP
+Fire Demon	$d	#f00	Demons generally have a natural affinity to a single element. Can you guess this one's affinity?	200	100	Demon	Fire		120	260	None	"Infernal Beam; 5 fire dmg; line; ignores los; range 8; 40 MP
 Detonation; 13 fire dmg; 2 radius burst; range 5; 25 MP; 3 turn cd"	2	None
-Flame Golem	#"	#d33	Likely created long ago by an unknown artificer, the patchwork rocky exoskeleton of these golems is filled with a roaring fire.	160	40	Fire	Construct		70	90	None	"Smash; 12 physical + 6 fire dmg; melee
+Flame Golem	#"	#d33	Likely created long ago by an unknown artificer, the patchwork rocky exoskeleton of these golems is filled with a roaring fire.	160	40	Fire	Construct		70	220	None	"Smash; 12 physical + 6 fire dmg; melee
 Flame Lash; 3 fire dmg; range 7; radius 0; 5 MP
 Core Ejection; 25 fire dmg; 10 turn cd; 40 MP"	1	None
-Flame Portal	()	#e00	Small-scale dimensional disturbances that can spit all manner of flame denizens from inside them.	300	0	Fire	Construct		120	200	None	Incursion; spawn 1-4 Demonic Spirit / Fire Spirit / Fire Demon / Flame Golem; 7 turn cd	4	None
-Crazed Fire Demon	$D	#f08	Similarly to a typical mage, if a demon attempts to channel too much energy, they may be overwhelmed by its intensity and reshaped into a new, primal form.	600	200	Demon	Fire		200	250	If witnessing any Fire damage, gains 2 Shield.	"Overcharged Infernal Beam; 20 fire dmg; ignores los; range 10; 60 MP; 2 turn cd
+Flame Portal	()	#e00	Small-scale dimensional disturbances that can spit all manner of flame denizens from inside them.	300	0	Fire	Construct		120	400	None	Incursion; spawn 1-4 Demonic Spirit / Fire Spirit / Fire Demon / Flame Golem; 7 turn cd	4	None
+Crazed Fire Demon	$D	#f08	Similarly to a typical mage, if a demon attempts to channel too much energy, they may be overwhelmed by its intensity and reshaped into a new, primal form.	600	200	Demon	Fire		200	600	If witnessing any Fire damage, gains 2 Shield.	"Overcharged Infernal Beam; 20 fire dmg; ignores los; range 10; 60 MP; 2 turn cd
 Flame Detonation; 14 fire dmg; radius 5 cone; range 6; 80 MP; 3 turn cd"	1	None
-Flame Rift	<>	#e00	Jagged tears in reality spouting endless roaring flames... and monsters.	1000	0	Fire	Construct		250	500	None	Incursion; spawn 3-6 of the flame portal pool, 1-3 Crazed Fire Demon or 1 Firebug Broodmother; 10 turn cd	4	None
+Flame Rift	<>	#e00	Jagged tears in reality spouting endless roaring flames... and monsters.	1000	0	Fire	Construct		250	1000	None	Incursion; spawn 3-6 of the flame portal pool, 1-3 Crazed Fire Demon or 1 Firebug Broodmother; 10 turn cd	4	None
 Firebug	.,	#a00	Mostly harmless, but their red-hot mandibles are not to be underestimated in swarms.	12	0	Living	Fire	Insect	1	2	None	Bite; 2 fire dmg; melee	1	None
-Firebug Broodmother	B,	#c00	The breeding cycle of firebugs is not well-studied, mostly due to the fact that broodmothers are well-armoured, aggressive and almost always surrounded by swarms of young.	1200	100	Living	Fire	Insect	280	600	None		2	None
+Firebug Broodmother	B,	#c00	The breeding cycle of firebugs is not well-studied, mostly due to the fact that broodmothers are well-armoured, aggressive and almost always surrounded by swarms of young.	1200	100	Living	Fire	Insect	280	1000	Summons a Firebug on an adjacent empty tile every turn.	"Searing Mandibles; 18 fire dmg; melee
+Rally Firebugs; radius 4; self burst; (range 999); doubles max hp of firebugs hit in burst and fully heals them; 4 turn cd"	2	None
 Goblin Fire Mage	G~	#f60	You thought only humans could use magic?	120	100	Living			80	140	None	"Fireball; 7 fire dmg; range 7; 3 radius burst; 25 MP
 Searing Touch; 24 fire dmg; melee; 40 MP"	2	None
 Ice Spirit	>S	#aff	Amalgamations of frigid energy, willing and eager to turn you into an icicle.			Ice								
@@ -170,24 +171,3 @@ Faithful of Order	f|		The last rank in the Order of Order one can achieve by stu
 Wizard of Order	w|		Wizards of Order are allowed access to the Order of Order's secret texts as thanks for their contributions. With them, they can become even more useful to the Order.			Living	Order							
 High Wizard of Order	W|		Only a few High Wizards of Order are selected out of the Order of Order every year. They form the Council of Order.			Living	Order							
 Master of Order	M|		Masters of Order are those in the Order of Order who have achieved the feat of creating a perfect Steel Colossus. The Order of Order bows to their wisdom.			Living	Order							
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														

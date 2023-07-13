@@ -20,18 +20,6 @@ function init_populate_a_ocean() {
 }
 
 
-function mutate_text(txt) {
-	for (var i=0; i<txt.length; i++) {
-		var ch = txt[i];
-		if (("#. ").includes(ch) && Math.random() <= 0.0002) {
-			txt = txt.replace_at(i, alphabet[Math.floor(Math.random() * alphabet.length)]);
-		}
-	}
-	
-	return txt;
-}
-
-
 function propagate_a_ocean_waves() {
 	// Each wave moves at a speed determined by the wave.
 	for (var i=a_ocean_waves.length - 1; i>-1; i--) {

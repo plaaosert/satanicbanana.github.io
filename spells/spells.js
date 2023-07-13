@@ -699,7 +699,7 @@ class Renderer {
         }
 
         // always pass this through
-        console.log("mousedown: blocking", Math.round((flattened_id-1) / 2))
+        // console.log("mousedown: blocking", Math.round((flattened_id-1) / 2))
         this.mousedown_selected_tile = Math.round((flattened_id-1) / 2)
         this.mousedownup(event, flattened_id);
     }
@@ -714,7 +714,7 @@ class Renderer {
         }
 
         // only pass this through if the selected tile changed since the mousedown
-        console.log("mouseup: checking", Math.round((flattened_id-1) / 2), "with block", this.mousedown_selected_tile)
+        // console.log("mouseup: checking", Math.round((flattened_id-1) / 2), "with block", this.mousedown_selected_tile)
         if (this.mousedown_selected_tile != Math.round((flattened_id-1) / 2)) {
             this.mousedownup(event, flattened_id);
         }
@@ -2440,8 +2440,8 @@ class Renderer {
     }
 
     cleanup_messageboxes() {
-        let padx = 80;
-        let pady = 16;
+        let padx = 72;
+        let pady = 14;
 
         let messagebox_size = this.total_size.sub(new Vector2(padx, pady))
 
@@ -2477,8 +2477,8 @@ class Renderer {
 
     render_messageboxes() {
         if (this.messagebox_open) {
-            let padx = 80;
-            let pady = 16;
+            let padx = 72;
+            let pady = 14;
 
             let messagebox_size = this.total_size.sub(new Vector2(padx, pady))
 
@@ -2666,7 +2666,12 @@ class Board {
 
 
 class EntityTemplate {
+    static id_inc = 0;
+
     constructor(name, icon, col, desc, max_hp, max_mp, affinities, xp_value, spawn_credits, innate_spells, specials, specials_text, ai_level, blocks_los, untargetable, on_death) {
+        this.id = EntityTemplate.id_inc;
+        EntityTemplate.id_inc++;
+        
         this.name = name
         this.icon = icon
         this.col = col
@@ -3468,32 +3473,21 @@ const affinity_weaknesses = {
     },
 };
 
-console.log(["Fire",
-"Ice",
-"Lightning",
-"Arcane",
-"Ghost",
-"Chaos",
-"Holy",
-"Dark",
-"Demon",
-"Undead",
-"Natural",
-"Living",
-"Insect",
-"Construct",
-"Order"].map(a => {
-    return [
-        "Fire",
-        "Ice",
-        "Lightning",
-        "Arcane",
-        "Physical",
-        "Dark",
-        "Chaos",
-        "Holy",
-        "Psychic"
-    ].map(t => affinity_weaknesses[a][t]).join("\t")
+Object.keys(DmgType).forEach(typ => {
+    Object.keys(Affinity).forEach(aff => {
+        if (affinity_weaknesses[aff][typ] >= 1) {
+            affinity_weaknesses[aff][typ] = 1 + ((affinity_weaknesses[aff][typ] - 1) * 2)
+        } else {
+            affinity_weaknesses[aff][typ] /= 2
+        }
+    })
+})
+
+console.log(Object.keys(Affinity).map(a => a.padEnd(5)).join(" "))
+console.log(Object.keys(DmgType).map(t => {
+    return Object.keys(Affinity).map(
+        a => affinity_weaknesses[a][t].toString().padEnd(Math.max(5, a.length))
+    ).join(" ")
 }).join("\n"))
 
 const StatusEffect = {
@@ -3848,11 +3842,11 @@ const Generator = {
         let expected_empty = board.num_tiles - num_walls;
         let actual_empty = board.num_tiles - walls_placed;
         if (actual_empty * 2 < expected_empty) {
-            console.log(actual_empty, expected_empty, "- worldgen fail");
+            // console.log(actual_empty, expected_empty, "worldgen fail");
             return false;
         }
 
-        console.log(actual_empty, expected_empty, "- worldgen success");
+        // console.log(actual_empty, expected_empty, "worldgen success");
         return true;
     }
 }
@@ -4550,7 +4544,7 @@ class Game {
         let success = false;
 
         for (let i=0; i<256; i++) {
-            console.log(`Attempting worldgen (try #${i+1})`)
+            // console.log(`Attempting worldgen (try #${i+1})`)
             success = alg(this, this.board);
             if (success) {
                 break;
@@ -4643,6 +4637,12 @@ class Game {
                 let lvl = this.player_level - this.player_skill_points + lvm + 1;
 
                 let msgbox = messagebox_templates.lvlup_normal;
+                if (lvl % 10 == 0) {
+                    msgbox = messagebox_templates.lvlup_msgbox_lv10
+                } else if (lvl % 5 == 0) {
+                    msgbox = messagebox_templates.lvlup_msgbox_lv5
+                }
+
                 let new_text = msgbox.text.replace("###", lvl.toString());
 
                 msgbox = msgbox.change_text(new_text);
@@ -4672,49 +4672,63 @@ class Game {
 
         console.log("spawn credits:", spawn_credits);
 
+        let ids_already_picked = new Set();
+
         let picked_enemy_spawns = [];
         let spawning = true;
         while (spawning) {
             spawning = false;
 
             let lower_bound = Math.max(0, spawn_credits * 0.1);
-            let upper_bound = Math.min(spawn_credits, Math.max(max_credits * 0.1, spawn_credits * 0.6));
+            let upper_bound = Math.min(spawn_credits, Math.max(max_credits * 0.1, spawn_credits * 0.5));
 
             let possible_spawns = entity_templates.filter(
-                template => template.spawn_credits >= lower_bound && template.spawn_credits <= upper_bound
+                template => template.spawn_credits >= lower_bound && template.spawn_credits <= upper_bound && !ids_already_picked.has(template.id)
             );
 
             if (possible_spawns.length > 0) {
                 spawning = true;
 
                 let picked_ent = possible_spawns[Math.floor(Math.random() * possible_spawns.length)];
-                let num_to_spawn = 0;
+                let num_to_spawn = 1;
                 let adding_enemy_count = true;
+                let cost = picked_ent.spawn_credits;
+
                 while (adding_enemy_count) {
                     adding_enemy_count = false;
 
-                    let new_cost = picked_ent.spawn_credits * ((num_to_spawn * 0.1) + 1);
+                    let new_cost = cost + picked_ent.spawn_credits;
+
+                    // multiple should only be spawned if their overall cost is <30% max credits
+                    // (to make sure that "boss" entities "graduate" to fodder once wave goes high enough)
+                    let can_spawn_multiple = (picked_ent.spawn_credits < (max_credits * 0.3) || num_to_spawn <= 1);
 
                     // if affordable
-                    if (new_cost < spawn_credits) {
-                        // if new cost is less than upper bound
-                        if (new_cost < upper_bound) {
+                    if (new_cost < spawn_credits && can_spawn_multiple) {
+                        if (true) {
                             // if random chance (1 / (n+1)) is successful
-                            if (Math.random() < (1 / (num_to_spawn + 1))) {
+                            if (Math.random() < (1 / ((num_to_spawn / 5) + 1))) {
                                 num_to_spawn++;
                                 adding_enemy_count = true;
                             }
                         }
                     }
 
-                    spawn_credits -= new_cost;
+                    cost = new_cost;
                 }
 
+                spawn_credits -= cost;
                 picked_enemy_spawns.push({
-                    ent: picked_ent, cnt: num_to_spawn
+                    ent: picked_ent, cnt: num_to_spawn, cost: cost
                 });
+
+                ids_already_picked.add(picked_ent.id);
             }
         }
+
+        console.log("picked spawns:\n" + picked_enemy_spawns.map(e => {
+            return ("- " + e.ent.name + " x" + e.cnt).padEnd(40) + `(${e.cost})`
+        }).join("\n"))
 
         picked_enemy_spawns.forEach(spawn => {
             // try to spawn far from the player:
@@ -4960,7 +4974,7 @@ class Game {
             renderer.refresh_right_panel = true;
         }
 
-        if (do_not_wait) {
+        if (do_not_wait && !this.player_ent.dead) {
             this.begin_turn(true);
         } else {
             let sthis = this;
@@ -4975,7 +4989,11 @@ class Game {
     }
 
     get_xp_for_levelup(level) {
-        return Math.round(89 + (10 * level) + Math.pow(level, 1.5));
+        if (level == 1) {
+            return 25;
+        }
+
+        return Math.round((89 + (10 * level) + Math.pow(level, 1.5)) * ((level+1) % 5 == 0 ? ((level+1) % 10 == 0 ? 1.5 : 0.75) : 0.25));
     }
 
     player_gain_xp(amount) {
@@ -5041,15 +5059,15 @@ class Game {
         }
     }
 
-    roll_for_loot(entity_killed, xp_value, restrict_type, custom_pool, max_number, max_rarity, start_number, custom_pool_name) {
+    roll_for_loot(entity_killed, xp_value, restrict_type, custom_pool, max_number, max_rarity, start_number, custom_pool_name, start_rarity) {
         let drops = [];
         let drop_count = start_number ? start_number : 0;
 
         let max_tier = max_rarity ? max_rarity : 10;
 
-        // pick number of drops. xp_value / 500, max chance 75%, min 15%
+        // pick number of drops. xp_value / 250, max chance 75%, min 15%
         // divide xp_value by 1.5 per additional drop
-        let drop_increase_chance = xp_value;
+        let drop_increase_chance = xp_value * 2;
         while (!max_number || drop_count < max_number) {
             let roll = Math.floor(Math.random() * 500);
             if (roll < (Math.max(500*0.15, Math.min(500*0.75, drop_increase_chance)))) {
@@ -5068,7 +5086,7 @@ class Game {
                 pool_name = custom_pool_name
             } else {
                 // Start at tier 1
-                let tier = 1;
+                let tier = start_rarity ? start_rarity : 1;
 
                 // Chance to increase in tier starts at (xp_value / 100),
                 // with a max of 80%.
@@ -6087,7 +6105,7 @@ function handle_resize(event) {
 
     let fontsize = Math.min(fontsize_x, fontsize_y);
 
-    console.log("fontsize before floor:", fontsize, "after: ", Math.floor(fontsize));
+    // console.log("fontsize before floor:", fontsize, "after: ", Math.floor(fontsize));
 
     let fontsize_round = Math.floor(fontsize);
 

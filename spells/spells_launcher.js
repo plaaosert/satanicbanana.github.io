@@ -268,6 +268,8 @@ e               <name> - spawn an entity using generic spawn (\"e bat\")
 
 s <name>               - get a spell with name               (\"s fireball\")
 
+m <msgbox_name>        - spawn a messagebox with name (\"m debug\")
+
 sxp <xp value>         - run the spell drop function with given xp value
 
 stp <pool>             - drop a spell from a specific pool (e.g. "Tier1", "Tier2", ...)
@@ -297,6 +299,19 @@ p                      - pong! echo command+args back to you
             
             case "p":
                 debug_response = "#0f0[" + directive + "] [" + data + "]"
+                break;
+
+            case "m":
+                if (data) {
+                    let msgbox = messagebox_templates[data]
+
+                    if (msgbox) {
+                        renderer.add_messagebox(msgbox);
+                        debug_response = `#0f0opened msgbox \"${data}\"`
+                    } else {
+                        debug_response = `#f00couldn't find a msgbox called \"${data}\"`
+                    }
+                }
                 break;
 
             case "e":
@@ -693,9 +708,103 @@ let lvlup_msgbox_normal = new MessageBoxTemplate(
     ]
 )
 
+let lvlup_msgbox_lv5 = new MessageBoxTemplate(
+    "- - MAGICAL POWER SURGED - -",
+    "Your magical power has surged into new heights from your many experiences, granting you [#afa]LEVEL ###[clear].\n\n" +
+    "Select a boon to choose where this rush of power will be directed.",
+    ["Restore all HP/MP", "+25/50 max HP/MP", "Random uncommon shard"],
+    ["#600", "#036", "#040"],
+    [
+        function() {
+            game.player_ent.restore_hp(99999999);
+            game.player_ent.restore_mp(99999999);
+
+            game.player_skill_points--;
+        },
+
+        function() {
+            game.player_ent.max_hp += 25
+            game.player_ent.hp += 25
+
+            game.player_ent.max_mp += 50
+            game.player_ent.mp += 50
+
+            game.player_skill_points--;
+        },
+
+        function() {
+            game.roll_for_loot(null, 0, null, null, 1, 5, 1, null, 4)
+
+            game.player_skill_points--;
+        }
+    ]
+)
+
+let lvlup_msgbox_lv10 = new MessageBoxTemplate(
+    "- - MAGICAL LIMIT SHATTERED - -",
+    "Your previous limitations have been shattered, granting you the prestige of [#afa]LEVEL ###[clear].\n\n" +
+    "Select how you will ascend further.",
+    ["Enhance all cores", "+75/200 max HP/MP", "2 random rare shards"],
+    ["#600", "#036", "#040"],
+    [
+        function() {
+            renderer.add_messagebox(messagebox_templates.lvlup_msgbox_permanent_enhance);
+
+            game.player_skill_points--;
+        },
+
+        function() {
+            game.player_ent.max_hp += 75
+            game.player_ent.hp += 75
+
+            game.player_ent.max_mp += 200
+            game.player_ent.mp += 200
+
+            game.player_skill_points--;
+        },
+
+        function() {
+            game.roll_for_loot(null, 0, null, null, 1, 8, 1, null, 6)
+            game.roll_for_loot(null, 0, null, null, 1, 8, 1, null, 6)
+
+            game.player_skill_points--;
+        }
+    ]
+)
+
+let lvlup_msgbox_permanent_enhance = new MessageBoxTemplate(
+    "- - SPELL ENHANCEMENT - -",
+    "Selecting one of these options will modify [#f00]all[clear] core fragments you use from this point forth.\n\n" +
+    "This cannot be undone. Choose wisely.",
+    ["+7 damage", "+1 radius", "+3 range"],
+    ["#600", "#036", "#040"],
+    [
+        function() {
+            // +7 dmg emblem
+        },
+
+        function() {
+            // +1 radius emblem
+        },
+
+        function() {
+            // +3 range emblem
+        }
+    ]
+)
+
 messagebox_templates = {
     debug: test_msgbox,
+
+    ln: lvlup_msgbox_normal,
+    l5: lvlup_msgbox_lv5,
+    l10: lvlup_msgbox_lv10,
+    lpe: lvlup_msgbox_permanent_enhance,
+
     lvlup_normal: lvlup_msgbox_normal,
+    lvlup_msgbox_lv5: lvlup_msgbox_lv5,
+    lvlup_msgbox_lv10: lvlup_msgbox_lv10,
+    lvlup_msgbox_permanent_enhance: lvlup_msgbox_permanent_enhance
 }
 
 /*

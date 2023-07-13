@@ -1,26 +1,53 @@
+@font-face {
+    font-family: "ibm_vga";
+    src: url("Web437_IBM_VGA_8x16.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "nec_apc";
+    src: url("Web437_NEC_APC3_8x16.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "terminus";
+    src: url("Terminus.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
 body {
 	background-color: black;
-	font-family: Courier;
+	font-family: nec_apc;
 	overflow: hidden;
 	margin-left: 0px;
 } 
+
+br {
+	font-size: 32px;
+}
 
 ::selection {
 	color: black;
 	background: white;
 }
 
-h1 {
+#banner {
+	display: inline;
 	color: white;
 	font-size: 32px;
-	margin-top: 128px;
-	margin-bottom: 0px;
-	margin-left: 160px;
 }
 
 a {
 	color: #bbb;
 	text-decoration: none;
+}
+
+a.normal-link {
+	color: #0cf;
 }
 
 a.foreboding {
@@ -60,15 +87,19 @@ p {
 	font-size: 32px;
 }
 
+span {
+	color: white;
+	font-size: 32px;
+}
+
 .margin-smaller {
-	margin-left: 160px;
 	font-size: 24px;
+	padding-left: 128px;
 }
 
 ul {
 	list-style-position: none;
 	font-size: 32px;
-	margin-left: 160px;
 	padding-left: 1em;
 }
 
@@ -80,7 +111,7 @@ ul {
 }
 
 .social-link {
-	font-size: 24px;
+	font-size: 32px;
 }
 
 .canvas {

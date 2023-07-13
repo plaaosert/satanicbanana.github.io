@@ -6,11 +6,11 @@ input {
 	color: white;
 	background-color: black;
 	font-size: 32px;
-	font-family: Courier;
+	font-family: nec_apc;
 	
 	border-style: none;
 	outline: none;
-	font-weight: bold;
+	font-weight: normal;
 	width: 70%;
 }
 
@@ -61,6 +61,7 @@ p.relic-flavour {
 
 .info {
 	color: #cf0;
+	font-size: 16px;
 }
 
 .important {
@@ -121,7 +122,7 @@ p.relic-flavour {
 	width: 70%;
 }
 
-.update-title {
+.update-title>* {
 	font-size: 32px;
 	
 	padding-top: 0px;
@@ -131,21 +132,23 @@ p.relic-flavour {
 	font-weight: bold;
 }
 
-.update-id {
+.update-id>* {
 	color: #ddd;
 	font-weight: bold;
 }
 
 .update-date {
-	font-size: 18px;
-	
 	margin-top: -28px;
 	padding-top: 0px;
-	color: #bbb;
-	font-weight: bold;
 }
 
-.update-flavour {
+.update-date>* {
+	font-size: 18px;
+	
+	color: #bbb;
+}
+
+.update-flavour>* {
 	font-size: 16px;
 	
 	margin-top: -12px;
@@ -156,10 +159,16 @@ p.relic-flavour {
 
 .update-category {
 	clear:both;
+	line-height: 0px;
 }
 
-.update-cat-name {
-	font-size: 28px;
+.update-content>p {
+	margin-block-start: 8px;
+	margin-block-end: 8px;
+}
+
+.update-cat-name>* {
+	font-size: 24px;
 	
 	color: white;
 	font-weight: bold;

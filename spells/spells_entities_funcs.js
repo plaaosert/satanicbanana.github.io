@@ -614,7 +614,7 @@ entities_spells = {
     ],
 
     "Giant Enemy Spider": [
-        // Trample; 500 physical dmg; range 1
+        enemy_melee_core("Trample", 500, DmgType.Physical)
     ],
 
     "Skeleton": [

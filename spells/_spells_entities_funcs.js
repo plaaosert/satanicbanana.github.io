@@ -158,7 +158,8 @@ entities_spells = {
     ],
 
     "Firebug Broodmother": [
-        // None
+        // Searing Mandibles; 18 fire dmg; melee
+        // Rally Firebugs; radius 4; self burst; (range 999); doubles max hp of firebugs hit in burst and fully heals them; 4 turn cd
     ],
 
     "Goblin Fire Mage": [
@@ -623,90 +624,6 @@ entities_spells = {
         // None
     ],
 
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
 
 }
 
@@ -852,7 +769,7 @@ entities_specials = {
     },
 
     "Firebug Broodmother": function(game, ent, event_type) {
-        // None
+        // Summons a Firebug on an adjacent empty tile every turn.
     },
 
     "Goblin Fire Mage": function(game, ent, event_type) {
@@ -1312,90 +1229,6 @@ entities_specials = {
     },
 
     "Master of Order": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_type) {
         // None
     },
 

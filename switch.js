@@ -18,7 +18,9 @@ function switch_to_next() {
 	
 	start_switch(prev, animations[cur_anim]);
 	
-	document.getElementById("5").className = animations[cur_anim] + "-ind";
+	document.getElementById("5").classList.remove(prev + "-ind");
+	document.getElementById("5").classList.add(animations[cur_anim] + "-ind");
+
 	origs["5"] = names[cur_anim];
 }
 
