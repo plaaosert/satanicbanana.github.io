@@ -10,11 +10,11 @@
     <meta content="#cccccc" data-react-helmet="true" name="theme-color" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 
-	<link rel="stylesheet" type="text/css" href="letters.css?v=07"/>
+	<link rel="stylesheet" type="text/css" href="letters.css?v=08"/>
 </head>
 <body>
 	<div class="overlay" id="loading-overlay">
-		<p class="dead-center" id="loading-text">my solver isn't very good so please wait while it finds a puzzle which can be solved</p>
+		<p class="dead-center" id="loading-text">my solver is okay but it still takes a moment to generate a challenge. hold on...</p>
 	</div>
 
 	<div class="topbar">
@@ -52,9 +52,9 @@
 	</div>
 
 	<div class="bottombar" id="normal-bottombar">
-		<p class="left-text" style="font-size: 3vmin; bottom: 36px">letters v1.0 | click or type letters to spell words.
+		<p class="left-text" style="font-size: 3vmin; bottom: 36px">letters v1.1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | click or type letters to spell words.
 			use all the letters at least once, <br>
-			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;but try to do it in as few words and letters as possible.
+			&nbsp;<span id="update-name" class="update-name">the "new generator" update</span><span id="update-name-hide"> | but try to do it in as few words and letters as possible.</span>
 		</p>
 		<p class="right-text" style="font-size: 2vmin; color:#ccc;">written in pure JS/HTML</p>
 		<span style="left: 256px; font-size: 2vmin"><a style="color:#f20; font-size: 2vmin" href="../index.html" > << go back >> </a>&nbsp;&nbsp;&nbsp;&nbsp;<a style="color:#f20; font-size: 2vmin; left: 10%;" href="javascript:redo_tutorial()" > << see tutorial again >> </a></span>
@@ -63,6 +63,6 @@
 	<script src="lines.js?v=00"></script>
 	<script src="freqs.js?v=00"></script>
 	<script src="words.js?v=04"></script>
-	<script src="letters.js?v=07"></script>
+	<script src="letters.js?v=08"></script>
 </body>
 </html>

@@ -276,6 +276,16 @@ h1 {
 	font-family: "MS Gothic", "Droid Sans Mono", "Courier";
 }
 
+.update-name {
+	text-decoration: underline;
+	color: #888;
+}
+
+.update-name-selected {
+	text-decoration: none;
+	color: #4c4;
+}
+
 @keyframes disappear {
   from {
     filter: saturate(100%) brightness(100%) opacity(100%);

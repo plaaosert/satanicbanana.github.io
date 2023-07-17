@@ -52,6 +52,8 @@ words_used = [];
 filtered_words = [];
 generating = false;
 
+saved_solution = [];
+
 var url_string = window.location.href; 
 var url = new URL(url_string);
 var demo_val = url.searchParams.get("demo");
@@ -419,6 +421,10 @@ function regenerate_random_puzzle(locked_letters) {
 }
 
 function solve_current_puzzle(max_depth, timeout) {
+	if (saved_solution) {
+		return saved_solution;
+	}
+
 	solve_attempt_time = Date.now();
 	return solve_current_puzzle_2(null, [], 0, max_depth, timeout);
 }
@@ -533,11 +539,11 @@ function win() {
 		})
 	}
 
-	for (var i=0; i<2000; i+=400) {
+	for (var i=0; i<10*win_speed; i+=2*win_speed) {
 		setTimeout(flash_up, i);
 	}
 
-	for (var i=200; i<2000; i+=400) {
+	for (var i=win_speed; i<10*win_speed; i+=2*win_speed) {
 		setTimeout(flash_down, i);
 	}
 
@@ -558,22 +564,217 @@ function win() {
 		}
 
 		setTimeout(function() {
-			generate_until_solvable(function() {
+			generate_puzzle(function() {
 				document.getElementById("loading-overlay").style.display = "none";
 
 				if (demo) {
 					setTimeout(function() {
 						automatically_win();
-					}, 100);
+					}, 0.5*win_speed);
 				}
-			}, 250);
-		}, 100);
-	}, 2600);
+			}, 1.25*win_speed);
+		}, 0.5*win_speed);
+	}, 13*win_speed);
+}
+
+function copy_chars_arr(chars) {
+	return chars.slice().map(arr => arr.slice());
+}
+
+function in_chars_arr(chars, c) {
+	return chars.some(arr => {
+		return arr.some(ch => ch == c);
+	})
+}
+
+function add_words_to_puzzle(cur_chars, last_char_index, last_char, depth) {
+	if (cur_chars.every(arr => {
+		return arr.every(c => c)
+	})) {
+		return cur_chars;
+	}
+
+	if (depth >= 5) {
+		return false;
+	}
+
+	let cur_char_index = last_char_index;
+	if (cur_char_index == -1) {
+		cur_char_index = Math.floor(Math.random() * 4)
+	}
+
+	let possible_words = words.filter(word => {
+		if (!freqs[word]) {
+			return false;
+		}
+
+		let sim_cur_chars = copy_chars_arr(cur_chars);
+
+		// try to place the word on the current grid. if it's possible, add it.
+		if (last_char && word[0] != last_char) {
+			return false;
+		}
+
+		let sim_char_idx = cur_char_index;
+		let sim_char = last_char ? last_char : word[0];
+
+		if (!last_char) {
+			sim_cur_chars[sim_char_idx][Math.floor(Math.random() * 3)] = sim_char;
+		}
+
+		for (let ci=1; ci<word.length; ci++) {
+			sim_char = word[ci];
+
+			// try to find a space for that char (an index that's not the current one with null or the char in it). if one exists we're golden
+			// if the char exists in any of them we need to make sure to ONLY try that one later
+			let found = false;
+			let found_index = 0;
+			for (let try_index=0; try_index<4; try_index++) {
+				if (try_index != sim_char_idx) {
+					if (sim_cur_chars[try_index].some(c => c == sim_char)) {
+						found = true;
+						found_index = try_index;
+
+						break;
+					} else if (sim_cur_chars[try_index].some(c => (!c)) && !in_chars_arr(sim_cur_chars, sim_char)) {
+						found = true;
+						found_index = try_index;
+
+						sim_cur_chars[try_index][sim_cur_chars[try_index].findIndex(c => !c)] = sim_char;
+						break;
+					} 
+				}
+			}
+
+			if (!found) {
+				return false;
+			}
+
+			sim_char_idx = found_index;
+		}
+
+		return true;
+	})
+
+	if (possible_words.length <= 0) {
+		return false;
+	}
+
+	for (let i=0; i<50; i++) {
+		// pick 3 random words with length 3+, select the most common one
+		let selected_words = new Array(50).fill(0).map(_ => {
+			return possible_words[Math.floor(Math.random() * possible_words.length)];
+		})
+
+		let word_scores = selected_words.map(w => (freqs[w] / 183212978.0) - ((Math.max(5, w.length)-5) * 0.05));
+
+		let best_word = selected_words[
+			word_scores.indexOf(Math.max(...word_scores))
+		];
+
+		let new_chars = copy_chars_arr(cur_chars);
+
+		let sim_char_idx = cur_char_index;
+		let sim_char = last_char ? last_char : best_word[0];
+		
+		if (!last_char) {
+			new_chars[sim_char_idx][Math.floor(Math.random() * 3)] = sim_char;
+		}
+
+		for (let ci=1; ci<best_word.length; ci++) {
+			sim_char = best_word[ci];
+
+			// try to find a space for that char (an index that's not the current one with null or the char in it). if one exists we're golden
+			// if the char exists in any of them we need to make sure to ONLY try that one later
+			for (let try_index=0; try_index<4; try_index++) {
+				if (try_index != sim_char_idx) {
+					if (new_chars[try_index].some(c => c == sim_char)) {
+						found = true;
+						found_index = try_index;
+
+						break;
+					} else if (new_chars[try_index].some(c => (!c)) && !in_chars_arr(new_chars, sim_char)) {
+						found = true;
+						found_index = try_index;
+
+						new_chars[try_index][new_chars[try_index].findIndex(c => !c)] = sim_char;
+						break;
+					} 
+				}
+			}
+
+			sim_char_idx = found_index;
+		}
+
+		let result = add_words_to_puzzle(new_chars, sim_char_idx, sim_char, depth+1)
+		if (result) {
+			// im so fucking smart
+			let res_arr = [best_word];
+			res_arr.push(...result);
+
+			return res_arr;
+		}
+	}
+}
+
+function generate_puzzle(callback, timeout, locked_letters) {
+	// meant to be a situational drop-in replacement for generate_until_solvable, but shouldn't take timeout or locked_letters
+	// so if it does, throw an exception
+	if (timeout || locked_letters) {
+		//console.log("timeout or locked_letters are not implemented in this function.")
+	}
+
+	// start with an empty board. generate random words. prefer more common words
+	let filled_chars = [
+		[null, null, null],
+		[null, null, null],
+		[null, null, null],
+		[null, null, null]
+	]
+
+	let result = add_words_to_puzzle(filled_chars, -1, null, 0);
+
+	// console.log("Letters");
+	// console.log(result.slice(-4));
+	// console.log("Words")
+	// console.log(result.slice(0, -4));
+
+	let result_split = [
+		result.slice(-4), result.slice(0, -4)
+	];
+
+	saved_solution = result_split[1];
+
+	current_selected_letter = null;
+	building_word = ""
+	words_used = [];
+	letters = [];
+
+	for (let r=0; r<4; r++) {
+		for (let i=0; i<3; i++) {
+			let idx = (r * 3) + i;
+
+			letters.push(result_split[0][r][i]);
+		}
+	}
+
+	if (!demo) {
+		generating = false;
+	}
+
+	setup_elements();
+	update_letter_elems();
+	update_word_history();
+
+	callback();
+	return;
 }
 
 solve_attempt_time = 0;
 gens = 0;
 function generate_until_solvable(callback, timeout, locked_letters) {
+	saved_solution = [];
+
 	generating = true;
 	gens = 0;
 	while (true) {
@@ -617,12 +818,33 @@ function redo_tutorial() {
 	location.reload();
 }
 
+original_update_name = "";
+update_desc = "Added a new challenge generator which is quicker, fairer and makes better challenges."
+
 document.addEventListener("DOMContentLoaded", function() {
 	generating = true;
 	document.getElementById("session-time").textContent = localtime.toString().toHHMMSS();
 	document.getElementById("all-time").textContent = gametime.toString().toDDHHMMSS();
 	document.getElementById("global-time").textContent = time.toString().toDDHHMMSS();
 	setInterval(update_time, 1000);
+
+	let update_name_elem = document.getElementById("update-name");
+	let update_hide_elem = document.getElementById("update-name-hide");
+
+	original_update_name = update_name_elem.textContent;
+	update_name_elem.addEventListener("mouseenter", function(evt) {
+		update_name_elem.textContent = update_desc;
+		update_name_elem.className = "update-name-selected";
+
+		update_hide_elem.style.display = "none";
+	})
+
+	update_name_elem.addEventListener("mouseleave", function(evt) {
+		update_name_elem.textContent = original_update_name;
+		update_name_elem.className = "update-name";
+
+		update_hide_elem.style.display = "unset";
+	})
 
 	setup_elements();
 
@@ -715,16 +937,16 @@ document.addEventListener("DOMContentLoaded", function() {
 		update_letter_elems();
 
 		if (demo) {
-			generate_until_solvable(function() {
+			generate_puzzle(function() {
 				document.getElementById("loading-overlay").style.display = "none";
 				console.log("here's an answer for this puzzle, you cheater...", solve_current_puzzle(5, 1000));
 				automatically_win();
-			}, 250);
+			}, 1.25*win_speed);
 		} else {
-			generate_until_solvable(function() {
+			generate_puzzle(function() {
 				document.getElementById("loading-overlay").style.display = "none";
 				console.log("here's an answer for this puzzle, you cheater...", solve_current_puzzle(5, 1000));
-			}, 250);
+			}, 1.25*win_speed);
 		}
 	
 		document.addEventListener('keydown', (event) => {
