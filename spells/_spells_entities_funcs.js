@@ -168,55 +168,63 @@ entities_spells = {
     ],
 
     "Ice Spirit": [
-        // None
+        // Ice Ball; same as normal ice ball in every way
     ],
 
     "Chilling Totem": [
-        // None
+        // Chilling Wind; summon an Ice Wall at a random adjacent position; 6 turn cooldown
     ],
 
     "Frozen Totem": [
-        // None
+        // Freezing Wind; summon 5 Ice Walls randomly in a radius of 2; 6 turn cooldown
     ],
 
     "Polar Bear": [
-        // None
+        // Bite; 16 physical dmg; melee
+        // Hibernate; apply frozen to self for 5 turns; cooldown 10 turns
     ],
 
     "Undead Viking Spearman": [
-        // None
+        // Spear Strike; 2 range; 4 physical dmg
+        // Chilling Touch; 2 range; 9 ice dmg; 25 MP
     ],
 
     "Frozen Ghost": [
-        // None
+        // Freezing Touch; melee; apply Frozen to target for 2 turns; 80 MP
     ],
 
     "Ice Demon": [
-        // None
+        // Ice Ball; same as normal ice ball in every way
+        // Frostbite; same as normal frostbite in every way
     ],
 
     "Undead Viking Bowman": [
-        // None
+        // Spear Strike; 9 range; 1 physical dmg
+        // Chilling Arrow; 9 range; 3 ice dmg; 25 MP
     ],
 
     "Lightning Spirit": [
-        // None
+        // Lightning Bolt; 3 range; 5 lightning dmg; 25 MP
     ],
 
     "Spark Wraith": [
-        // None
+        // Voltaic Discharge; 5 range; 7 lightning dmg; 75 MP
+        // Void Transmission; 2 range; 4 lightning dmg; 100% redeal dark; lightning damage causes targets to be teleported randomly within 10 tiles
     ],
 
     "Charged Golem": [
-        // None
+        // Static Crush; 10 physical dmg + 10 lightning dmg; melee
+        // Eject Rod; 6 range; 8 physical dmg + 6 lightning dmg; removes 15% hp on cast; cooldown 4
+        // Regenerate; apply Stunned to self for 3 turns and heal 30% max HP; 10 turn cooldown; only (and always) used when <30% HP
     ],
 
     "Amphibious Eel": [
-        // None
+        // Shock; 4 lightning dmg; melee
     ],
 
     "Goblin Stormcrafter": [
-        // None
+        // Lightning Bolt; as normal spell
+        // Hypercharge; as normal spell
     ],
 
     "Arcane Aberration": [
@@ -624,6 +632,90 @@ entities_spells = {
         // None
     ],
 
+    "Ice Wall": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
+    "Unnamed": [
+        // None
+    ],
+
 
 }
 
@@ -781,23 +873,23 @@ entities_specials = {
     },
 
     "Chilling Totem": function(game, ent, event_type) {
-        // None
+        // Deals 2 Ice damage per turn to all units within 2 tiles.
     },
 
     "Frozen Totem": function(game, ent, event_type) {
-        // None
+        // Deals 6 Ice damage per turn to all units within 2 tiles.
     },
 
     "Polar Bear": function(game, ent, event_type) {
-        // None
+        // Heals 25 HP per turn while Frozen.
     },
 
     "Undead Viking Spearman": function(game, ent, event_type) {
-        // None
+        // Immune to Frozen.
     },
 
     "Frozen Ghost": function(game, ent, event_type) {
-        // None
+        // Immune to Frozen.
     },
 
     "Ice Demon": function(game, ent, event_type) {
@@ -805,7 +897,7 @@ entities_specials = {
     },
 
     "Undead Viking Bowman": function(game, ent, event_type) {
-        // None
+        // Immune to Frozen.
     },
 
     "Lightning Spirit": function(game, ent, event_type) {
@@ -1229,6 +1321,90 @@ entities_specials = {
     },
 
     "Master of Order": function(game, ent, event_type) {
+        // None
+    },
+
+    "Ice Wall": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
+        // None
+    },
+
+    "Unnamed": function(game, ent, event_type) {
         // None
     },
 

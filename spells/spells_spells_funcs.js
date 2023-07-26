@@ -934,7 +934,7 @@ spells_funcs = {
             let hp_pct = user.hp / user.max_hp
             let factor = 10;
 
-            let final_amt = (1-hp_pct) * factor;
+            let final_amt = Math.floor((1-hp_pct) * factor);
 
             stats.damage += Math.round(final_amt * 5);
         },
@@ -948,7 +948,7 @@ spells_funcs = {
             let hp_pct = user.hp / user.max_hp
             let factor = 10;
 
-            let final_amt = (1-hp_pct) * factor;
+            let final_amt = Math.floor((1-hp_pct) * factor);
 
             stats.damage += Math.round(final_amt * 15);
             stats.radius += Math.round(final_amt * 1);
@@ -1899,7 +1899,7 @@ spells_funcs = {
             stats.multicasts["normal"] += amt
         },
         function(caster, spell, stats, position) {
-            let amt_lose = Math.floor(caster.hp * 0.005);
+            let amt_lose = Math.ceil(caster.hp * 0.005);
 
             caster.lose_hp(amt_lose);
         },

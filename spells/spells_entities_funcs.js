@@ -114,41 +114,82 @@ entities_spells = {
         // Metal Bash; 10 physical dmg; range 1
         // Shrapnel Salvo; unc.multicast x4 => 6 phys line; range 6; 15 MP
         // Makeshift Gun; 14 physical dmg; line; range 10; 6 turn cooldown
+        enemy_melee_core("Metal Bash", 10, DmgType.Physical),
+
+        simple_enemy_core(
+            0, "Shrapnel Salvo", "[]", damage_type_cols[DmgType.Physical],
+            "#000", "Fires five times with random spread.", 6, DmgType.Physical,
+            6, 1, Shape.Line, 15, SpellTargeting.Positional, null, function(user, spell, stats) {
+                stats.multicasts["unpredictable"] += 4
+            }
+        ),
+
+        simple_enemy_line_core(
+            6, "Makeshift Gun", "[]", damage_type_cols[DmgType.Physical],
+            14, DmgType.Physical, 10, 0
+        )
     ],
 
     "Goblin Gear": [
         // Steel Strike; 18 physical dmg; range 1
         // Missile Salvo; unc.multicast x4 => 12 fire dmg radius 3 burst; range 6; 25 MP
         // Railcannon; 22 physical dmg; range 10; 50 MP; 3 turn cooldown
+        enemy_melee_core("Steel Strike", 18, DmgType.Physical),
+
+        simple_enemy_core(
+            0, "Missile Salvo", "[]", damage_type_cols[DmgType.Fire],
+            "#000", "Fires five times with random spread.", 12, DmgType.Fire,
+            6, 3, Shape.Diamond, 25, SpellTargeting.Positional, null, function(user, spell, stats) {
+                stats.multicasts["unpredictable"] += 4
+            }
+        ),
+
+        simple_enemy_line_core(
+            3, "Railcannon", "[]", damage_type_cols[DmgType.Physical],
+            22, DmgType.Physical, 10, 0
+        )
     ],
 
     "Giant Goblin": [
         // Crush; 14 physical dmg; range 1
+        enemy_melee_core("Crush", 14, DmgType.Physical)
     ],
 
     "Titanic Goblin": [
         // Crush; 30 physical dmg; range 1
+        enemy_melee_core("Crush", 30, DmgType.Physical)
     ],
 
     "Bat": [
         // Bite; 6 physical dmg; range 1
+        enemy_melee_core("Bite", 6, DmgType.Physical)
     ],
 
     "Giant Bat": [
         // Bite; 18 physical dmg; range 1
+        enemy_melee_core("Bite", 18, DmgType.Physical)
     ],
 
     "Ghost": [
         // Dark Touch; 3 dark dmg; range 1
+        enemy_melee_core("Dark Touch", 3, DmgType.Dark)
     ],
 
     "Vengeful Ghost": [
         // Fire Bolt; 5 fire dmg; range 3; 10 MP
         // Soul Sucker; 12 dark dmg; range 1; -5 MP
+        simple_enemy_burst_core(0, "Fire Bolt", "[]", damage_type_cols[DmgType.Fire], 5, DmgType.Fire, 3, 1, 10),
+
+        enemy_melee_core("Soul Sucker", 12, DmgType.Dark, 0, -5)
     ],
 
     "Wraith": [
         // Terror; 8 dark dmg; radius 2 burst; selftarget; 15 MP
+        simple_enemy_core(
+            0, "Terror", "[]", damage_type_cols[DmgType.Dark],
+            "#000", "", 8, DmgType.Dark,
+            2, 2, Shape.Diamond, 15, SpellTargeting.SelfTarget
+        )
     ],
 
     "Spirit Amalgam": [
@@ -217,55 +258,63 @@ entities_spells = {
     ],
 
     "Ice Spirit": [
-        // None
+        // Ice Ball; same as normal ice ball in every way
     ],
 
     "Chilling Totem": [
-        // None
+        // Chilling Wind; summon an Ice Wall at a random adjacent position; 6 turn cooldown
     ],
 
     "Frozen Totem": [
-        // None
+        // Freezing Wind; summon 5 Ice Walls randomly in a radius of 2; 6 turn cooldown
     ],
 
     "Polar Bear": [
-        // None
+        // Bite; 16 physical dmg; melee
+        // Hibernate; apply frozen to self for 5 turns; cooldown 10 turns
     ],
 
     "Undead Viking Spearman": [
-        // None
+        // Spear Strike; 2 range; 4 physical dmg
+        // Chilling Touch; 2 range; 9 ice dmg; 25 MP
     ],
 
     "Frozen Ghost": [
-        // None
+        // Freezing Touch; melee; apply Frozen to target for 2 turns; 80 MP
     ],
 
     "Ice Demon": [
-        // None
+        // Ice Ball; same as normal ice ball in every way
+        // Frostbite; same as normal frostbite in every way
     ],
 
     "Undead Viking Bowman": [
-        // None
+        // Spear Strike; 9 range; 1 physical dmg
+        // Chilling Arrow; 9 range; 3 ice dmg; 25 MP
     ],
 
     "Lightning Spirit": [
-        // None
+        // Lightning Bolt; 3 range; 5 lightning dmg; 25 MP
     ],
 
     "Spark Wraith": [
-        // None
+        // Voltaic Discharge; 5 range; 7 lightning dmg; 75 MP
+        // Void Transmission; 2 range; 4 lightning dmg; 100% redeal dark; lightning damage causes targets to be teleported randomly within 10 tiles
     ],
 
     "Charged Golem": [
-        // None
+        // Static Crush; 10 physical dmg + 10 lightning dmg; melee
+        // Eject Rod; 6 range; 8 physical dmg + 6 lightning dmg; removes 15% hp on cast; cooldown 4
+        // Regenerate; apply Stunned to self for 3 turns and heal 30% max HP; 10 turn cooldown; only (and always) used when <30% HP
     ],
 
     "Amphibious Eel": [
-        // None
+        // Shock; 4 lightning dmg; melee
     ],
 
     "Goblin Stormcrafter": [
-        // None
+        // Lightning Bolt; as normal spell
+        // Hypercharge; as normal spell
     ],
 
     "Arcane Aberration": [
@@ -673,11 +722,11 @@ entities_spells = {
         // None
     ],
 
-    "Unnamed": [
+    "Ice Wall": [
         // None
     ],
 
-    "Unnamed": [
+    "Target Dummy": [
         // None
     ],
 
@@ -900,7 +949,7 @@ entities_specials = {
     },
 
     "Firebug Broodmother": function(game, ent, event_type) {
-        // None
+        // Summons a Firebug on an adjacent empty tile every turn.
     },
 
     "Goblin Fire Mage": function(game, ent, event_type) {
@@ -912,23 +961,23 @@ entities_specials = {
     },
 
     "Chilling Totem": function(game, ent, event_type) {
-        // None
+        // Deals 2 Ice damage per turn to all units within 2 tiles.
     },
 
     "Frozen Totem": function(game, ent, event_type) {
-        // None
+        // Deals 6 Ice damage per turn to all units within 2 tiles.
     },
 
     "Polar Bear": function(game, ent, event_type) {
-        // None
+        // Heals 25 HP per turn while Frozen.
     },
 
     "Undead Viking Spearman": function(game, ent, event_type) {
-        // None
+        // Immune to Frozen.
     },
 
     "Frozen Ghost": function(game, ent, event_type) {
-        // None
+        // Immune to Frozen.
     },
 
     "Ice Demon": function(game, ent, event_type) {
@@ -936,7 +985,7 @@ entities_specials = {
     },
 
     "Undead Viking Bowman": function(game, ent, event_type) {
-        // None
+        // Immune to Frozen.
     },
 
     "Lightning Spirit": function(game, ent, event_type) {
@@ -1363,12 +1412,12 @@ entities_specials = {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Ice Wall": function(game, ent, event_type) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
-        // None
+    "Target Dummy": function(game, ent, event_type) {
+        // Heals to max HP every turn.
     },
 
     "Unnamed": function(game, ent, event_type) {

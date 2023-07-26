@@ -56,19 +56,27 @@ Firebug Broodmother	B,	#c00	The breeding cycle of firebugs is not well-studied, 
 Rally Firebugs; radius 4; self burst; (range 999); doubles max hp of firebugs hit in burst and fully heals them; 4 turn cd"	2	None
 Goblin Fire Mage	G~	#f60	You thought only humans could use magic?	120	100	Living			80	140	None	"Fireball; 7 fire dmg; range 7; 3 radius burst; 25 MP
 Searing Touch; 24 fire dmg; melee; 40 MP"	2	None
-Ice Spirit	>S	#aff	Amalgamations of frigid energy, willing and eager to turn you into an icicle.			Ice								
-Chilling Totem	n|	#8bb	Totems seem to appear in response to conflict. You appear to be evidence of this.			Ice	Construct							
-Frozen Totem	N|	#8dd	Frozen totems are more powerful than their chilling variants, being able to freeze any would-be assailants solid.			Ice	Construct							
-Polar Bear	B*	#aff	Every bit as powerful and hungry as its reputation.			Living	Ice							
-Undead Viking Spearman	V-	#dff	Many a ship has sunk in these waters. Well-preserved in ice, they have waited for your arrival.			Undead	Ice							
-Frozen Ghost	o>	#bdd	Ghosts are especially malleable when it comes to magical energy, moulded into specific elements by their surroundings.			Ghost	Ice							
-Ice Demon	$i	#fdf	Demons with an affinity to Ice can learn its magic just as well as any other.			Demon	Ice							
-Undead Viking Bowman	V}	#dff	Somehow, even after centuries entombed in frost, their bowstrings work just as well.			Undead	Ice							
-Lightning Spirit	&S	#ff3	Crackling with power, just waiting for a victim to draw near.			Lightning								
-Spark Wraith	W&	#cc2	Absorbing enough dark and lightning energy can empower a ghost into a creature of legend.			Lightning	Undead	Dark						
-Charged Golem	&]	#cc7	Metal plates and rods embedded into solid stone, held together by crackling arcs of electricity.			Lightning	Construct							
-Amphibious Eel	~&	#ce2	It's "a slight annoyance" until it delivers a deadly shock straight into your chest.			Living	Lightning							
-Goblin Stormcrafter	G&	#cd5	Don't be fooled by the ritual garb and mysticism. This is very real magic.			Living								
+Ice Spirit	>S	#aff	Amalgamations of frigid energy, willing and eager to turn you into an icicle.	75	70	Ice			30	60	None	Ice Ball; same as normal ice ball in every way		
+Chilling Totem	n|	#8bb	Totems seem to appear in response to conflict. You seem to be evidence of this.	80	0	Ice	Construct		25	75	Deals 2 Ice damage per turn to all units within 2 tiles.	Chilling Wind; summon an Ice Wall at a random adjacent position; 6 turn cooldown		
+Frozen Totem	N|	#8dd	Frozen totems are more powerful than their chilling variants, being able to freeze any would-be assailants solid.	240	0	Ice	Construct		120	300	Deals 6 Ice damage per turn to all units within 2 tiles.	Freezing Wind; summon 5 Ice Walls randomly in a radius of 2; 6 turn cooldown		
+Polar Bear	B*	#aff	Every bit as powerful and hungry as its reputation.	300	0	Living	Ice		80	200	Heals 25 HP per turn while Frozen.	"Bite; 16 physical dmg; melee
+Hibernate; apply frozen to self for 5 turns; cooldown 10 turns"		
+Undead Viking Spearman	V-	#dff	Many a ship has sunk in these waters. Well-preserved in ice, they have waited for your arrival.	80	25	Undead	Ice		30	60	Immune to Frozen.	"Spear Strike; 2 range; 4 physical dmg
+Chilling Touch; 2 range; 9 ice dmg; 25 MP"		
+Frozen Ghost	o>	#bdd	Ghosts are especially malleable when it comes to magical energy, moulded into specific elements by their surroundings.	25	80	Ghost	Ice		16	40	Immune to Frozen.	Freezing Touch; melee; apply Frozen to target for 2 turns; 80 MP		
+Ice Demon	$i	#fdf	Demons with an affinity to Ice can learn its magic just as well as any other.	200	100	Demon	Ice		120	260	None	"Ice Ball; same as normal ice ball in every way
+Frostbite; same as normal frostbite in every way"		
+Undead Viking Bowman	V}	#dff	Somehow, even after centuries entombed in frost, their bowstrings work just as well.	60	25	Undead	Ice		30	60	Immune to Frozen.	"Spear Strike; 9 range; 1 physical dmg
+Chilling Arrow; 9 range; 3 ice dmg; 25 MP"		
+Lightning Spirit	&S	#ff3	Crackling with power, just waiting for a victim to draw near.	50	100	Lightning			30	60	None	Lightning Bolt; 3 range; 5 lightning dmg; 25 MP		
+Spark Wraith	W&	#cc2	Absorbing enough dark and lightning energy can empower a ghost into a creature of legend.	180	200	Lightning	Undead	Dark	160	400	None	"Voltaic Discharge; 5 range; 7 lightning dmg; 75 MP
+Void Transmission; 2 range; 4 lightning dmg; 100% redeal dark; lightning damage causes targets to be teleported randomly within 10 tiles"		
+Charged Golem	&]	#cc7	Metal plates and rods embedded into solid stone, held together by crackling arcs of electricity.	220	140	Lightning	Construct		80	240	None	"Static Crush; 10 physical dmg + 10 lightning dmg; melee
+Eject Rod; 6 range; 8 physical dmg + 6 lightning dmg; removes 15% hp on cast; cooldown 4
+Regenerate; apply Stunned to self for 3 turns and heal 30% max HP; 10 turn cooldown; only (and always) used when <30% HP"		
+Amphibious Eel	~&	#ce2	It's "a slight annoyance" until it delivers a deadly shock straight into your chest.	40	40	Living	Lightning		12	40	None	Shock; 4 lightning dmg; melee		
+Goblin Stormcrafter	G&	#cd5	Don't be fooled by the ritual garb and mysticism. This is very real magic.	120	160	Living			80	140	None	"Lightning Bolt; as normal spell
+Hypercharge; as normal spell"		
 Arcane Aberration	$%	#f49	A twisting, formless blob of arcane power, given a strange kind of intelligence through its immense complexity.			Arcane	Chaos							
 Living Wand	=@	#fac	Wands may, over time, become saturated with magic and gain a form of intelligence. They generally do not appreciate their prior treatment.			Arcane								
 Magishroom	|>	#8f9	A walking mushroom, having absorbed enough magical energy to cast its own spells.			Natural	Arcane							
@@ -77,7 +85,7 @@ Demonic Arcanist	D=	#f26	Demons able to resist their primal urges long enough ca
 Possessed Wand	=$	#f8c	Like all things, wands may be chosen as vessels for ghostly presences.			Arcane	Undead							
 Arcane Spirit	]S	#f49	Magic is just as much a force of nature as fire or lightning - its manifestations also just as potent.			Arcane								
 Posessed Armour	U;	#aaa	For reasons unknown, ghosts are drawn to unworn sets of armour. Some suggest it may be because of their similarity to human forms.			Undead	Construct							
-Ghost Ghost Ghost	00	#ddd	The ghost of a ghost can still die, after all!			Ghost	Ghost	Ghost						
+Ghost Ghost Ghost	00	#ddd	Ghosts of ghosts can still die, after all!			Ghost	Ghost	Ghost						
 Revenant	0!	#888	Often the byproducts of dark rituals, revenants form when latent echoes of dark magic meld with the vengeful death throes of human sacrifices.			Dark	Ghost							
 Restless Spirit	!o	#a8a	Some spirits are more driven than most, not content to simply drift with the tides of undeath.			Ghost								
 Ghastly Horseman	Ho	#fbb	It is said that when the time comes again for one who has cheated death, the horsemen ensure they do not escape a second time.			Dark	Undead							
@@ -95,79 +103,100 @@ Doomsayer	v!	#f70	Sometimes, a priest can become so enamoured with their sermons
 High Priest	P!	#ffa	Trusted agents of the faith. Probably on first-name terms with at least one angel.			Living	Holy							
 Necromancer	N,	#92c	Mastery over life and death isn't so difficult, really. The hard part is staying on the right side of that line afterwards.			Living	Dark							
 Thrall	v>	#44c	Typical footsoldier of a necromancer. Usually just as fragile as their masters.			Dark	Undead							
-Tormentor	@(													
-Dark Spirit	@S													
-Malicious Force	#>													
-Crow	c~													
-Corvid Abomination	C~													
-Flesh Golem	F]													
-Experiment	&]													
-Grand Experiment	$}													
-Imp	i-													
-Fire Imp	i"													
-Frost Imp	i>													
-Chaotic Imp	i%													
-Primal Demon	%D													
-Demon Mage	%-													
-Demon Wizard	%=													
-Brimstone Elemental	R!													
-Brimstone Demon	R$													
-Bone Shambler	b,													
-Bone Construct	b;													
-Bone Hulk	B,													
-Giant Bone Construct	B;													
-Mistake	$!	#93a	A terrifying amalgam of flesh, bone and magical energy. Clearly a failed experiment of a dark wizard, but the magic coursing through it still grants it immense strength.	400	0	Construct	Dark	Undead	800	20000	None	"Sweep; 40 physical dmg; range 1
+Tormentor	@(	#62a	Weak and unremarkable manifestations of dark energy. Most commonly found knocking things off tables or making hinges squeak.			Dark								
+Dark Spirit	@S	#62a	Dark energy has no true opposite, unlike the elemental forces. Spirits of darkness are led mostly by a compulsion to engulf and destroy everything around them.			Dark								
+Malicious Force	#>	#93b	Whether from a vengeful wizard, a spiteful dying wish or a hateful curse, malicious forces are the result of negative emotions given power.			Dark								
+Crow	c~	#84f	Crows are agile and very intelligent. They and the forces of darkness have a truce of sorts.			Living	Dark							
+Corvid Abomination	C~	#84f	The forces of darkness never promised they would leave the crows untouched, just unharmed.			Living	Dark							
+Flesh Golem	F]	#c4f	Necromancers soon tire of playing with single corpses. It's much more fun to graft two or three together.			Construct	Undead							
+Experiment	&]	#c4f	A bear rib here, a lion skull there... and why not include some eagle wings too?			Construct	Undead							
+Grand Experiment	$}	#c4f	The longer a necromancer lives, the more lives must be defiled to entertain them. These grotesque constructions can be made of over a hundred separate corpses.			Construct	Undead							
+Imp	i-	#e33	I'll be honest, I hate these things. Nothing more to say on the matter.			Demon								
+Fire Imp	i"	#f64	Small. Loud. Annoying. Knows Fireball.			Demon	Fire							
+Frost Imp	i>	#8bb	Small. Loud. Annoying. Knows Ice Ball.			Demon	Ice							
+Chaotic Imp	i%	#f30	They're everywhere.			Demon	Chaos							
+Primal Demon	%D	#e33	A small subset of demons spend their entire lives sequestered away in the underworld, such that they never develop an affinity to any element. Such demons end up roughly like humans, barring the overwhelming strength advantage.			Demon								
+Demon Mage	%-	#f33	Of the demons who refuse to align to a specific element are those who use the added freedom to learn magic, just like a human.			Demon								
+Demon Wizard	%=	#f33	Surprisingly enough, demons with no affinity are just about on a level playing field with any other magic user. So this demon has been training for decades.			Demon								
+Brimstone Elemental	R!	#c00				Fire								
+Brimstone Demon	R$	#c00				Demon								
+Bone Shambler	b,	#bbb				Construct	Undead							
+Bone Construct	b;	#bbb				Construct	Undead							
+Bone Hulk	B,	#bbb				Construct	Undead							
+Giant Bone Construct	B;	#bbb				Construct	Undead							
+Mistake	$!	#93a	A terrifying amalgam of flesh, bone and magical energy. Though clearly a failed experiment of a dark wizard, the magic coursing through it still grants it immense strength.	1000	0	Construct	Dark	Undead	800	20000	None	"Sweep; 40 physical dmg; range 1
 Life Drain; 32 dark dmg; range 1; heals user by damage dealt"	1	None
-Locust Swarm	:;													
-Giant Beetle	O\													
-Lamia	/O													
-Frost Tiger	Op													
-Voidtouched Lion	Op													
-Treant	/D													
-Stumpy Walker	F\													
-Giant Flytrap	FX													
-Vine Lasher	v/													
-Fire Flower	@"													
-Posessed Sunflower	@$													
-Chimera	H#													
-Minotaur	#R													
-Werewolf	W}													
-Basilisk	Ib													
-Kraken	K~													
-Ogre	o/													
-Giant Ogre	O/													
-Tiny Ogre	./													
-Gnome	:.													
-Hypergnome	|.													
-Centaur Courser	H=													
-Centaur Bowman	H}													
-Centaur Spearman	H-													
-Phoenix	\P													
-Ice Phoenix	\P													
-Hydra	!/													
-Scorpion	S_													
-Lightning Scorpion	&_													
-Acidic Scorpion	$_													
-Towering Isopod	#+													
-Giant Mantis	M}													
-Chaotic Construct	%]													
-Dark Idol	v]													
-Flesh Totem	K]													
-Bugbeast	B|		A towering entity comprised of many smaller swarm insects, all moving as one.											
-Spider	m^					Insect								
-Giant Spider	M^					Insect								
+Locust Swarm	:;	#3c3				Living	Insect							
+Giant Beetle	O\	#3c3				Living	Insect							
+Lamia	/O	#6d3				Living								
+Frost Tiger	Op	#3dd				Living	Ice							
+Voidtouched Lion	Oq	#d8f				Living	Arcane							
+Treant	/D	#a60				Natural								
+Stumpy Walker	F\	#a60				Natural								
+Giant Flytrap	FX	#1a0				Living								
+Vine Lasher	v/	#1a0				Living								
+Fire Flower	@"	#ca0				Living								
+Posessed Sunflower	@$	#94f				Living	Dark							
+Chimera	H#	#fa0				Living								
+Minotaur	#R	#950				Living								
+Werewolf	W}	#aaa				Living								
+Basilisk	Ib	#3b3				Living								
+Kraken	K~	#99c				Living								
+Ogre	o/	#3c3				Living								
+Giant Ogre	O/	#3c3				Living								
+Tiny Ogre	./	#3c3				Living								
+Gnome	:.	#2d2				Natural								
+Hypergnome	|.	#0f0				Natural								
+Centaur Courser	H=	#a60				Living								
+Centaur Bowman	H}	#a60				Living								
+Centaur Spearman	H-	#a60				Living								
+Phoenix	\P	#f63				Fire								
+Ice Phoenix	\P	#aff				Ice								
+Hydra	!/	#6d6				Living								
+Scorpion	S_	#d80				Living	Insect							
+Lightning Scorpion	&_	#fc0				Living	Insect							
+Acidic Scorpion	$_	#ac0				Living	Insect							
+Towering Isopod	#+	#b90				Living	Insect							
+Giant Mantis	M}	#3c3				Living	Insect							
+Chaotic Construct	%]	#e90				Construct	Chaos							
+Dark Idol	v]	#93a				Construct	Dark							
+Flesh Totem	K]	#d6f				Construct	Dark	Undead						
+Bugbeast	B|	#1b1	A towering entity comprised of many smaller swarm insects, all moving as one.			Construct	Insect							
+Spider	m^	#84c				Insect								
+Giant Spider	M^	#84c				Insect								
 Giant Enemy Spider	M%	#F04031	The giant enemy spider...	5000	0	Construct	Insect		2500	10000	None	Trample; 500 physical dmg; range 1	1	None
-Skeleton	s#													
-Giant Skeleton	S#													
-Seraphim														
-Rock Golem	|.		Perfectly formed golems raised in service of the Order of Order.			Construct	Order							
-Acolyte of Order	c|		As lowly as they are, these acolytes are just as capable of performing the Incantations of Order.			Living	Order							
-Rock Titan	|]		Titanic constructions of magically hewn stone, raised in service of the Order of Order.			Construct	Order							
-Granite Titan	|&		Only to be fabricated by the most orderly of the Order of Order, their construction of pure granite grants them even greater strength.			Construct	Order							
-Mud Titan	|~		Created specifically to oppose demons of fire and chaos, the mud titan is a necessary evil for the Order of Order to employ.			Construct	Order							
-Bronze Colossus	|>		With enough devotion, a Wizard of the Order of Order can perform the same golemcraft rituals as lesser adherents using solid metal.			Construct	Order							
-Steel Colossus	|#		The apex of order. Only a Master of Order could hope to bend steel into such a form.			Construct	Order							
-Faithful of Order	f|		The last rank in the Order of Order one can achieve by study alone. Well-trained in sorceries and rituals alike.			Living	Order							
-Wizard of Order	w|		Wizards of Order are allowed access to the Order of Order's secret texts as thanks for their contributions. With them, they can become even more useful to the Order.			Living	Order							
-High Wizard of Order	W|		Only a few High Wizards of Order are selected out of the Order of Order every year. They form the Council of Order.			Living	Order							
-Master of Order	M|		Masters of Order are those in the Order of Order who have achieved the feat of creating a perfect Steel Colossus. The Order of Order bows to their wisdom.			Living	Order							
+Skeleton	s#	#ccc				Undead								
+Giant Skeleton	S#	#ccc				Undead								
+Seraphim	A^	#ffa				Holy								
+Rock Golem	|.	#dca	Perfectly formed golems raised in service of the Order of Order.			Construct	Order							
+Acolyte of Order	c|	#fda	As lowly as they are, these acolytes are just as capable of performing the Incantations of Order.			Living	Order							
+Rock Titan	|]	#dcd	Titanic constructions of magically hewn stone, raised in service of the Order of Order.			Construct	Order							
+Granite Titan	|&	#dcd	Only to be fabricated by the most orderly of the Order of Order, their construction of pure granite grants them even greater strength.			Construct	Order							
+Mud Titan	|~	#a66	Created specifically to oppose demons of fire and chaos, the mud titan is a necessary evil for the Order of Order to employ.			Construct	Order							
+Bronze Colossus	|>	#c73	With enough devotion, a Wizard of the Order of Order can perform the same golemcraft rituals as lesser adherents using solid metal.			Construct	Order							
+Steel Colossus	|#	#ccd	The apex of order. Only a Master of Order could hope to bend steel into such a form.			Construct	Order							
+Faithful of Order	f|	#fda	The last rank in the Order of Order one can achieve by study alone. Well-trained in sorceries and rituals alike.			Living	Order							
+Wizard of Order	w|	#fda	Wizards of Order are allowed access to the Order of Order's secret texts as thanks for their contributions. With them, they can become even more useful to the Order.			Living	Order							
+High Wizard of Order	W|	#fda	Only a few High Wizards of Order are selected out of the Order of Order every year. They form the Council of Order.			Living	Order							
+Master of Order	M|	#fda	Masters of Order are those in the Order of Order who have achieved the feat of creating a perfect Steel Colossus. The Order of Order bows to their wisdom.			Living	Order							
+Ice Wall	[]	#aff	A wall made out of pure ice.	50	0	Ice	Construct		0	-1	None	None	4	None
+														
+														
+														
+														
+														
+														
+														
+														
+														
+														
+														
+														
+														
+														
+														
+														
+														
+														
+														
+														

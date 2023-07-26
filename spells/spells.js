@@ -61,7 +61,30 @@ TODO:
 - spells should be clickable to select them, or bound to numbers 1-5
 */
 
+pretty_print_trigger = {
+    "at_target": "At target position",
+    "on_hit": "At any damage instance",
+    "on_affected_tiles": "At every affected tile"
+}
+
 switch_checkerboard = 0;
+
+function lerp_arr(from, to, amt, round) {
+    return from.map((t, i) => {
+        let diff = to[i] - from[i];
+
+        if (round) {
+            return Math.round(t + (diff * amt));
+        } else {
+            return t + (diff * amt);
+        }
+        
+    })
+}
+
+function lerp_colour(from, to, amt) {
+    return lerp_arr(from, to, amt, true);
+}
 
 function in_bounds(val, lo, hi) {
     return val >= lo && val < hi;
@@ -207,17 +230,28 @@ class Particle {
 }
 
 class MessageBoxTemplate {
-    constructor(title, text, options, option_background_cols, option_actions) {
+    constructor(title, text, options, option_background_cols, option_actions, on_open) {
         this.title = title;
         this.text = text;
         this.options = options;
         this.option_background_cols = option_background_cols;
         this.option_actions = option_actions;
+        this.on_open = on_open
+    }
+
+    static basic_infobox(title, text, confirm_opt_text, confirm_opt_col, on_open) {
+        return new MessageBoxTemplate(
+            title, text,
+            [confirm_opt_text ? confirm_opt_text : "OK"],
+            [confirm_opt_col ? confirm_opt_col : "#060"],
+            [function() {}],
+            on_open
+        )
     }
 
     copy() {
         return new MessageBoxTemplate(
-            this.title, this.text, [...this.options], [...this.option_background_cols], [...this.option_actions]
+            this.title, this.text, [...this.options], [...this.option_background_cols], [...this.option_actions], this.on_open
         );
     }
 
@@ -238,11 +272,14 @@ class MessageBoxTemplate {
 
 class MessageBox {
     constructor(template) {
+        this.template = template
+
         this.title = template.title;
         this.text = template.text;
         this.options = template.options;
         this.option_background_cols = template.option_background_cols;
         this.option_actions = template.option_actions;
+        this.on_open = template.on_open;
 
         this.need_to_calculate = true;
         this.registered_option_positions = {}
@@ -316,6 +353,12 @@ class Renderer {
 
         this.selected_messagebox_option_nr = null;
         this.selected_messagebox_option_fn = null;
+
+        this.default_msgbox_pad_x = 62;
+        this.default_msgbox_pad_y = 12;
+        
+        this.msgbox_pad_x = this.default_msgbox_pad_x;
+        this.msgbox_pad_y = this.default_msgbox_pad_y;
     }
 
     reset_selections() {
@@ -982,9 +1025,9 @@ class Renderer {
                                     //this.move_particles(path[1].sub(game.player_ent.position).neg());
                                 }
             
-                                game.end_turn();
+                                game.end_turn(game.player_ent);
                             } else if (game_pos.equals(game.player_ent.position)) {
-                                game.end_turn();
+                                game.end_turn(game.player_ent);
                             }
                         }
                     }
@@ -997,12 +1040,30 @@ class Renderer {
 
             case 3:  // messagebox
                 if (this.selected_messagebox_option_fn) {
-                    this.selected_messagebox_option_fn();
+                    let fn_to_run = this.selected_messagebox_option_fn;
+                    let old_msgbox = this.messagebox_open;
+
+                    this.cleanup_messageboxes();
 
                     this.selected_messagebox_option_nr = null;
                     this.selected_messagebox_option_fn = null;
 
-                    this.cleanup_messageboxes();
+                    let response = fn_to_run();
+
+                    if (response) {
+                        this.add_messagebox(
+                            MessageBoxTemplate.basic_infobox(
+                                response.title ? response.title : old_msgbox.title,
+                                response.text ? response.text : old_msgbox.text,
+                                response.confirm_opt_text ? response.confirm_opt_text : null,
+                                response.confirm_opt_col ? response.confirm_opt_col : null,
+                                response.on_open ? response.on_open : null
+                            ),
+                            true
+                        )
+                    }
+
+                    this.check_messagebox_queue();
                 }
                 break;
         }
@@ -1300,12 +1361,12 @@ class Renderer {
 
         this.set_pixel_text(
             left_mount_pos.add(new Vector2(0, 1)),
-            this.pad_str(`[red]${p.hp}/${p.max_hp}[clear] HP`, 4+1+4+3)
+            this.pad_str(`[red]${p.hp}/${p.max_hp}[clear] HP`, 5+1+5+3)
         )
 
         this.set_pixel_text(
             left_mount_pos.add(new Vector2(0, 2)),
-            this.pad_str(`[cyan]${p.mp}/${p.max_mp}[clear] MP`, 4+1+4+3)
+            this.pad_str(`[cyan]${p.mp}/${p.max_mp}[clear] MP`, 5+1+5+3)
         )
 
         // affinities
@@ -1805,7 +1866,7 @@ class Renderer {
                     if (spell.trigger && spell.trigger[0] != "none") {
                         this.set_pixel_text(
                             current_spell_point,
-                            this.pad_str(`${"\u00A0".repeat(margin)}[#4df]${spell.trigger[0]}`, clearance_x)
+                            this.pad_str(`${"\u00A0".repeat(margin)}[#4df]${pretty_print_trigger[spell.trigger[0]]}`, clearance_x)
                         )
 
                         this.set_pixel_text(
@@ -2189,7 +2250,7 @@ class Renderer {
 
         //console.log(tl, br);
 
-        let radius_vecs = [];
+        let radius_vec_set = [];
         if (game.selected_player_primed_spell) {
             // selected tile needs to be scaled back by size of left,
             // then halved,
@@ -2214,8 +2275,8 @@ class Renderer {
                 );
                 */
 
-                radius_vecs = game.selected_player_primed_spell.root_spell.get_affected_tiles(
-                    game.board, game.player_ent, s_game_pos
+                radius_vec_set = game.player_get_spell_affected_tiles(
+                    s_game_pos
                 )
             }
         }
@@ -2226,6 +2287,8 @@ class Renderer {
         }
 
         this.last_selected_tiles = [];
+
+        let col_lerp_triggers_to = [[12, 12, 16], [6, 6, 16]];
 
         for (let x=0; x<x_delta; x++) {
             for (let y=0; y<y_delta; y++) {
@@ -2269,20 +2332,35 @@ class Renderer {
                         back_rgb = [0, 0, 0];
                     } else {
                         if (game.selected_player_primed_spell) {
-                            if (radius_vecs.some((v) => v.equals(game_pos))) {
-                                let effect_indicator_col = (Math.floor(game_pos.x) + game_pos.y) % 2 != switch_checkerboard ? [32, 32, 64] : [24, 24, 64];
+                            let in_radius = false;
+                            for (let rvi=0; rvi<radius_vec_set.length; rvi++) {
+                                let radius_vecs = radius_vec_set[rvi];
+                                let cf = (1 / radius_vec_set.length) * rvi;
 
-                                back_rgb = effect_indicator_col;
+                                if (radius_vecs.some((v) => v.equals(game_pos))) {
+                                    let effect_indicator_col = (Math.floor(game_pos.x) + game_pos.y) % 2 != switch_checkerboard ? [32, 32, 64] : [24, 24, 64];
+                                    let lerp_to = (Math.floor(game_pos.x) + game_pos.y) % 2 != switch_checkerboard ? col_lerp_triggers_to[0] : col_lerp_triggers_to[1];
 
-                                if (this.selected_tile && new Vector2(Math.floor(this.selected_tile.x / 2) * 2, this.selected_tile.y).equals(screen_pos)) {
-                                    //console.log("changed");
-                                    if (game.selected_player_primed_spell.root_spell.stats.target_type == SpellTargeting.UnitTarget) {
-                                        selected_col = "#66f";
-                                    } else {
-                                        selected_col = "#66f";
+                                    effect_indicator_col = lerp_colour(effect_indicator_col, lerp_to, cf);
+
+                                    back_rgb = effect_indicator_col;
+    
+                                    if (this.selected_tile && new Vector2(Math.floor(this.selected_tile.x / 2) * 2, this.selected_tile.y).equals(screen_pos)) {
+                                        //console.log("changed");
+                                        if (game.selected_player_primed_spell.root_spell.stats.target_type == SpellTargeting.UnitTarget) {
+                                            selected_col = "#66f";
+                                        } else {
+                                            selected_col = "#66f";
+                                        }
+                                        //console.log(selected_col);
                                     }
-                                    //console.log(selected_col);
+
+                                    in_radius = true;
                                 }
+                            }
+
+                            if (in_radius) {
+                                // already handled above
                             } else if (game.selected_player_primed_spell.root_spell.in_range(game.player_ent, game_pos, true)) {
                                 // using "hypothetical" range to show the range of unit target spells too
                                 let really_in_range = game.selected_player_primed_spell.root_spell.in_range(game.player_ent, game_pos);
@@ -2440,13 +2518,13 @@ class Renderer {
     }
 
     cleanup_messageboxes() {
-        let padx = 72;
-        let pady = 14;
+        let padx = this.msgbox_pad_x;
+        let pady = this.msgbox_pad_y;
 
         let messagebox_size = this.total_size.sub(new Vector2(padx, pady))
 
-        let messagebox_tl = new Vector2(Math.floor(padx / 2), Math.ceil(pady / 2))
-        let messagebox_br = this.total_size.sub(messagebox_tl);
+        let messagebox_tl = new Vector2(Math.floor(padx / 2), Math.floor(pady / 2))
+        let messagebox_br = messagebox_tl.add(messagebox_size);
 
         for (let x=messagebox_tl.x; x<=messagebox_br.x; x++) {
             for (let y=messagebox_tl.y; y<=messagebox_br.y; y++) {
@@ -2460,30 +2538,35 @@ class Renderer {
         this.messagebox_open = null;
         this.selected_messagebox_option_nr = null;
         this.selected_messagebox_option_fn = null;
-
-        this.check_messagebox_queue();
     }
 
     check_messagebox_queue() {
         if (!this.messagebox_open && this.messagebox_queue.length > 0) {
+            console.log("messagebox not open, checking queue", this.messagebox_queue);
             this.messagebox_open = new MessageBox(this.messagebox_queue[0]);
             this.messagebox_queue = this.messagebox_queue.slice(1);
+
+            if (this.messagebox_open.on_open) {
+                this.messagebox_open.on_open(this.messagebox_open);
+            }
 
             this.render_messageboxes();
 
             this.mouseover(null, this.cur_mouse_flatid);
+        } else {
+            console.log("tried to check queue but messagebox open, or queue empty")
         }
     }
 
     render_messageboxes() {
         if (this.messagebox_open) {
-            let padx = 72;
-            let pady = 14;
+            let padx = this.msgbox_pad_x;
+            let pady = this.msgbox_pad_y;
 
             let messagebox_size = this.total_size.sub(new Vector2(padx, pady))
 
-            let messagebox_tl = new Vector2(Math.floor(padx / 2), Math.ceil(pady / 2))
-            let messagebox_br = this.total_size.sub(messagebox_tl);
+            let messagebox_tl = new Vector2(Math.floor(padx / 2), Math.floor(pady / 2))
+            let messagebox_br = messagebox_tl.add(messagebox_size);
 
             if (this.messagebox_open.need_to_calculate) {
                 this.messagebox_open.tl = messagebox_tl;
@@ -2552,8 +2635,22 @@ class Renderer {
         }
     }
 
-    add_messagebox(template) {
-        this.messagebox_queue.push(template);
+    add_messagebox(template, immediately) {
+        if (immediately && this.messagebox_open) {
+            this.selected_messagebox_option_nr = null;
+            this.selected_messagebox_option_fn = null;
+
+            this.messagebox_queue.splice(0, 0, this.messagebox_open.template);
+            this.messagebox_queue.splice(0, 0, template);
+
+            this.cleanup_messageboxes();
+        } else if (immediately) {
+            // splice but don't cleanup
+            this.messagebox_queue.splice(0, 0, template);
+        } else {
+            this.messagebox_queue.push(template);
+        }
+        
         this.check_messagebox_queue();
     }
 
@@ -2767,13 +2864,15 @@ class Entity {
                 break;
             
             case 1:
+            case 2: // TODO ai level 2 (smart), 3 (vsmart), 4 (motionless)
+            case 4:
                 let target_ent = game.find_closest_enemy(this);
 
                 if (target_ent) {
                     // check if we can cast a spell
                     let cast_spell = false;
                     let spell_to_cast = [];
-                    let best_mp_cd = [0, 0];
+                    let best_mp_cd = [Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY];
 
                     // prioritise castable spell with the highest max cooldown and manacost
                     for (let i=0; i<this.innate_primed_spells.length; i++) {
@@ -2781,7 +2880,7 @@ class Entity {
                         let cooldown = this.innate_primed_spells[i][1];
 
                         if (cooldown <= 0) {
-                            if (primed_spell.manacost <= this.mp && primed_spell.root_spell.in_range(this, target_ent.position)) {
+                            if (primed_spell.manacost <= this.mp && primed_spell.root_spell.spell_would_affect(this, target_ent)) {
                                 //console.log("executing spell", primed_spell);
                                 if (this.innate_spells[i][1] == best_mp_cd[1] && primed_spell.manacost == best_mp_cd[0]) {
                                     spell_to_cast.push([primed_spell, i])
@@ -2813,24 +2912,28 @@ class Entity {
                     // they should only move towards the player if they are out of range
                     // and move away otherwise
                     if (!cast_spell) {
-                        let path = pathfind(this.position, target_ent.position);
+                        if (this.ai_level == 4) {
+                            game.end_turn(this);
+                        } else {
+                            let path = pathfind(this.position, target_ent.position);
 
-                        //console.log(path, this.position, target_ent.position);
-                        if (path && path.length > 1) {
-                            let result = game.move_entity(this, path[1], false);
+                            //console.log(path, this.position, target_ent.position);
+                            if (path && path.length > 1) {
+                                let result = game.move_entity(this, path[1], false);
+                            }
+                                
+                            game.end_turn(this);
                         }
-                            
-                        game.end_turn();
                     }
                 } else {
                     // experimental "do not wait" if we don't do anything
-                    game.end_turn(true);
+                    game.end_turn(this, true);
                 }
                 
                 break;
 
             default:
-                game.end_turn(true);
+                game.end_turn(this, true);
                 break;
         }
     }
@@ -2993,12 +3096,20 @@ class Entity {
     }
 
     change_hp(amount) {
+        let old_hp = this.hp;
+
         this.hp += amount;
         this.hp = Math.max(0, Math.min(this.max_hp, this.hp));
+
+        return this.hp - old_hp;
     }
 
     restore_hp(amount) {
-        this.change_hp(amount);
+        if (this.change_hp(amount)) {
+            renderer.put_particle_from_game_loc(this.position, new Particle(
+                heal_flash_particle
+            ));
+        };
     }
 
     lose_hp(amount) {
@@ -3012,8 +3123,12 @@ class Entity {
     }
 
     change_mp(amount) {
+        let old_mp = this.mp;
+
         this.mp += amount;
         this.mp = Math.max(0, Math.min(this.max_mp, this.mp));
+
+        return this.mp - old_mp;
     }
 
     lose_mp(amount) {
@@ -3021,7 +3136,13 @@ class Entity {
     }
 
     restore_mp(amount) {
-        this.change_mp(amount);
+        if (this.change_mp(amount)) {
+            /* a bit too noisy, ignore for now
+            renderer.put_particle_from_game_loc(this.position, new Particle(
+                mp_flash_particle
+            ));
+            */
+        };
     }
 
     get_damage_mults() {
@@ -4069,6 +4190,18 @@ class PrimedSpell {
         this.stats.range = Math.max(0, this.stats.range);
     }
 
+    spell_would_affect(caster, ent, ignore_unit_target) {
+        // check if it's in range. for a selftarget, it will instead check the shape and see if the
+        // target is inside it. 
+        if ([SpellTargeting.SelfTarget, SpellTargeting.SelfTargetPlusCaster].includes(this.stats.target_type)) {
+            return this.get_affected_tiles(game.board, caster, caster.position).some(vec => {
+                return vec.equals(ent.position)
+            });
+        } else {
+            return this.in_range(caster, ent.position, ignore_unit_target);
+        }
+    }
+
     in_range(caster, position, ignore_unit_target) {
         if ([SpellTargeting.SelfTarget, SpellTargeting.SelfTargetPlusCaster].includes(this.stats.target_type)) {
             return caster.position.equals(position);
@@ -4108,7 +4241,9 @@ class PrimedSpell {
     }
 
     get_affected_tiles(board, caster, position) {
-        let origin = this.origin ? this.origin : caster.position;
+        let origin = this.origin ? this.origin : (
+            caster.position ? caster.position : caster
+        );
 
         let cast_locations = this.stats.shape(origin, position, this.stats.radius, this.stats.los);
         if (this.stats.specials.includes(SpellSpecials.NEGATIVESPACE)) {
@@ -4123,14 +4258,22 @@ class PrimedSpell {
         return cast_locations;
     }
 
-    cast(board, caster, position) {
+    cast(board, caster, target_position) {
         //console.log(this.origin);
+        let position = target_position;
+        if ([SpellTargeting.SelfTarget, SpellTargeting.SelfTargetPlusCaster].includes(this.stats.target_type)) {
+            console.log("forced position back to ent position")
+            position = caster.position;
+        }
+
+        if (this.stats.target_type == SpellTargeting.UnitTarget && !board.get_pos(position)) {
+            throw ReferenceError("Tried to cast a unit target spell with no unit at target position!")
+        }
 
         // before we start, drop spawn protection on enemies.
         // TODO probably make this suck a lil less since it wastes a bunch of time rn
         game.drop_spawn_protection();
 
-        // untested; added recently
         this.caster = caster;
 
         let self_target_safe = this.stats.target_type == SpellTargeting.SelfTarget;
@@ -4164,9 +4307,11 @@ class PrimedSpell {
         // drop some particles indicating where the spell came from
         let line_points = Shape.Line[1](origin, position, 1, false);
         line_points.forEach(p => {
-            renderer.put_particle_from_game_loc(p, new Particle(
-                spell_projection_particle
-            ));
+            if (!p.equals(origin)) {
+                renderer.put_particle_from_game_loc(p, new Particle(
+                    spell_projection_particle
+                ));
+            }
         })
 
         // we really want to sell the chaos effect so do chaos stuff here if needed
@@ -4452,8 +4597,8 @@ class Game {
 
         this.wavecount = 0;
         this.spawn_credits_base = 30;
-        this.spawn_credits_gain = 20;
-        this.spawn_credits_mult = 1.001;
+        this.spawn_credits_gain = 30;
+        this.spawn_credits_mult = 1.0015;
         
         this.wave_entities = {};
 
@@ -4501,6 +4646,8 @@ class Game {
 
         this.enabled = true;
         this.turn_processing = true;
+
+        this.needs_main_view_update = true;
     }
 
     spawn(ent_name, at, team) {
@@ -4607,6 +4754,85 @@ class Game {
         }
 
         return false;
+    }
+
+    player_get_spell_affected_tiles(target_pos) {
+        let vecs_added = new Set();
+
+        let vec_set = [];
+        // spell, target, origin
+        let dive_spells = [[this.selected_player_primed_spell.root_spell, target_pos, this.player_ent.position]];
+        while (dive_spells.length > 0) {
+            let new_dive_spells = [];
+
+            dive_spells.forEach(dive_spell => {
+                let full_new_vecs = dive_spell[0].get_affected_tiles(
+                    this.board, dive_spell[2], dive_spell[1]
+                )
+
+                let new_vecs = full_new_vecs.filter(vec => !vecs_added.has(vec.hash_code()))
+
+                if (new_vecs.length > 0) {
+                    vec_set.push(new_vecs)
+                }
+
+                new_vecs.forEach(vec => vecs_added.add(vec.hash_code()));
+
+                if (dive_spell[0].trigger) {
+                    let trigger_typ = dive_spell[0].trigger[0];
+                    let trigger_spell = dive_spell[0].trigger[1];
+
+                    switch (trigger_typ) {
+                        case "at_target":
+                            new_dive_spells.push([trigger_spell, dive_spell[1], dive_spell[1]]);
+                            break;
+
+                        case "on_hit":
+                            full_new_vecs.forEach(vec => {
+                                let ent = board.get_pos(vec);
+
+                                if (ent && ent.get_damage_mult(dive_spell[0].stats.damage_type) != 0) {
+                                    // TODO may fall down on damage manipulation stuff or more complex spell interactions
+                                    // will probably need to mark them somehow or something if i really want this to work
+                                    new_dive_spells.push([trigger_spell, vec, dive_spell[1]]);
+                                }
+                            })
+                            break;
+
+                        case "on_affected_tiles":
+                            full_new_vecs.forEach(vec => {
+                                new_dive_spells.push([trigger_spell, vec, dive_spell[1]]);
+                            })
+                            break;
+                    }
+                }
+            })
+
+            dive_spells = new_dive_spells;
+        }
+
+        return vec_set;
+    }
+
+    trigger_event(tags, search_string) {
+        let possible_events = [];
+        if (tags) {
+            possible_events = events_list_unsorted.filter(evt => {
+                return tags.every(tag => evt.tags.includes(tag))
+            })
+        } else {
+            possible_events = events_list_unsorted.slice()
+        }
+
+        possible_events = possible_events.filter(evt => {
+            return (!search_string) || evt.name.toLowerCase().includes(search_string.toLowerCase());
+        });
+
+        let chosen_event_index = Math.floor(Math.random() * possible_events.length);
+        
+        let msgbox = possible_events[chosen_event_index].msgbox;
+
+        renderer.add_messagebox(msgbox);
     }
 
     drop_spawn_protection() {
@@ -4876,6 +5102,10 @@ class Game {
     }
 
     check_spell_stack() {
+        if (!this.turn_processing) {
+            return;
+        }
+
         // primed spells go on the spell stack so they can be cast instantly
         // they are given as a collection of {spell, target}
         //console.log("checking spell stack");
@@ -4915,7 +5145,7 @@ class Game {
                 let sthis = this;
                 let interval = this.entities[this.turn_index].id == this.player_ent.id ? this.spell_speed * 5 : this.spell_speed;
                 setTimeout(function() {
-                    sthis.end_turn()
+                    sthis.end_turn(sthis.entities[sthis.turn_index])
                 }, interval);
             } else {
                 let me = this;
@@ -4926,10 +5156,16 @@ class Game {
         }
     }
 
-    end_turn(do_not_wait) {
+    end_turn(ent_ending_turn, do_not_wait) {
         // if (!this.enabled) {
         //     return;
         // }
+
+        this.needs_main_view_update = true;
+
+        if (ent_ending_turn.id != this.entities[this.turn_index].id) {
+            return;
+        }
 
         this.waiting_for_spell = false;
         this.spell_speed = this.max_spell_speed;
@@ -4990,10 +5226,10 @@ class Game {
 
     get_xp_for_levelup(level) {
         if (level == 1) {
-            return 25;
+            return 50;
         }
 
-        return Math.round((89 + (10 * level) + Math.pow(level, 1.5)) * ((level+1) % 5 == 0 ? ((level+1) % 10 == 0 ? 1.5 : 0.75) : 0.25));
+        return Math.round((89 + (10 * level) + Math.pow(level, 1.5)) * ((level+1) % 5 == 0 ? ((level+1) % 10 == 0 ? 2 : 1) : 0.5));
     }
 
     player_gain_xp(amount) {
@@ -5059,18 +5295,136 @@ class Game {
         }
     }
 
-    roll_for_loot(entity_killed, xp_value, restrict_type, custom_pool, max_number, max_rarity, start_number, custom_pool_name, start_rarity) {
+    test_xpvalue_effects(xpvalue_from, xpvalue_to, xpvalue_step, restrict_type, custom_pool, max_number, max_rarity, start_number, custom_pool_name, start_rarity) {
+        let outputs = [];
+        for (let xp_value=xpvalue_from; xp_value<xpvalue_to; xp_value+=(xpvalue_step ? xpvalue_step : 1)) {
+            let res = this.test_item_drop_chances(
+                xp_value, restrict_type, custom_pool, max_number, max_rarity, start_number, custom_pool_name, start_rarity
+            )
+
+            outputs.push(res)
+        }
+
+        // not sure how best to visualise this tbh
+    }
+
+    test_item_drop_chances_print(xp_value, restrict_type, custom_pool, max_number, max_rarity, start_number, custom_pool_name, start_rarity) {
+        let res = this.test_item_drop_chances(
+            xp_value, restrict_type, custom_pool, max_number, max_rarity, start_number, custom_pool_name, start_rarity
+        )
+        
+        console.log(res.all_drops)
+
+        console.log(
+            res.output
+        )
+    }
+
+    test_item_drop_chances(xp_value, restrict_type, custom_pool, max_number, max_rarity, start_number, custom_pool_name, start_rarity) {
+        let num_tries = itemtest_config.rounds;
+        
+        let all_drops = [];
+        for (let i=0; i<num_tries; i++) {
+            all_drops.push(this.generate_item_drops(
+                xp_value, restrict_type, custom_pool, max_number, max_rarity, start_number, custom_pool_name, start_rarity
+            ));
+        }
+
+        let pool_counts = {};
+        let drop_counts = {};
+        let frag_counts = {};
+        let num_fragments = 0;
+        all_drops.forEach(drop_set => {
+            drop_set.forEach(drop => {
+                pool_counts[drop.pool_name] = (pool_counts[drop.pool_name] ?? 0) + 1;
+                frag_counts[drop.item.name] = (frag_counts[drop.item.name] ?? 0) + 1;
+            });
+            
+            drop_counts[drop_set.length] = (drop_counts[drop_set.length] ?? 0) + 1;
+            num_fragments += drop_set.length;
+        })
+
+        let make_bar = function(v, t) {
+            let bar_len = 16;
+            let pct = v / t;
+            let pips = Math.max(0, Math.floor(bar_len * pct));
+
+            return `${"#".repeat(pips)}${" ".repeat(bar_len - pips)}`;
+        }
+
+        let to_pct = function(v, t) {
+            return `${((Math.round((v * 10000) / t) / 100).toString() + "%").padEnd(8)} | ${
+                make_bar(v, t)
+            }`;
+        }
+
+        let output = "";
+        let log = function(s) {
+            output += s + "\n"
+        }
+
+        log(`${itemtest_config.rounds} drops tested\n`);
+        //log(all_drops);
+
+        log("Pools:");
+        log(Object.keys(pool_counts).sort((a,b) => {
+            if (a.match(/Tier\d+/) && b.match(/Tier\d+/)) {
+                return Number.parseInt(a.replace("Tier", "")) - Number.parseInt(b.replace("Tier", ""))
+            } else {
+                return a.localeCompare(b);
+            }
+        }).map(t => {
+            return `${t.toString().padEnd(10)} | ${pool_counts[t].toString().padEnd(8)} | ${to_pct(pool_counts[t], num_fragments)}`
+        }).join("\n"))
+        
+        log("\nNumber of drops:")
+        log(Object.keys(drop_counts).sort((a,b) => {
+            return Number.parseInt(a) - Number.parseInt(b)
+        }).map(t => {
+            return `${t.toString().padEnd(4)} | ${drop_counts[t].toString().padEnd(8)} | ${to_pct(drop_counts[t], num_tries)}`
+        }).join("\n"))
+
+        log(`\n${num_fragments} fragments total, average ${Math.round((num_fragments * 100) / num_tries) / 100} per drop`)
+
+        log(`\n${itemtest_config.frag_num_show} most common fragments:`)
+        log(Object.keys(frag_counts).sort((a,b) => {
+            return frag_counts[b] - frag_counts[a]
+        }).slice(
+            0, itemtest_config.frag_num_show
+        ).map(t => {
+            return `${t.toString().padEnd(32)} | ${frag_counts[t].toString().padEnd(8)} | ${to_pct(frag_counts[t], num_fragments)}`
+        }).join("\n"))
+
+        return {
+            pool_counts: pool_counts,
+            drop_counts: drop_counts,
+            frag_counts: frag_counts,
+            num_fragments: num_fragments,
+            output: output,
+            all_drops: all_drops
+        }
+    }
+
+    generate_item_drops(xp_value, restrict_type, custom_pool, max_number, max_rarity, start_number, custom_pool_name, start_rarity) {
+        // Notes about this function:
+        // 1) start_rarity will factor in xp_value increases as if the rarity started at 1 normally,
+        //    so a drop with start_rarity 1 will have the same chance of dropping 2 as start_rarity 4 has for 5.
+        //
+        // 2) start_number works the same way as start_rarity.
+        // 3) custom_pool overrides all rarity increase code, but still allows for multiple drops.
+        // 4) custom_pool_name is used to define how the particle effect will look, defaulting to "default".
+        
         let drops = [];
         let drop_count = start_number ? start_number : 0;
 
         let max_tier = max_rarity ? max_rarity : 10;
 
-        // pick number of drops. xp_value / 250, max chance 75%, min 15%
+        // pick number of drops. (xp_value * 2) / 5, max chance 100%, min 20%
         // divide xp_value by 1.5 per additional drop
         let drop_increase_chance = xp_value * 2;
         while (!max_number || drop_count < max_number) {
             let roll = Math.floor(Math.random() * 500);
-            if (roll < (Math.max(500*0.15, Math.min(500*0.75, drop_increase_chance)))) {
+            if (roll < (Math.max(500*0.20, Math.min(500*1, drop_increase_chance)))) {
                 drop_increase_chance /= 1.5;
                 drop_count++;
             } else {
@@ -5080,23 +5434,48 @@ class Game {
 
         for (let i=0; i<drop_count; i++) {
             let pool = [];
-            let pool_name = "";
+            let pool_name = "default";
+
+            if (custom_pool_name) {
+                pool_name = custom_pool_name
+            }
+
             if (custom_pool) {
                 pool = custom_pool;
-                pool_name = custom_pool_name
             } else {
                 // Start at tier 1
                 let tier = start_rarity ? start_rarity : 1;
 
+                if (Math.random() < 0.25) {
+                    tier = Math.min(max_tier, tier+1)
+                }
+
+                else if (Math.random() < 0.125) {
+                    tier = Math.min(max_tier, tier+2)
+                }
+
                 // Chance to increase in tier starts at (xp_value / 100),
-                // with a max of 80%.
-                // If chance is 300% or greater, this max is instead 100%
+                // linear up to 0.8 then softcapping up to 0.95.
                 // If increase was successful, divide chance by 1.4
-                let chance = xp_value;
+                let chance = 100 + (xp_value * 5);
+
+                let chance_linear_cap = 0.9;
+                let chance_softcap_max = 0.07;
+
                 while (tier < max_tier) {
-                    let roll = Math.floor(Math.random() * 100);
-                    if (chance >= 300 || roll < Math.min(500*0.8, chance)) {
-                        chance /= 1.4;
+                    let roll = Math.floor(Math.random() * 1000);
+
+                    let capped_chance = Math.min(1000*chance_linear_cap, chance);
+                    let remaining_chance = chance - capped_chance;
+
+                    let softcapped_chance = (chance_softcap_max + (-chance_softcap_max * Math.pow(
+                        (remaining_chance / 1000) + 1, -1
+                    ))) * 1000
+
+                    let final_chance = capped_chance + softcapped_chance
+
+                    if (roll < final_chance) {
+                        chance /= 1.2;
                         tier++;
                     } else {
                         break;
@@ -5107,22 +5486,60 @@ class Game {
                 pool_name = "Tier" + tier;
             }
 
-            console.log(pool_name);
-
             if (pool.length > 0) {
                 let item = pool[Math.floor(Math.random() * pool.length)];
 
-                if (entity_killed) {
-                    setTimeout(function() {
-                        item_sparkle(item, entity_killed.position, pool_name)
-                    }, 100 + 50 * i)
-                } else {
-                    setTimeout(function() {
-                        item_sparkle(item, game.player_ent.position, pool_name)
-                    }, 100 + 50 * i)
-                }
+                drops.push({item: item, pool_name: pool_name});
             }
         }
+
+        return drops;
+    }
+
+    make_item_sparkles(entity_killed, drops) {
+        drops.forEach((item, i) => {
+            if (entity_killed) {
+                setTimeout(function() {
+                    item_sparkle(item.item, entity_killed.position, item.pool_name)
+                }, 100 + 50 * i)
+            } else {
+                setTimeout(function() {
+                    item_sparkle(item.item, game.player_ent.position, item.pool_name)
+                }, 100 + 50 * i)
+            }
+        })
+    }
+
+    roll_for_loot(entity_killed, xp_value, restrict_type, custom_pool, max_number, max_rarity, start_number, custom_pool_name, start_rarity) {
+        let drops = this.generate_item_drops(xp_value, restrict_type, custom_pool, max_number, max_rarity, start_number, custom_pool_name, start_rarity);
+
+        this.make_item_sparkles(entity_killed, drops);
+
+        return drops;
+    }
+
+    drop_items_of_rarity_name(rarity, n_min, n_max) {
+        let rarity_spread = {
+            "common": [1,3],
+            "uncommon": [4,5],
+            "rare": [6,8],
+            "legendary": [9,10],
+
+            "c": [1,3],
+            "u": [4,5],
+            "r": [6,8],
+            "l": [9,10]
+        }[rarity.toString().toLowerCase()]
+
+        return this.drop_items_of_rarity_spread(
+            n_min ? n_min : 1, n_max ? n_max : 1,
+            rarity_spread[0], rarity_spread[1]
+        )
+    }
+
+    drop_items_of_rarity_spread(n_min, n_max, r_min, r_max) {
+        // All inclusive
+        return this.roll_for_loot(null, 0, null, null, n_max, r_max, n_min, null, r_min)
     }
 
     select_player_spell(id) {
@@ -5614,13 +6031,17 @@ function enemy_spell_group(cooldown, name, col, spells) {
     ];
 }
 
-function simple_enemy_core(cooldown, name, icon, col, back_col, desc, damage, damage_type, range, radius, shape, manacost, target_type=SpellTargeting.Positional, teams=null) {
+function simple_enemy_core(cooldown, name, icon, col, back_col, desc, damage, damage_type, range, radius, shape, manacost, target_type=SpellTargeting.Positional, teams=null, to_stats=null) {
     let sp = core_spell(
         name, icon ? icon : "[]", SpellSubtype.Core,
         col ? col : damage_type_cols[damage_type], back_col,
         desc, damage, damage_type, range, radius, shape,
         manacost, target_type, teams
     );
+
+    if (to_stats) {
+        sp.augment("to_stats", to_stats);
+    }
 
     return [
         [sp], cooldown, name, col ? col : damage_type_cols[damage_type]
@@ -5977,6 +6398,14 @@ let spell_projection_particle = new ParticleTemplate(
     ["**", "++", ".."], "#bbb", 1
 );
 
+let heal_flash_particle = new ParticleTemplate(
+    ["++", "\"\"", "''"], "#4f4", 1
+)
+
+let mp_flash_particle = new ParticleTemplate(
+    ["**", ".."], "cyan", 1
+)
+
 function get_spell_by_name(name) {
     let matches = spells_list.filter(spell => {
         return spell.name.toLowerCase().includes(name.toLowerCase());
@@ -6117,3 +6546,8 @@ function handle_resize(event) {
 
     game.style.setProperty("--fontsiz", `${fontsize_round}px`);
 }
+
+// TODO:
+// ai level 2
+// selftarget/unit target not working on ai
+// event chains, e.g. order of order 

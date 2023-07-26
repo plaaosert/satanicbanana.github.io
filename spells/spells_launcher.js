@@ -111,8 +111,8 @@ for (let xt=0; xt<game.board.dimensions.x; xt++) {
 game.player_spells = [
     {spells: [get_spell_by_name("fireball")], name: "Fireball"},
     {spells: [get_spell_by_name("lightning bolt")], name: "Lightning Bolt"},
-    {spells: [], name: "Spell 3"},
-    {spells: [], name: "Spell 4"},
+    {spells: gen_spells("target trigger", "magic missile", "tile trigger", "ice ball", "tile trigger", "ice ball", "ice ball"), name: "Spell 3"},
+    {spells: gen_spells("target trigger", "magic missile", "fireball"), name: "Spell 4"},
     {spells: [], name: "Spell 5"},
     /*
     {spells: [...spells_list.filter(s => !s.is_corrupt()).slice(0, 20)], name: "0-20"},
@@ -121,6 +121,10 @@ game.player_spells = [
     {spells: [...spells_list.filter(s => !s.is_corrupt()).slice(60, 80)], name: "60-80"}
     */
 ]
+
+game.player_ent.max_mp = 10000;
+game.player_ent.mp = 10000;
+
 
 game.player_add_spells_to_inv([
     get_spell_by_name("magic missile"),
@@ -246,6 +250,11 @@ let frame_times = [];
 let show_fps = false;
 let show_ops = false;
 
+let itemtest_config = {
+    rounds: 100000,
+    frag_num_show: 10
+}
+
 renderer.render_game_checkerboard("black");
 renderer.request_new_frame();
 
@@ -259,56 +268,51 @@ function handle_debug_command() {
     try {
         switch (directive) {
             case "h":
-                debug_response = "#0f0check the js console";
-                console.log(`
-
-e               <name> - spawn an entity using generic spawn (\"e bat\")
-  <posx> <posy>        - with a specific position            (\"e 4 32 bat\")
-                           ! [to spawn on player team, add "#" to start of name]
-
-s <name>               - get a spell with name               (\"s fireball\")
-
-m <msgbox_name>        - spawn a messagebox with name (\"m debug\")
-
-sxp <xp value>         - run the spell drop function with given xp value
-
-stp <pool>             - drop a spell from a specific pool (e.g. "Tier1", "Tier2", ...)
-
-pm(M) <value>          - set player current(max) MP to value
-
-ph(H) <value>          - set player current(max) HP to value
-
-xp <value>             - gain value XP
-
-d <fps|operations>     - toggle a debug view
-
-gp                     - get player position
-
-tp <posx> <posy>       - teleport player to position
-
-k                      - kill target underneath the mouse cursor
-
-big                    - gain 1000 HP, 5000 MP, LV 50 and 4 of each main trigger type 
-
-god                    - gain 999999 HP, 999999 MP, LV 999 and 4 of each main trigger type 
-
-p                      - pong! echo command+args back to you
-
-                `)
+                debug_response = "#0f0";
+                renderer.add_messagebox(messagebox_templates["debug_help_msgbox"], true)
                 break;
             
             case "p":
                 debug_response = "#0f0[" + directive + "] [" + data + "]"
                 break;
 
+            case "w":
+                if (data.toLowerCase() == "start") {
+                    delete game.wave_entities["WAVESTOP_OBJ"]
+                    debug_response = "#0f0wave progression restarted"
+                } else if (data.toLowerCase() == "stop") {
+                    game.wave_entities["WAVESTOP_OBJ"] = 1;
+                    debug_response = "#0f0wave progression stopped"
+                }
+                break;
+
             case "m":
                 if (data) {
                     let msgbox = messagebox_templates[data]
+                    let opened = false;
+
+                    if (!msgbox) {
+                        if (event_messageboxes[data]) {
+                            opened = true;
+                            game.trigger_event([data])
+                            debug_response = `#0f0opened msgbox from the \"${data}\" pool`;
+                        } else {
+                            let chosen_msgbox_length = Number.POSITIVE_INFINITY;
+                            events_list_unsorted.forEach(evt => {
+                                if (evt.name.toLowerCase().includes(data.toLowerCase()) || evt.name.toLowerCase().replace("_", "").includes(data.toLowerCase())) {
+                                    if (evt.name.length < chosen_msgbox_length) {
+                                        msgbox = evt.msgbox
+                                        chosen_msgbox_length = evt.name.length
+                                    }
+                                }
+                            })
+                        }
+                    }
 
                     if (msgbox) {
                         renderer.add_messagebox(msgbox);
                         debug_response = `#0f0opened msgbox \"${data}\"`
-                    } else {
+                    } else if (!opened) {
                         debug_response = `#f00couldn't find a msgbox called \"${data}\"`
                     }
                 }
@@ -330,7 +334,7 @@ p                      - pong! echo command+args back to you
                     let team = name.charAt(0) == "#" ? Teams.PLAYER : Teams.ENEMY;
 
                     let search_name = name.charAt(0) == "#" ? name.slice(1) : name
-                    let ent = get_entity_by_name(search_name);
+                    let ent = get_entity_by_name(search_name.replace("-", " "));
                     if (!pos) {
                         pos = game.select_far_position(game.player_ent.position, 32, 2, 8);
                     }
@@ -390,6 +394,13 @@ p                      - pong! echo command+args back to you
                 game.player_ent.hp = 999999;
 
                 game.player_level = 999;
+
+                game.player_spells[0] = {
+                    spells: gen_spells("gun"),
+                    name: "gun"
+                }
+
+                game.player_spells_edit[0][0] = get_spell_by_name("gun")
 
                 game.player_add_spell_to_inv(get_spell_by_name("add target trigger"))
                 game.player_add_spell_to_inv(get_spell_by_name("add target trigger"))
@@ -546,6 +557,18 @@ p                      - pong! echo command+args back to you
                     debug_response = "#f00no entity under cursor"
                 }
                 break;
+            
+            case "ka":
+                let num_killed = 0;
+                game.entities.forEach(ent => {
+                    if (!ent.untargetable && ent.id != game.player_ent.id) {
+                        game.kill(ent)
+                        num_killed++;
+                    }
+                })
+
+                debug_response = `#0f0killed a bunch of guys (${num_killed})`
+                break;
 
             case "scrimblo":
             case "gobbo":
@@ -591,10 +614,12 @@ function game_loop() {
 
     renderer.render_left_panel();
 
-    if (game.inventory_open) {
-        renderer.render_inventory_menu();
-    } else {
-        renderer.render_game_view();
+    if (game.needs_main_view_update) {
+        if (game.inventory_open) {
+            renderer.render_inventory_menu();
+        } else {
+            renderer.render_game_view();
+        }
     }
 
     renderer.render_right_panel();
@@ -710,7 +735,7 @@ let lvlup_msgbox_normal = new MessageBoxTemplate(
 
 let lvlup_msgbox_lv5 = new MessageBoxTemplate(
     "- - MAGICAL POWER SURGED - -",
-    "Your magical power has surged into new heights from your many experiences, granting you [#afa]LEVEL ###[clear].\n\n" +
+    "Your magical power has surged into new heights from your many experiences, granting you the status of [#afa]LEVEL ###[clear].\n\n" +
     "Select a boon to choose where this rush of power will be directed.",
     ["Restore all HP/MP", "+25/50 max HP/MP", "Random uncommon shard"],
     ["#600", "#036", "#040"],
@@ -793,6 +818,98 @@ let lvlup_msgbox_permanent_enhance = new MessageBoxTemplate(
     ]
 )
 
+let debug_help_msgbox = new MessageBoxTemplate(
+    "DEBUG HELP",
+`[#4f4]e               <name> [#ddd]| spawn an entity using generic spawn (for spaces, use \"-\")                | [#0cf]e bat
+[#4f4]  <posx> <posy>        [#ddd]| with a specific position                                                 | [#0cf]e 4 32 bat
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]s <name>               [#ddd]| get a spell with name                                                    | [#0cf]s fireball
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]m <msgbox_name>        [#ddd]| spawn a messagebox with name                                             | [#0cf]m debug
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]sxp <xp value>         [#ddd]| run the spell drop function with given xp value                          | [#0cf]sxp 250
+[#4f4]stp <pool>             [#ddd]| drop a spell from a specific pool                                        | [#0cf]stp Tier4
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]pm(M) <value>          [#ddd]| set player current(max) MP to value                                      | [#0cf]pm 74  [#ddd]|[#0cf] pM 200
+[#4f4]ph(H) <value>          [#ddd]| set player current(max) HP to value                                      | [#0cf]ph 102 [#ddd]|[#0cf] pH 200
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]xp <value>             [#ddd]| gain value XP                                                            | [#0cf]xp 500
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]d <fps|operations>     [#ddd]| toggle a debug view                                                      | [#0cf]d operations
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]gp                     [#ddd]| get player position                                                      | [#0cf]gp
+[#4f4]tp <posx> <posy>       [#ddd]| teleport player to position                                              | [#0cf]tp 3 21
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]k(a)                   [#ddd]| kill target underneath the mouse cursor (or all entities if \"a\" given)   | [#0cf]k [#ddd]|[#0cf] ka
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]big                    [#ddd]| gain 1000 HP, 5000 MP, LV 50 and 4 of each main trigger type             | [#0cf]big
+[#4f4]god                    [#ddd]| gain 999999 HP, 999999 MP, LV 999 and 4 of each main trigger type        | [#0cf]god
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]w <stop|start>         [#ddd]| enables/disables wave progression (waves will not finish if this is off) | [#0cf]w stop
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]p                      [#ddd]| pong! echo command+args back to you                                      | [#0cf]ping hi plaao`,
+    ["OK"],
+    ["#060"],
+    [
+        function() {
+            renderer.msgbox_pad_x = renderer.default_msgbox_pad_x;
+            renderer.msgbox_pad_y = renderer.default_msgbox_pad_y;
+        }
+    ],
+    function(msgbox) { 
+        renderer.msgbox_pad_x = 1;
+        renderer.msgbox_pad_y = 1;
+    }
+)
+
+let debug_msgbox_padding_test = new MessageBoxTemplate(
+    "MSGBOX PAD TEST",
+    "Current padding: [[PADX]], [[PADY]]",
+    ["x-", "x+", "y-", "y+", "??", "reset", "exit"],
+    ["#020", "#200", "#020", "#200", "#046", "#060", "#800"],
+    [
+        function() {
+            renderer.msgbox_pad_x--;
+            renderer.add_messagebox(messagebox_templates["debug_msgbox_padding_test"], true);
+        },
+
+        function() {
+            renderer.msgbox_pad_x++;
+            renderer.add_messagebox(messagebox_templates["debug_msgbox_padding_test"], true);
+        },
+
+        function() {
+            renderer.msgbox_pad_y--;
+            renderer.add_messagebox(messagebox_templates["debug_msgbox_padding_test"], true);
+        },
+
+        function() {
+            renderer.msgbox_pad_y++;
+            renderer.add_messagebox(messagebox_templates["debug_msgbox_padding_test"], true);
+        },
+
+        function() {
+            renderer.msgbox_pad_x = Math.floor(Math.random() * 100) + 1;
+            renderer.msgbox_pad_y = Math.floor(Math.random() * 30) + 1;
+            renderer.add_messagebox(messagebox_templates["debug_msgbox_padding_test"], true);
+        },
+
+        function() {
+            renderer.msgbox_pad_x = renderer.default_msgbox_pad_x;
+            renderer.msgbox_pad_y = renderer.default_msgbox_pad_y;
+            renderer.add_messagebox(messagebox_templates["debug_msgbox_padding_test"], true);
+        },
+
+        function() {
+            renderer.msgbox_pad_x = renderer.default_msgbox_pad_x;
+            renderer.msgbox_pad_y = renderer.default_msgbox_pad_y;
+        },
+    ],
+    function(msgbox) {
+        msgbox.text = msgbox.text.replace("\[\[PADX\]\]", renderer.msgbox_pad_x).replace("\[\[PADY\]\]", renderer.msgbox_pad_y);
+    }
+)
+
 messagebox_templates = {
     debug: test_msgbox,
 
@@ -804,7 +921,10 @@ messagebox_templates = {
     lvlup_normal: lvlup_msgbox_normal,
     lvlup_msgbox_lv5: lvlup_msgbox_lv5,
     lvlup_msgbox_lv10: lvlup_msgbox_lv10,
-    lvlup_msgbox_permanent_enhance: lvlup_msgbox_permanent_enhance
+    lvlup_msgbox_permanent_enhance: lvlup_msgbox_permanent_enhance,
+
+    debug_help_msgbox: debug_help_msgbox,
+    debug_msgbox_padding_test: debug_msgbox_padding_test
 }
 
 /*
@@ -860,7 +980,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 need_to_clear_cmd = true;
                 debug_cmd = ""
                 showing_debug_menu = false;
-            } else if (code == "Backspace" && debug_cmd.length > 0) {
+            } else if (code == "Backspace" && debug_cmd.length > 1) {
                 debug_cmd = debug_cmd.slice(0, -1);
             } else if (code == "ArrowUp") {
                 debug_cmd = last_debug_cmd;
@@ -988,7 +1108,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     renderer.move_particles(mov_pos.neg());
                 }
     
-                game.end_turn();
+                game.end_turn(game.player_ent);
             }
         }
 
