@@ -99,7 +99,7 @@ game.spawn_entity(get_entity_by_name("big guy"), Teams.ENEMY, new Vector2(14, 22
 
 for (let xt=0; xt<game.board.dimensions.x; xt++) {
     for (let yt=0; yt<game.board.dimensions.y; yt++) {
-        if (Math.random() < 0.01) {
+        if (game.random() < 0.01) {
             game.spawn_entity(get_entity_by_name("Wall"), Teams.UNALIGNED, new Vector2(xt, yt), false);
         }
     }
@@ -110,10 +110,10 @@ for (let xt=0; xt<game.board.dimensions.x; xt++) {
 
 game.player_spells = [
     {spells: [get_spell_by_name("fireball")], name: "Fireball"},
-    {spells: [get_spell_by_name("lightning bolt")], name: "Lightning Bolt"},
+    {spells: gen_spells("tile trigger", "Fireball", "Retarget: Sparse", "Ice Ball"), name: "Lightning Bolt"},
     {spells: gen_spells("target trigger", "magic missile", "tile trigger", "ice ball", "tile trigger", "ice ball", "ice ball"), name: "Spell 3"},
     {spells: gen_spells("target trigger", "magic missile", "fireball"), name: "Spell 4"},
-    {spells: [], name: "Spell 5"},
+    {spells: spells_list.filter(s => s.name.startsWith("Retarget:")), name: "Spell 5"},
     /*
     {spells: [...spells_list.filter(s => !s.is_corrupt()).slice(0, 20)], name: "0-20"},
     {spells: [...spells_list.filter(s => !s.is_corrupt()).slice(20, 40)], name: "20-40"},
@@ -176,6 +176,9 @@ let test = function(spells) {
 
 game.player_discard_edits();
 game.open_inventory();
+
+game.player_spells_edit[0][1] = game.player_spells_edit[0][0];
+game.player_spells_edit[0][0] = null;
 
 let xp_flash = new ParticleTemplate(["++", "''"], "#ddd", 1);
 
@@ -255,6 +258,10 @@ let itemtest_config = {
     frag_num_show: 10
 }
 
+let debug_quicksaves = {
+
+}
+
 renderer.render_game_checkerboard("black");
 renderer.request_new_frame();
 
@@ -276,6 +283,77 @@ function handle_debug_command() {
                 debug_response = "#0f0[" + directive + "] [" + data + "]"
                 break;
 
+            case "r":
+            case "rp":
+                let keep_random_state = directive == "rp";
+
+                let num_rolls = 5;
+                let min = 1;
+                let max = 100;
+
+                let old_rand = null;
+                if (keep_random_state) {
+                    old_rand = game.random(true);
+                }
+
+                if (data) {
+                    let segs = data.split(" ");
+                    if (segs.length == 1) {
+                        num_rolls = Number.parseInt(segs[0]);
+                    } else if (segs.length == 2) {
+                        num_rolls = Number.parseInt(segs[0]);
+                        max = Number.parseInt(segs[1]);
+                    } else {
+                        num_rolls = Number.parseInt(segs[0]);
+                        min = Number.parseInt(segs[1]);
+                        max = Number.parseInt(segs[2]);
+                    }
+                }
+
+                rolls = Array(num_rolls).fill(0).map(_ => Math.floor(game.random() * (max - min)) + min)
+
+                if (keep_random_state) {
+                    game.random = random_from_parameters(...old_rand);
+                }
+
+                debug_response = `#0f0${rolls.join(", ")}`;
+
+                break;
+
+            case "qs":
+                let quicksave_slot = null;
+                if (data) {
+                    quicksave_slot = data;
+                } else {
+                    quicksave_slot = 1;
+                    while (debug_quicksaves[quicksave_slot.toString()]) {
+                        quicksave_slot++;
+                    }
+
+                    quicksave_slot = quicksave_slot.toString();
+                }
+
+                let overwritten = debug_quicksaves[quicksave_slot] ? true : false;
+
+                debug_quicksaves[quicksave_slot] = game.to_save_string();
+
+                debug_response = `#0f0${overwritten ? "saved over name" : "saved new named"} [${quicksave_slot}] (chars: ${debug_quicksaves[quicksave_slot].length})`;
+                break;
+
+            case "ql":
+                if (data || Object.keys(debug_quicksaves).length == 1) {
+                    let load_name = data ? data : Object.keys(debug_quicksaves)[0];
+
+                    load_game(debug_quicksaves[load_name]);
+
+                    debug_response = `#0f0loaded quicksave [${load_name}]`;
+                } else if (Object.keys(debug_quicksaves).length <= 0) {
+                    debug_response = `#f00no quicksaves. use "qs" to make one.`;
+                } else {
+                    debug_response = `#0cfquicksave names: ${Object.keys(debug_quicksaves).sort().join(", ")}`;
+                }
+                break;
+
             case "w":
                 if (data.toLowerCase() == "start") {
                     delete game.wave_entities["WAVESTOP_OBJ"]
@@ -283,6 +361,25 @@ function handle_debug_command() {
                 } else if (data.toLowerCase() == "stop") {
                     game.wave_entities["WAVESTOP_OBJ"] = 1;
                     debug_response = "#0f0wave progression stopped"
+                }
+                break;
+
+            case "emb":
+                if (data) {
+                    let emb = get_emblem_by_iname(data);
+                    if (!emb) {
+                        emb = find_emblem_by_iname(data);
+                    }
+
+                    if (emb) {
+                        game.player_emblems.push(emb);
+                        renderer.refresh_right_panel = true;
+                        debug_response = `#0f0added emblem: "${emb.iname}"`;
+                    } else {
+                        debug_response = `#f00couldn't find an emblem with iname "${data}"`;
+                    }
+                } else {
+                    debug_response = "#0f0" + game.player_emblems.map(e => e.iname).join(", ");
                 }
                 break;
 
@@ -358,6 +455,28 @@ function handle_debug_command() {
                     } else {
                         debug_response = `#f00couldn't find a spell \"${data}\"`
                     }
+                }
+                break;
+
+            case "sps":
+                if (data) {
+                    let split = data.split(" ");
+                    let spell_index = Number.parseInt(split[0])-1;
+                    let slice_amt = 1;
+                    if (!spell_index) {
+                        spell_index = 0;
+                        slice_amt = 0;
+                    }
+
+                    let spell_list = split.slice(slice_amt).join(" ").replace(", ", ",").split(",").filter(t => t);
+                    let spells = gen_spells(...spell_list);
+
+                    game.player_spells[spell_index].spells = spells;
+                    game.player_spells_edit[spell_index] = [...spells, ...Array(game.player_max_spell_shards - spells.length).fill(null)];
+
+                    debug_response = `#0f0updated spell #${spell_index+1}`
+                } else {
+                    debug_response = `#f00"sps [1-5] spell 1, spell 2, spell 3, ..."`
                 }
                 break;
 
@@ -597,10 +716,10 @@ function game_loop() {
     ppos = ppos.wrap(new Vector2(48, 24));
 
     // if (ppos.x % 16 == 0) {
-    //     if (Math.random() < 0.1) {
+    //     if (game.random() < 0.1) {
     //         mov_dir = new Vector2(
-    //             Math.floor(Math.random() * 2) - 1,
-    //             Math.floor(Math.random() * 2) - 1
+    //             Math.floor(game.random() * 2) - 1,
+    //             Math.floor(game.random() * 2) - 1
     //         )
     //     } 
     //     
@@ -685,7 +804,7 @@ let test_msgbox = new MessageBoxTemplate(
     ["#060", "#600", "#444", "#630", "#336"],
     [
         function() { 
-            let spell_select = Math.floor(Math.random() * spells_loot_table["Tier1"].length);
+            let spell_select = Math.floor(game.random() * spells_loot_table["Tier1"].length);
             let spell_obj = spells_loot_table["Tier1"][spell_select];
 
             game.player_add_spell_to_inv(spell_obj);
@@ -818,14 +937,67 @@ let lvlup_msgbox_permanent_enhance = new MessageBoxTemplate(
     ]
 )
 
-let debug_help_msgbox = new MessageBoxTemplate(
-    "DEBUG HELP",
-`[#4f4]e               <name> [#ddd]| spawn an entity using generic spawn (for spaces, use \"-\")                | [#0cf]e bat
-[#4f4]  <posx> <posy>        [#ddd]| with a specific position                                                 | [#0cf]e 4 32 bat
+let debug_help_msgbox_primary = new MessageBoxTemplate(
+    "DEBUG HELP -- ENGINE",
+`[#4f4]h                      [#ddd]| show this help screen                                                    | [#0cf]h
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]r(p)                   [#ddd]| roll 5 random numbers using game random state (then reset it if \"rp\")  | [#0cf]r          [#ddd]| [#0cf]r          
+[#4f4]     <n>               [#ddd]| set number of times to roll                                              | [#0cf]r 10       [#ddd]| [#0cf]r 10       
+[#4f4]     <n> <max>         [#ddd]| set maximum roll value (default 100)                                     | [#0cf]r 10 6     [#ddd]| [#0cf]r 10 6     
+[#4f4]     <n> <min> <max>   [#ddd]| set minimum and maximum roll value (default 1, 100)                      | [#0cf]r 10 50 60 [#ddd]| [#0cf]r 10 50 60 
+[#4f4]                       [#ddd]|                                                                          |
+[#4f4]qs                     [#ddd]| save game to an autogenerated slot name. saves are deleted on refresh    | 
+[#4f4]qs <save_name>         [#ddd]| save game to slot save_name. saves are deleted on refresh                | 
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]ql <save_name>         [#ddd]| load game from slot save_name. if blank and only one save, picks that    |
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          |
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          |
+[#4f4]d <fps|operations>     [#ddd]| toggle a debug view                                                      | [#0cf]d operations
+[#4f4]                       [#ddd]|                                                                          |
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          |
+[#4f4]                       [#ddd]|                                                                          |
+[#4f4]                       [#ddd]|                                                                          |
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          |
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]p                      [#ddd]|                                                                          | [#0cf]ping hi plaao`,
+    ["< GAME", "Close", "PLAYER >"],
+    ["#026", "#333", "#060"],
+    [
+        function() {
+            renderer.add_messagebox(debug_help_msgbox_game, true);
+        },
+
+        function() {
+            renderer.msgbox_pad_x = renderer.default_msgbox_pad_x;
+            renderer.msgbox_pad_y = renderer.default_msgbox_pad_y;
+        },
+
+        function() {
+            renderer.add_messagebox(debug_help_msgbox_player, true);
+        },
+    ],
+    function(msgbox) { 
+        renderer.msgbox_pad_x = 1;
+        renderer.msgbox_pad_y = 1;
+    }
+)
+
+let debug_help_msgbox_player = new MessageBoxTemplate(
+    "DEBUG HELP -- PLAYER",
+`[#4f4]                       [#ddd]|                                                                          |
+[#4f4]                       [#ddd]|                                                                          |
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]s <name>               [#ddd]| get a spell with name                                                    | [#0cf]s fireball
 [#4f4]                       [#ddd]|                                                                          | 
-[#4f4]m <msgbox_name>        [#ddd]| spawn a messagebox with name                                             | [#0cf]m debug
+[#4f4]                       [#ddd]|                                                                          |
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]sxp <xp value>         [#ddd]| run the spell drop function with given xp value                          | [#0cf]sxp 250
 [#4f4]stp <pool>             [#ddd]| drop a spell from a specific pool                                        | [#0cf]stp Tier4
@@ -835,26 +1007,86 @@ let debug_help_msgbox = new MessageBoxTemplate(
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]xp <value>             [#ddd]| gain value XP                                                            | [#0cf]xp 500
 [#4f4]                       [#ddd]|                                                                          | 
-[#4f4]d <fps|operations>     [#ddd]| toggle a debug view                                                      | [#0cf]d operations
+[#4f4]emb <emblem_name>      [#ddd]| get emblem with iname emblem_name. if blank, lists player emblem inames  | [#0cf]emb lv10_dmg
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]gp                     [#ddd]| get player position                                                      | [#0cf]gp
 [#4f4]tp <posx> <posy>       [#ddd]| teleport player to position                                              | [#0cf]tp 3 21
 [#4f4]                       [#ddd]|                                                                          | 
-[#4f4]k(a)                   [#ddd]| kill target underneath the mouse cursor (or all entities if \"a\" given)   | [#0cf]k [#ddd]|[#0cf] ka
+[#4f4]                       [#ddd]|                                                                          |
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]big                    [#ddd]| gain 1000 HP, 5000 MP, LV 50 and 4 of each main trigger type             | [#0cf]big
 [#4f4]god                    [#ddd]| gain 999999 HP, 999999 MP, LV 999 and 4 of each main trigger type        | [#0cf]god
 [#4f4]                       [#ddd]|                                                                          | 
-[#4f4]w <stop|start>         [#ddd]| enables/disables wave progression (waves will not finish if this is off) | [#0cf]w stop
 [#4f4]                       [#ddd]|                                                                          | 
-[#4f4]p                      [#ddd]| pong! echo command+args back to you                                      | [#0cf]ping hi plaao`,
-    ["OK"],
-    ["#060"],
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          | `,
+    ["< PRIMARY", "Close", "GAME >"],
+    ["#026", "#333", "#060"],
     [
+        function() {
+            renderer.add_messagebox(debug_help_msgbox_primary, true);
+        },
+
         function() {
             renderer.msgbox_pad_x = renderer.default_msgbox_pad_x;
             renderer.msgbox_pad_y = renderer.default_msgbox_pad_y;
-        }
+        },
+
+        function() {
+            renderer.add_messagebox(debug_help_msgbox_game, true);
+        },
+    ],
+    function(msgbox) { 
+        renderer.msgbox_pad_x = 1;
+        renderer.msgbox_pad_y = 1;
+    }
+)
+
+let debug_help_msgbox_game = new MessageBoxTemplate(
+    "DEBUG HELP -- GAME",
+`[#4f4]e               <name> [#ddd]| spawn an entity using generic spawn (for spaces, use \"-\")                | [#0cf]e bat
+[#4f4]  <posx> <posy>        [#ddd]| with a specific position                                                 | [#0cf]e 4 32 bat
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          |
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]m <msgbox_name>        [#ddd]| spawn a messagebox with name                                             | [#0cf]m debug
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          |
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          |
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          |
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          |
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]k(a)                   [#ddd]| kill target underneath the mouse cursor (or all entities if \"a\" given)   | [#0cf]k [#ddd]|[#0cf] ka
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          |
+[#4f4]                       [#ddd]|                                                                          |
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]w <stop|start>         [#ddd]| enables/disables wave progression (waves will not finish if this is off) | [#0cf]w stop
+[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]                       [#ddd]|                                                                          | `,
+    ["< PLAYER", "Close", "PRIMARY >"],
+    ["#026", "#333", "#060"],
+    [
+        function() {
+            renderer.add_messagebox(debug_help_msgbox_player, true);
+        },
+
+        function() {
+            renderer.msgbox_pad_x = renderer.default_msgbox_pad_x;
+            renderer.msgbox_pad_y = renderer.default_msgbox_pad_y;
+        },
+
+        function() {
+            renderer.add_messagebox(debug_help_msgbox_primary, true);
+        },
     ],
     function(msgbox) { 
         renderer.msgbox_pad_x = 1;
@@ -889,8 +1121,8 @@ let debug_msgbox_padding_test = new MessageBoxTemplate(
         },
 
         function() {
-            renderer.msgbox_pad_x = Math.floor(Math.random() * 100) + 1;
-            renderer.msgbox_pad_y = Math.floor(Math.random() * 30) + 1;
+            renderer.msgbox_pad_x = Math.floor(game.random() * 100) + 1;
+            renderer.msgbox_pad_y = Math.floor(game.random() * 30) + 1;
             renderer.add_messagebox(messagebox_templates["debug_msgbox_padding_test"], true);
         },
 
@@ -923,7 +1155,7 @@ messagebox_templates = {
     lvlup_msgbox_lv10: lvlup_msgbox_lv10,
     lvlup_msgbox_permanent_enhance: lvlup_msgbox_permanent_enhance,
 
-    debug_help_msgbox: debug_help_msgbox,
+    debug_help_msgbox: debug_help_msgbox_primary,
     debug_msgbox_padding_test: debug_msgbox_padding_test
 }
 
@@ -998,12 +1230,15 @@ document.addEventListener("DOMContentLoaded", function() {
                     game.player_spells[renderer.inventory_editing_spell_name].name = cur_name.slice(0, -1);
                 } else if (code == "Enter") {
                     renderer.inventory_editing_spell_name = undefined;
-                } else if (name.match(/^[a-zA-Z0-9_\-\+\.!? ]$/i) && cur_name.length < 30) {
+                } else if (name.match(/^[a-zA-Z0-9_\-\+\.!? \[\]\#]$/i) && renderer.code_string_len(cur_name) < 30) {
                     if (name == " ") {
                         name = "\u00A0";
                     }
                     game.player_spells[renderer.inventory_editing_spell_name].name += name;
                 }
+
+                renderer.refresh_left_panel = true;
+                renderer.refresh_right_panel = true;
             } else {
                 if (code == "KeyR") {
                     game.toggle_inventory();

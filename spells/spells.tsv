@@ -182,31 +182,31 @@ Vengeance	>!	Modifier	Misc	#fff	#265	Changes the core's damage type to the damag
 Affinity Attunement	>A	Modifier	Misc	#fff	#265	Changes the core's damage type to the caster's first affinity which is also a damage type. If there are none, this does nothing.	6,7,8,9	300							
 Heavy Impact	#]	Modifier	Misc	#fff	#265	Any units on tiles affected by this core are pushed up to 2 tiles away from the core's cast position.	3,4,6,8	60							
 Negative Space	!O	Modifier	Misc	#fff	#265	Causes the core to affect all tiles in its range [#4df]except[clear] the ones in its original effect shape.	9,10	600							
-183	##	Modifier	Misc	#fff	#265										
-184	##	Modifier	Misc	#fff	#265										
-185	##	Modifier	Misc	#fff	#265										
-186	##	Modifier	Misc	#fff	#265										
-187	##	Modifier	Misc	#fff	#265										
-188	##	Modifier	Misc	#fff	#265										
-189	##	Modifier	Misc	#fff	#265										
-190	##	Modifier	Misc	#fff	#265										
-191	##	Modifier	Misc	#fff	#265										
-192	##	Modifier	Misc	#fff	#265										
-193	##	Modifier	Misc	#fff	#265										
-194	##	Modifier	Misc	#fff	#265										
-195	##	Modifier	Misc	#fff	#265										
-196	##	Modifier	Misc	#fff	#265										
-197	##	Modifier	Misc	#fff	#265										
-198	##	Modifier	Misc	#fff	#265										
-199	##	Modifier	Misc	#fff	#265										
+Reconversion	8~	Modifier	Misc	#fff	#265	Any non-player entity at the target position of the core will have all its affinities reversed. For example, [#e25822]Fire[clear] will become [#A5F2F3]Ice[clear].	6,7,8,9,10	150							
+Retarget: Self	@o	Modifier	Misc	#faf	#265	Sets the target of the core to the caster's position and removes the caster's position from the core's area of effect.	4,5,6,7	25							
+Retarget: Enemy	@e	Modifier	Misc	#faf	#265	Sets the target of the core to the closest enemy of the caster, within the original range of the core.	5,6,7,8	75							
+Retarget: Ally	@a	Modifier	Misc	#faf	#265	Sets the target of the core to the closest ally of the caster, within the original range of the core.	5,6,7,8	40							
+Retarget: Weak	@w	Modifier	Misc	#faf	#265	Sets the target of the core to the closest unit weakest to the core's damage type, within the original range of the core.	5,6,7,8	150							
+Retarget: Strong	@s	Modifier	Misc	#faf	#265	Sets the target of the core to the closest unit most resistant to the core's damage type, within the original range of the core.	5,6,7,8	60							
+Retarget: Native	@n	Modifier	Misc	#faf	#265	Sets the target of the core to the closest unit with an affinity matching the core's damage type, within the original range of the core.	6,7,8	50							
+Retarget: Pushback	@p	Modifier	Misc	#faf	#265	Moves the target of the core up to 3 tiles away from the caster.	4,5,6,7,8	50							
+Retarget: Magnetism	@m	Modifier	Misc	#faf	#265	Moves the target of the core up to 3 tiles towards the caster.	4,5,6,7,8	50							
+Retarget: Compact	@c	Modifier	Misc	#faf	#265	Moves the target of the core up to 2 tiles towards the position from which the core was cast.	5,6,7,8	50							
+Retarget: Sparse	@s	Modifier	Misc	#faf	#265	Moves the target of the core up to 2 tiles away from the position from which the core was cast.	5,6,7,8	50							
+Retarget: Mysterious	@?	Modifier	Misc	#faa	#265	Modifies the target of the core based on a mysterious set of rules indistinguishable from randomness.	4,6,8	176							
+Spell Transference	?>	Modifier	Misc	#fff	#265	The first core after this fragment is not cast. Instead, its special effects are transferred to the next core.	9,10	200							
+Arcane Echo	)2	Modifier	Misc	#fff	#265	All of the core's special effects will trigger twice.	7,8,9,10	150							
+Spreading Arcana	.O	Modifier	Misc	#fff	#265	Any of the core's special effects that would apply to the targeted position are also applied to every tile the core affects.	8,9,10	300							
+Purity	X.	Modifier	Misc	#fff	#265	The core will not trigger any of its special effects.	7,8,9,10	-75							
+Unresolved Spell	*?	Modifier	Misc	#fe9	#265	When this fragment is cast, it permanently becomes another random fragment.	5,8	0							
 Gun	%=	Core	Red	#fff	#f00			50	5000	Physical	30	1	Line	Positional	Enemy
 Uncontrolled Multicast x16	!F	Modifier	Red Modifier	#fff	#f00	Adds 16 to the core's chaoscast value.		200							
 All Elements	!!	Core	Red	#fff	#f00	all at once. testing		0	99999	Physical	1	40	Diamond	SelfTarget	Player + Enemy
 Pea Spell	!!	Core	Red	#fff	#f00	pea spell		2	73	Chaos	10	3	Circle	Positional	Player + Enemy
 summon GUY	@]	Core	Red	#fff	#f00	Summon "Guy" at the target position.		120	25	Dark	10	5	Circle	Positional	Player + Enemy
 Goop	%;	Core	Red	#fff	#f00	Applies 999 turns of Poison to all units (all of them)		57	1	Psychic	0	1	Diamond	SelfTarget	Player + Enemy
-206	##	Core	Core	#fff	#000										
-207	##	Core	Core	#fff	#000										
+Zenith Arcana III	##	Modifier	Red Modifier	#fff	#f00	You're not strong enough for Zenith Arcana III.		1							
+Zenith Arcana IV	##	Modifier	Red Modifier	#fff	#f00	It's a little bit [#f00]too[clear] strong...		5000							
 208	##	Core	Core	#fff	#000										
 209	##	Core	Core	#fff	#000										
 210	##	Core	Core	#fff	#000										

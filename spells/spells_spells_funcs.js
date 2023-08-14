@@ -315,7 +315,7 @@ spells_funcs = {
                     let old_dmgtype = spell_obj.unknown_incant_dmgtype ? spell_obj.unknown_incant_dmgtype : DmgType.Chaos;
                     
                     let dmgtypes = Object.keys(DmgType);
-                    let new_dmgtype = DmgType[dmgtypes[Math.floor(Math.random() * dmgtypes.length)]];
+                    let new_dmgtype = DmgType[dmgtypes[Math.floor(game.random() * dmgtypes.length)]];
 
                     spell_obj.desc = spell_obj.desc.replace(`[${damage_type_cols[old_dmgtype]}]${old_dmgtype}[clear]`, `[${damage_type_cols[new_dmgtype]}]${new_dmgtype}[clear]`);
 
@@ -357,7 +357,7 @@ spells_funcs = {
                         return !affinities.includes(aff);
                     })
 
-                    let new_aff = possible_affs[Math.floor(Math.random() * possible_affs.length)];
+                    let new_aff = possible_affs[Math.floor(game.random() * possible_affs.length)];
 
                     if (affinities.length >= 3) {
                         affinities[2] = new_aff;
@@ -371,7 +371,7 @@ spells_funcs = {
                     break;
 
                 case 8:
-                    let new_col = Math.floor(Math.random()*16777215).toString(16);
+                    let new_col = Math.floor(game.random()*16777215).toString(16);
 
                     spell_obj.col = "#" + new_col;
                     break;
@@ -388,7 +388,7 @@ spells_funcs = {
                     if (ent) {
                         let efc_list = Object.values(StatusEffect);
                         for (let i=0; i<3; i++) {
-                            let efc = efc_list[Math.floor(Math.random() * efc_list.length)];
+                            let efc = efc_list[Math.floor(game.random() * efc_list.length)];
 
                             apply_status(user, ent, efc, 10);
                         }
@@ -409,7 +409,7 @@ spells_funcs = {
                     iconchars = "qwertyuiop[]asdfghjkl;'#zxcvbnm,./\\1234567890-=!\"£$%^&*()_+QWERTYUIOP{}ASDFGHJKL:@~ZXCVBNM<>?|";
                     spell_obj.icon = "";
                     for (let i=0; i<2; i++) {
-                        spell_obj.icon += iconchars[Math.floor(Math.random() * iconchars.length)];
+                        spell_obj.icon += iconchars[Math.floor(game.random() * iconchars.length)];
                     }
 
                     break;
@@ -425,14 +425,14 @@ spells_funcs = {
                     break;
 
                 case 16:
-                    if (Math.random() < 1/50) {
+                    if (game.random() < 1/50) {
                         switch_checkerboard = switch_checkerboard ? 0 : 1;
                     }
                     break;
             }
 
-            let new_incant = Math.floor(Math.random() * 17);
-            if (current_incant == 0 && Math.random() < 0.5) {
+            let new_incant = Math.floor(game.random() * 17);
+            if (current_incant == 0 && game.random() < 0.5) {
                 new_incant = 1;
             }
 
@@ -493,7 +493,7 @@ spells_funcs = {
             let old_dmgtype = spell_obj.unknown_incant_dmgtype ? spell_obj.unknown_incant_dmgtype : DmgType.Chaos;
                     
             let dmgtypes = Object.keys(DmgType);
-            let new_dmgtype = DmgType[dmgtypes[Math.floor(Math.random() * dmgtypes.length)]];
+            let new_dmgtype = DmgType[dmgtypes[Math.floor(game.random() * dmgtypes.length)]];
 
             spell_obj.desc = spell_obj.desc.replace(`[${damage_type_cols[old_dmgtype]}]${old_dmgtype}[clear]`, `[${damage_type_cols[new_dmgtype]}]${new_dmgtype}[clear]`);
 
@@ -511,7 +511,7 @@ spells_funcs = {
         no_hit,
         function(user, spell, stats, location) {
             let dmg = stats.damage;
-            if (Math.random() < 0.5) {
+            if (game.random() < 0.5) {
                 tile_damage(user, location, dmg, DmgType.Fire)
             } else {
                 tile_damage(user, location, dmg, DmgType.Lightning)
@@ -529,7 +529,7 @@ spells_funcs = {
                 "Brimstone Demon"
             ]
 
-            let chosen_demon = demons[Math.floor(Math.random() * demons.length)];
+            let chosen_demon = demons[Math.floor(game.random() * demons.length)];
 
             game.spawn_entity(get_entity_by_name(chosen_demon), user.team, location);
         },
@@ -900,7 +900,7 @@ spells_funcs = {
 
     "Random Damage": [
         function(user, spell, stats) {
-            stats.damage += Math.floor(Math.random() * 201) - 100;
+            stats.damage += Math.floor(game.random() * 201) - 100;
         },
         no_target,
         no_hit,
@@ -1524,7 +1524,7 @@ spells_funcs = {
     "Chromatic Target Trigger": [
         function(user, spell, stats) {
             let dmgtypes = Object.keys(DmgType);
-            let new_dmgtype = DmgType[dmgtypes[Math.floor(Math.random() * dmgtypes.length)]];
+            let new_dmgtype = DmgType[dmgtypes[Math.floor(game.random() * dmgtypes.length)]];
 
             stats.damage_type = new_dmgtype;
         },
@@ -1536,7 +1536,7 @@ spells_funcs = {
     "Chromatic Tile Trigger": [
         function(user, spell, stats) {
             let dmgtypes = Object.keys(DmgType);
-            let new_dmgtype = DmgType[dmgtypes[Math.floor(Math.random() * dmgtypes.length)]];
+            let new_dmgtype = DmgType[dmgtypes[Math.floor(game.random() * dmgtypes.length)]];
 
             stats.damage_type = new_dmgtype;
         },
@@ -1556,7 +1556,7 @@ spells_funcs = {
 
     "Unreliable Target Trigger": [
         function(user, spell, stats) {
-            if (Math.random() < 0.5) {
+            if (game.random() < 0.5) {
                 stats.radius = 0;
             }
         },
@@ -2123,119 +2123,152 @@ spells_funcs = {
         no_tiles
     ],
 
-    "183": [
+    "Reconversion": [
+        no_stats,
+        function(caster, spell, stats, position) {
+            let ent = board.get_pos(position)
+            if (ent && ent.id != game.player_ent.id) {
+                let new_affinities = [];
+                ent.affinities.forEach(aff => {
+                    new_affinities.push(affinity_opposites[aff]);
+                })
+
+                ent.affinities = new_affinities;
+            }
+        },
+        no_hit,
+        no_tiles
+    ],
+
+    "Retarget: Self": [
+        function(user, spell, stats) {
+            stats.retarget = RetargetType.Self;
+            stats.target_type = SpellTargeting.SelfTarget;
+        },
+        no_target,
+        no_hit,
+        no_tiles
+    ],
+
+    "Retarget: Enemy": [
+        function(user, spell, stats) {
+            stats.retarget = RetargetType.Enemy;
+        },
+        no_target,
+        no_hit,
+        no_tiles
+    ],
+
+    "Retarget: Ally": [
+        function(user, spell, stats) {
+            stats.retarget = RetargetType.Ally;
+        },
+        no_target,
+        no_hit,
+        no_tiles
+    ],
+
+    "Retarget: Weak": [
+        function(user, spell, stats) {
+            stats.retarget = RetargetType.Weak;
+        },
+        no_target,
+        no_hit,
+        no_tiles
+    ],
+
+    "Retarget: Strong": [
+        function(user, spell, stats) {
+            stats.retarget = RetargetType.Strong;
+        },
+        no_target,
+        no_hit,
+        no_tiles
+    ],
+
+    "Retarget: Native": [
+        function(user, spell, stats) {
+            stats.retarget = RetargetType.Native;
+        },
+        no_target,
+        no_hit,
+        no_tiles
+    ],
+
+    "Retarget: Pushback": [
+        function(user, spell, stats) {
+            stats.retarget = RetargetType.Pushback;
+        },
+        no_target,
+        no_hit,
+        no_tiles
+    ],
+
+    "Retarget: Magnetism": [
+        function(user, spell, stats) {
+            stats.retarget = RetargetType.Magnetism;
+        },
+        no_target,
+        no_hit,
+        no_tiles
+    ],
+
+    "Retarget: Compact": [
+        function(user, spell, stats) {
+            stats.retarget = RetargetType.Compact;
+        },
+        no_target,
+        no_hit,
+        no_tiles
+    ],
+
+    "Retarget: Sparse": [
+        function(user, spell, stats) {
+            stats.retarget = RetargetType.Sparse;
+        },
+        no_target,
+        no_hit,
+        no_tiles
+    ],
+
+    "Retarget: Mysterious": [
+        function(user, spell, stats) {
+            stats.retarget = RetargetType.Mysterious;
+        },
+        no_target,
+        no_hit,
+        no_tiles
+    ],
+
+    "Spell Transference": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "184": [
+    "Arcane Echo": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "185": [
+    "Spreading Arcana": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "186": [
+    "Purity": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "187": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "188": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "189": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "190": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "191": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "192": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "193": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "194": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "195": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "196": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "197": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "198": [
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles
-    ],
-
-    "199": [
+    "Unresolved Spell": [
         no_stats,
         no_target,
         no_hit,

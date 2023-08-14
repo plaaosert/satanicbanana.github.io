@@ -808,691 +808,691 @@ entities_spells = {
 }
 
 entities_specials = {
-    "Player": function(game, ent, event_type) {
+    "Player": function(game, ent, event_info) {
         // None
     },
 
-    "test enemy": function(game, ent, event_type) {
+    "test enemy": function(game, ent, event_info) {
         // None
     },
 
-    "big guy": function(game, ent, event_type) {
+    "big guy": function(game, ent, event_info) {
         // None
     },
 
-    "Fuckn GUy": function(game, ent, event_type) {
+    "Fuckn GUy": function(game, ent, event_info) {
         // None
     },
 
-    "Wall": function(game, ent, event_type) {
+    "Wall": function(game, ent, event_info) {
         // None
     },
 
-    "Goblin": function(game, ent, event_type) {
+    "Goblin": function(game, ent, event_info) {
         // None
     },
 
-    "Hobgoblin": function(game, ent, event_type) {
+    "Hobgoblin": function(game, ent, event_info) {
         // None
     },
 
-    "Gobbo": function(game, ent, event_type) {
+    "Gobbo": function(game, ent, event_info) {
         // None
     },
 
-    "Gremlin": function(game, ent, event_type) {
+    "Gremlin": function(game, ent, event_info) {
         // None
     },
 
-    "Alpha Goblin": function(game, ent, event_type) {
+    "Alpha Goblin": function(game, ent, event_info) {
         // None
     },
 
-    "Flaming Goblin": function(game, ent, event_type) {
+    "Flaming Goblin": function(game, ent, event_info) {
         // None
     },
 
-    "Esper Goblin": function(game, ent, event_type) {
+    "Esper Goblin": function(game, ent, event_info) {
         // None
     },
 
-    "Static Goblin": function(game, ent, event_type) {
+    "Static Goblin": function(game, ent, event_info) {
         // None
     },
 
-    "Possessed Bat": function(game, ent, event_type) {
+    "Possessed Bat": function(game, ent, event_info) {
         // None
     },
 
-    "Goblin War Machine": function(game, ent, event_type) {
+    "Goblin War Machine": function(game, ent, event_info) {
         // None
     },
 
-    "Goblin Gear": function(game, ent, event_type) {
+    "Goblin Gear": function(game, ent, event_info) {
         // None
     },
 
-    "Giant Goblin": function(game, ent, event_type) {
+    "Giant Goblin": function(game, ent, event_info) {
         // Regenerates 5 HP per turn.
     },
 
-    "Titanic Goblin": function(game, ent, event_type) {
+    "Titanic Goblin": function(game, ent, event_info) {
         // Regenerates 12 HP per turn.
     },
 
-    "Bat": function(game, ent, event_type) {
+    "Bat": function(game, ent, event_info) {
         // None
     },
 
-    "Giant Bat": function(game, ent, event_type) {
+    "Giant Bat": function(game, ent, event_info) {
         // None
     },
 
-    "Ghost": function(game, ent, event_type) {
+    "Ghost": function(game, ent, event_info) {
         // None
     },
 
-    "Vengeful Ghost": function(game, ent, event_type) {
+    "Vengeful Ghost": function(game, ent, event_info) {
         // Deals 2 Dark damage every turn to adjacent units.
     },
 
-    "Wraith": function(game, ent, event_type) {
+    "Wraith": function(game, ent, event_info) {
         // None
     },
 
-    "Spirit Amalgam": function(game, ent, event_type) {
+    "Spirit Amalgam": function(game, ent, event_info) {
         // None
     },
 
-    "Bucket of Ghosts": function(game, ent, event_type) {
+    "Bucket of Ghosts": function(game, ent, event_info) {
         // None
     },
 
-    "Ghost Ghost": function(game, ent, event_type) {
+    "Ghost Ghost": function(game, ent, event_info) {
         // None
     },
 
-    "Demonic Spirit": function(game, ent, event_type) {
+    "Demonic Spirit": function(game, ent, event_info) {
         // If alive for 16 turns, explodes in a 3 tile burst for 16 Fire damage. (Turns remaining: [[explosion_turns_left]])
     },
 
-    "Spirit Caller": function(game, ent, event_type) {
+    "Spirit Caller": function(game, ent, event_info) {
         // None
     },
 
-    "Fire Spirit": function(game, ent, event_type) {
+    "Fire Spirit": function(game, ent, event_info) {
         // If witnessing any Fire damage, heals 2 HP.
     },
 
-    "Fire Demon": function(game, ent, event_type) {
+    "Fire Demon": function(game, ent, event_info) {
         // None
     },
 
-    "Flame Golem": function(game, ent, event_type) {
+    "Flame Golem": function(game, ent, event_info) {
         // None
     },
 
-    "Flame Portal": function(game, ent, event_type) {
+    "Flame Portal": function(game, ent, event_info) {
         // None
     },
 
-    "Crazed Fire Demon": function(game, ent, event_type) {
+    "Crazed Fire Demon": function(game, ent, event_info) {
         // If witnessing any Fire damage, gains 2 Shield.
     },
 
-    "Flame Rift": function(game, ent, event_type) {
+    "Flame Rift": function(game, ent, event_info) {
         // None
     },
 
-    "Firebug": function(game, ent, event_type) {
+    "Firebug": function(game, ent, event_info) {
         // None
     },
 
-    "Firebug Broodmother": function(game, ent, event_type) {
+    "Firebug Broodmother": function(game, ent, event_info) {
         // Summons a Firebug on an adjacent empty tile every turn.
     },
 
-    "Goblin Fire Mage": function(game, ent, event_type) {
+    "Goblin Fire Mage": function(game, ent, event_info) {
         // None
     },
 
-    "Ice Spirit": function(game, ent, event_type) {
+    "Ice Spirit": function(game, ent, event_info) {
         // None
     },
 
-    "Chilling Totem": function(game, ent, event_type) {
+    "Chilling Totem": function(game, ent, event_info) {
         // Deals 2 Ice damage per turn to all units within 2 tiles.
     },
 
-    "Frozen Totem": function(game, ent, event_type) {
+    "Frozen Totem": function(game, ent, event_info) {
         // Deals 6 Ice damage per turn to all units within 2 tiles.
     },
 
-    "Polar Bear": function(game, ent, event_type) {
+    "Polar Bear": function(game, ent, event_info) {
         // Heals 25 HP per turn while Frozen.
     },
 
-    "Undead Viking Spearman": function(game, ent, event_type) {
+    "Undead Viking Spearman": function(game, ent, event_info) {
         // Immune to Frozen.
     },
 
-    "Frozen Ghost": function(game, ent, event_type) {
+    "Frozen Ghost": function(game, ent, event_info) {
         // Immune to Frozen.
     },
 
-    "Ice Demon": function(game, ent, event_type) {
+    "Ice Demon": function(game, ent, event_info) {
         // None
     },
 
-    "Undead Viking Bowman": function(game, ent, event_type) {
+    "Undead Viking Bowman": function(game, ent, event_info) {
         // Immune to Frozen.
     },
 
-    "Lightning Spirit": function(game, ent, event_type) {
+    "Lightning Spirit": function(game, ent, event_info) {
         // None
     },
 
-    "Spark Wraith": function(game, ent, event_type) {
+    "Spark Wraith": function(game, ent, event_info) {
         // None
     },
 
-    "Charged Golem": function(game, ent, event_type) {
+    "Charged Golem": function(game, ent, event_info) {
         // None
     },
 
-    "Amphibious Eel": function(game, ent, event_type) {
+    "Amphibious Eel": function(game, ent, event_info) {
         // None
     },
 
-    "Goblin Stormcrafter": function(game, ent, event_type) {
+    "Goblin Stormcrafter": function(game, ent, event_info) {
         // None
     },
 
-    "Arcane Aberration": function(game, ent, event_type) {
+    "Arcane Aberration": function(game, ent, event_info) {
         // None
     },
 
-    "Living Wand": function(game, ent, event_type) {
+    "Living Wand": function(game, ent, event_info) {
         // None
     },
 
-    "Magishroom": function(game, ent, event_type) {
+    "Magishroom": function(game, ent, event_info) {
         // None
     },
 
-    "Giant Magishroom": function(game, ent, event_type) {
+    "Giant Magishroom": function(game, ent, event_info) {
         // None
     },
 
-    "Demonic Arcanist": function(game, ent, event_type) {
+    "Demonic Arcanist": function(game, ent, event_info) {
         // None
     },
 
-    "Possessed Wand": function(game, ent, event_type) {
+    "Possessed Wand": function(game, ent, event_info) {
         // None
     },
 
-    "Arcane Spirit": function(game, ent, event_type) {
+    "Arcane Spirit": function(game, ent, event_info) {
         // None
     },
 
-    "Posessed Armour": function(game, ent, event_type) {
+    "Posessed Armour": function(game, ent, event_info) {
         // None
     },
 
-    "Ghost Ghost Ghost": function(game, ent, event_type) {
+    "Ghost Ghost Ghost": function(game, ent, event_info) {
         // None
     },
 
-    "Revenant": function(game, ent, event_type) {
+    "Revenant": function(game, ent, event_info) {
         // None
     },
 
-    "Restless Spirit": function(game, ent, event_type) {
+    "Restless Spirit": function(game, ent, event_info) {
         // None
     },
 
-    "Ghastly Horseman": function(game, ent, event_type) {
+    "Ghastly Horseman": function(game, ent, event_info) {
         // None
     },
 
-    "Fallen Knight": function(game, ent, event_type) {
+    "Fallen Knight": function(game, ent, event_info) {
         // None
     },
 
-    "Angel of Fire": function(game, ent, event_type) {
+    "Angel of Fire": function(game, ent, event_info) {
         // None
     },
 
-    "Angel of Lightning": function(game, ent, event_type) {
+    "Angel of Lightning": function(game, ent, event_info) {
         // None
     },
 
-    "Angel of Judgement": function(game, ent, event_type) {
+    "Angel of Judgement": function(game, ent, event_info) {
         // None
     },
 
-    "High Angel of Fire": function(game, ent, event_type) {
+    "High Angel of Fire": function(game, ent, event_info) {
         // None
     },
 
-    "High Angel of Lightning": function(game, ent, event_type) {
+    "High Angel of Lightning": function(game, ent, event_info) {
         // None
     },
 
-    "Archangel": function(game, ent, event_type) {
+    "Archangel": function(game, ent, event_info) {
         // None
     },
 
-    "Holy Avatar": function(game, ent, event_type) {
+    "Holy Avatar": function(game, ent, event_info) {
         // None
     },
 
-    "Priest": function(game, ent, event_type) {
+    "Priest": function(game, ent, event_info) {
         // None
     },
 
-    "Idol": function(game, ent, event_type) {
+    "Idol": function(game, ent, event_info) {
         // None
     },
 
-    "Doomsayer": function(game, ent, event_type) {
+    "Doomsayer": function(game, ent, event_info) {
         // None
     },
 
-    "High Priest": function(game, ent, event_type) {
+    "High Priest": function(game, ent, event_info) {
         // None
     },
 
-    "Necromancer": function(game, ent, event_type) {
+    "Necromancer": function(game, ent, event_info) {
         // None
     },
 
-    "Thrall": function(game, ent, event_type) {
+    "Thrall": function(game, ent, event_info) {
         // None
     },
 
-    "Tormentor": function(game, ent, event_type) {
+    "Tormentor": function(game, ent, event_info) {
         // None
     },
 
-    "Dark Spirit": function(game, ent, event_type) {
+    "Dark Spirit": function(game, ent, event_info) {
         // None
     },
 
-    "Malicious Force": function(game, ent, event_type) {
+    "Malicious Force": function(game, ent, event_info) {
         // None
     },
 
-    "Crow": function(game, ent, event_type) {
+    "Crow": function(game, ent, event_info) {
         // None
     },
 
-    "Corvid Abomination": function(game, ent, event_type) {
+    "Corvid Abomination": function(game, ent, event_info) {
         // None
     },
 
-    "Flesh Golem": function(game, ent, event_type) {
+    "Flesh Golem": function(game, ent, event_info) {
         // None
     },
 
-    "Experiment": function(game, ent, event_type) {
+    "Experiment": function(game, ent, event_info) {
         // None
     },
 
-    "Grand Experiment": function(game, ent, event_type) {
+    "Grand Experiment": function(game, ent, event_info) {
         // None
     },
 
-    "Imp": function(game, ent, event_type) {
+    "Imp": function(game, ent, event_info) {
         // None
     },
 
-    "Fire Imp": function(game, ent, event_type) {
+    "Fire Imp": function(game, ent, event_info) {
         // None
     },
 
-    "Frost Imp": function(game, ent, event_type) {
+    "Frost Imp": function(game, ent, event_info) {
         // None
     },
 
-    "Chaotic Imp": function(game, ent, event_type) {
+    "Chaotic Imp": function(game, ent, event_info) {
         // None
     },
 
-    "Primal Demon": function(game, ent, event_type) {
+    "Primal Demon": function(game, ent, event_info) {
         // None
     },
 
-    "Demon Mage": function(game, ent, event_type) {
+    "Demon Mage": function(game, ent, event_info) {
         // None
     },
 
-    "Demon Wizard": function(game, ent, event_type) {
+    "Demon Wizard": function(game, ent, event_info) {
         // None
     },
 
-    "Brimstone Elemental": function(game, ent, event_type) {
+    "Brimstone Elemental": function(game, ent, event_info) {
         // None
     },
 
-    "Brimstone Demon": function(game, ent, event_type) {
+    "Brimstone Demon": function(game, ent, event_info) {
         // None
     },
 
-    "Bone Shambler": function(game, ent, event_type) {
+    "Bone Shambler": function(game, ent, event_info) {
         // None
     },
 
-    "Bone Construct": function(game, ent, event_type) {
+    "Bone Construct": function(game, ent, event_info) {
         // None
     },
 
-    "Bone Hulk": function(game, ent, event_type) {
+    "Bone Hulk": function(game, ent, event_info) {
         // None
     },
 
-    "Giant Bone Construct": function(game, ent, event_type) {
+    "Giant Bone Construct": function(game, ent, event_info) {
         // None
     },
 
-    "Mistake": function(game, ent, event_type) {
+    "Mistake": function(game, ent, event_info) {
         // None
     },
 
-    "Locust Swarm": function(game, ent, event_type) {
+    "Locust Swarm": function(game, ent, event_info) {
         // None
     },
 
-    "Giant Beetle": function(game, ent, event_type) {
+    "Giant Beetle": function(game, ent, event_info) {
         // None
     },
 
-    "Lamia": function(game, ent, event_type) {
+    "Lamia": function(game, ent, event_info) {
         // None
     },
 
-    "Frost Tiger": function(game, ent, event_type) {
+    "Frost Tiger": function(game, ent, event_info) {
         // None
     },
 
-    "Voidtouched Lion": function(game, ent, event_type) {
+    "Voidtouched Lion": function(game, ent, event_info) {
         // None
     },
 
-    "Treant": function(game, ent, event_type) {
+    "Treant": function(game, ent, event_info) {
         // None
     },
 
-    "Stumpy Walker": function(game, ent, event_type) {
+    "Stumpy Walker": function(game, ent, event_info) {
         // None
     },
 
-    "Giant Flytrap": function(game, ent, event_type) {
+    "Giant Flytrap": function(game, ent, event_info) {
         // None
     },
 
-    "Vine Lasher": function(game, ent, event_type) {
+    "Vine Lasher": function(game, ent, event_info) {
         // None
     },
 
-    "Fire Flower": function(game, ent, event_type) {
+    "Fire Flower": function(game, ent, event_info) {
         // None
     },
 
-    "Posessed Sunflower": function(game, ent, event_type) {
+    "Posessed Sunflower": function(game, ent, event_info) {
         // None
     },
 
-    "Chimera": function(game, ent, event_type) {
+    "Chimera": function(game, ent, event_info) {
         // None
     },
 
-    "Minotaur": function(game, ent, event_type) {
+    "Minotaur": function(game, ent, event_info) {
         // None
     },
 
-    "Werewolf": function(game, ent, event_type) {
+    "Werewolf": function(game, ent, event_info) {
         // None
     },
 
-    "Basilisk": function(game, ent, event_type) {
+    "Basilisk": function(game, ent, event_info) {
         // None
     },
 
-    "Kraken": function(game, ent, event_type) {
+    "Kraken": function(game, ent, event_info) {
         // None
     },
 
-    "Ogre": function(game, ent, event_type) {
+    "Ogre": function(game, ent, event_info) {
         // None
     },
 
-    "Giant Ogre": function(game, ent, event_type) {
+    "Giant Ogre": function(game, ent, event_info) {
         // None
     },
 
-    "Tiny Ogre": function(game, ent, event_type) {
+    "Tiny Ogre": function(game, ent, event_info) {
         // None
     },
 
-    "Gnome": function(game, ent, event_type) {
+    "Gnome": function(game, ent, event_info) {
         // None
     },
 
-    "Hypergnome": function(game, ent, event_type) {
+    "Hypergnome": function(game, ent, event_info) {
         // None
     },
 
-    "Centaur Courser": function(game, ent, event_type) {
+    "Centaur Courser": function(game, ent, event_info) {
         // None
     },
 
-    "Centaur Bowman": function(game, ent, event_type) {
+    "Centaur Bowman": function(game, ent, event_info) {
         // None
     },
 
-    "Centaur Spearman": function(game, ent, event_type) {
+    "Centaur Spearman": function(game, ent, event_info) {
         // None
     },
 
-    "Phoenix": function(game, ent, event_type) {
+    "Phoenix": function(game, ent, event_info) {
         // None
     },
 
-    "Ice Phoenix": function(game, ent, event_type) {
+    "Ice Phoenix": function(game, ent, event_info) {
         // None
     },
 
-    "Hydra": function(game, ent, event_type) {
+    "Hydra": function(game, ent, event_info) {
         // None
     },
 
-    "Scorpion": function(game, ent, event_type) {
+    "Scorpion": function(game, ent, event_info) {
         // None
     },
 
-    "Lightning Scorpion": function(game, ent, event_type) {
+    "Lightning Scorpion": function(game, ent, event_info) {
         // None
     },
 
-    "Acidic Scorpion": function(game, ent, event_type) {
+    "Acidic Scorpion": function(game, ent, event_info) {
         // None
     },
 
-    "Towering Isopod": function(game, ent, event_type) {
+    "Towering Isopod": function(game, ent, event_info) {
         // None
     },
 
-    "Giant Mantis": function(game, ent, event_type) {
+    "Giant Mantis": function(game, ent, event_info) {
         // None
     },
 
-    "Chaotic Construct": function(game, ent, event_type) {
+    "Chaotic Construct": function(game, ent, event_info) {
         // None
     },
 
-    "Dark Idol": function(game, ent, event_type) {
+    "Dark Idol": function(game, ent, event_info) {
         // None
     },
 
-    "Flesh Totem": function(game, ent, event_type) {
+    "Flesh Totem": function(game, ent, event_info) {
         // None
     },
 
-    "Bugbeast": function(game, ent, event_type) {
+    "Bugbeast": function(game, ent, event_info) {
         // None
     },
 
-    "Spider": function(game, ent, event_type) {
+    "Spider": function(game, ent, event_info) {
         // None
     },
 
-    "Giant Spider": function(game, ent, event_type) {
+    "Giant Spider": function(game, ent, event_info) {
         // None
     },
 
-    "Giant Enemy Spider": function(game, ent, event_type) {
+    "Giant Enemy Spider": function(game, ent, event_info) {
         // None
     },
 
-    "Skeleton": function(game, ent, event_type) {
+    "Skeleton": function(game, ent, event_info) {
         // None
     },
 
-    "Giant Skeleton": function(game, ent, event_type) {
+    "Giant Skeleton": function(game, ent, event_info) {
         // None
     },
 
-    "Seraphim": function(game, ent, event_type) {
+    "Seraphim": function(game, ent, event_info) {
         // None
     },
 
-    "Rock Golem": function(game, ent, event_type) {
+    "Rock Golem": function(game, ent, event_info) {
         // None
     },
 
-    "Acolyte of Order": function(game, ent, event_type) {
+    "Acolyte of Order": function(game, ent, event_info) {
         // None
     },
 
-    "Rock Titan": function(game, ent, event_type) {
+    "Rock Titan": function(game, ent, event_info) {
         // None
     },
 
-    "Granite Titan": function(game, ent, event_type) {
+    "Granite Titan": function(game, ent, event_info) {
         // None
     },
 
-    "Mud Titan": function(game, ent, event_type) {
+    "Mud Titan": function(game, ent, event_info) {
         // None
     },
 
-    "Bronze Colossus": function(game, ent, event_type) {
+    "Bronze Colossus": function(game, ent, event_info) {
         // None
     },
 
-    "Steel Colossus": function(game, ent, event_type) {
+    "Steel Colossus": function(game, ent, event_info) {
         // None
     },
 
-    "Faithful of Order": function(game, ent, event_type) {
+    "Faithful of Order": function(game, ent, event_info) {
         // None
     },
 
-    "Wizard of Order": function(game, ent, event_type) {
+    "Wizard of Order": function(game, ent, event_info) {
         // None
     },
 
-    "High Wizard of Order": function(game, ent, event_type) {
+    "High Wizard of Order": function(game, ent, event_info) {
         // None
     },
 
-    "Master of Order": function(game, ent, event_type) {
+    "Master of Order": function(game, ent, event_info) {
         // None
     },
 
-    "Ice Wall": function(game, ent, event_type) {
+    "Ice Wall": function(game, ent, event_info) {
         // None
     },
 
-    "Target Dummy": function(game, ent, event_type) {
+    "Target Dummy": function(game, ent, event_info) {
         // Heals to max HP every turn.
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_type) {
+    "Unnamed": function(game, ent, event_info) {
         // None
     },
 

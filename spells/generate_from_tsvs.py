@@ -93,7 +93,7 @@ with open("entities.tsv", "r") as f:
 
         final_spells_text += t2
 
-        t3 = '    "{}": function(game, ent, event_type) [[[\n' \
+        t3 = '    "{}": function(game, ent, event_info) [[[\n' \
              '        // {}\n' \
              '    ]]],\n\n'.format(
                 name, specials

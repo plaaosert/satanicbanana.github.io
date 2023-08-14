@@ -1280,119 +1280,119 @@ spells_funcs = {
         no_tiles
     ],
 
-    "183": [
+    "Reconversion": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "184": [
+    "Retarget: Self": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "185": [
+    "Retarget: Enemy": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "186": [
+    "Retarget: Ally": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "187": [
+    "Retarget: Weak": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "188": [
+    "Retarget: Strong": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "189": [
+    "Retarget: Native": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "190": [
+    "Retarget: Pushback": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "191": [
+    "Retarget: Magnetism": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "192": [
+    "Retarget: Compact": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "193": [
+    "Retarget: Sparse": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "194": [
+    "Retarget: Mysterious": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "195": [
+    "Spell Transference": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "196": [
+    "Arcane Echo": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "197": [
+    "Spreading Arcana": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "198": [
+    "Purity": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "199": [
+    "Unresolved Spell": [
         no_stats,
         no_target,
         no_hit,
@@ -1441,14 +1441,14 @@ spells_funcs = {
         no_tiles
     ],
 
-    "206": [
+    "Zenith Arcana III": [
         no_stats,
         no_target,
         no_hit,
         no_tiles
     ],
 
-    "207": [
+    "Zenith Arcana IV": [
         no_stats,
         no_target,
         no_hit,

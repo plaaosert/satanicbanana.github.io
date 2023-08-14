@@ -61,6 +61,41 @@ TODO:
 - spells should be clickable to select them, or bound to numbers 1-5
 */
 
+const sbox = {
+    "h": "─",
+    "v": "│",
+    "tl": "┌",
+    "tr": "┐",
+    "bl": "└",
+    "br": "┘",
+    "ml": "├",
+    "mr": "┤",
+    "tm": "┬",
+    "dm": "┴",
+    "c": "┼",
+    "f": "█"
+}
+
+const dbox = {
+    "h": "═",
+    "v": "║",
+    "tl": "╔",
+    "tr": "╗",
+    "bl": "╚",
+    "br": "╝",
+    "ml": "╠",
+    "mr": "╣",
+    "tm": "╦",
+    "dm": "╩",
+    "c": "╬",
+    "f": "█"
+}
+
+const boxs = {
+    "s": sbox,
+    "d": dbox
+}
+
 pretty_print_trigger = {
     "at_target": "At target position",
     "on_hit": "At any damage instance",
@@ -68,6 +103,66 @@ pretty_print_trigger = {
 }
 
 switch_checkerboard = 0;
+
+// All seeded randomness from:
+// https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
+function cyrb128(str) {
+    let h1 = 1779033703, h2 = 3144134277,
+        h3 = 1013904242, h4 = 2773480762;
+    for (let i = 0, k; i < str.length; i++) {
+        k = str.charCodeAt(i);
+        h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+        h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+        h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+        h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+    }
+    h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+    h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+    h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+    h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+    h1 ^= (h2 ^ h3 ^ h4), h2 ^= h1, h3 ^= h1, h4 ^= h1;
+    return [h1>>>0, h2>>>0, h3>>>0, h4>>>0];
+}
+
+function sfc32(a, b, c, d) {
+    return function(dump_values) {
+        if (dump_values) {
+            return [a, b, c, d]
+        }
+
+        a >>>= 0; b >>>= 0; c >>>= 0; d >>>= 0; 
+        var t = (a + b) | 0;
+        a = b ^ b >>> 9;
+        b = c + (c << 3) | 0;
+        c = (c << 21 | c >>> 11);
+        d = d + 1 | 0;
+        t = t + d | 0;
+        c = c + t | 0;
+        return (t >>> 0) / 4294967296;
+    }
+}
+
+function get_seeded_randomiser(seed) {
+    let seed_hash = cyrb128(seed);
+
+    let rand = sfc32(seed_hash[0], seed_hash[1], seed_hash[2], seed_hash[3]);
+
+    return rand;
+}
+
+function random_from_parameters(a, b, c, d) {
+    return sfc32(a, b, c, d);
+}
+
+function seeded_random(seed) {
+    let rand = get_seeded_randomiser(seed)
+
+    // generate once, discard
+    rand();
+
+    // return second number
+    return rand();
+}
 
 function lerp_arr(from, to, amt, round) {
     return from.map((t, i) => {
@@ -91,7 +186,7 @@ function in_bounds(val, lo, hi) {
 }
 
 function random_on_circle(r) {
-    let theta = Math.random() * 2 * Math.PI;
+    let theta = game.random() * 2 * Math.PI;
 
     let x = r * Math.cos(theta);
     let y = r * Math.sin(theta);
@@ -145,12 +240,25 @@ class Vector2 {
         return new Vector2(this.x / other, this.y / other);
     }
 
+    // TODO test it works (moved sqr_magnitude into its own function from magnitude)
+    sqr_magnitude() {
+        return Math.pow(this.x, 2) + Math.pow(this.y, 2)
+    }
+
     magnitude() {
-        return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
+        return Math.sqrt(this.sqr_magnitude());
     }
 
     normalize() {
+        if (this.sqr_magnitude() == 0) {
+            return this;
+        }
+
         return this.div(this.magnitude());
+    }
+
+    sqr_distance(other) {
+        return this.sub(other).sqr_magnitude();
     }
 
     distance(other) {
@@ -598,6 +706,8 @@ class Renderer {
         this.selected_spell = null;
         this.selected_spell_loc = null;
         this.selected_full_spell = null;
+
+        this.selected_tile = resolved_pos;
 
         switch (this.get_position_panel(resolved_pos)) {
             case 0:  // left panel
@@ -1181,6 +1291,8 @@ class Renderer {
         let cur_line = "";
         let cur_word = "";
         let string_len = 0;
+        let word_len = 0;
+
         let in_code = false;
 
         for (let i=0; i<s.length; i++) {
@@ -1197,22 +1309,25 @@ class Renderer {
                         if (char == " ") {
                             cur_line += cur_word + " ";
                             cur_word = "";
+                            word_len = -1;
                         }
 
                         string_len++;
+                        word_len++;
                     }
                 }
             }
 
-            if (string_len > w || char == "\n") {
+            if (string_len >= w || char == "\n") {
                 if (char == "\n" && !(string_len > w)) {
                     cur_line += cur_word + " ";
                     cur_word = "";
+                    word_len = 0;
                 }
 
                 lines.push(cur_line.trim());
                 cur_line = "";
-                string_len = cur_word.length;
+                string_len = word_len;
             }
 
             if (char != " " && char != "\n") {
@@ -1228,7 +1343,29 @@ class Renderer {
         return lines.join("\n");
     }
     
-    set_pixel_text(pos, text, start_col, clearance_x) {
+    code_string_len(s) {
+        // Assumes no newlines
+        let string_len = 0;
+        let in_code = false;
+        for (let i=0; i<s.length; i++) {
+            let char = s[i];
+            if (in_code) {
+                if (char == "]") {
+                    in_code = false;
+                }
+            } else {
+                if (char == "[" && (i == s.length - 1 || s[i+1] != "]")) {
+                    in_code = true;
+                } else {
+                    string_len++;
+                }
+            }
+        }
+    
+        return string_len
+    }
+
+    set_pixel_text(pos, text, start_col, clearance_x, force_col) {
         let col = start_col;
         let reading_new_col = false;
         let col_read = "";
@@ -1265,7 +1402,7 @@ class Renderer {
                     char = char.replace("«", "[").replace("»", "]");
 
                     if (char != "\n") {
-                        this.set_pixel(cur_pos, char, col);
+                        this.set_pixel(cur_pos, char, force_col ? force_col : col);
                         cur_pos = cur_pos.add(new Vector2(1, 0));
                     }
 
@@ -1279,6 +1416,13 @@ class Renderer {
                     }
                 }
             }
+        }
+
+        if (col_read || reading_new_col) {
+            this.set_pixel(cur_pos, "[", "#fff");
+            let fmt_codecol = col_read.replace("_", "").trim()
+            let code_col = CSS.supports("color", fmt_codecol) ? fmt_codecol : "#fff"
+            this.set_pixel_text(cur_pos.add(new Vector2(1, 0)), col_read, start_col, clearance_x, code_col);
         }
 
         return wraps;
@@ -1361,12 +1505,12 @@ class Renderer {
 
         this.set_pixel_text(
             left_mount_pos.add(new Vector2(0, 1)),
-            this.pad_str(`[red]${p.hp}/${p.max_hp}[clear] HP`, 5+1+5+3)
+            this.pad_str(`[red]${p.hp}/${p.max_hp}[clear] HP`, 7+1+7+3)
         )
 
         this.set_pixel_text(
             left_mount_pos.add(new Vector2(0, 2)),
-            this.pad_str(`[cyan]${p.mp}/${p.max_mp}[clear] MP`, 5+1+5+3)
+            this.pad_str(`[cyan]${p.mp}/${p.max_mp}[clear] MP`, 7+1+7+3)
         )
 
         // affinities
@@ -1417,7 +1561,12 @@ class Renderer {
 
             this.set_pixel_text(
                 current_spell_point,
-                this.pad_str(`[${cols[0]}](${i+1}) [${cols[1]}]${name}`, clearance_x - 8) + this.pad_str(`[${cols[2]}]${parsed.manacost} MP`, 8)
+                this.pad_str(`[${cols[0]}](${i+1}) [${cols[1]}]${name}`, clearance_x - 8)
+            );
+
+            this.set_pixel_text(
+                current_spell_point.add(new Vector2(clearance_x - 9, 0)),
+                this.pad_str(`[${cols[2]}]${parsed.manacost} MP`, 8, 1)
             );
 
             if (game.selected_id == i) {
@@ -1889,13 +2038,95 @@ class Renderer {
                 
             } else if (this.inventory_editing_spell_frag) {
                 
+            } else if (this.inventory_delete_spell_selected) {
+                this.set_pixel_text(
+                    right_mount_pos,
+                    this.pad_str(`[white]Move a fragment here to delete it.[clear]\nThis is [#f00]permanent![clear]`, clearance_x, 0),
+                    "white"
+                );
             } else {
-                // need to clear the whole panel. can do this with a well-constructed string
-                // size of right panel is right panel size x - 4 (border margin) multiplied by y - 2
-                /*
-                let string_len = (this.right_menu_size.x - 4) * (this.right_menu_size.y - 2);
-                this.set_pixel_text(right_mount_pos, "\u00A0".repeat(string_len), null);
-                */
+                // render recorded damage here i suppose? and other stats like wavecount
+                // maybe also enemies remaining
+                this.set_pixel_text(
+                    right_mount_pos,
+                    this.pad_str(`[white]- Wave [#0f0]${game.wavecount}[clear] -`, clearance_x, 2),
+                    "white"
+                );
+
+                if (Object.keys(game.wave_entities).length > 0) {
+                    this.set_pixel_text(
+                        right_mount_pos.add(new Vector2(0, 2)),
+                        this.pad_str(`[white]Enemies remaining: [#f80]${Object.keys(game.wave_entities).length}[clear]`, clearance_x),
+                        null
+                    );
+                } else {
+                    this.set_pixel_text(
+                        right_mount_pos.add(new Vector2(0, 2)),
+                        this.pad_str(`[#0f0]Wave completed![clear]`, clearance_x),
+                        null
+                    );
+                }
+
+                // desc
+                let text_pos = right_mount_pos.add(new Vector2(0, 4));
+                this.set_pixel_text(
+                    text_pos,
+                    this.pad_str(`[white]Damage dealt | This wave  | Total`, clearance_x),
+                    "white"
+                );
+
+                let player_record_key = this.game.player_ent.id + "|" + this.game.player_ent.name;
+                Object.keys(DmgType).forEach(typ => {
+                    text_pos = text_pos.add(new Vector2(0, 1));
+                    let dmg_amt_wave = 0;
+                    let dmg_amt_total = 0;
+                    if (this.game.recorded_damage[player_record_key] && this.game.recorded_damage[player_record_key][typ]) {
+                        dmg_amt_total = this.game.recorded_damage[player_record_key][typ];
+                    }
+
+                    if (this.game.current_wave_damage[player_record_key] && this.game.current_wave_damage[player_record_key][typ]) {
+                        dmg_amt_wave = this.game.current_wave_damage[player_record_key][typ];
+                    }
+
+                    dmg_amt_wave = dmg_amt_wave.toString().padEnd(10);
+                    dmg_amt_total = dmg_amt_total.toString().padEnd(10);
+
+                    this.set_pixel_text(
+                        text_pos,
+                        this.pad_str(`[${damage_type_cols[typ]}]${typ.padEnd(12)}[white] |[#0cf] ${dmg_amt_wave}[white] |[#0cf] ${dmg_amt_total}[clear]`, clearance_x),
+                        "white"
+                    );
+                })
+
+                let emblems_pos = text_pos.add(new Vector2(0, 2));
+                if (this.game.player_emblems.length > 0) {
+                    this.set_pixel_text(
+                        emblems_pos,
+                        this.pad_str(`[#fff]Emblems ([#0f0]${this.game.player_emblems.length}[clear])`, clearance_x),
+                        null
+                    );
+
+                    emblems_pos = emblems_pos.add(new Vector2(0, 2));
+
+                    this.game.player_emblems.forEach(emblem => {
+                        this.set_pixel_text(
+                            emblems_pos,
+                            `${emblem.name}`,
+                            "#fff", clearance_x
+                        );
+
+                        emblems_pos = emblems_pos.add(new Vector2(0, 1));
+
+                        // TODO line wrapping isn't working as intended
+                        let wraps = this.set_pixel_text(
+                            emblems_pos,
+                            `${emblem.desc}`,
+                            "#fff", clearance_x
+                        );
+
+                        emblems_pos = emblems_pos.add(new Vector2(0, 2 + wraps));
+                    })
+                }
             }
         }
     }
@@ -1975,7 +2206,12 @@ class Renderer {
             let parsed = this.game.player_ent.parse_spell(game.player_spells[j].spells, new Vector2(0, 0));
             this.set_pixel_text(
                 current_line,
-                this.pad_str(`[white](${j+1}) ${spell_name}`, clearance_x - 9) + this.pad_str(`[cyan]${parsed.manacost} MP`, 8, 1)
+                this.pad_str(`[white](${j+1}) ${spell_name}`, clearance_x - 9)
+            )
+
+            this.set_pixel_text(
+                current_line.add(new Vector2(clearance_x - 9, 0)),
+                this.pad_str(`[cyan]${parsed.manacost} MP`, 8, 1)
             )
 
             this.inventory_spell_names[current_line.y] = j;
@@ -2538,6 +2774,9 @@ class Renderer {
         this.messagebox_open = null;
         this.selected_messagebox_option_nr = null;
         this.selected_messagebox_option_fn = null;
+
+        this.refresh_left_panel = true;
+        this.refresh_right_panel = true;
     }
 
     check_messagebox_queue() {
@@ -2900,7 +3139,7 @@ class Entity {
                     }
 
                     if (cast_spell) {
-                        let chosen = spell_to_cast[Math.floor(Math.random() * spell_to_cast.length)];
+                        let chosen = spell_to_cast[Math.floor(game.random() * spell_to_cast.length)];
                         let primed_spell = chosen[0];
                         let innate_index = chosen[1];
 
@@ -3308,10 +3547,11 @@ class Spell {
 }
 
 // TODO fire these events for every entity when something happens
+// [game, ent, event_info{event_type, other details, e.g. damage amount and type for DamageTaken}]
 const GameEventType = {
+    SelfSpawned: "SelfSpawned",  // TODO
     SelfTurnBegan: "SelfTurnBegan",  // TODO
     SelfTurnEnded: "SelfTurnEnded",  // TODO
-    AnyTurnBegan: "AnyTurnBegan",  // TODO
     AnyTurnEnded: "AnyTurnEnded",  // TODO
     SelfDamageTaken: "SelfDamageTaken",  // TODO
     AnyDamageTaken: "AnyDamageTaken",  // TODO
@@ -3343,6 +3583,21 @@ const SpellTargeting = {
     SelfTarget: 'the area around the caster',    // cast location is self tile
     SelfTargetPlusCaster: 'at the caster\'s position'  // self target implicitly removes caster tile but this doesn't
 };
+
+const RetargetType = {
+    None: "None",
+    Self: "Self",
+    Enemy: "Enemy",
+    Ally: "Ally",
+    Weak: "Weak",
+    Strong: "Strong",
+    Native: "Native",
+    Pushback: "Pushback",
+    Magnetism: "Magnetism",
+    Compact: "Compact",
+    Sparse: "Sparse",
+    Mysterious: "Mysterious"
+}
 
 const Teams = {
     PLAYER: "Player",
@@ -3408,6 +3663,24 @@ const affinity_cols = {
     "Insect": "#282",
     "Construct": "#bbb",
     "Order": "#D5C2A5"
+}
+
+const affinity_opposites = {
+    "Fire": "Ice",
+    "Ice": "Fire",
+    "Lightning": "Natural",
+    "Arcane": "Dark",
+    "Ghost": "Construct",
+    "Chaos": "Order",
+    "Holy": "Demon",
+    "Dark": "Arcane",
+    "Demon": "Holy",
+    "Undead": "Living",
+    "Natural": "Lightning",
+    "Living": "Undead",
+    "Insect": "Insect",
+    "Construct": "Ghost",
+    "Order": "Chaos"
 }
 
 // index 1: what type the defender is
@@ -3882,7 +4155,7 @@ const Generator = {
     RandomWalls: function(game, board, cvr) {
         let coverage = cvr ? cvr : 0.02
 
-        let num_walls = (0.85 + (Math.random() * 0.3)) * board.num_tiles * coverage;
+        let num_walls = (0.85 + (game.random() * 0.3)) * board.num_tiles * coverage;
         num_walls = Math.floor(num_walls);
 
         let wall = get_entity_by_name("Wall");
@@ -3891,8 +4164,8 @@ const Generator = {
 
         for (let i=0; i<num_walls; i++) {
             let pos = new Vector2(
-                Math.floor(Math.random() * board.dimensions.x),
-                Math.floor(Math.random() * board.dimensions.y)
+                Math.floor(game.random() * board.dimensions.x),
+                Math.floor(game.random() * board.dimensions.y)
             );
 
             let result = game.spawn_entity(
@@ -4139,6 +4412,9 @@ class PrimedSpell {
             "simultaneous": 0,
             "btb": 0
         }
+
+        this.stats.retarget = RetargetType.NONE;
+
         this.stats.shape = Shape.Diamond;
         this.stats.los = true;
 
@@ -4162,6 +4438,12 @@ class PrimedSpell {
         this.spells.forEach(spell => {
             if (spell.fns.to_stats) {
                 spell.fns.to_stats(this.caster, spell, this.stats);
+            }
+
+            if (this.caster.id == game.player_ent.id && spell.typ == SpellType.Core) {
+                game.player_emblems.forEach(emblem => {
+                    emblem.to_core_stats(this.caster, spell, this.stats);
+                })
             }
         })
 
@@ -4193,6 +4475,7 @@ class PrimedSpell {
     spell_would_affect(caster, ent, ignore_unit_target) {
         // check if it's in range. for a selftarget, it will instead check the shape and see if the
         // target is inside it. 
+        // TODO need to also have a flag to tell AI to use it no matter what (e.g. selftarget cores)
         if ([SpellTargeting.SelfTarget, SpellTargeting.SelfTargetPlusCaster].includes(this.stats.target_type)) {
             return this.get_affected_tiles(game.board, caster, caster.position).some(vec => {
                 return vec.equals(ent.position)
@@ -4240,6 +4523,7 @@ class PrimedSpell {
         }
     }
 
+    // DOES NOT RETARGET ON ITS OWN!!! NEED TO DO THIS SEPARATELY
     get_affected_tiles(board, caster, position) {
         let origin = this.origin ? this.origin : (
             caster.position ? caster.position : caster
@@ -4256,6 +4540,146 @@ class PrimedSpell {
         }
 
         return cast_locations;
+    }
+
+    get_retarget_position(board, caster, origin, old_position) {
+        switch (this.stats.retarget) {
+            case RetargetType.Self:
+                return caster.position;
+
+            case RetargetType.Enemy:  // closest enemy of CASTER
+            case RetargetType.Ally:  // closest ally of CASTER
+            case RetargetType.Weak:  // weakest to core dmg type, tiebreak with closest
+            case RetargetType.Strong:  // strongest against core dmg type, tiebreak with closest
+            case RetargetType.Native:  // filter by affinities matching dmg type, tiebreak with closest
+                let positions = Shape.Circle[1](origin, old_position, this.stats.range, this.stats.los)
+                let ents = game.board.check_shape(
+                    positions, null, null, e => (e && !e.untargetable)
+                )
+
+                // filter this based on the retarget type:
+                switch (this.stats.retarget) {
+                    case RetargetType.Enemy:
+                        ents = ents.filter(e => !e.has_team(caster.team))
+                        break;
+
+                    case RetargetType.Ally:
+                        ents = ents.filter(e => e.has_team(caster.team))
+                        break;
+
+                    case RetargetType.Weak:
+                        let highest_dmg_mult = Math.max(
+                            ...(ents.map(e => e.get_damage_mult(this.stats.damage_type)))
+                        )
+                        ents = ents.filter(e => e.get_damage_mult(this.stats.damage_type) >= highest_dmg_mult);
+                        break;
+
+                    case RetargetType.Strong:
+                        let lowest_dmg_mult = Math.min(
+                            ...(ents.map(e => e.get_damage_mult(this.stats.damage_type)))
+                        )
+                        ents = ents.filter(e => e.get_damage_mult(this.stats.damage_type) <= lowest_dmg_mult);
+                        break;
+
+                    case RetargetType.Native:
+                        ents = ents.filter(e => e.has_affinity(this.stats.damage_type))
+                        break;
+                }
+
+                if (ents.length <= 0) {
+                    return old_position;
+                }
+
+                // now pick the closest entity
+                let closest_ent = ents.reduce((prev, curr) => {
+                    if (old_position.sqr_distance(prev.position) < old_position.sqr_distance(curr.position)) {
+                        return prev;
+                    } else {
+                        return curr;
+                    }
+                })
+
+                return closest_ent.position;
+
+            case RetargetType.Pushback:
+            case RetargetType.Magnetism:
+            case RetargetType.Compact:
+            case RetargetType.Sparse:
+            case RetargetType.Mysterious:
+                // use the line shape so we obey LOS. the position we target is dependent on the retarget type.
+                let line_delta = new Vector2(0, 0);
+                let target_pos = null;
+                let max_dist = 0;
+                switch (this.stats.retarget) {
+                    case RetargetType.Pushback:
+                        // 3 tiles away from caster
+                        line_delta = old_position.sub(caster.position).normalize().mul(3).round();
+
+                        max_dist = 3;
+                        break;
+
+                    case RetargetType.Magnetism:
+                        // 3 tiles towards caster
+                        if (old_position.distance(caster.position) < 3) {
+                            target_pos = caster.position;
+                        } else {
+                            line_delta = old_position.sub(caster.position).normalize().mul(-3).round();
+                        }
+
+                        max_dist = 3;
+                        break;
+
+                    case RetargetType.Compact:
+                        // 2 tiles towards cast position
+                        if (old_position.distance(origin) < 2) {
+                            target_pos = origin;
+                        } else {
+                            line_delta = old_position.sub(origin).normalize().mul(-2).round();
+                        }
+
+                        max_dist = 2;
+                        break;
+
+                    case RetargetType.Sparse:
+                        // 2 tiles away from cast position
+                        line_delta = old_position.sub(origin).normalize().mul(2).round();
+
+                        max_dist = 2;
+                        break;
+
+                    case RetargetType.Mysterious:
+                        // seed a random generator with the target xy, modify by random +-8 xy
+                        line_delta = new Vector2(
+                            8 - (seeded_random(old_position.hash_code().toString()) * 16),
+                            8 - (seeded_random(old_position.mul(3).hash_code().toString()) * 16)
+                        ).round();
+
+                        max_dist = 999;
+                        break;
+                }
+
+                let line_points = [];
+                if (!target_pos) {
+                    target_pos = old_position.add(line_delta);
+                    line_points = Shape.Line[1](old_position, target_pos, 1, this.stats.los);
+                } else {
+                    line_points = [target_pos];
+                }
+                
+                // the last thing in the line is either where it stopped due to LOS
+                // or where it got to the goal position
+                // so just return that here
+                if (line_points.length > 0) {
+                    // console.log("length comparison of retarget (max, real):", max_dist, line_points.length)
+                    // console.log(line_points)
+                    // console.log(line_points[line_points.length-1])
+                    return line_points[line_points.length-1];
+                } else {
+                    return old_position;
+                }
+        }
+
+        return old_position;
     }
 
     cast(board, caster, target_position) {
@@ -4280,6 +4704,11 @@ class PrimedSpell {
 
         let origin = this.origin ? this.origin : caster.position;
         
+        position = this.get_retarget_position(board, caster, origin, position);
+        // if (this.stats.retarget != RetargetType.None) {
+        //     console.log(`Successfully retargeted from ${target_position.toString()} to ${position.toString()}`)
+        // }
+
         let cast_locations = this.get_affected_tiles(board, caster, position);
 
         if (this.stats.shape("whoami") == Shape.Line[0]) {
@@ -4521,7 +4950,7 @@ class PrimedSpell {
                 ents = ents.filter(e => !this.stats.mutable_info["simultaneous_ents"].includes(e.id))
 
                 if (ents.length > 0) {
-                    let ent = ents[Math.floor(Math.random() * ents.length)];
+                    let ent = ents[Math.floor(game.random() * ents.length)];
 
                     let new_mc = 0;
                     this.stats.multicasts["simultaneous"] -= 1;
@@ -4568,7 +4997,7 @@ class PrimedSpell {
             ents = ents.filter(e => !this.stats.mutable_info["chainspell_ents"].includes(e.id))
 
             if (ents.length > 0) {
-                let ent = ents[Math.floor(Math.random() * ents.length)];
+                let ent = ents[Math.floor(game.random() * ents.length)];
 
                 let new_mc = this.stats.multicasts["chain"] - 1;
                 this.stats.mutable_info["chainspell_ents"].push(ent.id);
@@ -4593,6 +5022,7 @@ class Game {
         this.player_ent = null;
         this.entities = [];
         this.recorded_damage = {};  // indexed by caster id and name
+        this.current_wave_damage = {};
         this.damage_counts = {};    // indexed by spell id
 
         this.wavecount = 0;
@@ -4602,7 +5032,13 @@ class Game {
         
         this.wave_entities = {};
 
-        this.player_spells = [];
+        this.player_spells = [
+            {spells: [], name: "Spell 1"},
+            {spells: [], name: "Spell 2"},
+            {spells: [], name: "Spell 3"},
+            {spells: [], name: "Spell 4"},
+            {spells: [], name: "Spell 5"}
+        ];
         this.selected_id = -1;
         this.selected_player_spell = null;
         this.selected_player_primed_spell = null;
@@ -4611,6 +5047,7 @@ class Game {
         this.player_skill_points = 0;
         this.player_inventory = [];
         this.player_spells_edit = [[], [], [], [], []];
+        this.player_emblems = [];
 
         this.player_max_spell_shards = 20;
         this.player_inventory_size = 60;
@@ -4648,6 +5085,247 @@ class Game {
         this.turn_processing = true;
 
         this.needs_main_view_update = true;
+
+        this.random_seed = Math.random().toString()
+        this.random = get_seeded_randomiser(this.random_seed)
+    }
+
+    // These are not copied by the naive copy straight from JSON. Everything else is.
+    // This also refers to things which shouldn't be added to the save string.
+    // Things in here will not be (automatically) added to the saved string, or copied to the entity on load.
+    static ignored_entity_properties = [
+        "specials", "specials_text", "is_player", "template_id", "template", "innate_spells",
+        "innate_primed_spells", "position", "is_wave_entity"
+    ]
+
+    static required_save_properties = [
+        "id"
+    ]
+
+    static make_game_from_save_string(save_str) {
+        // the way we're gonna do this is make a new game and board instance, then return that
+        let decoded_save = atob(save_str);
+        let save = JSON.parse(decoded_save);
+
+        let new_board = new Board(new Vector2(
+            save.board_size.x,
+            save.board_size.y,
+        ))
+
+        let new_game = new Game(new_board);
+
+        new_game.player_xp = save.player.xp;
+        new_game.player_level = save.player.level;
+        new_game.player_skill_points = save.player.skill_points;
+        new_game.player_emblems = save.player.emblems.map(e => get_emblem_by_iname(e));
+        
+        new_game.player_spells = save.player.spells.map(sp => {
+            return {
+                spells: gen_spells(...sp.spells),
+                name: sp.name
+            }
+        })
+
+        new_game.player_spells_edit = save.player.spells_edit.map(sp => {
+            return sp.map(s => s ? get_spell_by_name(s) : s)
+        })
+
+        new_game.player_inventory = save.player.inventory.map(sp => {
+            return sp ? get_spell_by_name(sp) : sp
+        })
+
+        new_game.wavecount = save.state.wavecount;
+        new_game.turn_index = save.state.current_turn_entity;
+        new_game.inventory_open = save.state.inventory_open;
+        new_game.recorded_damage = save.state.recorded_damage;
+        new_game.current_wave_damage = save.state.current_wave_damage;
+
+        // fill the board with entities
+        save.entities.forEach(ent => {
+            // pretty much everything from the entity can be changed,
+            // so we need to bring everything over. there's a few things like
+            // position, innate_primed_spells and innate_spells
+            // which we need to do a bit more work to reconstruct, too
+            /*
+                NON-ENTITY INFORMATION TO INGEST:
+                    - is this the player entity
+                    - is this a wave entity
+                    - template ID
+
+                OBJECT STRUCTURES TO REMAKE:
+                    - position (Vector2)
+                    - innate_spells [array of spells by ID, cooldown, name, colour]
+                    - innate_primed_spells (only cooldowns, the spell itself should be calculated from innate_spells)
+            
+                PROPERTIES TO IGNORE:
+                    - specials (it's too much to copy these since they're literally functions)
+                    - specials_text (if we can't modify specials, we shouldn't modify specials_text)
+            */
+            // so, the plan is:
+            // - get the template ID, make the entity
+            // - copy over all the other non-ignored properties we use.
+            //       if the key is not present in the save, don't copy it (it's unchanged)
+            // - manually remake the other structures
+            // - make sure the game agrees with all this information
+            // - make sure the board knows where the entity is (do this with move_entity)
+        
+            let entity_template = entity_templates[ent.template_id];
+            let new_ent = new Entity(entity_template, ent.team);
+
+            Object.keys(ent).forEach(k => {
+                if (!Game.ignored_entity_properties.includes(k)) {
+                    if (ent[k]) {
+                        new_ent[k] = ent[k]
+                    }
+                }
+            })
+
+            new_ent.position = new Vector2(ent.position.x, ent.position.y);
+
+            // untargetable entities shouldnt be saved in their entirety. that's silly
+            if (!new_ent.untargetable) {
+                new_ent.innate_spells = ent.innate_spells.map((s, i) => {
+                    return [s[0].map((sp, j) => {
+                        // If the spell has a name instead of being null,
+                        // this means it's been replaced.
+                        return sp ? get_spell_by_name(sp) : new_ent.template.innate_spells[i][0][j]
+                    }), s[1], s[2], s[3]]
+                })
+                new_ent.calculate_primed_spells(new Vector2(0, 0));
+
+                // NOTE THAT THIS IS A DIFFERENT STRUCTURE; WE REMOVE THE ARRAY [root_spell, cooldown]
+                // AND INSTEAD REPLACE IT WITH JUST cooldown
+                ent.innate_primed_spells.forEach((ps, i) => {
+                    new_ent.innate_primed_spells[i][1] = ps
+                })
+
+                let original_record_key = ent.id.toString() + "|" + (ent.name ? ent.name : new_ent.template.name);
+                let new_record_key = new_ent.id.toString() + "|" + new_ent.name;
+
+                new_game.recorded_damage[new_record_key] = new_game.recorded_damage[original_record_key];
+
+                new_game.current_wave_damage[new_record_key] = new_game.current_wave_damage[original_record_key];
+                
+                if (original_record_key != new_record_key) {
+                    delete new_game.recorded_damage[original_record_key]
+                    delete new_game.current_wave_damage[original_record_key]
+                }
+            }
+
+            if (ent.is_player) {
+                new_game.player_ent = new_ent;
+            }
+
+            if (ent.is_wave_entity) {
+                new_game.wave_entities[new_ent.id] = new_ent
+            }
+
+            new_game.put_entity_obj(new_ent, new_ent.position, true);
+        })
+
+        return new_game;
+    }
+
+    to_save_string() {
+        /* need to save:
+        
+        - board size
+        - stats and position of every entity, IN THE ORDER OF THE GAME ENTITIES LIST, including if the entity is a wave entity or not
+        - current entity in the turn order
+        - player xp, skill points
+        - the state of the random generator (a,b,c,d, pass true as the first param to rand() to get this)
+        - the state of unknown incantation and its effects
+        - whether we're in the inventory or in the game
+        - player emblems (TODO isnt implemented yet)
+        - player spells, player spell names, player inventory
+        - state of the damage records? though we don't use them, would be nice to have
+        */
+        let save = {player: {}, state: {}};
+
+        save.board_size = {x: this.board.dimensions.x, y: this.board.dimensions.y};
+
+        save.player.xp = this.player_xp;
+        save.player.level = this.player_level;
+        save.player.skill_points = this.player_skill_points;
+        save.player.emblems = this.player_emblems.map(e => e.iname);
+        
+        save.player.spells = this.player_spells.map(sp => {
+            return {
+                spells: sp.spells.map(s => s.name),
+                name: sp.name
+            }
+        });
+
+        save.player.spells_edit = this.player_spells_edit.map(sp => {
+            return sp.map(s => s ? s.name : s)
+        });
+
+        save.player.inventory = this.player_inventory.map(sp => {
+            return sp ? sp.name : sp
+        });
+
+        save.state.wavecount = this.wavecount;
+        save.state.current_turn_entity = this.turn_index;
+        save.state.inventory_open = this.inventory_open;
+        save.state.recorded_damage = this.recorded_damage;
+        save.state.current_wave_damage = this.current_wave_damage;
+
+        save.entities = this.entities.map(ent => {
+            let o = {};
+            
+            // - template_id, is_player, is_wave_entity
+            // - copy over all the other non-ignored properties
+            // - manually remake:
+            //      position (Vector2), 
+            //      innate_spells (same but replace spell objs with strings of the spell names),
+            //      innate_primed_spells (replace [primedspell, cooldown] with just cooldown)
+            o.template_id = ent.template.id;
+            if (ent.id == this.player_ent.id) {
+                o.is_player = true;
+            }
+
+            if (game.wave_entities[ent.id]) {
+                o.is_wave_entity = true;
+            }
+
+            // untargetable entities shouldnt be saved in their entirety. that's silly
+            if (!ent.untargetable) {
+                Object.keys(ent).forEach(k => {
+                    if (!Game.ignored_entity_properties.includes(k)) {
+                        if (ent[k] != ent.template[k] || Game.required_save_properties.includes(k)) {
+                            o[k] = ent[k];
+                        }
+                    }
+                })
+            }
+
+            o.position = {x: ent.position.x, y: ent.position.y};
+
+            if (!ent.untargetable) {
+                o.innate_spells = ent.innate_spells.map((sp, i) => {
+                    return [sp[0].map((s, j) => {
+                        // check if the fragment at this index is present in innate_spells,
+                        // and is the same fragment ID.
+                        // if it is, return null, else return the fragment name
+                        // (new fragments should only be added to entities if they are part of the main list; no custom fragments unless they're part of that main list)
+                        if (ent.template.innate_spells[i] && ent.template.innate_spells[i][0][j].id == s.id) {
+                            return null;
+                        } else {
+                            return s.name;
+                        }
+                    }), sp[1], sp[2], sp[3]]
+                })
+
+                o.innate_primed_spells = ent.innate_primed_spells.map(sp => {
+                    return sp[1];
+                })
+            }
+
+            return o;
+        });
+
+        console.log(save);
+        return btoa(JSON.stringify(save));
     }
 
     spawn(ent_name, at, team) {
@@ -4766,8 +5444,13 @@ class Game {
             let new_dive_spells = [];
 
             dive_spells.forEach(dive_spell => {
+                // also apply retarget each time
+                let retargeted_pos = dive_spell[0].get_retarget_position(
+                    this.board, this.player_ent, dive_spell[2], dive_spell[1]
+                )
+
                 let full_new_vecs = dive_spell[0].get_affected_tiles(
-                    this.board, dive_spell[2], dive_spell[1]
+                    this.board, dive_spell[2], retargeted_pos
                 )
 
                 let new_vecs = full_new_vecs.filter(vec => !vecs_added.has(vec.hash_code()))
@@ -4784,7 +5467,7 @@ class Game {
 
                     switch (trigger_typ) {
                         case "at_target":
-                            new_dive_spells.push([trigger_spell, dive_spell[1], dive_spell[1]]);
+                            new_dive_spells.push([trigger_spell, retargeted_pos, retargeted_pos]);
                             break;
 
                         case "on_hit":
@@ -4794,14 +5477,14 @@ class Game {
                                 if (ent && ent.get_damage_mult(dive_spell[0].stats.damage_type) != 0) {
                                     // TODO may fall down on damage manipulation stuff or more complex spell interactions
                                     // will probably need to mark them somehow or something if i really want this to work
-                                    new_dive_spells.push([trigger_spell, vec, dive_spell[1]]);
+                                    new_dive_spells.push([trigger_spell, vec, retargeted_pos]);
                                 }
                             })
                             break;
 
                         case "on_affected_tiles":
                             full_new_vecs.forEach(vec => {
-                                new_dive_spells.push([trigger_spell, vec, dive_spell[1]]);
+                                new_dive_spells.push([trigger_spell, vec, retargeted_pos]);
                             })
                             break;
                     }
@@ -4828,7 +5511,7 @@ class Game {
             return (!search_string) || evt.name.toLowerCase().includes(search_string.toLowerCase());
         });
 
-        let chosen_event_index = Math.floor(Math.random() * possible_events.length);
+        let chosen_event_index = Math.floor(game.random() * possible_events.length);
         
         let msgbox = possible_events[chosen_event_index].msgbox;
 
@@ -4876,6 +5559,9 @@ class Game {
                 renderer.add_messagebox(msgbox);
             }
         }
+
+        this.refresh_right_panel = true;
+        this.refresh_left_panel = true;
     }
 
     toggle_inventory() {
@@ -4915,7 +5601,7 @@ class Game {
             if (possible_spawns.length > 0) {
                 spawning = true;
 
-                let picked_ent = possible_spawns[Math.floor(Math.random() * possible_spawns.length)];
+                let picked_ent = possible_spawns[Math.floor(game.random() * possible_spawns.length)];
                 let num_to_spawn = 1;
                 let adding_enemy_count = true;
                 let cost = picked_ent.spawn_credits;
@@ -4933,7 +5619,7 @@ class Game {
                     if (new_cost < spawn_credits && can_spawn_multiple) {
                         if (true) {
                             // if random chance (1 / (n+1)) is successful
-                            if (Math.random() < (1 / ((num_to_spawn / 5) + 1))) {
+                            if (game.random() < (1 / ((num_to_spawn / 5) + 1))) {
                                 num_to_spawn++;
                                 adding_enemy_count = true;
                             }
@@ -5029,6 +5715,8 @@ class Game {
             this.enabled = false;
             this.turn_processing = false;
 
+            this.reset_wave_damage();
+
             let sthis = this;
             setTimeout(function() {
                 // sthis.player_ent.refresh();
@@ -5054,6 +5742,9 @@ class Game {
                     )
 
                     sthis.progress_wave();
+
+                    renderer.refresh_left_panel = true;
+                    renderer.refresh_right_panel = true;
                 });
             });
         }
@@ -5185,8 +5876,8 @@ class Game {
         }
 
         /*
-        if (Math.random() < (0.25 + (num_enemy_spawns / 100)) && this.entities[this.turn_index].id == this.player_ent.id) {
-            let loc = new Vector2(Math.floor(Math.random() * game.board.dimensions.x), Math.floor(Math.random() * game.board.dimensions.y));
+        if (game.random() < (0.25 + (num_enemy_spawns / 100)) && this.entities[this.turn_index].id == this.player_ent.id) {
+            let loc = new Vector2(Math.floor(game.random() * game.board.dimensions.x), Math.floor(game.random() * game.board.dimensions.y));
             let enemy = game.spawn_entity(get_entity_by_name("test enemy"), Teams.ENEMY, loc, false);
             if (enemy) {
                 enemy.name = "spawned guy #" + num_enemy_spawns;
@@ -5423,7 +6114,7 @@ class Game {
         // divide xp_value by 1.5 per additional drop
         let drop_increase_chance = xp_value * 2;
         while (!max_number || drop_count < max_number) {
-            let roll = Math.floor(Math.random() * 500);
+            let roll = Math.floor(game.random() * 500);
             if (roll < (Math.max(500*0.20, Math.min(500*1, drop_increase_chance)))) {
                 drop_increase_chance /= 1.5;
                 drop_count++;
@@ -5446,11 +6137,11 @@ class Game {
                 // Start at tier 1
                 let tier = start_rarity ? start_rarity : 1;
 
-                if (Math.random() < 0.25) {
+                if (game.random() < 0.25) {
                     tier = Math.min(max_tier, tier+1)
                 }
 
-                else if (Math.random() < 0.125) {
+                else if (game.random() < 0.125) {
                     tier = Math.min(max_tier, tier+2)
                 }
 
@@ -5463,7 +6154,7 @@ class Game {
                 let chance_softcap_max = 0.07;
 
                 while (tier < max_tier) {
-                    let roll = Math.floor(Math.random() * 1000);
+                    let roll = Math.floor(game.random() * 1000);
 
                     let capped_chance = Math.min(1000*chance_linear_cap, chance);
                     let remaining_chance = chance - capped_chance;
@@ -5487,7 +6178,7 @@ class Game {
             }
 
             if (pool.length > 0) {
-                let item = pool[Math.floor(Math.random() * pool.length)];
+                let item = pool[Math.floor(game.random() * pool.length)];
 
                 drops.push({item: item, pool_name: pool_name});
             }
@@ -5684,7 +6375,7 @@ class Game {
             })
         }
 
-        points.sort(() => Math.random() - 0.5);
+        points.sort(() => game.random() - 0.5);
 
         for (let i=0; i<points.length; i++) {
             let point = points[i];
@@ -5781,6 +6472,10 @@ class Game {
         return this.move_entity(this.player_ent, new_pos, false);
     }
 
+    reset_wave_damage() {
+        this.current_wave_damage = {};
+    }
+
     reset_recorded_damage() {
         this.recorded_damage = {};
     }
@@ -5818,11 +6513,25 @@ class Game {
                 });
             }
 
-            let record_name = caster.id.toString() + caster.name;
-            if (this.recorded_damage[record_name]) {
-                this.recorded_damage[record_name] += dmg_taken;
+            let record_name = caster.id.toString() + "|" + caster.name;
+            if (!this.recorded_damage[record_name]) {
+                this.recorded_damage[record_name] = {};
+            }
+
+            if (this.recorded_damage[record_name][damage_type]) {
+                this.recorded_damage[record_name][damage_type] += dmg_taken;
             } else {
-                this.recorded_damage[record_name] = dmg_taken;
+                this.recorded_damage[record_name][damage_type] = dmg_taken;
+            }
+
+            if (!this.current_wave_damage[record_name]) {
+                this.current_wave_damage[record_name] = {};
+            }
+
+            if (this.current_wave_damage[record_name][damage_type]) {
+                this.current_wave_damage[record_name][damage_type] += dmg_taken;
+            } else {
+                this.current_wave_damage[record_name][damage_type] = dmg_taken;
             }
         }
     }
@@ -5891,10 +6600,12 @@ class Game {
 }
 
 keywords = [
-    "Native", "native", "Chain", "chain", "Arc ", "arc ", "Multicast", "multicast"
+    "Native ", "native ", "Chain ", "chain ", "Arc ", "arc ", "Multicast ", "multicast ", "Chaoscast ", "chaoscast "
 ]
 
 function format_spell_desc(st) {
+    // currently, this tries to place 2 codes at things (like affinities or keywords) which would ordinarily be highlighted.
+
     let desc_str = st;
 
     desc_str = desc_str.replace(/([^#]|^)(-?\d+(?:\.\d+)?[%x]?)/g, `$1[#4df]$2[clear]`);
@@ -5956,7 +6667,7 @@ function random_damage_type(excluding) {
         typs = typs.filter(t => !excluding.includes(DmgType[t]))
     }
 
-    return typs[Math.floor(Math.random() * typs.length)];
+    return typs[Math.floor(game.random() * typs.length)];
 }
 
 function half_redeal(of, to) {
@@ -5982,6 +6693,18 @@ function redeal_dmg(of_typs, as_typs, ratio) {
                 game.deal_damage(enemy, caster, caster.id, new_dmg, typ, should_ignore)
             });
         }
+    }
+}
+
+function common_stat_mod(modifiers) {
+    return function(user, spell, stats) {
+        Object.keys(modifiers).forEach(k => {
+            if (k == "damage_type" || k == "shape") {
+                stats[k] = modifiers[k]
+            } else {
+                stats[k] += modifiers[k];
+            }
+        })
     }
 }
 
@@ -6444,7 +7167,7 @@ function gen_spells(...names) {
 
 function general_sparkle(from, particle, col, info, on_hit_player) {
     let dat = {
-        speed: random_on_circle((Math.random() * 1.5) + 1),
+        speed: random_on_circle((game.random() * 1.5) + 1),
         pos: from.copy(),
         col: col,
         info: info
@@ -6499,6 +7222,38 @@ function item_sparkle(item, from, drop_pool) {
     general_sparkle(from, particle, particle_col, {item: titem}, function(info) { game.player_add_spell_to_inv(info.item) })
 }
 
+function load_game(save_string) {
+    let new_game = Game.make_game_from_save_string(save_string);
+
+    let new_board = new_game.board;
+
+    game = new_game;
+    board = new_board;
+
+    renderer.game = new_game;
+    renderer.board = new_game.board;
+
+    game.check_wave_end();
+
+    game.player_commit_edits();
+    game.recent_spells_gained = [];
+
+    game.begin_turn();
+
+    if (game.inventory_open) {
+        renderer.render_game_checkerboard("black");
+        renderer.reset_selections();
+        renderer.render_inventory_menu();
+    } else {
+        renderer.render_game_view();
+    }
+
+    renderer.refresh_left_panel = true;
+    renderer.refresh_right_panel = true;
+
+    renderer.request_new_frame();
+}
+
 function vh(percent) {
     // topbar, bottombar 128px + 64px
 
@@ -6536,7 +7291,10 @@ function handle_resize(event) {
 
     // console.log("fontsize before floor:", fontsize, "after: ", Math.floor(fontsize));
 
-    let fontsize_round = Math.floor(fontsize);
+    // MS Gothic: intervals of 1
+    // Terminus: intervals of 6(?) needs more testing
+    // nec_apc: intervals of 16
+    let fontsize_round = Math.floor(fontsize / 1) * 1;
 
     let gamelines = document.getElementById("gamelines");
     let game = document.getElementById("game");
@@ -6548,6 +7306,9 @@ function handle_resize(event) {
 }
 
 // TODO:
-// ai level 2
+// ai level 2,3,4
 // selftarget/unit target not working on ai
 // event chains, e.g. order of order 
+// death chain not working?
+// drag fragment to a position before the start of a spell (the little padding location) to append to the start
+// turns on enemies STILL sometimes skips. need to figure this Shit out 

@@ -34,7 +34,7 @@ events_list_unsorted = [
         
                 function() {
                     // give +10, +25 or +40 max MP
-                    let mp_restore = [10, 25, 40][Math.floor(Math.random() * 3)];
+                    let mp_restore = [10, 25, 40][Math.floor(game.random() * 3)];
 
                     game.player_ent.max_mp += mp_restore;
                     game.player_ent.restore_mp(mp_restore);
@@ -62,9 +62,9 @@ events_list_unsorted = [
         
                 function() {
                     // gain 2 uncommon fragments (20%), a 33% hp restore (20%), a 20% hp drain (20%), 1 rare fragment (10%) or nothing (30%)
-                    let random_choice = Math.floor(Math.random() * 5);
+                    let random_choice = Math.floor(game.random() * 5);
                     
-                    if (random_choice == 3 && Math.random() < 0.5) {
+                    if (random_choice == 3 && game.random() < 0.5) {
                         random_choice = 4
                     }
                     
@@ -114,6 +114,7 @@ events_list_unsorted = [
     ),
 
     // Rare
+    // Affinity
     new MsgboxEvent(
         "necromancer_tome",
         ["rare", "neutral", "permanent", "affinity"],

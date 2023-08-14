@@ -321,7 +321,7 @@ spells_list = [
     core_spell(
         "Unknown Incantation", "!?", SpellSubtype.Core,
         "#e90", "#000",
-        "\"This core will have a random bonus effect on cast that changes every time it is used by ANYONE.\nNext effect: [#4df]Nothing.[clear]\",
+        "\"This core will have a random bonus effect on cast that changes every time it is used by ANYONE.\nNext effect: [#4df]Nothing.[clear]\"",
         20, DmgType.Chaos,
         10, 2, Shape.Diamond,
         30,
@@ -2013,10 +2013,10 @@ spells_list = [
     ),
 
     modifier(
-        "183", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Reconversion", "8~", SpellSubtype.Misc,
+        "#fff", "#265",
+        "Any non-player entity at the target position of the core will have all its affinities reversed. For example, [#e52]Fire[clear] will become [#aff]Ice[clear].",
+        150,
         no_stats,
         no_target,
         no_hit,
@@ -2024,10 +2024,10 @@ spells_list = [
     ),
 
     modifier(
-        "184", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Retarget: Self", "@o", SpellSubtype.Misc,
+        "#faf", "#265",
+        "Sets the target of the core to the caster's position and removes the caster's position from the core's area of effect.",
+        25,
         no_stats,
         no_target,
         no_hit,
@@ -2035,10 +2035,10 @@ spells_list = [
     ),
 
     modifier(
-        "185", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Retarget: Enemy", "@e", SpellSubtype.Misc,
+        "#faf", "#265",
+        "Sets the target of the core to the closest enemy of the caster, within the original range of the core.",
+        75,
         no_stats,
         no_target,
         no_hit,
@@ -2046,10 +2046,10 @@ spells_list = [
     ),
 
     modifier(
-        "186", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Retarget: Ally", "@a", SpellSubtype.Misc,
+        "#faf", "#265",
+        "Sets the target of the core to the closest ally of the caster, within the original range of the core.",
+        40,
         no_stats,
         no_target,
         no_hit,
@@ -2057,10 +2057,10 @@ spells_list = [
     ),
 
     modifier(
-        "187", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Retarget: Weak", "@w", SpellSubtype.Misc,
+        "#faf", "#265",
+        "Sets the target of the core to the closest unit weakest to the core's damage type, within the original range of the core.",
+        150,
         no_stats,
         no_target,
         no_hit,
@@ -2068,10 +2068,10 @@ spells_list = [
     ),
 
     modifier(
-        "188", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Retarget: Strong", "@s", SpellSubtype.Misc,
+        "#faf", "#265",
+        "Sets the target of the core to the closest unit most resistant to the core's damage type, within the original range of the core.",
+        60,
         no_stats,
         no_target,
         no_hit,
@@ -2079,10 +2079,10 @@ spells_list = [
     ),
 
     modifier(
-        "189", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Retarget: Native", "@n", SpellSubtype.Misc,
+        "#faf", "#265",
+        "Sets the target of the core to the closest unit with an affinity matching the core's damage type, within the original range of the core.",
+        50,
         no_stats,
         no_target,
         no_hit,
@@ -2090,10 +2090,10 @@ spells_list = [
     ),
 
     modifier(
-        "190", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Retarget: Pushback", "@p", SpellSubtype.Misc,
+        "#faf", "#265",
+        "Moves the target of the core up to 3 tiles away from the caster.",
+        50,
         no_stats,
         no_target,
         no_hit,
@@ -2101,10 +2101,10 @@ spells_list = [
     ),
 
     modifier(
-        "191", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Retarget: Magnetism", "@m", SpellSubtype.Misc,
+        "#faf", "#265",
+        "Moves the target of the core up to 3 tiles towards the caster.",
+        50,
         no_stats,
         no_target,
         no_hit,
@@ -2112,10 +2112,10 @@ spells_list = [
     ),
 
     modifier(
-        "192", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Retarget: Compact", "@c", SpellSubtype.Misc,
+        "#faf", "#265",
+        "Moves the target of the core up to 2 tiles towards the position from which the core was cast.",
+        50,
         no_stats,
         no_target,
         no_hit,
@@ -2123,10 +2123,10 @@ spells_list = [
     ),
 
     modifier(
-        "193", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Retarget: Sparse", "@s", SpellSubtype.Misc,
+        "#faf", "#265",
+        "Moves the target of the core up to 2 tiles away from the position from which the core was cast.",
+        50,
         no_stats,
         no_target,
         no_hit,
@@ -2134,10 +2134,10 @@ spells_list = [
     ),
 
     modifier(
-        "194", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Retarget: Mysterious", "@?", SpellSubtype.Misc,
+        "#faa", "#265",
+        "Modifies the target of the core based on a mysterious set of rules indistinguishable from randomness.",
+        176,
         no_stats,
         no_target,
         no_hit,
@@ -2145,10 +2145,10 @@ spells_list = [
     ),
 
     modifier(
-        "195", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Spell Transference", "?>", SpellSubtype.Misc,
+        "#fff", "#265",
+        "The first core after this fragment is not cast. Instead, its special effects are transferred to the next core.",
+        200,
         no_stats,
         no_target,
         no_hit,
@@ -2156,10 +2156,10 @@ spells_list = [
     ),
 
     modifier(
-        "196", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Arcane Echo", ")2", SpellSubtype.Misc,
+        "#fff", "#265",
+        "All of the core's special effects will trigger twice.",
+        150,
         no_stats,
         no_target,
         no_hit,
@@ -2167,10 +2167,10 @@ spells_list = [
     ),
 
     modifier(
-        "197", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Spreading Arcana", ".O", SpellSubtype.Misc,
+        "#fff", "#265",
+        "Any of the core's special effects that would apply to the targeted position are also applied to every tile the core affects.",
+        300,
         no_stats,
         no_target,
         no_hit,
@@ -2178,10 +2178,10 @@ spells_list = [
     ),
 
     modifier(
-        "198", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "Purity", "X.", SpellSubtype.Misc,
+        "#fff", "#265",
+        "The core will not trigger any of its special effects.",
+        -75,
         no_stats,
         no_target,
         no_hit,
@@ -2189,9 +2189,9 @@ spells_list = [
     ),
 
     modifier(
-        "199", "??", SpellSubtype.RedModifier,
-        "#fff", "#f00",
-        "This core is corrupted and should not be here!",
+        "Unresolved Spell", "*?", SpellSubtype.Misc,
+        "#fe9", "#265",
+        "When this fragment is cast, it permanently becomes another random fragment.",
         0,
         no_stats,
         no_target,
@@ -2266,10 +2266,10 @@ spells_list = [
     ),
 
     modifier(
-        "206", "??", SpellSubtype.Red,
+        "Zenith Arcana III", "##", SpellSubtype.RedModifier,
         "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "You're not strong enough for Zenith Arcana III.",
+        1,
         no_stats,
         no_target,
         no_hit,
@@ -2277,10 +2277,10 @@ spells_list = [
     ),
 
     modifier(
-        "207", "??", SpellSubtype.Red,
+        "Zenith Arcana IV", "##", SpellSubtype.RedModifier,
         "#fff", "#f00",
-        "This core is corrupted and should not be here!",
-        0,
+        "It's a little bit [#f00]too[clear] strong...",
+        5000,
         no_stats,
         no_target,
         no_hit,
