@@ -84,7 +84,7 @@ class Vector2 {
         return new Vector2(this.x % bounds.x, this.y % bounds.y);
     }
 
-    rotate_towards(other, theta_max) {
+    rotate_towards(other, theta_max, return_angle_rotated=false) {
         let angle_diff = this.angle_between(other);
 
         if (Math.abs(angle_diff) >= theta_max) {
@@ -94,7 +94,12 @@ class Vector2 {
         //console.log(angle_diff)
 
         let result_angle = this.angle() + angle_diff;
-        return Vector2.from_angle(result_angle, this.magnitude());
+
+        if (return_angle_rotated) {
+            return [Vector2.from_angle(result_angle, this.magnitude()), angle_diff];
+        } else {
+            return Vector2.from_angle(result_angle, this.magnitude());
+        }
     }
 
     rotate(rad) {
@@ -126,12 +131,20 @@ class Vector2 {
 
         if (this.magnitude() * other.magnitude() == 0) {
             return 0;
-        }
+        }25
 
         let dot = (this.dot(other)) / (this.magnitude() * other.magnitude())
         let dp = Math.max(-1, Math.min(1, dot));
 
         return Math.acos(dp);
+    }
+
+    mask(x, y) {
+        return new Vector2(this.x * x, this.y * y);
+    }
+
+    divmask(x, y) {
+        return new Vector2(this.x / x, this.y / y);
     }
 }
 
