@@ -1,3 +1,30 @@
+// https://stackoverflow.com/questions/6312993/javascript-seconds-to-time-string-with-format-hhmmss
+String.prototype.toHHMMSS = function () {
+    var sec_num = parseInt(this, 10); // don't forget the second param
+    var hours   = Math.floor(sec_num / 3600);
+    var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+    var seconds = sec_num - (hours * 3600) - (minutes * 60);
+
+    if (hours   < 10) {hours   = "0"+hours;}
+    if (minutes < 10) {minutes = "0"+minutes;}
+    if (seconds < 10) {seconds = "0"+seconds;}
+    return hours+':'+minutes+':'+seconds;
+}
+
+String.prototype.toDDHHMMSS = function () {
+    var sec_num = parseInt(this, 10); // don't forget the second param
+	var days    = Math.floor(sec_num / 86400);
+    var hours   = Math.floor((sec_num - (days * 86400)) / 3600);
+    var minutes = Math.floor((sec_num - (days * 86400) - (hours * 3600)) / 60);
+    var seconds = Math.floor(sec_num - (days * 86400) - (hours * 3600) - (minutes * 60));
+
+	if (days    < 10) {days    = "0"+days;}
+    if (hours   < 10) {hours   = "0"+hours;}
+    if (minutes < 10) {minutes = "0"+minutes;}
+    if (seconds < 10) {seconds = "0"+seconds;}
+    return days+":"+hours+':'+minutes+':'+seconds;
+}
+
 function win_nothing() {
     return function(wheel, reward_id, player) {
         return;
@@ -17,11 +44,11 @@ function win_currency_random(t, vmin, vmax) {
 }
 
 class WheelData {
-    id_inc = 0;
+    static id_inc = 0;
 
     constructor(name, desc, wheel_elem_id, cost_type, cost_amt, spin_speed, time_taken, rewards) {
         this.id = WheelData.id_inc;
-        WheelData.id_inc++
+        WheelData.id_inc++;
         
         this.name = name;                    // the name of the wheel
         this.desc = desc;                    // the description of the wheel
@@ -186,15 +213,22 @@ class Player {
 }
 
 function load_all_data() {
-    let p_data = JSON.parse(localStorage.getItem("wheels_player_data"));
-    let w_data = JSON.parse(localStorage.getItem("wheels_wheel_data"));
+    let p_load = localStorage.getItem("wheels_player_data");
+    let w_load = localStorage.getItem("wheels_wheel_data");
+
+    if (!p_load || !w_load) {
+        return null;
+    }
+
+    let p_data = JSON.parse(p_load);
+    let w_data = JSON.parse(w_load);
 
     let p = new Player(
         p_data.name, p_data.currencies
     )
 
     let w = w_data.map(wheel => {
-        return Wheel.import(wheel_templates[wheel.data_id], wheel.cur_angle, wheel.time_left, wheel.chosen_speed, wheel.chosen_time, wheel.last_time_calculated)
+        return Wheel.import(wheel_datas[wheel.data_id], wheel.cur_angle, wheel.time_left, wheel.chosen_speed, wheel.chosen_time, wheel.last_time_calculated)
     })
 
     return {
@@ -205,24 +239,56 @@ function load_all_data() {
 
 function save_all_data(player, wheels) {
     localStorage.setItem("wheels_player_data", player.export());
-    localStorage.setItem("wheels_wheel_data", JSON.stringify(wheels.map(wheel.export_as_obj())))
+    localStorage.setItem("wheels_wheel_data", JSON.stringify(wheels.map(wheel => wheel.export_as_obj())))
 }
 
-let test_wheel = null;
-let player = Player.new("plaao");
-player.currencies["rocks"] = 10000
+let load = false ? null : load_all_data();
+let new_save = true;
+if (load) {
+    new_save = false;
+}
+
+let player = null;
+let wheels = [];
+if (new_save) {
+    player = Player.new("plaao");
+    player.currencies["rocks"] = 10000
+} else {
+    player = load.player;
+    wheels = load.wheels;
+}
 
 document.addEventListener("DOMContentLoaded", function() {
-    test_wheel = new Wheel(wheel_datas[0]);
-    test_wheel.pay_for_spin(player);
+    let test_wheel = null;
+    if (new_save) {
+        test_wheel = new Wheel(wheel_datas[0]);
+        test_wheel.pay_for_spin(player);
+
+        wheels.push(test_wheel);
+    } else {
+        test_wheel = wheels[0];
+    }
+
+    console.log(`Loading was ${new_save ? "unsuccessful" : "successful"}`);
 
     let test_currencies_txt = document.getElementById("debug_currencies");
+    let debug_log_txt = document.getElementById("debug_log");
+
+    let save_interval = Date.now() + 1000;
 
     setInterval(function() {
         if (test_wheel.update(player)) {
             test_wheel.pay_for_spin(player);
         };
 
-        test_currencies_txt.textContent = `${player.name}\n\n${Object.keys(player.currencies).map(k => `${k}: ${player.currencies[k]}`).join("\n")}`
-    }, 5);
+        test_currencies_txt.textContent = `${player.name}\n\n${Object.keys(player.currencies).map(k => `${k}: ${player.currencies[k]}`).join("\n")}`;
+        debug_log_txt.textContent = (Math.round(test_wheel.time_left) / 1000).toString().toDDHHMMSS();
+
+        // setup keypress to save/load, then do testing to make sure the wheels always stop at the same place no matter what
+        if (Date.now() > save_interval) {
+            console.log("Saved game");
+            save_interval = Date.now() + 1000;
+            save_all_data(player, [test_wheel]);
+        }
+    }, 1000/60);
 })
