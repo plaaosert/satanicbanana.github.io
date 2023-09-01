@@ -1,20 +1,20 @@
 @font-face {
     font-family: "ibm_vga";
-    src: url("Web437_IBM_VGA_8x16.woff") format("woff");
+    src: url("/shared/fonts/Web437_IBM_VGA_8x16.woff") format("woff");
     font-weight: normal;
     font-style: normal;
 }
 
 @font-face {
     font-family: "nec_apc";
-    src: url("Web437_NEC_APC3_8x16.woff") format("woff");
+    src: url("/shared/fonts/Web437_NEC_APC3_8x16.woff") format("woff");
     font-weight: normal;
     font-style: normal;
 }
 
 @font-face {
     font-family: "terminus";
-    src: url("Terminus.woff") format("woff");
+    src: url("/shared/fonts/Terminus.woff") format("woff");
     font-weight: normal;
     font-style: normal;
 }
@@ -116,10 +116,6 @@ body {
 
 .game {
 	position: absolute;
-	top: 50%;
-	left: 5%;
-	margin-right: -50%;
-	transform: translate(0%, -50%);
 	
 	color: #fff;
 	
@@ -132,139 +128,6 @@ body {
     justify-content: center;
 
 	display: grid;
-
-	--rowgap: 48px;
-	--colgap: 96px;
-
-	row-gap: var(--rowgap);
-	column-gap: var(--colgap);
-}
-
-.wheel-grid-item {
-	grid-column: 1;
-	grid-row: 1;
-
-	--imgsiz: 320px;
-
-	width: var(--imgsiz);
-	height: var(--imgsiz);
-
-	position: relative;
-}
-
-.wheel-frame-front {
-	position: absolute;
-	top: 0;
-	left: 0;
-
-	width: 100%;
-	height: 100%;
-
-	border: 2px solid white;
-
-	z-index: 2;
-
-	pointer-events: none;
-}
-
-.wheel-wheel {
-	position: absolute;
-	top: 0;
-	left: 0;
-
-	width: 100%;
-	height: 100%;
-
-	z-index: 1;
-}
-
-.ready-to-spin {
-	filter: brightness(1.5);
-}
-
-.wheel-frame-back {
-	position: absolute;
-	top: 0;
-	left: 0;
-
-	width: 100%;
-	height: 100%;
-
-	z-index: 0;
-}
-
-.wheel-autospin-button {
-	position: relative;
-	z-index: 3;
-	left: 16px;
-	width: fit-content;
-
-	padding: 4px 4px 4px 4px;
-
-	border: 1px solid;
-}
-
-.currencies-list {
-	position: absolute;
-	right: -4px;
-	
-	width: 25%;
-	height: 100%;
-
-	background-color: #000;
-	border: 1px solid #fff;
-}
-
-.currency-container {
-	display: grid;
-	padding-top: calc((100vh - (64px * 7) - 128px - 64px) / 2);
-}
-
-.currency-item-top {
-	border-top: 1px solid white;
-}
-
-.currency-item {
-	display: flex;
-	align-items: center;
-
-	--iconsiz: 80px;
-	--fontsiz: 32px;
-	height: var(--iconsiz);
-	font-size: var(--fontsiz);
-
-	border-bottom: 1px solid white;
-}
-
-.currency-item-img {
-	display: inline;
-	padding-left: 24px;
-
-	height: 100%;
-}
-
-.currency-item-text {
-	display: inline;
-
-	color: white;
-	margin-left: 32px;
-	padding-right: 32px;
-
-	border-bottom: 1px solid white;
-}
-
-.currency-item-text-popup {
-	color: #4d4;
-	margin-left: auto;
-	padding-right: 20px;
-}
-
-.closed {
-	visibility: hidden;
-}
-
-.open {
-	visibility: visible;
 }
 
 a {

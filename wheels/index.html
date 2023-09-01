@@ -18,18 +18,108 @@
 	</div>
 
 	<div class="game" id="game">
-        <div id="wheel-amateurity-container" class="wheel-container">
-            <img src="img/wheels/wheel_of_amateurity_frame_front.png", id="wheel-amateurity-frame-front" class="wheel-frame-front">
-            <img src="img/wheels/wheel_of_amateurity_frame_back.png", id="wheel-amateurity-frame-back" class="wheel-frame-back">
-            <img src="img/wheels/wheel_of_amateurity_wheel.png", id="wheel-amateurity-wheel" class="wheel-wheel">
+        <div class="wheel-grid-item">
+            <div id="wheel-amateurity-container" class="wheel-container">
+                <img src="img/wheels/wheel_of_amateurity_frame_front.png", id="wheel-amateurity-frame-front" class="wheel-frame-front">
+                <img src="img/wheels/wheel_of_amateurity_frame_back.png", id="wheel-amateurity-frame-back" class="wheel-frame-back">
+                <img src="img/wheels/wheel_of_amateurity_wheel.png", id="wheel-amateurity-wheel" class="wheel-wheel">
+            </div>
+            <p id="wheel-amateurity-autospin-button" class="wheel-autospin-button green">Spinning automatically</p>
+        </div>
+
+        <div class="wheel-grid-item" style="grid-column: 2;">
+            <div id="wheel-unknown-container" class="wheel-container">
+                <img src="img/wheels/unknown_frame_front.png", id="wheel-unknown-frame-front" class="wheel-frame-front">
+                <img src="img/wheels/unknown_frame_back.png", id="wheel-unknown-frame-back" class="wheel-frame-back">
+                <img src="img/wheels/unknown_wheel.png", id="wheel-unknown-wheel" class="wheel-wheel">
+            </div>
+            <p id="wheel-unknown-autospin-button" class="wheel-autospin-button yellow">Coming soon...</p>
+        </div>
+
+        <div class="wheel-grid-item" style="grid-column: 3;">
+            <div id="wheel-unknown-container" class="wheel-container">
+                <img src="img/wheels/unknown_frame_front.png", id="wheel-unknown-frame-front" class="wheel-frame-front">
+                <img src="img/wheels/unknown_frame_back.png", id="wheel-unknown-frame-back" class="wheel-frame-back">
+                <img src="img/wheels/unknown_wheel.png", id="wheel-unknown-wheel" class="wheel-wheel">
+            </div>
+            <p id="wheel-unknown-autospin-button" class="wheel-autospin-button yellow">Coming soon...</p>
+        </div>
+
+        <div class="wheel-grid-item" style="grid-row: 2; grid-column: 1;">
+            <div id="wheel-unknown-container" class="wheel-container">
+                <img src="img/wheels/unknown_frame_front.png", id="wheel-unknown-frame-front" class="wheel-frame-front">
+                <img src="img/wheels/unknown_frame_back.png", id="wheel-unknown-frame-back" class="wheel-frame-back">
+                <img src="img/wheels/unknown_wheel.png", id="wheel-unknown-wheel" class="wheel-wheel">
+            </div>
+            <p id="wheel-unknown-autospin-button" class="wheel-autospin-button yellow">Coming soon...</p>
+        </div>
+
+        <div class="wheel-grid-item" style="grid-row: 2; grid-column: 2;">
+            <div id="wheel-unknown-container" class="wheel-container">
+                <img src="img/wheels/unknown_frame_front.png", id="wheel-unknown-frame-front" class="wheel-frame-front">
+                <img src="img/wheels/unknown_frame_back.png", id="wheel-unknown-frame-back" class="wheel-frame-back">
+                <img src="img/wheels/unknown_wheel.png", id="wheel-unknown-wheel" class="wheel-wheel">
+            </div>
+            <p id="wheel-unknown-autospin-button" class="wheel-autospin-button yellow">Coming soon...</p>
+        </div>
+
+        <div class="wheel-grid-item" style="grid-row: 2; grid-column: 3;">
+            <div id="wheel-unknown-container" class="wheel-container">
+                <img src="img/wheels/unknown_frame_front.png", id="wheel-unknown-frame-front" class="wheel-frame-front">
+                <img src="img/wheels/unknown_frame_back.png", id="wheel-unknown-frame-back" class="wheel-frame-back">
+                <img src="img/wheels/unknown_wheel.png", id="wheel-unknown-wheel" class="wheel-wheel">
+            </div>
+            <p id="wheel-unknown-autospin-button" class="wheel-autospin-button yellow">Coming soon...</p>
         </div>
 	</div>
 
-    <p id="debug_currencies" style="font-size: 32px; text-align: right; white-space:pre; color:white; font-family:nec_apc; position:fixed; top:192px; right:32px;">
-        test
-    </p>
+    <div class="currencies-list">
+        <div class="currency-container">
+            <div class="currency-item currency-item-top" style="grid-row: 1;">
+                <img src="img/icons/bread.png" class="currency-item-img">
+                <p class="currency-item-text" id="currency-item-text-bread">5</p>
+                <p class="currency-item-text-popup closed" id="currency-item-text-popup-bread">+0</p>
+            </div>
 
-    <p id="debug_log" style="font-size: 32px; text-align: right; white-space:pre; color:white; font-family:nec_apc; position:fixed; top:192px; right:512px;">
+            <div class="currency-item" style="grid-row: 2;">
+                <img src="img/icons/gold.png" class="currency-item-img">
+                <p class="currency-item-text" id="currency-item-text-gold">27</p>
+                <p class="currency-item-text-popup closed" id="currency-item-text-popup-gold">+0</p>
+            </div>
+
+            <div class="currency-item" style="grid-row: 3;">
+                <img src="img/icons/insanium.png" class="currency-item-img">
+                <p class="currency-item-text" id="currency-item-text-insanium">27</p>
+                <p class="currency-item-text-popup closed" id="currency-item-text-popup-insanium">+0</p>
+            </div>
+
+            <div class="currency-item" style="grid-row: 4;">
+                <img src="img/icons/orbs.png" class="currency-item-img">
+                <p class="currency-item-text" id="currency-item-text-orbs">27</p>
+                <p class="currency-item-text-popup closed" id="currency-item-text-popup-orbs">+0</p>
+            </div>
+
+            <div class="currency-item" style="grid-row: 5;">
+                <img src="img/icons/rocks.png" class="currency-item-img">
+                <p class="currency-item-text" id="currency-item-text-rocks">27</p>
+                <p class="currency-item-text-popup closed" id="currency-item-text-popup-rocks">+0</p>
+            </div>
+
+            <div class="currency-item" style="grid-row: 6;">
+                <img src="img/icons/specks_of_dust.png" class="currency-item-img">
+                <p class="currency-item-text" id="currency-item-text-specks_of_dust">27</p>
+                <p class="currency-item-text-popup closed" id="currency-item-text-popup-specks_of_dust">+0</p>
+            </div>
+
+            <div class="currency-item" style="grid-row: 7;">
+                <img src="img/icons/thread.png" class="currency-item-img">
+                <p class="currency-item-text" id="currency-item-text-thread">27</p>
+                <p class="currency-item-text-popup closed" id="currency-item-text-popup-thread">+0</p>
+            </div>
+        </div>
+    </div>
+
+    <p id="debug_log" style="font-size: 32px; text-align: left; white-space:pre; color:white; font-family: nec_apc; position:fixed; top:32px; left: 160px;">
         test
     </p>
 
@@ -43,6 +133,10 @@
 		<p style="font-size: 2vmin"><a class="right-text" style="top:89px; color:#f20; font-size: 2vmin" href="../index.html" > << go back >> </a></p>
 	</div>
 	
+    <script src="../shared/js/helpers.js?v=00"></script>
+
     <script src="wheels.js?v=00"></script>
+    
+    <script src="../shared/js/playtime.js?v=00"></script>
 </body>
 </html>

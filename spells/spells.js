@@ -427,6 +427,7 @@ class Renderer {
         this.cur_mouse_flatid = null;
 
         this.selected_tile = null;
+        this.selected_panel_id = -1;
         this.mousedown_selected_tile = null;
 
         this.selected_ent = null;
@@ -708,9 +709,12 @@ class Renderer {
         this.selected_full_spell = null;
 
         this.selected_tile = resolved_pos;
+        this.selected_panel_id = -1;
 
         switch (this.get_position_panel(resolved_pos)) {
             case 0:  // left panel
+                this.selected_panel_id = 0;
+
                 this.selected_tile = null;
                 this.selected_ent = null;
                 this.refresh_right_panel = true;
@@ -738,6 +742,8 @@ class Renderer {
 
                 break;
             case 1:  // game screen
+                this.selected_panel_id = 1;
+
                 // highlight current selected panel
                 if (this.game.inventory_open) {
                     // check for mouseover on spells, items and names
@@ -803,9 +809,17 @@ class Renderer {
 
                 break;
             case 2:  // right panel
+                this.selected_panel_id = 2;
+                this.selected_tile = null;
+                this.selected_ent = null;
+
                 break;
 
             case 3:  // messagebox
+                this.selected_panel_id = 3;
+                this.selected_tile = null;
+                this.selected_ent = null;
+
                 let button_result = this.messagebox_open.registered_option_positions[resolved_pos.hash_code()];
                 if (button_result) {
                     this.selected_messagebox_option_nr = button_result[0];
@@ -1013,6 +1027,8 @@ class Renderer {
                 this.inventory_editing_spell_name = null;
                 if (this.selected_full_spell != null) {
                     game.select_player_spell(this.selected_full_spell);
+                } else {
+                    this.game.deselect_player_spell();
                 }
                 break;
 
@@ -1145,6 +1161,7 @@ class Renderer {
 
                 break;
             case 2:
+                this.game.deselect_player_spell();
                 this.inventory_editing_spell_name = null;
                 break;
 
@@ -2655,7 +2672,7 @@ class Renderer {
         }
 
         // selected cell
-        if (this.selected_tile) {
+        if (this.selected_tile && this.selected_panel_id == 1) {
             this.set_back_pair(this.selected_tile, selected_col);
         }
     }
@@ -6234,6 +6251,11 @@ class Game {
     }
 
     select_player_spell(id) {
+        if (this.selected_id == id) {
+            this.deselect_player_spell();
+            return;
+        }
+
         let result = this.select_player_spell_list(this.player_spells[id].spells);
         
         if (result) {
