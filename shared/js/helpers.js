@@ -97,7 +97,7 @@ function format_number(val, typ, max_val=1e9) {
                 let magnitude = Math.log10(val);
                 let digits = Math.floor(magnitude);
                 
-                let frac = Math.round((val / Math.pow(10, digits)) * 100) / 100;
+                let frac = Math.floor((val / Math.pow(10, digits)) * 100) / 100;
                 
                 return `${frac}e${digits}`;
             } else {

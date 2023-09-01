@@ -242,7 +242,7 @@ function update_currency_view() {
         if (currency_element_objs[k]) {
             currency_element_objs[k].textContent = format_number(Math.round(lerp_currency_values[k]), NumberFormat.SCIENTIFIC);
             let lerped = lerp(lerp_currency_values[k], player.currencies[k], 0.05);
-            if (Math.abs(lerped - lerp_currency_values[k]) < 0.05) {
+            if (Math.abs(lerped - player.currencies[k]) < 1) {
                 lerp_currency_values[k] = player.currencies[k];
             } else {
                 lerp_currency_values[k] = lerped;
