@@ -89,7 +89,7 @@ class Wheel {
     }
 
     pay_for_spin(player) {
-        if (this.chosen_speed == 0 && player.currencies[this.data.cost_type] > this.data.cost_amt) {
+        if (this.chosen_speed == 0 && player.currencies[this.data.cost_type] >= this.data.cost_amt) {
             player.currencies[this.data.cost_type] -= this.data.cost_amt;
 
             this.start_spin();
