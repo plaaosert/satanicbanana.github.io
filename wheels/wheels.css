@@ -204,6 +204,18 @@ body {
 	border: 1px solid;
 }
 
+.active-button {
+	filter: brightness(1);
+}
+
+.active-button:hover {
+	filter: brightness(2.5);
+}
+
+.active-button:active {
+	filter: brightness(0.75);
+}
+
 .currencies-list {
 	position: absolute;
 	right: -4px;
@@ -257,6 +269,16 @@ body {
 	color: #4d4;
 	margin-left: auto;
 	padding-right: 20px;
+}
+
+.currency-copy-button {
+	font-size: 24px;
+	margin-left: 32px;
+
+	padding: 4px 4px 4px 4px;
+
+	color: #4d4;
+	border: 2px solid;
 }
 
 .closed {

@@ -1,5 +1,15 @@
 game_id = "wheels"
 
+const currency_to_friendly_name = {
+    "bread": "Bread",
+    "gold": "Gold",
+    "insanium": "Insanium",
+    "orbs": "Orbs",
+    "rocks": "Rocks",
+    "specks_of_dust": "Specks of Dust",
+    "thread": "Thread",
+}
+
 function win_nothing() {
     return function(wheel, reward_id, player) {
         return;
@@ -235,6 +245,22 @@ function load_all_data() {
 function save_all_data(player, wheels) {
     localStorage.setItem("wheels_player_data", player.export());
     localStorage.setItem("wheels_wheel_data", JSON.stringify(wheels.map(wheel => wheel.export_as_obj())))
+}
+
+function copy_currencies_to_clipboard() {
+    let txt = "My currencies right now:\n\n" + Object.keys(player.currencies).map(k => `${currency_to_friendly_name[k]}: ${format_number(player.currencies[k], NumberFormat.SCIENTIFIC)}`).join("\n") + "\n\nhttps://plaao.net/wheels";
+
+    navigator.clipboard.writeText(txt).then(function() {
+        console.log('Copied');
+        
+        document.getElementById("currency-copy-button").innerHTML = "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0Copied!\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0"
+        
+        setTimeout(function() {
+            document.getElementById("currency-copy-button").innerHTML = "Copy currencies to clipboard"
+        }, 2500);
+    }, function(err) {
+        console.error('Failed due to error: ', err);
+    });
 }
 
 function update_currency_view() {
