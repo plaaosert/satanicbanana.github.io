@@ -88,7 +88,7 @@ const NumberFormat = {
     SCIENTIFIC: 0
 }
 
-function format_number(val, typ, max_val=1e9) {
+function format_number(val, typ, max_val=1e6) {
     let method = typ ? typ : NumberFormat.SCIENTIFIC;
 
     switch (method) {
@@ -100,9 +100,27 @@ function format_number(val, typ, max_val=1e9) {
                 let frac = Math.floor((val / Math.pow(10, digits)) * 100) / 100;
                 
                 return `${frac}e${digits}`;
+            } else if (Math.abs(val) >= max_val) {
+                let magnitude = Math.log10(Math.abs(val));
+                let digits = Math.floor(magnitude);
+                
+                let frac = Math.floor((Math.abs(val) / Math.pow(10, digits)) * 100) / 100;
+                
+                return `-${frac}e${digits}`;
             } else {
                 return val.toLocaleString();
             }
             break;
     }
+}
+
+// https://stackoverflow.com/questions/33424138/how-to-remove-a-div-with-fade-out-effect-in-javascript
+function removeFadeOut( el, speed ) {
+    var seconds = speed/1000;
+    el.style.transition = "opacity "+seconds+"s ease";
+
+    el.style.opacity = 0;
+    setTimeout(function() {
+        el.parentNode.removeChild(el);
+    }, speed);
 }
