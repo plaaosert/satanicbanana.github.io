@@ -79,7 +79,7 @@ const wheel_datas = [
         "Wheel of Amateurity", "We found this wheel in our garbage dump outside. You can spin it if you want, but put it away after you're done. It looks terrible.",
         "wheel-amateurity", "rocks", 1,
         () => {return (0.005 + (Math.random() * 0.01))},
-        (speed) => {return (speed * 100 * 5000)},
+        (speed) => {return (Math.random() * 2) +(speed * 100 * 5000)},
         [
             win_currency("bread", 2),
             win_currency("gold", 7),
@@ -98,7 +98,7 @@ const wheel_datas = [
         "Wheel of Mediocre Wealth", ".",
         "wheel-mediocre-wealth", "specks_of_dust", 50000000,
         () => {return (0.025 + (Math.random() * 0.1))},
-        (speed) => {return (speed * 9 * 15000)},
+        (speed) => {return (Math.random() * 5) + (speed * 9 * 15000)},
         [
             win_currency("insanium", 13),
             function(wheel, reward_id, player) {
@@ -189,7 +189,7 @@ class Wheel {
         this.update_visuals();
 
         this.chosen_speed = this.data.spin_speed();
-        this.chosen_time = this.data.time_taken(this.chosen_speed);
+        this.chosen_time = this.data.time_taken(this.chosen_speed) / 1;
         this.time_left = this.chosen_time;
 
         console.log("speed:", this.chosen_speed, "time:", this.chosen_time);
