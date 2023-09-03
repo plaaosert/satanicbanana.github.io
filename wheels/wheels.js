@@ -97,8 +97,8 @@ const wheel_datas = [
     new WheelData(
         "Wheel of Mediocre Wealth", ".",
         "wheel-mediocre-wealth", "specks_of_dust", 50000000,
-        () => {return (0.05 + (Math.random() * 0.1))},
-        (speed) => {return (speed * 10 * 15000)},
+        () => {return (0.025 + (Math.random() * 0.1))},
+        (speed) => {return (speed * 9 * 15000)},
         [
             win_currency("insanium", 13),
             function(wheel, reward_id, player) {
