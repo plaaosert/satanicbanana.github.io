@@ -19,7 +19,13 @@
     justify-content: center;
 }
 
-.hand {
+.hand-img {
+	mix-blend-mode: screen;
+
 	width: 64px;
 	height: 64px;
+}
+
+.mouse-transparent {
+	pointer-events: none;
 }

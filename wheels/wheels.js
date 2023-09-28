@@ -158,7 +158,7 @@ class Wheel {
         this.wheel_element = document.getElementById(this.data.wheel_elem_id + "-wheel");
         let sthis = this;
         this.wheel_element.addEventListener("click", function() {
-            sthis.pay_for_spin(player);
+            sthis.pay_for_spin(loaded_player);
         })
     }
 
@@ -189,7 +189,7 @@ class Wheel {
         this.update_visuals();
 
         this.chosen_speed = this.data.spin_speed();
-        this.chosen_time = this.data.time_taken(this.chosen_speed) / 1;
+        this.chosen_time = this.data.time_taken(this.chosen_speed);
         this.time_left = this.chosen_time;
 
         console.log("speed:", this.chosen_speed, "time:", this.chosen_time);
@@ -215,7 +215,7 @@ class Wheel {
 
     update(player) {
         if (this.chosen_speed != 0) {
-            let time_elapsed = Date.now() - this.last_time_calculated;
+            let time_elapsed = (Date.now() - this.last_time_calculated) * timescale;
             let time_to_move = Math.min(time_elapsed, this.time_left);
 
             let amount_to_move = (this.cur_speed() * time_to_move) + (time_to_move * (this.speed_at_time_left(this.time_left - time_to_move) - this.cur_speed()) * 0.5)
@@ -329,7 +329,7 @@ function save_all_data(player, wheels) {
 }
 
 function copy_currencies_to_clipboard() {
-    let txt = "My currencies right now:\n\n" + Object.keys(player.currencies).map(k => `${(k=="thread" && player.hread) ? "T" : currency_to_friendly_name[k]}: ${(k=="thread" && player.hread) ? "hread" : format_number(player.currencies[k], NumberFormat.SCIENTIFIC)}`).join("\n") + "\n\nhttps://plaao.net/wheels";
+    let txt = "My currencies right now:\n\n" + Object.keys(loaded_player.currencies).map(k => `${(k=="thread" && loaded_player.hread) ? "T" : currency_to_friendly_name[k]}: ${(k=="thread" && loaded_player.hread) ? "hread" : format_number(loaded_player.currencies[k], NumberFormat.SCIENTIFIC)}`).join("\n") + "\n\nhttps://plaao.net/wheels";
 
     navigator.clipboard.writeText(txt).then(function() {
         console.log('Copied');
@@ -344,7 +344,7 @@ function copy_currencies_to_clipboard() {
     });
 }
 
-function update_currency_view() {
+function update_currency_view(player) {
     Object.keys(last_currency_values).forEach(k => {
         if (currency_element_objs[k]) {
             if (k == "thread" && player.hread) {
@@ -415,49 +415,41 @@ function SKULL() {
     }, 100);
 }
 
-function handle_resize(event) {
+function benchmark_wheels(time, ts=10) {
+    autosaving_enabled = false;
+    enable_benchmarks = true;
+    save_all_data(loaded_player, wheels);
 
+    currency_start = structuredClone(loaded_player.currencies);
+    timescale = ts;
+    wheels.forEach(wheel => {
+        wheel.autospinning = true;
+    })
+
+    console.log(`Benchmarking at ${timescale}x speed for ${time/1000}s`);
+
+    setTimeout(function() {
+        // process results
+        console.log("\n" + Object.keys(currency_start).map(k => `${k.padEnd(16)} | ${loaded_player.currencies[k] - currency_start[k]} (${Math.round((loaded_player.currencies[k] - currency_start[k]) * (100/(time/1000))) / 100}/s)`).join("\n"))
+
+        timescale = 1;
+
+        autosaving_enabled = true;
+        enable_benchmarks = false;
+
+        let load = load_all_data();
+        
+        loaded_player = load.player;
+        wheels = load.wheels;
+
+        setup_game(false);
+    }, time);
 }
 
-const CLEARSAVE = false;
-
-let load = CLEARSAVE ? null : load_all_data();
-let new_save = true;
-if (load) {
-    new_save = false;
-}
-
-let player = null;
-let wheels = [];
-if (new_save) {
-    player = Player.new("plaao");
-    player.currencies = {
-        "bread": 0,
-        "gold": 0,
-        "insanium": 0,
-        "orbs": 0,
-        "rocks": 10,
-        "specks_of_dust": 500000000,
-        "thread": 0,
-    }
-} else {
-    player = load.player;
-    wheels = load.wheels;
-}
-
-let bread_icon = document.getElementById("currency-item-img-bread");
-let currency_element_objs = {};
-let currency_popup_objs = {};
-let popup_timeouts = {};
-Object.keys(player.currencies).forEach(k => {
-    currency_element_objs[k] = document.getElementById("currency-item-text-" + k);
-    currency_popup_objs[k] = document.getElementById("currency-item-text-popup-" + k);
-})
-
-let last_currency_values = {...player.currencies};
-let lerp_currency_values = {...player.currencies};
-
-document.addEventListener("DOMContentLoaded", function() {    
+function setup_game(new_save) {
+    last_currency_values = {...loaded_player.currencies};
+    lerp_currency_values = {...loaded_player.currencies};
+    
     //let test_wheel = null;
     if (new_save) {
         wheels = [];
@@ -477,7 +469,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     wheels = wheels.filter(w => wheel_datas.some(d => d.name == w.data.name));
-    bread_icon.src = player.bread_status == 2 ? "img/icons/bread_slice.png" : "img/icons/bread.png"
+    bread_icon.src = loaded_player.bread_status == 2 ? "img/icons/bread_slice.png" : "img/icons/bread.png"
 
     console.log(`Loading was ${new_save ? "unsuccessful" : "successful"}`);
 
@@ -511,6 +503,56 @@ document.addEventListener("DOMContentLoaded", function() {
             autospin_button.classList.add("red");
         }
     })
+}
+
+function handle_resize(event) {
+
+}
+
+const CLEARSAVE = false;
+
+let timescale = 1;
+let autosaving_enabled = true;
+let enable_benchmarks = false;
+
+let wheel_reward_counts = {};
+let currency_start = {};
+
+let load = CLEARSAVE ? null : load_all_data();
+let new_save = true;
+if (load) {
+    new_save = false;
+}
+
+let loaded_player = null;
+let wheels = [];
+if (new_save) {
+    loaded_player = Player.new("plaao");
+    loaded_player.currencies = {
+        "bread": 0,
+        "gold": 0,
+        "insanium": 0,
+        "orbs": 0,
+        "rocks": 10,
+        "specks_of_dust": 500000000,
+        "thread": 0,
+    }
+} else {
+    loaded_player = load.player;
+    wheels = load.wheels;
+}
+
+let bread_icon = document.getElementById("currency-item-img-bread");
+let currency_element_objs = {};
+let currency_popup_objs = {};
+let popup_timeouts = {};
+Object.keys(loaded_player.currencies).forEach(k => {
+    currency_element_objs[k] = document.getElementById("currency-item-text-" + k);
+    currency_popup_objs[k] = document.getElementById("currency-item-text-popup-" + k);
+})
+
+document.addEventListener("DOMContentLoaded", function() {    
+    setup_game(new_save);
 
     //let test_currencies_txt = document.getElementById("debug_currencies");
     let debug_log_txt = document.getElementById("debug_log");
@@ -521,24 +563,24 @@ document.addEventListener("DOMContentLoaded", function() {
 
     setInterval(function() {
         wheels.forEach(wheel => {
-            if (wheel.update(player)) {
+            if (wheel.update(loaded_player)) {
                 if (wheel.autospinning) {
-                    wheel.pay_for_spin(player);
+                    wheel.pay_for_spin(loaded_player);
                 }
             };
         })
 
-        update_currency_view();
+        update_currency_view(loaded_player);
 
-        debug_log_txt.textContent = (Math.round(wheels[0].time_left) / 1000).toString().toDDHHMMSS();
-        debug_log_txt2.textContent = (Math.round(wheels[1].time_left) / 1000).toString().toDDHHMMSS();
-        debug_log_txt3.textContent = (Math.round(wheels[2].time_left) / 1000).toString().toDDHHMMSS();
+        debug_log_txt.textContent = Math.max(0, (Math.round(wheels[0].time_left) / 1000)).toString().toDDHHMMSS();
+        debug_log_txt2.textContent = Math.max(0, (Math.round(wheels[1].time_left) / 1000)).toString().toDDHHMMSS();
+        debug_log_txt3.textContent = Math.max(0, (Math.round(wheels[2].time_left) / 1000)).toString().toDDHHMMSS();
 
         // setup keypress to save/load, then do testing to make sure the wheels always stop at the same place no matter what
-        if (Date.now() > save_interval) {
+        if (Date.now() > save_interval && autosaving_enabled) {
             console.log("Saved game");
             save_interval = Date.now() + 1000;
-            save_all_data(player, wheels);
+            save_all_data(loaded_player, wheels);
         }
     }, 1000/60);
 })

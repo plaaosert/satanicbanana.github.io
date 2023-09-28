@@ -1,0 +1,8 @@
+isolate r, g, b from each sprite
+increase saturation of g by ~14% (set to 114 in pdn)
+increase saturation of b by ~21% (set to 121 in pdn)
+
+set the images to blend additively
+then change the opacity of each image separately to set r, g, b
+
+better than the shitty css system.

@@ -97,6 +97,7 @@ body {
 
 .bottombar a {
 	pointer-events: all;
+	left:unset;
 }
 
 .topbar {
