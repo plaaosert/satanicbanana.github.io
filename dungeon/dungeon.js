@@ -24,6 +24,8 @@ tile_empty.src = "images/single_big/tile000.png";
 const prerender_canvas = document.getElementById("hidden-prerender-canvas");
 const prerender_ctx = prerender_canvas.getContext("2d");
 
+const load_progress = document.getElementById("load-progress")
+
 let num_textures_loaded = 0;
 let num_textures_needed = 0;
 
@@ -37,6 +39,7 @@ const full_texture_atlas = new Array(253).fill(0).map((v, i) => {
         num_textures_needed++;
         t.addEventListener("load", function() {
             num_textures_loaded++;
+            load_progress.textContent = `loading textures ${Math.round(100 * (num_textures_loaded / num_textures_needed)) / 1}%`;
         })
 
         ts.push(t);
