@@ -38,6 +38,7 @@ aims = {
 	"7":"@plaaosert",
 	"8":">> a game about matching words in a box",
 	"9":">> not complete just yet!",
+	"10":">> it's time to spin...",
 	"banner":"// \u00A0hello!\u00A0\u00A0 //"
 };
 
@@ -46,7 +47,7 @@ num_glitch_elements = Object.keys(aims).length;
 // select elements using format "#" where # is i
 // then set their onmouseover and onmouseout to handler (defined below)
 for (var i = 1; i <= num_glitch_elements; i++) {
-	var l = document.getElementById(i == 10 ? "banner" : i);
+	var l = document.getElementById(i == num_glitch_elements ? "banner" : i);
 	l.onmouseover = l.onmouseout = handler;
 }
 
@@ -66,9 +67,9 @@ evts = {};
 // setup original texts too
 origs = {}
 for (var i = 1; i <= num_glitch_elements; i++) {
-	var l = document.getElementById(i == 10 ? "banner" : i);
-	origs[(i == 10 ? "banner" : i).toString()] = l.textContent;
-	evts[(i == 10 ? "banner" : i).toString()] = null;
+	var l = document.getElementById(i == num_glitch_elements ? "banner" : i);
+	origs[(i == num_glitch_elements ? "banner" : i).toString()] = l.textContent;
+	evts[(i == num_glitch_elements ? "banner" : i).toString()] = null;
 }
 
 /*

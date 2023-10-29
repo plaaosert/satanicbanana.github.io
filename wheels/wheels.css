@@ -438,6 +438,18 @@ body {
 	visibility: visible;
 }
 
+.wheel-autospin-button.green {
+	background-color: #020;
+}
+
+.wheel-autospin-button.yellow {
+	background-color: #220;
+}
+
+.wheel-autospin-button.red {
+	background-color: #200;
+}
+
 a {
 	position: fixed;
 	bottom: 24px;
