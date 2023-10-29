@@ -80,7 +80,7 @@ const bread_upgrades = {
     "static-plus": {
         "order": 1,
         "id": "static-plus",
-        "desc": `Gain <span class="yellow important">+1</span> of every currency whenever you gain it.`,
+        "desc": `Gain <span class="yellow important">+1</span> of each currency whenever you gain it.`,
         "cost": 1000,
         "cost_mul": 2,
         "currency": "bread",
