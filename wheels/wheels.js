@@ -98,7 +98,7 @@ const bread_upgrades = {
         "order": 1,
         "id": "bread-plus-from-all",
         "desc": `Gain more <span class="important">Bread</span> based on your <span class="important">Orb</span> value (<span class="yellow important">+0.25%</span> per <span class="important">Orb</span> per upgrade level)`,
-        "cost": 400,
+        "cost": 100,
         "cost_mul": 1.5,
         "currency": "orbs",
         "affects": "bread_mult",
