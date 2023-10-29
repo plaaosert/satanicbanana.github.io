@@ -1,5 +1,148 @@
 game_id = "wheels"
 
+const UpgradeOperator = {
+    NONE: 0,
+    ADDITIVE: 1,
+    MULTIPLICATIVE: 2,
+    FINALADDITIVE: 3,  // final is applied after other bonuses, undefined order within final/nonfinal
+    FINALMULTIPLICATIVE: 4
+}
+
+const bread_upgrades = {
+    "timespeed-plus": {
+        "order": 0,
+        "id": "timespeed-plus",
+        "desc": `All wheels spin <span class="yellow important">10%</span> faster.`,
+        "cost": 100,
+        "cost_mul": 1.4,
+        "currency": "bread",
+        "affects": "timespeed",
+        "fn": function(player, upgrade_count) {
+            return 0.1 * upgrade_count;
+        },
+        "method": UpgradeOperator.ADDITIVE,
+        "stat_fmt": function(st) {
+            return `${Math.round(st*100)}%`;
+        }
+    },
+
+    "timespeed-plus-2": {
+        "order": 1,
+        "id": "timespeed-plus-2",
+        "desc": `All wheels spin <span class="yellow important">1.05x</span> faster.`,
+        "cost": 250,
+        "cost_mul": 1.5,
+        "currency": "bread",
+        "affects": "timespeed",
+        "fn": function(player, upgrade_count) {
+            return Math.pow(1.05, upgrade_count);
+        },
+        "method": UpgradeOperator.MULTIPLICATIVE,
+        "stat_fmt": function(st) {
+            return `${Math.round(st*100) / 100}x`;
+        }
+    },
+
+    "bread-plus": {
+        "order": 1,
+        "id": "bread-plus",
+        "desc": `All <span class="important">Bread</span> gain is increased by <span class="yellow important">7%</span>.`,
+        "cost": 50,
+        "cost_mul": 1.2,
+        "currency": "bread",
+        "affects": "bread_mult",
+        "fn": function(player, upgrade_count) {
+            return 0.07 * upgrade_count;
+        },
+        "method": UpgradeOperator.ADDITIVE,
+        "stat_fmt": function(st) {
+            return `${Math.round(st*100)}%`;
+        }
+    },
+
+    "orbs-plus": {
+        "order": 1,
+        "id": "orbs-plus",
+        "desc": `All <span class="important">Orb</span> gain is increased by <span class="yellow important">1.01x</span>.`,
+        "cost": 300,
+        "cost_mul": 1.1,
+        "currency": "bread",
+        "affects": "orbs_mult",
+        "fn": function(player, upgrade_count) {
+            return Math.pow(1.01, upgrade_count);
+        },
+        "method": UpgradeOperator.MULTIPLICATIVE,
+        "stat_fmt": function(st) {
+            return `${Math.round(st*1000) / 1000}x`;
+        }
+    },
+
+    "static-plus": {
+        "order": 1,
+        "id": "static-plus",
+        "desc": `Gain <span class="yellow important">+1</span> of every currency whenever you gain it.`,
+        "cost": 1000,
+        "cost_mul": 2,
+        "currency": "bread",
+        "affects": "all_plus",
+        "fn": function(player, upgrade_count) {
+            return upgrade_count;
+        },
+        "method": UpgradeOperator.ADDITIVE,
+        "stat_fmt": function(st) {
+            return `+${st}`;
+        }
+    },
+
+    "bread-plus-from-all": {
+        "order": 1,
+        "id": "bread-plus-from-all",
+        "desc": `Gain more <span class="important">Bread</span> based on your <span class="important">Orb</span> value (<span class="yellow important">+0.25%</span> per <span class="important">Orb</span> per upgrade level)`,
+        "cost": 400,
+        "cost_mul": 1.5,
+        "currency": "orbs",
+        "affects": "bread_mult",
+        "fn": function(player, upgrade_count) {
+            return 0.0025 * upgrade_count * player.currencies["orbs"];
+        },
+        "method": UpgradeOperator.ADDITIVE,
+        "stat_fmt": function(st) {
+            return `${Math.round(st*10000)/100}%`;
+        }
+    },
+
+    "hread-empower": {
+        "order": 1,
+        "id": "hread-empower",
+        "desc": `<span class="yellow important">hread</span> grants its bonus to all currencies.`,
+        "cost": 100000,
+        "cost_mul": 1,
+        "currency": "bread",
+        "affects": "hread_empower",
+        "fn": function(player, upgrade_count) {
+            return upgrade_count;
+        },
+        "method": UpgradeOperator.ADDITIVE,
+        "stat_fmt": function(st) {
+            return st ? "Yes" : "No"
+        },
+        "max_upgrades": 1
+    }
+}
+
+let ordered_bread_upgrades = [];
+let bread_upgrades_open = false;
+
+ordered_bread_upgrades = [];
+
+Object.keys(bread_upgrades).forEach(k => {
+    ordered_bread_upgrades.push(bread_upgrades[k]);
+})
+
+ordered_bread_upgrades.sort((a, b) =>
+    a.order - b.order
+);
+
 const currency_to_friendly_name = {
     "bread": "Bread",
     "gold": "Gold",
@@ -8,6 +151,146 @@ const currency_to_friendly_name = {
     "rocks": "Rocks",
     "specks_of_dust": "Specks of Dust",
     "thread": "Thread",
+}
+
+let bread_upgrade_elems = [];
+
+function get_bread_upgrade_cost(player, upgrade) {
+    return Math.round(upgrade.cost * Math.pow(upgrade.cost_mul, player.get_upgrade_count(upgrade.id)));
+}
+
+function is_bread_upgrade_affordable(player, upgrade) {
+    let cost = get_bread_upgrade_cost(player, upgrade);
+    return player.currencies[upgrade.currency] >= cost && (!upgrade.max_upgrades || player.get_upgrade_count(upgrade.id) < upgrade.max_upgrades);
+}
+
+function try_purchase_bread_upgrade(upgrade_id) {
+    let upgrade = bread_upgrades[upgrade_id];
+    if (is_bread_upgrade_affordable(loaded_player, upgrade)) {
+        let cost = get_bread_upgrade_cost(loaded_player, upgrade)
+        
+        loaded_player.currencies[upgrade.currency] -= cost;
+        loaded_player.add_upgrade(upgrade.id);
+    }
+}
+
+function calculate_bread_upgrade_bonuses(player) {
+    let stats = {
+        timespeed: 1,
+        all_plus: 0,
+        all_mult: 1,
+        hread_empower: 0
+    };
+
+    Object.keys(currency_to_friendly_name).forEach(c => {
+        stats[c + "_plus"] = 0;
+        stats[c + "_mult"] = 1;
+    });
+
+    ordered_bread_upgrades.filter(u => u.method == UpgradeOperator.ADDITIVE).forEach(u => {
+        let v = u.fn(player, player.get_upgrade_count(u.id));
+        stats[u.affects] += v;
+    })
+
+    ordered_bread_upgrades.filter(u => u.method == UpgradeOperator.MULTIPLICATIVE).forEach(u => {
+        let v = u.fn(player, player.get_upgrade_count(u.id));
+        stats[u.affects] *= v;
+    })
+    
+    ordered_bread_upgrades.filter(u => u.method == UpgradeOperator.FINALADDITIVE).forEach(u => {
+        let v = u.fn(player, player.get_upgrade_count(u.id));
+        stats[u.affects] += v;
+    })
+
+    ordered_bread_upgrades.filter(u => u.method == UpgradeOperator.FINALMULTIPLICATIVE).forEach(u => {
+        let v = u.fn(player, player.get_upgrade_count(u.id));
+        stats[u.affects] *= v;
+    })
+
+    return stats;
+}
+
+function toggle_bread_upgrade_menu() {
+    bread_upgrades_open = !bread_upgrades_open;
+
+    if (bread_upgrades_open) {
+        document.getElementById("bread-upgrade-tab-button").classList.remove("collapsed");
+        document.getElementById("bread-upgrade-tab-button").classList.add("expanded");
+        document.getElementById("bread-upgrade-tab-button").textContent = ">";
+
+        document.getElementById("bread-upgrades-list").classList.remove("hidden");
+    } else {
+        document.getElementById("bread-upgrade-tab-button").classList.add("collapsed");
+        document.getElementById("bread-upgrade-tab-button").classList.remove("expanded");
+        document.getElementById("bread-upgrade-tab-button").textContent = "<";
+
+        document.getElementById("bread-upgrades-list").classList.add("hidden");
+    }
+}
+
+function render_bread_upgrades(player) {
+    if (!bread_upgrades_open) {
+        return;
+    }
+
+    if (bread_upgrade_elems.length <= 0) {
+        bread_upgrade_elems = Array.from(document.getElementsByClassName("bread-upgrade"));
+
+        bread_upgrade_elems.sort((a, b) =>
+            a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1
+        );
+    }
+
+    if (ordered_bread_upgrades.length <= 0) {
+        ordered_bread_upgrades = [];
+
+        Object.keys(bread_upgrades).forEach(k => {
+            ordered_bread_upgrades.push(bread_upgrades[k]);
+        })
+
+        ordered_bread_upgrades.sort((a, b) =>
+            a.order - b.order
+        );
+    }
+
+    ordered_bread_upgrades.forEach((upgrade, i) => {
+        // need to edit:
+        //  bread-upgrade-desc-text
+        //  bread-upgrade-currentstat-text
+        //  bread-upgrade-cost-button ("affordable" class or "unaffordable" class)
+        //  bread-upgrade-img (set src)
+        //  bread-upgrade-cost-text
+        let e = bread_upgrade_elems[i];
+
+        let upgrade_efc = upgrade.fn(player, player.get_upgrade_count(upgrade.id));
+        let upgrade_str = upgrade.stat_fmt(upgrade_efc);
+
+        let infodiv = e.querySelector("#bread-upgrade-info");
+
+        infodiv.querySelector("#bread-upgrade-desc-text").innerHTML = upgrade.desc;
+        infodiv.querySelector("#bread-upgrade-currentstat-text > span").textContent = upgrade_str;
+        
+        let button = e.querySelector("#bread-upgrade-cost-button");
+
+        if (player.get_upgrade_count(upgrade.id) >= upgrade.max_upgrades) {
+            button.classList.remove("unaffordable");
+            button.classList.remove("affordable");
+        } else if (is_bread_upgrade_affordable(player, upgrade)) {
+            button.classList.remove("unaffordable");
+            button.classList.add("affordable");
+        } else {
+            button.classList.remove("affordable");
+            button.classList.add("unaffordable");
+        }
+
+        button.querySelector("#bread-upgrade-img").src = `img/icons/${upgrade.currency}.png`;
+
+        if (player.get_upgrade_count(upgrade.id) >= upgrade.max_upgrades) {
+            button.querySelector("#bread-upgrade-cost-text").textContent = "-";
+        } else {
+            button.querySelector("#bread-upgrade-cost-text").textContent = format_number(get_bread_upgrade_cost(player, upgrade), NumberFormat.SCIENTIFIC);
+        }
+    });
 }
 
 function win_nothing() {
@@ -215,7 +498,7 @@ class Wheel {
 
     update(player) {
         if (this.chosen_speed != 0) {
-            let time_elapsed = (Date.now() - this.last_time_calculated) * timescale;
+            let time_elapsed = (Date.now() - this.last_time_calculated) * (player.timespeed_override ? player.timespeed_override : player.stat_bonuses.timespeed);
             let time_to_move = Math.min(time_elapsed, this.time_left);
 
             let amount_to_move = (this.cur_speed() * time_to_move) + (time_to_move * (this.speed_at_time_left(this.time_left - time_to_move) - this.cur_speed()) * 0.5)
@@ -273,9 +556,22 @@ class Wheel {
 }
 
 class Player {
-    constructor(name, currencies) {
+    constructor(name, currencies, upgrade_counts) {
         this.name = name;
         this.currencies = currencies;
+        this.timespeed = 1;
+
+        if (upgrade_counts && typeof upgrade_counts === "object" && !Array.isArray(upgrade_counts)) {
+            this.upgrade_counts = upgrade_counts;
+        } else {
+            this.upgrade_counts = {};
+        }
+
+        Object.keys(bread_upgrades).forEach(k => {
+            if (!this.upgrade_counts[k]) {
+                this.upgrade_counts[k] = 0;
+            }
+        })
     }
 
     static new(name) {
@@ -293,6 +589,14 @@ class Player {
     export() {
         return JSON.stringify(this);
     }
+
+    get_upgrade_count(id) {
+        return this.upgrade_counts[id] ? this.upgrade_counts[id] : 0;
+    }
+
+    add_upgrade(id, amt=1) {
+        this.upgrade_counts[id] = (this.upgrade_counts[id] ? this.upgrade_counts[id] : 0) + amt;
+    }
 }
 
 function load_all_data() {
@@ -307,11 +611,13 @@ function load_all_data() {
     let w_data = JSON.parse(w_load);
 
     let p = new Player(
-        p_data.name, p_data.currencies
+        p_data.name, p_data.currencies, p_data.upgrade_counts
     )
 
-    p.bread_status = p_data.bread_status;
-    p.hread = p_data.hread;
+    p.bread_status = p_data.bread_status ? p_data.bread_status : 1
+    p.hread = p_data.hread ? p_data.hread : false
+
+    p.timespeed = p_data.timespeed ? p_data.timespeed : 1;
 
     let w = w_data.map(wheel => {
         return Wheel.import(wheel_datas[wheel.data_id], wheel.cur_angle, wheel.time_left, wheel.chosen_speed, wheel.chosen_time, wheel.last_time_calculated, wheel.autospinning)
@@ -371,10 +677,24 @@ function update_currency_view(player) {
 
         let change = player.currencies[k] - last_currency_values[k];
         if (change != 0) {
-            if (k == "thread" && player.hread) {
-                player.hread = false;
-                player.currencies[k] += change;
-                change *= 2;
+            if (change > 0) {
+                if ((k == "thread" || player.stat_bonuses.hread_empower) && player.hread) {
+                    if (k == "thread") {
+                        player.hread = false;
+                    }
+                    player.currencies[k] += change;
+                }
+
+                player.currencies[k] += player.stat_bonuses.all_plus;
+                player.currencies[k] += change * (player.stat_bonuses.all_mult - 1);
+
+                player.currencies[k] += player.stat_bonuses[k + "_plus"];
+                player.currencies[k] += change * (player.stat_bonuses[k + "_mult"] - 1);
+
+                player.currencies[k] = Math.floor(player.currencies[k]);
+
+                // update change
+                change = player.currencies[k] - last_currency_values[k];
             }
 
             currency_popup_objs[k].classList.remove("closed");
@@ -421,18 +741,18 @@ function benchmark_wheels(time, ts=10) {
     save_all_data(loaded_player, wheels);
 
     currency_start = structuredClone(loaded_player.currencies);
-    timescale = ts;
+    loaded_player.timespeed_override = ts;
     wheels.forEach(wheel => {
         wheel.autospinning = true;
     })
 
-    console.log(`Benchmarking at ${timescale}x speed for ${time/1000}s`);
+    console.log(`Benchmarking at ${loaded_player.timespeed_override}x speed for ${time/1000}s`);
 
     setTimeout(function() {
         // process results
         console.log("\n" + Object.keys(currency_start).map(k => `${k.padEnd(16)} | ${loaded_player.currencies[k] - currency_start[k]} (${Math.round((loaded_player.currencies[k] - currency_start[k]) * (100/(time/1000))) / 100}/s)`).join("\n"))
 
-        timescale = 1;
+        loaded_player.timespeed_override = 0;
 
         autosaving_enabled = true;
         enable_benchmarks = false;
@@ -511,7 +831,6 @@ function handle_resize(event) {
 
 const CLEARSAVE = false;
 
-let timescale = 1;
 let autosaving_enabled = true;
 let enable_benchmarks = false;
 
@@ -551,8 +870,11 @@ Object.keys(loaded_player.currencies).forEach(k => {
     currency_popup_objs[k] = document.getElementById("currency-item-text-popup-" + k);
 })
 
+let stat_bonuses = {};
+
 document.addEventListener("DOMContentLoaded", function() {    
     setup_game(new_save);
+    loaded_player.stat_bonuses = calculate_bread_upgrade_bonuses(loaded_player);
 
     //let test_currencies_txt = document.getElementById("debug_currencies");
     let debug_log_txt = document.getElementById("debug_log");
@@ -575,6 +897,9 @@ document.addEventListener("DOMContentLoaded", function() {
         debug_log_txt.textContent = Math.max(0, (Math.round(wheels[0].time_left) / 1000)).toString().toDDHHMMSS();
         debug_log_txt2.textContent = Math.max(0, (Math.round(wheels[1].time_left) / 1000)).toString().toDDHHMMSS();
         debug_log_txt3.textContent = Math.max(0, (Math.round(wheels[2].time_left) / 1000)).toString().toDDHHMMSS();
+
+        render_bread_upgrades(loaded_player);
+        loaded_player.stat_bonuses = calculate_bread_upgrade_bonuses(loaded_player);
 
         // setup keypress to save/load, then do testing to make sure the wheels always stop at the same place no matter what
         if (Date.now() > save_interval && autosaving_enabled) {
