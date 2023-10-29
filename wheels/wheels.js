@@ -13,8 +13,8 @@ const bread_upgrades = {
         "order": 0,
         "id": "timespeed-plus",
         "desc": `All wheels spin <span class="yellow important">10%</span> faster.`,
-        "cost": 100,
-        "cost_mul": 1.4,
+        "cost": 60,
+        "cost_mul": 1.42,
         "currency": "bread",
         "affects": "timespeed",
         "fn": function(player, upgrade_count) {
@@ -47,8 +47,8 @@ const bread_upgrades = {
         "order": 1,
         "id": "bread-plus",
         "desc": `All <span class="important">Bread</span> gain is increased by <span class="yellow important">7%</span>.`,
-        "cost": 50,
-        "cost_mul": 1.2,
+        "cost": 10,
+        "cost_mul": 1.25,
         "currency": "bread",
         "affects": "bread_mult",
         "fn": function(player, upgrade_count) {
