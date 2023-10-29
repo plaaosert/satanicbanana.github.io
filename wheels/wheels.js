@@ -12,7 +12,7 @@ const bread_upgrades = {
     "timespeed-plus": {
         "order": 0,
         "id": "timespeed-plus",
-        "desc": `All wheels spin <span class="yellow important">10%</span> faster.`,
+        "desc": `All wheels spin <span class="yellow important">10%</span> faster. Percentage upgrades apply additively.`,
         "cost": 60,
         "cost_mul": 1.42,
         "currency": "bread",
@@ -29,7 +29,7 @@ const bread_upgrades = {
     "timespeed-plus-2": {
         "order": 1,
         "id": "timespeed-plus-2",
-        "desc": `All wheels spin <span class="yellow important">1.05x</span> faster.`,
+        "desc": `All wheels spin <span class="yellow important">1.05x</span> faster. Multiplier upgrades apply multiplicatively.`,
         "cost": 250,
         "cost_mul": 1.5,
         "currency": "bread",
