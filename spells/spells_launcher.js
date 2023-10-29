@@ -58,7 +58,7 @@ let num_enemy_spawns = 0;
 
 let board = new Board(new Vector2(64, 64));
 let game = new Game(board);
-let renderer = new Renderer(game, board, new Vector2(64, 36), 48, 48, 1/5);
+let renderer = new Renderer(game, board, new Vector2(64, 36), 48, 48, 1/3);
 
 game.spawn_player(get_entity_by_name("Player"), new Vector2(16, 18));
 
@@ -77,7 +77,7 @@ game.spawn_player(get_entity_by_name("Player"), new Vector2(16, 18));
 // game.wave_entities[e3.id] = e3;
 // game.wave_entities[e4.id] = e4;
 
-game.check_wave_end()
+game.setup();
 
 /*
 game.spawn_entity(get_entity_by_name("test enemy"), Teams.PLAYER, new Vector2(12, 20), true).name = "friendly friend ^w^";
@@ -267,20 +267,112 @@ renderer.request_new_frame();
 
 let next_frame_time = 0;
 
+// Assumes you've already sorted out the line breaks and formatting.
+function make_paginated_popup(string, padx, pady) {
+    let original_popup_padx = renderer.msgbox_pad_x;
+    let original_popup_pady = renderer.msgbox_pad_y;
+
+    let messagebox_size = renderer.total_size.sub(new Vector2(padx, pady))
+    
+    let lines = string.split("\n");
+    let lines_per_page = messagebox_size.y-6;
+
+    if (lines_per_page < 1) {
+        throw RangeError(`Messagebox padding is too small (lines per page: ${lines_per_page})`);
+    }
+
+    let num_pages_needed = Math.ceil(lines.length / lines_per_page);
+
+    let messageboxes = [];
+
+    for (let box_id=0; box_id<num_pages_needed; box_id++) {
+        let button_data = []
+
+        if (box_id != 0) {
+            // back button if there is a page before this one
+            button_data.push(
+                [`< Page ${box_id}`, `#026`, function() {
+                    renderer.add_messagebox(messageboxes[box_id-1], true);
+                }]
+            )
+        } else {
+            button_data.push(
+                [`First page`, `#111`, function() {
+                    renderer.add_messagebox(messageboxes[box_id], true);
+                }, [`#222`, "#fff"]]
+            )
+        }
+
+        // all messageboxes have a close button
+        button_data.push(
+            [`Close`, `#333`, function() {
+                renderer.msgbox_pad_x = original_popup_padx;
+                renderer.msgbox_pad_y = original_popup_pady;
+            }]
+        )
+
+        if (box_id < num_pages_needed-1) {
+            // forward button if not last page
+            button_data.push(
+                [`Page ${box_id+2} >`, `#026`, function() {
+                    renderer.add_messagebox(messageboxes[box_id+1], true);
+                }]
+            )
+        } else {
+            button_data.push(
+                [`Last page`, `#111`, function() {
+                    renderer.add_messagebox(messageboxes[box_id], true);
+                }, [`#222`, "#fff"]]
+            )
+        }
+
+        let box = new MessageBoxTemplate(
+            `Page ${box_id+1}`,
+            lines.slice(box_id*lines_per_page, (box_id+1)*lines_per_page).join("\n"),
+            button_data.map(t => t[0]),
+            button_data.map(t => t[1]),
+            button_data.map(t => t[2]),
+            function(msgbox) { 
+                renderer.msgbox_pad_x = padx;
+                renderer.msgbox_pad_y = pady;
+            },
+            button_data.map(t => t.length >= 4 ? t[3] : null)
+        )
+
+        messageboxes.push(box);
+    }
+
+    renderer.add_messagebox(messageboxes[0], true);
+}
+
 function handle_debug_command() {
     debug_response = "#f00I got nothing. (use command \"h\")";
-    directive = debug_cmd.slice(1).split(/ (.*)/s)[0];
-    data = debug_cmd.slice(1).split(/ (.*)/s)[1];
+    let directive = debug_cmd.slice(1).split(/ (.*)/s)[0];
+    let data = debug_cmd.slice(1).split(/ (.*)/s)[1];
 
     try {
         switch (directive) {
             case "h":
+            case "help":
+            case "?":
                 debug_response = "#0f0";
                 renderer.add_messagebox(messagebox_templates["debug_help_msgbox"], true)
                 break;
             
             case "p":
                 debug_response = "#0f0[" + directive + "] [" + data + "]"
+                break;
+
+            case "repeat":
+            case "rep":
+                let d = data.split(" ");
+                let times = Number.parseInt(d[0]);
+                for (let i=0; i<times; i++) {
+                    debug_cmd = " " + d.slice(1).join(" ");
+                    handle_debug_command();
+                }
+
+                debug_response = `#0f0repeated "${d.slice(1).join(" ")}" ${times} times`; 
                 break;
 
             case "r":
@@ -364,6 +456,22 @@ function handle_debug_command() {
                 }
                 break;
 
+            case "ss":
+                if (data.toLowerCase() == "reset") {
+                    game.max_spell_speed = 0.075;
+                    game.min_spell_speed = 0;
+                    game.spell_speed = 0.075;
+
+                    debug_response = "#0f0spell speed reset";
+                } else {
+                    game.max_spell_speed = Number.parseFloat(data);
+                    game.min_spell_speed = game.max_spell_speed
+                    game.spell_speed = game.max_spell_speed;
+
+                    debug_response = `#0f0spell speed set to ${game.max_spell_speed}`;
+                }
+                break;
+
             case "emb":
                 if (data) {
                     let emb = get_emblem_by_iname(data);
@@ -379,8 +487,37 @@ function handle_debug_command() {
                         debug_response = `#f00couldn't find an emblem with iname "${data}"`;
                     }
                 } else {
-                    debug_response = "#0f0" + game.player_emblems.map(e => e.iname).join(", ");
+                    debug_response = "#0f0opened a msgbox";
+
+                    let longest_iname = emblems_list.reduce((a, v) => Math.max(v.iname.length, a), 0) + 1;
+                    let total_size = renderer.total_size.x - 2;
+
+                    let emblem_list_str = emblems_list.map(
+                        e => `[#0cf]${e.iname.padEnd(longest_iname)}[clear] | ${e.desc.length > (total_size-longest_iname) ? e.desc.slice(0, (total_size-longest_iname-3)) + "..." : e.desc}`
+                    ).join("\n")
+                    
+                    make_paginated_popup(emblem_list_str, 1, 1);
                 }
+                break;
+
+            case "emball":
+                game.player_emblems.push(get_emblem_by_iname("lv10_dmg"))
+                game.player_emblems.push(get_emblem_by_iname("lv10_radius"))
+                game.player_emblems.push(get_emblem_by_iname("lv10_range"))
+                game.player_emblems.push(get_emblem_by_iname("affinity_necromancer"))
+                game.player_emblems.push(get_emblem_by_iname("affinity_elementalist_fire"))
+                game.player_emblems.push(get_emblem_by_iname("affinity_elementalist_ice"))
+                game.player_emblems.push(get_emblem_by_iname("affinity_elementalist_lightning"))
+                game.player_emblems.push(get_emblem_by_iname("affinity_order_1"))
+
+                debug_response = `#0f0added 8 emblems`;
+                break;
+
+            case "lprog":
+                game.player_location_progress++;
+                renderer.refresh_right_panel = true;
+
+                debug_response = `#0f0progressed location progress`;
                 break;
 
             case "m":
@@ -431,7 +568,7 @@ function handle_debug_command() {
                     let team = name.charAt(0) == "#" ? Teams.PLAYER : Teams.ENEMY;
 
                     let search_name = name.charAt(0) == "#" ? name.slice(1) : name
-                    let ent = get_entity_by_name(search_name.replace("-", " "));
+                    let ent = get_entity_by_name(search_name.replaceAll("-", " "));
                     if (!pos) {
                         pos = game.select_far_position(game.player_ent.position, 32, 2, 8);
                     }
@@ -445,6 +582,47 @@ function handle_debug_command() {
                 }
                 break;
 
+            case "dummies":
+                let num_killed = 0;
+                if (data && data[0] == "a") {
+                    game.wave_entities["WAVESTOP_OBJ"] = 1;
+
+                    game.entities.forEach(ent => {
+                        if (ent.id != game.player_ent.id) {
+                            game.kill(ent)
+                            num_killed++;
+                        }
+                    })
+                }
+
+                angle = (game.random() * 360);
+
+                for (let i=0; i<5; i++) {
+                    let v = game.player_ent.position.add(new Vector2(
+                        6, 0
+                    ).rotate(angle * (Math.PI / 180)).round());
+
+                    let obj = null;
+                    let tries = 0;
+                    while (!obj && tries < 100) {
+                        obj = game.spawn_entity(
+                            get_entity_by_name("target dummy"), Teams.ENEMY, 
+                            v, false
+                        );
+                        angle += 1;
+                        tries++;
+                    }
+
+                    angle += (72-5);
+                }
+
+                if (num_killed > 0) {
+                    debug_response = "#0f0objects killed, wave progression stopped, dummies spawned";
+                } else {
+                    debug_response = "#0f0dummies spawned";
+                }
+                break;
+
             case "s":
                 if (data) {
                     let spell = get_spell_by_name(data);
@@ -455,6 +633,23 @@ function handle_debug_command() {
                     } else {
                         debug_response = `#f00couldn't find a spell \"${data}\"`
                     }
+                } else {
+                    debug_response = `#f00no spell provided`
+                }
+                break;
+
+            case "st":
+                if (data) {
+                    let sp_list = spells_list.filter(spell => spell.subtyp.toLowerCase() == data.toLowerCase());
+
+                    game.player_add_spells_to_inv(sp_list);
+                    if (sp_list.length > 0) {
+                        debug_response = `#0f0added ${sp_list.length} spells`;
+                    } else {
+                        debug_response = `#f00no spells with subtype ${data.toLowerCase()}`
+                    }
+                } else {
+                    debug_response = `#f00no spell subtype provided`
                 }
                 break;
 
@@ -463,12 +658,12 @@ function handle_debug_command() {
                     let split = data.split(" ");
                     let spell_index = Number.parseInt(split[0])-1;
                     let slice_amt = 1;
-                    if (!spell_index) {
+                    if (isNaN(spell_index)) {
                         spell_index = 0;
                         slice_amt = 0;
                     }
 
-                    let spell_list = split.slice(slice_amt).join(" ").replace(", ", ",").split(",").filter(t => t);
+                    let spell_list = split.slice(slice_amt).join(" ").replaceAll(", ", ",").split(",").filter(t => t);
                     let spells = gen_spells(...spell_list);
 
                     game.player_spells[spell_index].spells = spells;
@@ -634,13 +829,17 @@ function handle_debug_command() {
                     debug_response = `#f00no debug view called \"${data}\"`
                     switch (data) {
                         case "fps":
+                        case "f":
                             debug_response = `#0f0toggled \"${data}\"`
                             show_fps = !show_fps
+                            clear_debug_info = true;
                             break;
 
                         case "operations":
+                        case "o":
                             debug_response = `#0f0toggled \"${data}\"`
                             show_ops = !show_ops
+                            clear_debug_info = true;
                             break;
                     }
                 }
@@ -677,7 +876,20 @@ function handle_debug_command() {
                 }
                 break;
             
-            case "ka":
+            case "kw": {
+                let num_killed = 0;
+                game.entities.forEach(ent => {
+                    if (ent.untargetable && ent.id != game.player_ent.id) {
+                        game.kill(ent)
+                        num_killed++;
+                    }
+                })
+
+                debug_response = `#0f0killed every wall (${num_killed})`
+                break;
+            }
+
+            case "ka": {
                 let num_killed = 0;
                 game.entities.forEach(ent => {
                     if (!ent.untargetable && ent.id != game.player_ent.id) {
@@ -688,6 +900,7 @@ function handle_debug_command() {
 
                 debug_response = `#0f0killed a bunch of guys (${num_killed})`
                 break;
+            }
 
             case "scrimblo":
             case "gobbo":
@@ -702,7 +915,12 @@ function handle_debug_command() {
     debug_timeout = 600;
 }
 
+let framecount = 0;
+let clear_debug_info = true;
+
 function game_loop() {
+    framecount++;
+
     //renderer.add_particle(ppos, new Particle(tmp));
     last_frame_time = Date.now();
     if (last_frame_time < next_frame_time) {
@@ -728,6 +946,12 @@ function game_loop() {
     //         mov_dir = mov_dir.neg();
     //     }
     // }
+
+    if (framecount % 60 == 0) {
+        renderer.refresh_left_panel = true;
+        renderer.refresh_right_panel = true;
+        renderer.needs_main_view_update = true;
+    }
 
     renderer.render_borders();
 
@@ -775,13 +999,14 @@ function game_loop() {
 
     renderer.paint_debug_info(debug_show, debug_col)
 
-    renderer.request_new_frame(show_ops, fps);
+    renderer.request_new_frame(show_ops, fps, clear_debug_info);
+    clear_debug_info = false;
 
     let frame_duration = Date.now() - last_frame_time;
-    //console.log("took", frame_duration, "so waiting", (1000/60) - frame_duration);
+    //console.log("took", frame_duration, "so waiting", (1000/TARGET_FPS) - frame_duration);
 
-    // setTimeout(game_loop, (1000/60) - frame_duration);
-    setTimeout(game_loop);
+    setTimeout(game_loop, (1000/TARGET_FPS) - frame_duration);
+    // setTimeout(game_loop);
 }
 
 /*
@@ -938,10 +1163,10 @@ let lvlup_msgbox_permanent_enhance = new MessageBoxTemplate(
 )
 
 let debug_help_msgbox_primary = new MessageBoxTemplate(
-    "DEBUG HELP -- ENGINE",
+    "DEBUG HELP -- [#f40]ENGINE",
 `[#4f4]h                      [#ddd]| show this help screen                                                    | [#0cf]h
 [#4f4]                       [#ddd]|                                                                          | 
-[#4f4]r(p)                   [#ddd]| roll 5 random numbers using game random state (then reset it if \"rp\")  | [#0cf]r          [#ddd]| [#0cf]r          
+[#4f4]r(p)                   [#ddd]| roll 5 random numbers using game random state (just predict if \"rp\")     | [#0cf]r          [#ddd]| [#0cf]r          
 [#4f4]     <n>               [#ddd]| set number of times to roll                                              | [#0cf]r 10       [#ddd]| [#0cf]r 10       
 [#4f4]     <n> <max>         [#ddd]| set maximum roll value (default 100)                                     | [#0cf]r 10 6     [#ddd]| [#0cf]r 10 6     
 [#4f4]     <n> <min> <max>   [#ddd]| set minimum and maximum roll value (default 1, 100)                      | [#0cf]r 10 50 60 [#ddd]| [#0cf]r 10 50 60 
@@ -951,7 +1176,7 @@ let debug_help_msgbox_primary = new MessageBoxTemplate(
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]ql <save_name>         [#ddd]| load game from slot save_name. if blank and only one save, picks that    |
 [#4f4]                       [#ddd]|                                                                          | 
-[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]ss <speed|reset>       [#ddd]| set max spell speed to value, or reset with \"reset\"                    | [#0cf]ss 0.75 [#ddd]| [#0cf]ss reset
 [#4f4]                       [#ddd]|                                                                          |
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]                       [#ddd]|                                                                          |
@@ -965,11 +1190,11 @@ let debug_help_msgbox_primary = new MessageBoxTemplate(
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]                       [#ddd]|                                                                          |
+[#f80]repeat <times> <cmd>   [#ddd]| execute \"cmd\" \"times\" times                                          | [#0cf]repeat 5 e bat
 [#4f4]                       [#ddd]|                                                                          | 
-[#4f4]                       [#ddd]|                                                                          | 
-[#4f4]p                      [#ddd]|                                                                          | [#0cf]ping hi plaao`,
+[#4f4]p                      [#ddd]| echo some text back to the console                                       | [#0cf]ping hi plaao`,
     ["< GAME", "Close", "PLAYER >"],
-    ["#026", "#333", "#060"],
+    ["#04a", "#333", "#060"],
     [
         function() {
             renderer.add_messagebox(debug_help_msgbox_game, true);
@@ -991,13 +1216,13 @@ let debug_help_msgbox_primary = new MessageBoxTemplate(
 )
 
 let debug_help_msgbox_player = new MessageBoxTemplate(
-    "DEBUG HELP -- PLAYER",
+    "DEBUG HELP -- [#0f0]PLAYER",
 `[#4f4]                       [#ddd]|                                                                          |
 [#4f4]                       [#ddd]|                                                                          |
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]s <name>               [#ddd]| get a spell with name                                                    | [#0cf]s fireball
-[#4f4]                       [#ddd]|                                                                          | 
-[#4f4]                       [#ddd]|                                                                          |
+[#4f4]st <subtype name>      [#ddd]| get all spells with given subtype                                        | [#0cf]st Shape
+[#4f4]sps «1-5» <spell,list> [#ddd]| set spell with ID 1-5 to the comma separated list of spells given        | [#0cf]sps 1 zenith arcana i, behind, fireball
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]sxp <xp value>         [#ddd]| run the spell drop function with given xp value                          | [#0cf]sxp 250
 [#4f4]stp <pool>             [#ddd]| drop a spell from a specific pool                                        | [#0cf]stp Tier4
@@ -1007,12 +1232,12 @@ let debug_help_msgbox_player = new MessageBoxTemplate(
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]xp <value>             [#ddd]| gain value XP                                                            | [#0cf]xp 500
 [#4f4]                       [#ddd]|                                                                          | 
-[#4f4]emb <emblem_name>      [#ddd]| get emblem with iname emblem_name. if blank, lists player emblem inames  | [#0cf]emb lv10_dmg
+[#4f4]emb <emblem_name>      [#ddd]| get emblem with iname emblem_name. if blank, lists all emblem inames     | [#0cf]emb lv10_dmg
+[#4f4]emball                 [#ddd]| get a bunch of emblem (8), close to the soft limit                       | [#0cf]emball
+[#4f4]                       [#ddd]|                                                                          |
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]gp                     [#ddd]| get player position                                                      | [#0cf]gp
 [#4f4]tp <posx> <posy>       [#ddd]| teleport player to position                                              | [#0cf]tp 3 21
-[#4f4]                       [#ddd]|                                                                          | 
-[#4f4]                       [#ddd]|                                                                          |
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]big                    [#ddd]| gain 1000 HP, 5000 MP, LV 50 and 4 of each main trigger type             | [#0cf]big
 [#4f4]god                    [#ddd]| gain 999999 HP, 999999 MP, LV 999 and 4 of each main trigger type        | [#0cf]god
@@ -1020,8 +1245,8 @@ let debug_help_msgbox_player = new MessageBoxTemplate(
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]                       [#ddd]|                                                                          | `,
-    ["< PRIMARY", "Close", "GAME >"],
-    ["#026", "#333", "#060"],
+    ["< ENGINE", "Close", "GAME >"],
+    ["#600", "#333", "#04a"],
     [
         function() {
             renderer.add_messagebox(debug_help_msgbox_primary, true);
@@ -1043,7 +1268,7 @@ let debug_help_msgbox_player = new MessageBoxTemplate(
 )
 
 let debug_help_msgbox_game = new MessageBoxTemplate(
-    "DEBUG HELP -- GAME",
+    "DEBUG HELP -- [#0cf]GAME",
 `[#4f4]e               <name> [#ddd]| spawn an entity using generic spawn (for spaces, use \"-\")                | [#0cf]e bat
 [#4f4]  <posx> <posy>        [#ddd]| with a specific position                                                 | [#0cf]e 4 32 bat
 [#4f4]                       [#ddd]|                                                                          | 
@@ -1064,16 +1289,16 @@ let debug_help_msgbox_game = new MessageBoxTemplate(
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]                       [#ddd]|                                                                          | 
-[#4f4]k(a)                   [#ddd]| kill target underneath the mouse cursor (or all entities if \"a\" given)   | [#0cf]k [#ddd]|[#0cf] ka
-[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]k(a|w)                 [#ddd]| kill target underneath the mouse cursor (or all entities if \"a\" given)   | [#0cf]k [#ddd]|[#0cf] ka[#ddd] |[#0cf] kw
+[#4f4]                       [#ddd]|                                         (or all walls if \"w\" given)      | 
 [#4f4]                       [#ddd]|                                                                          |
-[#4f4]                       [#ddd]|                                                                          |
+[#4f4]dummies «a/arena»      [#ddd]| make 5 target dummies around player, if (a)rena, removes everything else | [#0cf]dummies [#ddd]|[#0cf] dummies arena
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]w <stop|start>         [#ddd]| enables/disables wave progression (waves will not finish if this is off) | [#0cf]w stop
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]                       [#ddd]|                                                                          | `,
-    ["< PLAYER", "Close", "PRIMARY >"],
-    ["#026", "#333", "#060"],
+    ["< PLAYER", "Close", "ENGINE >"],
+    ["#060", "#333", "#600"],
     [
         function() {
             renderer.add_messagebox(debug_help_msgbox_player, true);
@@ -1142,6 +1367,40 @@ let debug_msgbox_padding_test = new MessageBoxTemplate(
     }
 )
 
+let start_of_game_popup = new MessageBoxTemplate(
+    "THE GAME'S TITLE SHOULD PROBABLY GO HERE",
+    "Your ancient confrontation with the lich Efrit is all you truly remember as you awaken from your centuries-long magical slumber.\n\nIn your absence, Efrit has run amok, tearing reality to shreds. Nothing remains in these shattered fragments of existence but your enemies and creatures driven mad by the chaos.\n\nYou must gather your senses, collect your lost magical power and flee from the encroaching corruption behind you.\n\nMaybe, with enough time, you may gather enough strength to live and confront him again.",
+    ["OK", "Hey, wait, what? I need a tutorial."],
+    ["#333", "#060"],
+    [
+        function() {
+            // NOTHING
+            game.player_location = new GameLocation(
+                location_templates[0],
+                [
+                    EventType.Battle,
+                    EventType.Battle,
+                    EventType.Event,
+                    EventType.Battle,
+                    EventType.Elite,
+                    EventType.GoodEvent
+                ]
+            );
+            game.player_location_progress = -1;
+            game.ready_for_wave_end = true;
+
+            renderer.msgbox_pad_x = renderer.default_msgbox_pad_x;
+            renderer.msgbox_pad_y = renderer.default_msgbox_pad_y;
+
+            game.check_wave_end(true);
+        },
+
+        function() {
+            // TUTORIAL
+        }
+    ]
+)
+
 messagebox_templates = {
     debug: test_msgbox,
 
@@ -1154,6 +1413,8 @@ messagebox_templates = {
     lvlup_msgbox_lv5: lvlup_msgbox_lv5,
     lvlup_msgbox_lv10: lvlup_msgbox_lv10,
     lvlup_msgbox_permanent_enhance: lvlup_msgbox_permanent_enhance,
+
+    start_of_game_popup: start_of_game_popup,
 
     debug_help_msgbox: debug_help_msgbox_primary,
     debug_msgbox_padding_test: debug_msgbox_padding_test
@@ -1335,6 +1596,8 @@ document.addEventListener("DOMContentLoaded", function() {
             }
     
             if (mov_pos && game.is_player_turn()) {
+                let turncount = game.turncount;
+
                 let result = game.move_player(
                     game.player_ent.position.add(mov_pos)
                 );
@@ -1343,7 +1606,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     renderer.move_particles(mov_pos.neg());
                 }
     
-                game.end_turn(game.player_ent);
+                game.end_turn(game.player_ent, turncount);
             }
         }
 
@@ -1356,21 +1619,3 @@ document.addEventListener("DOMContentLoaded", function() {
 
     game_loop();
 })
-
-// TODO
-// ADD UI:
-// - Levelup dialog (pick between HP, MP, MP regen, random core, random modifier)
-// - work out a way to show the effect of the whole spell for enemies (and you)
-//   for enemies will probably rely on the desc written by me to show anything, then just show basic stats
-// GAME LOOP:
-// - status effects - currently not implemented at all
-// - open inventory after beating all enemies
-// - world generation between waves
-/*
-https://docs.google.com/spreadsheets/d/1HZQqG0wqTs9oZUu4H4hqChqNRa-kj8lPe9Y93V5l_z8/edit?usp=sharing
-*/
-
-/*
-TODO BUGS:
-- none!
-*/

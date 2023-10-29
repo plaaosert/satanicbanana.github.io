@@ -61,6 +61,8 @@ TODO:
 - spells should be clickable to select them, or bound to numbers 1-5
 */
 
+const TARGET_FPS = 60;
+
 const sbox = {
     "h": "─",
     "v": "│",
@@ -338,22 +340,24 @@ class Particle {
 }
 
 class MessageBoxTemplate {
-    constructor(title, text, options, option_background_cols, option_actions, on_open) {
+    constructor(title, text, options, option_background_cols, option_actions, on_open, custom_highlight_col) {
         this.title = title;
         this.text = text;
         this.options = options;
         this.option_background_cols = option_background_cols;
         this.option_actions = option_actions;
         this.on_open = on_open
+        this.custom_highlight_col = custom_highlight_col
     }
 
-    static basic_infobox(title, text, confirm_opt_text, confirm_opt_col, on_open) {
+    static basic_infobox(title, text, confirm_opt_text, confirm_opt_col, on_open, custom_highlight_col) {
         return new MessageBoxTemplate(
             title, text,
             [confirm_opt_text ? confirm_opt_text : "OK"],
             [confirm_opt_col ? confirm_opt_col : "#060"],
             [function() {}],
-            on_open
+            on_open,
+            [custom_highlight_col ? custom_highlight_col : null]
         )
     }
 
@@ -388,6 +392,7 @@ class MessageBox {
         this.option_background_cols = template.option_background_cols;
         this.option_actions = template.option_actions;
         this.on_open = template.on_open;
+        this.custom_highlight_col = template.custom_highlight_col;
 
         this.need_to_calculate = true;
         this.registered_option_positions = {}
@@ -441,8 +446,8 @@ class Renderer {
         this.selected_full_spell = null;
         this.selected_spell_loc = null;
 
-        this.refresh_left_panel = false;
-        this.refresh_right_panel = false;
+        this.refresh_left_panel = true;
+        this.refresh_right_panel = true;
 
         this.inventory_spell_origins = {};  // {vec: {spell, frag_id, spell_id}}
         this.inventory_items_origins = {};  // {vec: {spell, inv_id}}
@@ -463,8 +468,8 @@ class Renderer {
         this.selected_messagebox_option_nr = null;
         this.selected_messagebox_option_fn = null;
 
-        this.default_msgbox_pad_x = 62;
-        this.default_msgbox_pad_y = 12;
+        this.default_msgbox_pad_x = 62-6;
+        this.default_msgbox_pad_y = 12-6;
         
         this.msgbox_pad_x = this.default_msgbox_pad_x;
         this.msgbox_pad_y = this.default_msgbox_pad_y;
@@ -642,7 +647,7 @@ class Renderer {
         }
     }
 
-    request_new_frame(show_changes, show_fps) {
+    request_new_frame(show_changes, show_fps, clear_debug_info) {
         let num_changes = [0, 0, 0];
         for (let yt=0; yt<this.total_size.y; yt++) {
             for (let xt=0; xt<this.total_size.x; xt++) {
@@ -673,17 +678,31 @@ class Renderer {
             }
         }
 
-        if (show_changes) {
-            let change_str = num_changes[0].toString().padStart(4, "\u00A0") + " text" + 
-                             num_changes[1].toString().padStart(4, "\u00A0") + " col" + 
-                             num_changes[2].toString().padStart(4, "\u00A0") + " bgcol";
+        if (show_changes || show_fps) {
+            let change_str = "";
+
+            if (show_changes) {
+                change_str = num_changes[0].toString().padStart(4, "\u00A0") + " text" + 
+                                num_changes[1].toString().padStart(4, "\u00A0") + " col" + 
+                                num_changes[2].toString().padStart(4, "\u00A0") + " bgcol";
+            }
+
+            if (show_changes && show_fps) {
+                change_str += " | "
+            }
 
             if (show_fps) {
-                change_str += " | fps: " + (Math.round(show_fps * 100) / 100).toString().padStart(8, "\u00A0")
+                change_str += "fps: " + (Math.round(show_fps * 100) / 100).toString().padStart(8, "\u00A0")
             }
 
             for (let i=0; i<change_str.length; i++) {
                 this.pixel_chars[this.total_size.y - 2][this.total_size.x - change_str.length - 1 + i].textContent = change_str[i];
+            }
+        }
+        
+        if (clear_debug_info) {
+            for (let i=0; i<this.right_menu_size.x-2; i++) {
+                this.pixel_chars[this.total_size.y - 2][this.total_size.x - this.right_menu_size.x + 1 + i].textContent = " "
             }
         }
     }
@@ -1128,6 +1147,8 @@ class Renderer {
                     //console.log("asking for refresh right");
                     */
                 } else {
+                    let turncount = game.turncount;
+
                     if (game.is_player_turn()) {
                         let normalised_pos = resolved_pos.sub(new Vector2(this.left_menu_size.x, 0));
                         normalised_pos = new Vector2(Math.floor(normalised_pos.x / 2) * 2, Math.floor(normalised_pos.y));
@@ -1151,9 +1172,9 @@ class Renderer {
                                     //this.move_particles(path[1].sub(game.player_ent.position).neg());
                                 }
             
-                                game.end_turn(game.player_ent);
+                                game.end_turn(game.player_ent, turncount);
                             } else if (game_pos.equals(game.player_ent.position)) {
-                                game.end_turn(game.player_ent);
+                                game.end_turn(game.player_ent, turncount);
                             }
                         }
                     }
@@ -1184,7 +1205,8 @@ class Renderer {
                                 response.text ? response.text : old_msgbox.text,
                                 response.confirm_opt_text ? response.confirm_opt_text : null,
                                 response.confirm_opt_col ? response.confirm_opt_col : null,
-                                response.on_open ? response.on_open : null
+                                response.on_open ? response.on_open : null,
+                                response.custom_highlight_col ? response.custom_highlight_col : null
                             ),
                             true
                         )
@@ -2064,31 +2086,76 @@ class Renderer {
             } else {
                 // render recorded damage here i suppose? and other stats like wavecount
                 // maybe also enemies remaining
-                this.set_pixel_text(
-                    right_mount_pos,
-                    this.pad_str(`[white]- Wave [#0f0]${game.wavecount}[clear] -`, clearance_x, 2),
-                    "white"
-                );
+                let current_event = game.player_location.events[this.game.player_location_progress];
+                let cur_evt_string = `[${event_type_to_colour[current_event]}]${current_event}`
 
-                if (Object.keys(game.wave_entities).length > 0) {
+                if (this.game.wavecount <= 0) {
+                    this.set_pixel_text(
+                        right_mount_pos,
+                        this.pad_str(``, clearance_x, 2),
+                        "white"
+                    );
+
                     this.set_pixel_text(
                         right_mount_pos.add(new Vector2(0, 2)),
-                        this.pad_str(`[white]Enemies remaining: [#f80]${Object.keys(game.wave_entities).length}[clear]`, clearance_x),
+                        this.pad_str(``, clearance_x),
+                        null
+                    );
+
+                    // location information and progress
+                    this.set_pixel_text(
+                        right_mount_pos.add(new Vector2(0, 4)),
+                        this.pad_str(``, clearance_x-1, 2),
+                        null
+                    );
+
+                    this.set_pixel_text(
+                        right_mount_pos.add(new Vector2(0, 6)),
+                        this.pad_str(``, clearance_x, 2),
                         null
                     );
                 } else {
                     this.set_pixel_text(
-                        right_mount_pos.add(new Vector2(0, 2)),
-                        this.pad_str(`[#0f0]Wave completed![clear]`, clearance_x),
+                        right_mount_pos,
+                        this.pad_str(`[white]- Shard [${game.player_location.col}]${game.location_count+1}[clear] | Area [${event_type_to_colour[current_event]}]${game.player_location_progress+1}[clear] -`, clearance_x, 2),
+                        "white"
+                    );
+
+                    if (Object.keys(game.wave_entities).length > 0) {
+                        this.set_pixel_text(
+                            right_mount_pos.add(new Vector2(0, 2)),
+                            this.pad_str(`[white]Enemies remaining: [#f80]${Object.keys(game.wave_entities).length}[clear]`, clearance_x),
+                            null
+                        );
+                    } else {
+                        this.set_pixel_text(
+                            right_mount_pos.add(new Vector2(0, 2)),
+                            this.pad_str(`[#0f0]Wave completed![clear]`, clearance_x),
+                            null
+                        );
+                    }
+
+                    // location information and progress
+                    this.set_pixel_text(
+                        right_mount_pos.add(new Vector2(0, 4)),
+                        this.pad_str(`[${game.player_location.col}]${game.player_location.name}[#fff] (${cur_evt_string}[#fff])`, clearance_x-1, 2),
+                        null
+                    );
+
+                    let path_str = this.make_location_path_string(game, clearance_x);
+
+                    this.set_pixel_text(
+                        right_mount_pos.add(new Vector2(0, 6)),
+                        this.pad_str(`[#fff]${path_str}`, clearance_x, 2),
                         null
                     );
                 }
 
                 // desc
-                let text_pos = right_mount_pos.add(new Vector2(0, 4));
+                let text_pos = right_mount_pos.add(new Vector2(0, 9));
                 this.set_pixel_text(
                     text_pos,
-                    this.pad_str(`[white]Damage dealt | This wave  | Total`, clearance_x),
+                    this.pad_str(this.game.wavecount <= 0 ? `` : `  [white]Damage dealt | This wave  | Total`, clearance_x),
                     "white"
                 );
 
@@ -2110,12 +2177,12 @@ class Renderer {
 
                     this.set_pixel_text(
                         text_pos,
-                        this.pad_str(`[${damage_type_cols[typ]}]${typ.padEnd(12)}[white] |[#0cf] ${dmg_amt_wave}[white] |[#0cf] ${dmg_amt_total}[clear]`, clearance_x),
+                        this.pad_str(this.game.wavecount <= 0 ? `` : `  [${damage_type_cols[typ]}]${typ.padEnd(12)}[white] |[#0cf] ${dmg_amt_wave}[white] |[#0cf] ${dmg_amt_total}[clear]`, clearance_x),
                         "white"
                     );
                 })
 
-                let emblems_pos = text_pos.add(new Vector2(0, 2));
+                let emblems_pos = text_pos.add(new Vector2(0, 3));
                 if (this.game.player_emblems.length > 0) {
                     this.set_pixel_text(
                         emblems_pos,
@@ -2134,6 +2201,7 @@ class Renderer {
 
                         emblems_pos = emblems_pos.add(new Vector2(0, 1));
 
+                        /* description disabled for now
                         // TODO line wrapping isn't working as intended
                         let wraps = this.set_pixel_text(
                             emblems_pos,
@@ -2142,10 +2210,52 @@ class Renderer {
                         );
 
                         emblems_pos = emblems_pos.add(new Vector2(0, 2 + wraps));
+                        */
                     })
                 }
             }
         }
+    }
+
+    make_location_path_string(game, clearance_x, events, prog) {
+        let pprog = prog ? prog : game.player_location_progress;
+        let pevents = events ? events : game.player_location.events;
+
+        let path_str = "";
+        let path_pad_size = Math.floor((clearance_x-3) / pevents.length);
+
+        if (pprog == 0) {
+            path_str += "[#fff]«[#888]"
+        } else {
+            path_str += " "
+        }
+
+        for (let i=0; i<pevents.length; i++) {
+            let evt = pevents[i];
+            let path = "";
+            if (i < pevents.length-1) {
+                path += " "
+                path += "-".repeat(path_pad_size-2);
+
+                if (i - pprog == -1) {
+                    path += "[#fff]«[#888]"
+                } else if (i - pprog == 0) {
+                    path = "[#fff]»[#888]" + path.slice(1) + " "
+                } else {
+                    path += " "
+                }
+            }
+
+            path_str += `[${i < pprog ? "#444" : event_type_to_colour[evt]}]${event_type_to_icon[evt]}[#888]${path}`;
+        }
+
+        if (pprog == pevents.length-1) {
+            path_str += "[#fff]»[#888]"
+        } else {
+            path_str += " "
+        }
+
+        return path_str;
     }
 
     render_game_checkerboard(light_col) {
@@ -2503,22 +2613,22 @@ class Renderer {
 
         //console.log(tl, br);
 
+        // selected tile needs to be scaled back by size of left,
+        // then halved,
+        // then used as a difference from center
+        let selected_loc = this.selected_tile ? this.selected_tile : new Vector2(0, 0);
+
+        let s_normalised_pos = selected_loc.sub(new Vector2(this.left_menu_size.x, 0));
+        s_normalised_pos = new Vector2(Math.floor(s_normalised_pos.x / 2) * 2, Math.floor(s_normalised_pos.y));
+
+        let s_player_screen_pos = this.game_view_size.div(2);
+        let s_screen_diff = s_normalised_pos.sub(s_player_screen_pos);
+        let s_game_diff = new Vector2(s_screen_diff.x / 2, s_screen_diff.y);
+
+        let s_game_pos = game.player_ent.position.add(s_game_diff);
+
         let radius_vec_set = [];
         if (game.selected_player_primed_spell) {
-            // selected tile needs to be scaled back by size of left,
-            // then halved,
-            // then used as a difference from center
-            let selected_loc = this.selected_tile ? this.selected_tile : new Vector2(0, 0);
-
-            let s_normalised_pos = selected_loc.sub(new Vector2(this.left_menu_size.x, 0));
-            s_normalised_pos = new Vector2(Math.floor(s_normalised_pos.x / 2) * 2, Math.floor(s_normalised_pos.y));
-
-            let s_player_screen_pos = this.game_view_size.div(2);
-            let s_screen_diff = s_normalised_pos.sub(s_player_screen_pos);
-            let s_game_diff = new Vector2(s_screen_diff.x / 2, s_screen_diff.y);
-
-            let s_game_pos = game.player_ent.position.add(s_game_diff);
-
             if (game.selected_player_primed_spell.root_spell.in_range(game.player_ent, s_game_pos)) {
                 /*
                 radius_vecs = game.selected_player_primed_spell.root_spell.stats.shape(
@@ -2541,7 +2651,12 @@ class Renderer {
 
         this.last_selected_tiles = [];
 
-        let col_lerp_triggers_to = [[12, 12, 16], [6, 6, 16]];
+        let col_lerp_triggers_to = [[48, 48, 64], [24, 24, 64]];
+
+        let line_to_selected = [];
+        if (!game.selected_player_primed_spell) {
+            line_to_selected = pathfind(game.player_ent.position, s_game_pos);
+        }
 
         for (let x=0; x<x_delta; x++) {
             for (let y=0; y<y_delta; y++) {
@@ -2591,7 +2706,7 @@ class Renderer {
                                 let cf = (1 / radius_vec_set.length) * rvi;
 
                                 if (radius_vecs.some((v) => v.equals(game_pos))) {
-                                    let effect_indicator_col = (Math.floor(game_pos.x) + game_pos.y) % 2 != switch_checkerboard ? [32, 32, 64] : [24, 24, 64];
+                                    let effect_indicator_col = (Math.floor(game_pos.x) + game_pos.y) % 2 != switch_checkerboard ? [64, 64, 128] : [48, 48, 128];
                                     let lerp_to = (Math.floor(game_pos.x) + game_pos.y) % 2 != switch_checkerboard ? col_lerp_triggers_to[0] : col_lerp_triggers_to[1];
 
                                     effect_indicator_col = lerp_colour(effect_indicator_col, lerp_to, cf);
@@ -2641,6 +2756,12 @@ class Renderer {
                             }
                         } else {
                             let neutral_col = (Math.floor(game_pos.x) + game_pos.y) % 2 != switch_checkerboard ? [0, 0, 0] : [16, 16, 16];
+
+                            if (line_to_selected && line_to_selected.some(p => p.equals(game_pos))) {
+                                neutral_col[0] += 32;
+                                neutral_col[1] += 32;
+                                neutral_col[2] += 32;
+                            }
 
                             back_rgb = neutral_col;
                         }
@@ -2864,8 +2985,12 @@ class Renderer {
 
             for (let i=0; i<this.messagebox_open.options.length; i++) {
                 let selected_option_length = option_length;
-                let back_col = this.selected_messagebox_option_nr == i ? "#fff" : this.messagebox_open.option_background_cols[i];
-                let text_col = this.selected_messagebox_option_nr == i ? "#000" : "#fff";
+
+                let selected_back_col = (this.messagebox_open.custom_highlight_col && this.messagebox_open.custom_highlight_col[i]) ? this.messagebox_open.custom_highlight_col[i][0] : "#fff";
+                let selected_text_col = (this.messagebox_open.custom_highlight_col && this.messagebox_open.custom_highlight_col[i]) ? this.messagebox_open.custom_highlight_col[i][1] : "#000";
+
+                let back_col = this.selected_messagebox_option_nr == i ? selected_back_col : this.messagebox_open.option_background_cols[i];
+                let text_col = this.selected_messagebox_option_nr == i ? selected_text_col : "#fff";
 
                 if (i < remaining_option_length) {
                     selected_option_length++;
@@ -3110,6 +3235,8 @@ class Entity {
     }
 
     do_turn() {
+        let turncount = game.turncount;
+
         this.calculate_primed_spells(game.player_ent.position);
 
         // sends stuff to the game if necessary, based on ai level
@@ -3169,27 +3296,35 @@ class Entity {
                     // and move away otherwise
                     if (!cast_spell) {
                         if (this.ai_level == 4) {
-                            game.end_turn(this);
+                            // DEFINITELY don't wait if we're ai level 4 (stationary)
+                            game.end_turn(this, turncount, true);
                         } else {
-                            let path = pathfind(this.position, target_ent.position);
-
+                            let clear_path = pathfind(this.position, target_ent.position);
+                            
                             //console.log(path, this.position, target_ent.position);
-                            if (path && path.length > 1) {
-                                let result = game.move_entity(this, path[1], false);
+                            if (clear_path && clear_path.length > 1) {
+                                let result = game.move_entity(this, clear_path[1], false);
+                            } else {
+                                let occupied_path = pathfind(this.position, target_ent.position, [this.team]);
+
+                                if (occupied_path && occupied_path.length > 1) {
+                                    let result = game.move_entity(this, occupied_path[1], false)
+                                }
                             }
                                 
-                            game.end_turn(this);
+                            // don't wait if we end up not casting a spell
+                            game.end_turn(this, turncount, true);
                         }
                     }
                 } else {
                     // experimental "do not wait" if we don't do anything
-                    game.end_turn(this, true);
+                    game.end_turn(this, turncount, true);
                 }
                 
                 break;
 
             default:
-                game.end_turn(this, true);
+                game.end_turn(this, turncount, true);
                 break;
         }
     }
@@ -3945,7 +4080,7 @@ function make_square(target, radius, predicate) {
     return positions;
 }
 
-function pathfind(start, goal) {
+function pathfind(start, goal, ignore_teams) {
     let gets = 0;
 
     function h(pos) {
@@ -4043,7 +4178,8 @@ function pathfind(start, goal) {
         for (let i=0; i<neighbours.length; i++) {
             let neighbor = neighbours[i];
 
-            if (board.position_valid(neighbor) && (!board.get_pos(neighbor) || neighbor.equals(goal))) {
+            let neighbour_ent = board.get_pos(neighbor);
+            if (board.position_valid(neighbor) && ((!neighbour_ent || (ignore_teams && neighbour_ent.team_present(ignore_teams))) || neighbor.equals(goal))) {
                 let neighbor_hash = neighbor.hash_code();
 
                 // d(current,neighbor) is the weight of the edge from current to neighbor
@@ -4168,14 +4304,162 @@ function propagate_diamond(origin, radius, los) {
     return positions.reverse();
 }
 
-const Generator = {
+function maze_gen(game, board, cvr, diagonals) {
+    let wall_remove_chance = cvr ? cvr : 0.1
+
+    let walls_removed = new Set();
+
+    let visited = new Set();
+    let visit_stack = [];
+    let initial_cell = game.player_ent.position;
+    visit_stack.push(initial_cell);
+
+    while (visit_stack.length > 0) {
+        // Pop a cell from the stack and make it a current cell
+        let current = visit_stack.pop()
+        
+        // If the current cell has any neighbours which have not been visited
+        let neighbours = diagonals ? [
+            current.add(new Vector2(0, 2)),
+            current.add(new Vector2(0, -2)),
+            current.add(new Vector2(-2, 0)),
+            current.add(new Vector2(2, 0)),
+            current.add(new Vector2(-2, -2)),
+            current.add(new Vector2(2, -2)),
+            current.add(new Vector2(-2, 2)),
+            current.add(new Vector2(2, 2)),
+        ] : [
+            current.add(new Vector2(0, 2)),
+            current.add(new Vector2(0, -2)),
+            current.add(new Vector2(-2, 0)),
+            current.add(new Vector2(2, 0)),
+            //current.add(new Vector2(-2, -2)),
+            //current.add(new Vector2(2, -2)),
+            //current.add(new Vector2(-2, 2)),
+            //current.add(new Vector2(2, 2)),
+        ] 
+
+        let unvisited_neighbours = neighbours.filter(v => game.board.position_valid(v) && !visited.has(v.hash_code()))
+        if (unvisited_neighbours.length > 0) {
+            // Push the current cell to the stack
+            visit_stack.push(current)
+
+            // Choose one of the unvisited neighbours
+            let chosen_neighbour = unvisited_neighbours[Math.floor(game.random() * unvisited_neighbours.length)];
+
+            // Remove the wall between the current cell and the chosen cell
+            walls_removed.add(current.hash_code());
+            walls_removed.add(current.add(chosen_neighbour.sub(current).div(2)).hash_code())
+            walls_removed.add(chosen_neighbour.hash_code());
+
+            // Mark the chosen cell as visited and push it to the stack
+            visited.add(chosen_neighbour.hash_code());
+            visit_stack.push(chosen_neighbour)
+        }
+    }
+
+    let walls = game.player_location.walls;
+    let walls_placed = 0;
+    for (let x=0; x<board.dimensions.x; x++) {
+        for (let y=0; y<board.dimensions.y; y++) {
+            let t = new Vector2(x, y);
+            if (game.random() > wall_remove_chance && !walls_removed.has(t.hash_code())) {
+                let result = game.spawn_entity(
+                    walls[0], Teams.UNALIGNED, t
+                )
+    
+                if (result) {
+                    walls_placed++;
+                }
+            }
+        }
+    }
+
+    walls_placed += flood_fill_inaccessible(game, walls);
+
+    // since the maze should always have a path to everywhere, it should never reject
+    return true;
+}
+
+function select_random_wall(game, walls) {
+    let w = walls[0];
+    let w_index = 0;
+    while (w_index < 4 && game.random() < 0.5) {
+        w_index++;
+        w = walls[w_index];
+    }
+
+    return w;
+}
+
+function flood_fill_inaccessible(game, walls) {
+    // check every tile. if it is not reachable from the player tile,
+    // turn it into a wall.
+    let walls_placed = 0;
+
+    let flood_set = {};
+    let expands = {};
+
+    let new_expands = {};
+    new_expands[game.player_ent.position.hash_code()] = game.player_ent.position;
+
+    while (Object.keys(new_expands).length > 0) {
+        expands = new_expands;
+        new_expands = {};
+
+        Object.keys(expands).forEach(p => {
+            let current = expands[p];
+            let neighbours = [
+                current.add(new Vector2(0, 1)),
+                current.add(new Vector2(0, -1)),
+                current.add(new Vector2(-1, 0)),
+                current.add(new Vector2(1, 0)),
+                current.add(new Vector2(-1, -1)),
+                current.add(new Vector2(1, -1)),
+                current.add(new Vector2(-1, 1)),
+                current.add(new Vector2(1, 1)),
+            ]
+
+            neighbours.forEach(n => {
+                if (board.position_valid(n)) {
+                    let ent = board.get_pos(n);
+                    if (!ent || !ent.blocks_los) {
+                        if (!flood_set[n.hash_code()]) {
+                            new_expands[n.hash_code()] = n;
+                            flood_set[n.hash_code()] = n;
+                        }
+                    }
+                }
+            })
+        })
+    }
+
+    for (let x=0; x<board.dimensions.x; x++) {
+        for (let y=0; y<board.dimensions.y; y++) {
+            let t = new Vector2(x, y);
+            if (!flood_set[t.hash_code()]) {
+                let result = game.spawn_entity(
+                    walls[4], Teams.UNALIGNED, t
+                )
+    
+                if (result) {
+                    walls_placed++;
+                }
+            }
+        }
+    }
+
+    return walls_placed;
+}
+
+const WorldGen = {
     RandomWalls: function(game, board, cvr) {
-        let coverage = cvr ? cvr : 0.02
+        let coverage = cvr ? cvr : 0.1
 
         let num_walls = (0.85 + (game.random() * 0.3)) * board.num_tiles * coverage;
         num_walls = Math.floor(num_walls);
 
-        let wall = get_entity_by_name("Wall");
+        let walls = game.player_location.walls;
 
         let walls_placed = 0;
 
@@ -4186,7 +4470,7 @@ const Generator = {
             );
 
             let result = game.spawn_entity(
-                wall, Teams.UNALIGNED, pos
+                select_random_wall(game, walls), Teams.UNALIGNED, pos
             )
 
             if (result) {
@@ -4194,59 +4478,7 @@ const Generator = {
             }
         }
 
-        // check every tile. if it is not reachable from the player tile,
-        // turn it into a wall.
-        let flood_set = {};
-        let expands = {};
-
-        let new_expands = {};
-        new_expands[game.player_ent.position.hash_code()] = game.player_ent.position;
-
-        while (Object.keys(new_expands).length > 0) {
-            expands = new_expands;
-            new_expands = {};
-
-            Object.keys(expands).forEach(p => {
-                let current = expands[p];
-                let neighbours = [
-                    current.add(new Vector2(0, 1)),
-                    current.add(new Vector2(0, -1)),
-                    current.add(new Vector2(-1, 0)),
-                    current.add(new Vector2(1, 0)),
-                    current.add(new Vector2(-1, -1)),
-                    current.add(new Vector2(1, -1)),
-                    current.add(new Vector2(-1, 1)),
-                    current.add(new Vector2(1, 1)),
-                ]
-
-                neighbours.forEach(n => {
-                    if (board.position_valid(n)) {
-                        let ent = board.get_pos(n);
-                        if (!ent || !ent.blocks_los) {
-                            if (!flood_set[n.hash_code()]) {
-                                new_expands[n.hash_code()] = n;
-                                flood_set[n.hash_code()] = n;
-                            }
-                        }
-                    }
-                })
-            })
-        }
-
-        for (let x=0; x<board.dimensions.x; x++) {
-            for (let y=0; y<board.dimensions.y; y++) {
-                let t = new Vector2(x, y);
-                if (!flood_set[t.hash_code()]) {
-                    let result = game.spawn_entity(
-                        wall, Teams.UNALIGNED, t
-                    )
-        
-                    if (result) {
-                        walls_placed++;
-                    }
-                }
-            }
-        }
+        walls_placed += flood_fill_inaccessible(game, walls);
 
         // finally, reject the generation if over 2x the number of tiles
         // that should be empty are now filled
@@ -4259,7 +4491,15 @@ const Generator = {
 
         // console.log(actual_empty, expected_empty, "worldgen success");
         return true;
-    }
+    },
+
+    Maze1: function(game, board, cvr) {
+        return maze_gen(game, board, cvr, false)
+    },
+
+    Maze1Diagonal: function(game, board, cvr) {
+        return maze_gen(game, board, cvr, true)
+    },
 }
 
 const Shape = {
@@ -4286,7 +4526,19 @@ const Shape = {
         return filtered
     }],
     Ring: ["ring shape", function(origin, target, radius, los) {
+        if (origin == "whoami") {
+            return "ring shape";
+        }
+        
+        let pts = make_square(target, radius+1);
 
+        let filtered = pts.filter(
+            vec => {
+                return (Math.abs(vec.sub(target).magnitude() - radius) < 0.5) && (target.equals(vec) || (!los || game.has_los_pos(target, vec)))
+            }
+        );
+
+        return filtered
     }],
     Diamond: ["burst", function(origin, target, radius, los) {
         if (origin == "whoami") {
@@ -4378,6 +4630,16 @@ const SpellSpecials = {
     NEGATIVESPACE: "NEGATIVESPACE"
 }
 
+const SpellMulticast = {
+    NORMAL: "normal",
+    CHAOSCAST: "unpredictable",
+    ARC: "simultaneous",
+    CHAIN: "chain",
+    BEHINDTHEBACK: "btb",
+    TRIANGLE: "triangle",
+    SQUARE: "square"
+}
+
 class PrimedSpell {
     static id_inc = 0;
 
@@ -4387,6 +4649,7 @@ class PrimedSpell {
 
         this.caster = caster
         this.origin = null;
+        this.original_cast_position = null;
 
         this.spells = spells
         this.trigger = ["none", null];  // ["at_target"/..., PrimedSpell]
@@ -4398,14 +4661,19 @@ class PrimedSpell {
 
     copy() {
         let new_primed = new PrimedSpell(this.caster, this.spells);
+        
         new_primed.origin = this.origin;
+        new_primed.original_cast_position = this.original_cast_position;
+
         if (this.trigger[0] != "none") {
             new_primed.trigger = [this.trigger[0], this.trigger[1].copy()];
         }
 
         new_primed.calculate();
+
         new_primed.stats.mutable_info = structuredClone(this.stats.mutable_info);
         new_primed.stats.multicasts = structuredClone(this.stats.multicasts);
+        new_primed.stats.multicast_stack = structuredClone(this.stats.multicast_stack);
 
         return new_primed;
     }
@@ -4427,10 +4695,14 @@ class PrimedSpell {
             "unpredictable": 0,
             "chain": 0,
             "simultaneous": 0,
-            "btb": 0
+            "btb": 0,
+            "triangle": 0,
+            "square": 0
         }
 
-        this.stats.retarget = RetargetType.NONE;
+        this.stats.multicast_stack = [];
+
+        this.stats.retargets = [];
 
         this.stats.shape = Shape.Diamond;
         this.stats.los = true;
@@ -4489,6 +4761,22 @@ class PrimedSpell {
         this.stats.range = Math.max(0, this.stats.range);
     }
 
+    shift_multicasts(kill_arcs) {
+        let t = 0;
+        while (kill_arcs || t <= 0) {
+            t++;
+            this.stats.mutable_info.last_multicast = this.stats.multicast_stack.shift();
+
+            // shift away the next thing immediately 
+            // if we just shifted an arc 
+            // AND the next thing is an arc
+
+            if (this.stats.mutable_info.last_multicast != SpellMulticast.ARC || this.stats.multicast_stack[0] != SpellMulticast.ARC) {
+                break;
+            }
+        }
+    }
+
     spell_would_affect(caster, ent, ignore_unit_target) {
         // check if it's in range. for a selftarget, it will instead check the shape and see if the
         // target is inside it. 
@@ -4541,10 +4829,16 @@ class PrimedSpell {
     }
 
     // DOES NOT RETARGET ON ITS OWN!!! NEED TO DO THIS SEPARATELY
-    get_affected_tiles(board, caster, position) {
+    get_affected_tiles(board, caster, position, force_origin) {
         let origin = this.origin ? this.origin : (
             caster.position ? caster.position : caster
         );
+
+        if (force_origin) {
+            origin = force_origin
+        }
+
+        this.origin = origin;
 
         let cast_locations = this.stats.shape(origin, position, this.stats.radius, this.stats.los);
         if (this.stats.specials.includes(SpellSpecials.NEGATIVESPACE)) {
@@ -4556,11 +4850,15 @@ class PrimedSpell {
             });
         }
 
+        if (!force_origin) {
+            this.origin = null;
+        }
+
         return cast_locations;
     }
 
-    get_retarget_position(board, caster, origin, old_position) {
-        switch (this.stats.retarget) {
+    get_single_retarget(board, caster, origin, old_position, original_cast_position, retarget) {
+        switch (retarget) {
             case RetargetType.Self:
                 return caster.position;
 
@@ -4575,7 +4873,7 @@ class PrimedSpell {
                 )
 
                 // filter this based on the retarget type:
-                switch (this.stats.retarget) {
+                switch (retarget) {
                     case RetargetType.Enemy:
                         ents = ents.filter(e => !e.has_team(caster.team))
                         break;
@@ -4627,7 +4925,7 @@ class PrimedSpell {
                 let line_delta = new Vector2(0, 0);
                 let target_pos = null;
                 let max_dist = 0;
-                switch (this.stats.retarget) {
+                switch (retarget) {
                     case RetargetType.Pushback:
                         // 3 tiles away from caster
                         line_delta = old_position.sub(caster.position).normalize().mul(3).round();
@@ -4648,10 +4946,10 @@ class PrimedSpell {
 
                     case RetargetType.Compact:
                         // 2 tiles towards cast position
-                        if (old_position.distance(origin) < 2) {
-                            target_pos = origin;
+                        if (old_position.distance(original_cast_position) < 2) {
+                            target_pos = original_cast_position;
                         } else {
-                            line_delta = old_position.sub(origin).normalize().mul(-2).round();
+                            line_delta = old_position.sub(original_cast_position).normalize().mul(-2).round();
                         }
 
                         max_dist = 2;
@@ -4659,19 +4957,23 @@ class PrimedSpell {
 
                     case RetargetType.Sparse:
                         // 2 tiles away from cast position
-                        line_delta = old_position.sub(origin).normalize().mul(2).round();
+                        line_delta = old_position.sub(original_cast_position).normalize().mul(2).round();
 
                         max_dist = 2;
                         break;
 
                     case RetargetType.Mysterious:
-                        // seed a random generator with the target xy, modify by random +-8 xy
-                        line_delta = new Vector2(
-                            8 - (seeded_random(old_position.hash_code().toString()) * 16),
-                            8 - (seeded_random(old_position.mul(3).hash_code().toString()) * 16)
-                        ).round();
+                        // seed a random generator with the target xy, modify by random r, theta values:
+                        // theta = 0, 360
+                        // r = 1, maxrange/2
+                        let rand = get_seeded_randomiser(old_position.hash_code().toString());
+                        
+                        let theta = rand() * 360;
+                        let r = 1 + (rand() * (this.stats.range / 2));
 
-                        max_dist = 999;
+                        line_delta = new Vector2(1, 0).rotate(theta).mul(r).round();
+
+                        max_dist = this.stats.range;
                         break;
                 }
 
@@ -4699,12 +5001,23 @@ class PrimedSpell {
         return old_position;
     }
 
+    get_retarget_position(board, caster, origin, old_position, original_cast_position) {
+        let p = old_position;
+        for (let i=0; i<this.stats.retargets.length; i++) {
+            p = this.get_single_retarget(board, caster, origin, p, original_cast_position, this.stats.retargets[i]);
+        }
+
+        return p;
+    }
+
     cast(board, caster, target_position) {
+        // console.log("Cast spell at", target_position);
+
         //console.log(this.origin);
         let position = target_position;
         if ([SpellTargeting.SelfTarget, SpellTargeting.SelfTargetPlusCaster].includes(this.stats.target_type)) {
-            console.log("forced position back to ent position")
-            position = caster.position;
+            console.log("not forcing position for now, but would here")
+            // position = caster.position;
         }
 
         if (this.stats.target_type == SpellTargeting.UnitTarget && !board.get_pos(position)) {
@@ -4720,13 +5033,19 @@ class PrimedSpell {
         let self_target_safe = this.stats.target_type == SpellTargeting.SelfTarget;
 
         let origin = this.origin ? this.origin : caster.position;
+        this.origin = origin;
+
+        let original_cast_position = this.original_cast_position ? this.original_cast_position : caster.position;
+        this.original_cast_position = original_cast_position;
         
-        position = this.get_retarget_position(board, caster, origin, position);
+        position = this.get_retarget_position(board, caster, origin, position, original_cast_position);
         // if (this.stats.retarget != RetargetType.None) {
         //     console.log(`Successfully retargeted from ${target_position.toString()} to ${position.toString()}`)
         // }
 
-        let cast_locations = this.get_affected_tiles(board, caster, position);
+        this.cast_position = position;
+
+        let cast_locations = this.get_affected_tiles(board, caster, position, origin);
 
         if (this.stats.shape("whoami") == Shape.Line[0]) {
             if (!cast_locations.some(v => v.equals(origin))) {
@@ -4828,7 +5147,8 @@ class PrimedSpell {
             })
 
             if (sthis.trigger[0] == "on_affected_tiles") {
-                sthis.trigger[1].origin = position;
+                sthis.trigger[1].origin = location;
+                sthis.trigger[1].original_cast_position = position;
                 game.cast_primed_spell(sthis.trigger[1].copy(), location, true);
             }
         })
@@ -4842,6 +5162,7 @@ class PrimedSpell {
 
         if (this.trigger[0] == "at_target") {
             this.trigger[1].origin = position;
+            this.trigger[1].original_cast_position = position;
             game.cast_primed_spell(this.trigger[1].copy(), position, true);
         }
 
@@ -4870,7 +5191,8 @@ class PrimedSpell {
                     })
 
                     if (this.trigger[0] == "on_hit") {
-                        this.trigger[1].origin = position;
+                        this.trigger[1].origin = ent.position;
+                        this.trigger[1].original_cast_position = position;
                         game.cast_primed_spell(this.trigger[1].copy(), ent.position, true);
                     }
 
@@ -4903,12 +5225,130 @@ class PrimedSpell {
         }
 
         if (this.stats.specials.includes(SpellSpecials.DEATHCHAIN)) {
-            if (entities_killed.length > 0) {
+            if (Object.keys(entities_killed).length > 0) {
                 this.stats.multicasts["chain"] += 1;
+                this.stats.multicast_stack.unshift(SpellMulticast.CHAIN);
             }
         }
 
         // check multicasts
+        // NEW SYSTEM!!!! we now pop off a single multicast from the multicast stack
+        // (don't actually pop) and do that one.
+        // i think you will agree that is much saner. lol
+        let need_to_retry_multicast = this.stats.multicast_stack.length > 0
+        while (need_to_retry_multicast) {
+            console.log(this.stats.multicast_stack);
+            let popped_mc = this.stats.multicast_stack[0];
+            
+            let pos_target = null;
+            let put_at_bottom = true;
+            let wait_for_more = false;
+            let new_origin = null;
+
+            if (this.stats.mutable_info.last_multicast != popped_mc) {
+                // clear chainspell list between different types of multicast
+                console.log("cleared multicasts");
+
+                this.stats.mutable_info["chainspell_ents"] = [];
+            }
+
+            switch (popped_mc) {
+                case SpellMulticast.NORMAL:
+                    pos_target = position.copy();
+                    break;
+                
+                case SpellMulticast.CHAOSCAST:
+                    pos_target = game.find_random_space_in_los(
+                        caster, position, this.stats.radius + 1,
+                        Shape.Diamond[1], !this.stats.los
+                    );
+                    break;
+                
+                case SpellMulticast.CHAIN:
+                case SpellMulticast.ARC:
+                    // chain: set origin to position and position to random ent
+                    // arc: set position to random ent, retain origin
+                    //      if this is first multicast, set origin to original position
+                    //      if this is multicast after any non-arc multicast, set origin to original position
+
+                    // target a random enemy in range and LOS
+                    // add the target to a list and ensure they don't get chained to twice
+                    if (game.board.get_pos(position)) {
+                        if (this.stats.mutable_info["chainspell_ents"]) {
+                            this.stats.mutable_info["chainspell_ents"].push(game.board.get_pos(position).id)
+                        } else {
+                            this.stats.mutable_info["chainspell_ents"] = [game.board.get_pos(position).id];
+                        }
+                    } else if (!this.stats.mutable_info["chainspell_ents"]) {
+                        this.stats.mutable_info["chainspell_ents"] = [];
+                    }
+
+                    let positions = Shape.Circle[1](origin, position, this.stats.range, this.stats.los)
+                    console.log(this.stats.mutable_info["chainspell_ents"]);
+                    let ents = game.board.check_shape(
+                        positions, this.stats.target_team, null, e => (e && !e.position.equals(position) && e.id != caster.id && !this.stats.mutable_info["chainspell_ents"].includes(e.id)) 
+                    )
+
+                    //console.log(ents, this.stats.mutable_info["chainspell_ents"]);
+                    ents = ents.filter(e => !this.stats.mutable_info["chainspell_ents"].includes(e.id))
+
+                    if (ents.length > 0) {
+                        let ent = ents[Math.floor(game.random() * ents.length)];
+
+                        this.stats.mutable_info["chainspell_ents"].push(ent.id);
+
+                        if (popped_mc == SpellMulticast.CHAIN || !this.stats.mutable_info.last_multicast || this.stats.mutable_info.last_multicast != SpellMulticast.ARC) {
+                            new_origin = position;
+                        }
+
+                        pos_target = ent.position;
+
+                        if (popped_mc == SpellMulticast.ARC && this.stats.multicast_stack.length > 1 && this.stats.multicast_stack[1] == SpellMulticast.ARC) {
+                            wait_for_more = true;
+                        }
+                    }
+                    break;
+                
+                case SpellMulticast.BEHINDTHEBACK: {
+                    let player_vector = position.sub(caster.position).mul(2);
+                    pos_target = player_vector.neg().add(position);
+                    break;
+                }
+                
+                case SpellMulticast.TRIANGLE:
+                case SpellMulticast.SQUARE: {
+                    let player_vector = position.sub(caster.position);
+
+                    let angle = (popped_mc == SpellMulticast.TRIANGLE ? 120 : 90) * (Math.PI / 180)
+                    let rotated = player_vector.rotate(angle);
+                    pos_target = rotated.add(caster.position).round();
+                    break;
+                }
+            }
+
+            if (pos_target) {
+                let new_spell = this.copy();
+                new_spell.shift_multicasts(true);
+
+                if (new_origin) {
+                    new_spell.origin = new_origin;
+                    this.origin = new_origin;
+                }
+
+                game.cast_primed_spell(new_spell, pos_target, put_at_bottom, wait_for_more);
+                need_to_retry_multicast = wait_for_more;
+                if (wait_for_more) {
+                    this.shift_multicasts();
+                }
+
+                console.log(new_spell.origin, pos_target, put_at_bottom, wait_for_more)
+            } else {
+                this.shift_multicasts();
+                need_to_retry_multicast = this.stats.multicast_stack.length > 0;
+            }
+        }
+
+        /*
         if (this.stats.multicasts["normal"] > 0) {
             // place a copy of this spell on the casting stack but decrement the value
             let new_pos = position.copy();
@@ -4922,11 +5362,44 @@ class PrimedSpell {
 
         else if (this.stats.multicasts["btb"] > 0) {
             // place a copy of this spell on the casting stack but decrement the value
-            let new_pos = position.sub(position).neg().add(position);
+            let player_vector = position.sub(caster.position).mul(2);
+            let new_pos = player_vector.neg().add(position);
 
             let new_mc = this.stats.multicasts["btb"] - 1;
             let new_spell = this.copy();
             new_spell.stats.multicasts["btb"] = new_mc;
+
+            //console.log(new_spell)
+            game.cast_primed_spell(new_spell, new_pos, true);
+        }
+
+        else if (this.stats.multicasts["triangle"] > 0) {
+            // place a copy of this spell on the casting stack but decrement the value
+            let player_vector = position.sub(caster.position);
+
+            let angle = 120 * (Math.PI / 180)
+            let rotated = player_vector.rotate(angle);
+            let new_pos = rotated.add(caster.position).round();
+
+            let new_mc = this.stats.multicasts["triangle"] - 1;
+            let new_spell = this.copy();
+            new_spell.stats.multicasts["triangle"] = new_mc;
+
+            //console.log(new_spell)
+            game.cast_primed_spell(new_spell, new_pos, true);
+        }
+
+        else if (this.stats.multicasts["square"] > 0) {
+            // place a copy of this spell on the casting stack but decrement the value
+            let player_vector = position.sub(caster.position);
+
+            let angle = 90 * (Math.PI / 180)
+            let rotated = player_vector.rotate(angle);
+            let new_pos = rotated.add(caster.position).round();
+
+            let new_mc = this.stats.multicasts["square"] - 1;
+            let new_spell = this.copy();
+            new_spell.stats.multicasts["square"] = new_mc;
 
             //console.log(new_spell)
             game.cast_primed_spell(new_spell, new_pos, true);
@@ -5029,12 +5502,48 @@ class PrimedSpell {
                 game.cast_primed_spell(new_spell, new_pos, true);
             }
         }
+        */
+
+        // reset origin (TODO test :))
+        this.origin = null;
+        this.original_cast_position = null;
     }
+}
+
+
+// TODO move to other file after we implement locations
+const EventType = {
+    Battle: "Battle",
+    Elite: "Elite",
+    Boss: "Boss",
+    Event: "Event",
+    GoodEvent: "Good Event",
+    RareEvent: "Rare Event",
+}
+
+const event_type_to_icon = {
+    "Battle": "X.",
+    "Elite": "X!",
+    "Boss": "XX",
+    "Event": "??",
+    "Good Event": "?+",
+    "Rare Event": "?!",
+}
+
+const event_type_to_colour = {
+    "Battle": "#d60",
+    "Elite": "#f00",
+    "Boss": "#f4f",
+    "Event": "#fff",
+    "Good Event": "#cfc",
+    "Rare Event": "#8f8",
 }
 
 
 class Game {
     constructor(board) {
+        this.TPS = 60;
+
         this.board = board;
         this.player_ent = null;
         this.entities = [];
@@ -5043,6 +5552,9 @@ class Game {
         this.damage_counts = {};    // indexed by spell id
 
         this.wavecount = 0;
+        this.turncount = 0;
+        this.location_count = 0;
+
         this.spawn_credits_base = 30;
         this.spawn_credits_gain = 30;
         this.spawn_credits_mult = 1.0015;
@@ -5081,25 +5593,43 @@ class Game {
             this.player_inventory.push(null);
         }
 
+        // TODO dummy data
+        this.player_location = new GameLocation(location_templates[0], [
+            EventType.Battle,
+            EventType.Elite,
+            EventType.Boss,
+            EventType.Event,
+            EventType.GoodEvent,
+            EventType.RareEvent
+        ])
+        this.player_location_progress = 6;
+
         // current turn; pops spells off this stack one by one for the purposes of animation
         // anything that casts a spell goes through here first
         this.casting_stack = []
         this.waiting_for_spell = false;
         this.checker_interval = null;
 
+        this.max_spell_speed = 0.075;
+        this.min_spell_speed = 0;
+
         this.spell_speed = 100;
+        this.spell_stack_timeout = 0;
 
         this.spells_this_turn = 0;
-        this.max_spell_speed = 100;
-        this.min_spell_speed = 10;
 
         this.turn_index = 0  // index into entities
 
         this.inventory_open = false;
         this.recent_spells_gained = [];
 
-        this.enabled = true;
-        this.turn_processing = true;
+        this.enabled = false;
+        this.turn_processing = false;
+        this.ready_for_wave_end = true;
+
+        this.turn_finished = false;
+        this.need_ai_call = true;
+        this.safe_to_skip_wait = false;
 
         this.needs_main_view_update = true;
 
@@ -5152,6 +5682,9 @@ class Game {
         })
 
         new_game.wavecount = save.state.wavecount;
+        new_game.turncount = save.state.turncount;
+        new_game.location_count = save.state.location_count;
+
         new_game.turn_index = save.state.current_turn_entity;
         new_game.inventory_open = save.state.inventory_open;
         new_game.recorded_damage = save.state.recorded_damage;
@@ -5282,6 +5815,9 @@ class Game {
         });
 
         save.state.wavecount = this.wavecount;
+        save.state.turncount = this.turncount;
+        save.state.location_count = this.location_count;
+
         save.state.current_turn_entity = this.turn_index;
         save.state.inventory_open = this.inventory_open;
         save.state.recorded_damage = this.recorded_damage;
@@ -5345,6 +5881,17 @@ class Game {
         return btoa(JSON.stringify(save));
     }
 
+    setup() {
+        this.turn_processing = true;
+        this.enabled = true;
+        this.turn_finished = true;
+
+        let sthis = this;
+        this.checker_interval = setInterval(function() {
+            sthis.interval_checker(sthis);
+        }, (1000/this.TPS));
+    }
+
     spawn(ent_name, at, team) {
         let ent = get_entity_by_name(ent_name)
         let pos = at ? at : this.select_far_position(this.player_ent.position, 16, 2, 8);
@@ -5361,7 +5908,7 @@ class Game {
         }
     }
 
-    reset_with_alg(alg) {
+    reset_with_alg(alg, cvr) {
         for (let x=0; x<this.board.dimensions.x; x++) {
             for (let y=0; y<this.board.dimensions.y; y++) {
                 let p = new Vector2(x, y);
@@ -5379,15 +5926,15 @@ class Game {
 
         this.turn_index = 0;
 
-        this.worldgen(alg);
+        this.worldgen(alg, cvr);
     }
 
-    worldgen(alg) {
+    worldgen(alg, cvr) {
         let success = false;
 
         for (let i=0; i<256; i++) {
             // console.log(`Attempting worldgen (try #${i+1})`)
-            success = alg(this, this.board);
+            success = alg(this, this.board, cvr);
             if (success) {
                 break;
             }
@@ -5455,15 +6002,15 @@ class Game {
         let vecs_added = new Set();
 
         let vec_set = [];
-        // spell, target, origin
-        let dive_spells = [[this.selected_player_primed_spell.root_spell, target_pos, this.player_ent.position]];
+        // spell, target, origin, original_cast_position
+        let dive_spells = [[this.selected_player_primed_spell.root_spell, target_pos, this.player_ent.position, this.player_ent.position]];
         while (dive_spells.length > 0) {
             let new_dive_spells = [];
 
             dive_spells.forEach(dive_spell => {
                 // also apply retarget each time
                 let retargeted_pos = dive_spell[0].get_retarget_position(
-                    this.board, this.player_ent, dive_spell[2], dive_spell[1]
+                    this.board, this.player_ent, dive_spell[2], dive_spell[1], dive_spell[3]
                 )
 
                 let full_new_vecs = dive_spell[0].get_affected_tiles(
@@ -5494,14 +6041,14 @@ class Game {
                                 if (ent && ent.get_damage_mult(dive_spell[0].stats.damage_type) != 0) {
                                     // TODO may fall down on damage manipulation stuff or more complex spell interactions
                                     // will probably need to mark them somehow or something if i really want this to work
-                                    new_dive_spells.push([trigger_spell, vec, retargeted_pos]);
+                                    new_dive_spells.push([trigger_spell, ent.position, ent.position, retargeted_pos]);
                                 }
                             })
                             break;
 
                         case "on_affected_tiles":
                             full_new_vecs.forEach(vec => {
-                                new_dive_spells.push([trigger_spell, vec, retargeted_pos]);
+                                new_dive_spells.push([trigger_spell, vec, vec, retargeted_pos]);
                             })
                             break;
                     }
@@ -5589,8 +6136,19 @@ class Game {
         }
     }
 
+    progress_location(location_entering) {
+        this.player_location = location_entering;
+
+        this.location_count++;
+        this.player_location_progress = -1;
+        this.ready_for_wave_end = true;
+
+        this.check_wave_end(true);
+    }
+
     progress_wave() {
         this.wavecount++;
+        this.player_location_progress++;
 
         let spawn_credits = this.spawn_credits_base;
         spawn_credits += this.spawn_credits_gain * this.wavecount;
@@ -5726,19 +6284,97 @@ class Game {
         return null;
     }
 
-    check_wave_end() {
-        if (Object.keys(this.wave_entities).length <= 0) {
+    interval_checker(game) {
+        if (game.player_ent.dead) {
+            clearInterval(game.checker_interval);
+            console.log("PLAYER DIED!!! ABORT!!! ABORT!!!!");
+            return;
+        }
+
+        // if the turn hasn't ended yet, check the spell stack. if it has, progress the turn.
+        if (!game.turn_processing) {
+            return;
+        }
+
+        if (game.turn_finished) {
+            let turns_taken_at_once = 0;
+            while (game.turn_finished) {
+                let ent = game.entities[game.turn_index]
+                ent.do_end_turn();
+
+                let can_skip_wait = game.safe_to_skip_wait;
+                game.safe_to_skip_wait = false;
+
+                let valid_ent = false;
+                while (!valid_ent) {
+                    game.turn_index = (game.turn_index + 1) % game.entities.length;
+                    game.turncount++;
+
+                    if (game.entities[game.turn_index].ai_level != 999) {
+                        valid_ent = true;
+                    }
+                }
+
+                game.check_wave_end();
+
+                if (renderer.selected_ent) {
+                    console.log("game asked for turn-end right panel refresh");
+                    renderer.refresh_right_panel = true;
+                }
+
+                game.begin_turn();
+
+                turns_taken_at_once++;
+                if (can_skip_wait) {
+                    let ent = game.entities[game.turn_index];
+                    ent.do_turn();
+                    game.need_ai_call = false;
+                } else {
+                    break;
+                }
+            }
+
+            //console.log(`ended turn for ${turns_taken_at_once} entities at once this time`);
+        } else {
+            if (game.need_ai_call) {
+                let ent = game.entities[game.turn_index];
+                ent.do_turn();
+                game.need_ai_call = false;
+            }
+
+            game.spell_stack_timeout -= (1/game.TPS);
+            if (game.spell_stack_timeout <= 0) {
+                game.spell_stack_timeout = game.spell_speed;
+                game.check_spell_stack();
+            }
+        }
+    }
+
+    check_wave_end(now) {
+        if (this.ready_for_wave_end && Object.keys(this.wave_entities).length <= 0) {
             // do mid-wave stuff here too
             this.enabled = false;
             this.turn_processing = false;
 
             this.reset_wave_damage();
 
+            // we need to open up a popup here before we continue - so here we show the notification
+            // then exit out and let the notification popup reset our progress
+            if (this.player_location_progress >= 5) {
+                this.ready_for_wave_end = false;
+                this.show_location_select_popup();
+                return;
+            }
+
             let sthis = this;
             setTimeout(function() {
-                // sthis.player_ent.refresh();
-
                 console.log("new wave:     ", sthis.wavecount + 1);
+
+                // sthis.player_ent.refresh();
+                sthis.move_player(new Vector2(
+                    Math.floor(sthis.board.dimensions.x / 2),
+                    Math.floor(sthis.board.dimensions.x / 2),
+                ))
 
                 sthis.open_inventory();
                 sthis.deselect_player_spell();
@@ -5754,27 +6390,165 @@ class Game {
                     sthis.turn_processing = true;
                     sthis.begin_turn();
 
+                    let algs = sthis.player_location.generators;
+                    let alg = algs[Math.floor(game.random() * algs.length)];
                     sthis.reset_with_alg(
-                        Generator.RandomWalls
+                        alg[0], alg[1] + (game.random() * (alg[2] - alg[1]))
                     )
 
                     sthis.progress_wave();
 
+                    // show popup for selecting a location here, or the start of game popup if wave 1
+                    if (sthis.player_location_progress >= 6) {
+                        sthis.show_location_select_popup();
+                    }
+
                     renderer.refresh_left_panel = true;
                     renderer.refresh_right_panel = true;
                 });
-            });
+            }, now ? 0 : 1000);
         }
     }
 
-    begin_turn(do_not_wait) {
+    show_location_select_popup() {
+        if (this.wavecount <= 1) {
+            renderer.add_messagebox(messagebox_templates.start_of_game_popup);
+        } else {
+            // pick 3 locations and 3 sets of events for them
+            let locations = [];
+            for (let i=0; i<3; i++) {
+                let loc = [null, []];
+
+                // select a random location
+                let ok = false;
+                while (!ok) {
+                    loc[0] = location_templates[
+                        Math.floor(this.random() * location_templates.length)
+                    ];
+
+                    if (!locations.some(l => l[0].name == loc[0].name)) {
+                        ok = true;
+                    }
+                }
+
+                // select events
+                let forced_next_event = null;
+                for (let e=0; e<6; e++) {
+                    if (forced_next_event) {
+                        loc[1].push(forced_next_event);
+                        forced_next_event = null;
+                    } else {
+                        if (e == 0) {
+                            // if this is the first event, it's a 50/50 between Battle and Event.
+                            let ran = this.random();
+                            if (ran < 0.5) {
+                                loc[1].push(EventType.Battle);
+                            } else {
+                                loc[1].push(EventType.Event);
+                            }
+                        } else if (e == 5) {
+                            // if this is the last event, it can only be
+                            // a battle or an event:
+                            // Battle: 40%
+                            // Event: 30%
+                            // Good Event: 20%
+                            // Rare Event: 10%
+                            let ran = this.random();
+                            if (ran < 0.4) {
+                                loc[1].push(EventType.Battle);
+                            } else if (ran < 0.7) {
+                                loc[1].push(EventType.Event);
+                            } else if (ran < 0.9) {
+                                loc[1].push(EventType.GoodEvent);
+                            } else {
+                                loc[1].push(EventType.RareEvent);
+                            }
+                        } else {
+                            // Battle: 40%
+                            // Elite: 20%
+                            // Boss: 10%
+                            // Event: 20%
+                            // Good Event: 10%
+                            // Rare Event: 0%
+                            let ran = this.random();
+                            if (ran < 0.4) {
+                                loc[1].push(EventType.Battle);
+                            } else if (ran < 0.6) {
+                                loc[1].push(EventType.Elite);
+                                forced_next_event = EventType.GoodEvent;
+                            } else if (ran < 0.7) {
+                                loc[1].push(EventType.Boss);
+                                forced_next_event = EventType.RareEvent;
+                            } else if (ran < 0.9) {
+                                loc[1].push(EventType.Event);
+                            } else {
+                                loc[1].push(EventType.GoodEvent);
+                            }
+                        }
+                    }
+                }
+
+                locations.push(loc);
+            }
+
+            // now need to build the popup
+            let sthis = this;
+            let msgbox_template = new MessageBoxTemplate(
+                "NEXT SHARD: CHOICE",
+                "As you reach the end of this shard, you glimpse paths to three more. With the world crumbling in your wake, you must choose where to go next.\n" +
+                (locations.map(loc => {
+                    let clearance_x = 80;
+                    let path_pad_size = Math.floor((clearance_x-3) / game.player_location.events.length);
+
+                    let names_str = loc[1].map(l => `[${event_type_to_colour[l]}]${renderer.pad_str(l, path_pad_size, 2)}[clear]`).join("  ");
+
+                    return `
+[${loc[0].col}]${loc[0].name}[clear]
+[#bbb]${loc[0].desc}[clear]
+
+${names_str}\n[#666]----${renderer.make_location_path_string(sthis, clearance_x, loc[1], -1)}[#666]---->\n`
+                })).join("\n"),
+                locations.map(l => l[0].name),
+                locations.map(l => l[0].bgcol),
+                [
+                    function() {
+                        renderer.msgbox_pad_x = renderer.default_msgbox_pad_x;
+                        renderer.msgbox_pad_y = renderer.default_msgbox_pad_y;
+
+                        let entering = new GameLocation(locations[0][0], locations[0][1]);
+                        game.progress_location(entering);
+                    },
+
+                    function() {
+                        renderer.msgbox_pad_x = renderer.default_msgbox_pad_x;
+                        renderer.msgbox_pad_y = renderer.default_msgbox_pad_y;
+
+                        let entering = new GameLocation(locations[1][0], locations[1][1]);
+                        game.progress_location(entering);
+                    },
+
+                    function() {
+                        renderer.msgbox_pad_x = renderer.default_msgbox_pad_x;
+                        renderer.msgbox_pad_y = renderer.default_msgbox_pad_y;
+
+                        let entering = new GameLocation(locations[2][0], locations[2][1]);
+                        game.progress_location(entering);
+                    }
+                ],
+                function(msgbox) { 
+                    renderer.msgbox_pad_x -= 0;
+                    renderer.msgbox_pad_y -= 0;
+                }
+            )
+
+            renderer.add_messagebox(msgbox_template);
+        }
+    }
+
+    begin_turn() {
         if (!this.turn_processing) {
             return;
         }
-
-        // shout here for the current turn entity's AI or the player to pick a move to use
-        let ent = this.entities[this.turn_index];
-        //console.log("beginning turn for", ent.name, do_not_wait ? "(NOWAIT)" : "(WAIT)");
         
         // we then periodically check the casting stack to see if there's anything on there.
         // if there is, we cast it and set waiting_for_spell to true, which means
@@ -5784,28 +6558,16 @@ class Game {
         
         this.casting_stack = [];
         this.waiting_for_spell = true;
-
-        let me = this;
-        this.checker_interval = setTimeout(function() {
-            me.check_spell_stack();
-        }, this.spell_speed);
-
-        if (do_not_wait) {
-            ent.do_turn();
-        } else {
-            let sthis = this;
-            setTimeout(function() {
-                ent.do_turn();
-            })
-        }
+        this.need_ai_call = true;
+        this.turn_finished = false;
     }
 
-    cast_primed_spell(primed_spell, position_target, insert_at_bottom, do_not_wait) {
+    cast_primed_spell(primed_spell, position_target, insert_at_bottom, wait_for_more) {
         //console.log("enqueued", primed_spell, "at", position_target);
         if (insert_at_bottom) {
-            this.casting_stack.unshift({spell: primed_spell, target: position_target, do_not_wait: do_not_wait});
+            this.casting_stack.unshift({spell: primed_spell, target: position_target, wait_for_more: wait_for_more});
         } else {
-            this.casting_stack.push({spell: primed_spell, target: position_target, do_not_wait: do_not_wait});
+            this.casting_stack.push({spell: primed_spell, target: position_target, wait_for_more: wait_for_more});
         }
     }
 
@@ -5813,6 +6575,9 @@ class Game {
         if (!this.turn_processing) {
             return;
         }
+
+        let turn_ent = this.entities[this.turn_index];
+        let turncount = this.turncount;
 
         // primed spells go on the spell stack so they can be cast instantly
         // they are given as a collection of {spell, target}
@@ -5826,7 +6591,7 @@ class Game {
                 //console.log("popping spell off stack:", spell_to_cast, "for",  this.entities[this.turn_index]);
                 spells_to_cast.push(spell_to_cast);
             
-                if (!spell_to_cast.do_not_wait) {
+                if (!spell_to_cast.wait_for_more) {
                     coalescing = false;
                 }
             }
@@ -5839,39 +6604,56 @@ class Game {
             this.waiting_for_spell = false;
 
             this.spells_this_turn++;
-
+            
             let n = Math.min(1, (this.spells_this_turn * this.spells_this_turn) / 2000);
             this.spell_speed = ((1-n) * this.max_spell_speed) + (n * this.min_spell_speed);
 
+            /*
             let me = this;
             this.checker_interval = setTimeout(function() {
                 me.check_spell_stack();
             }, this.spell_speed);
+            */
         } else {
             if (!this.waiting_for_spell) {
                 //console.log("ending turn for", this.entities[this.turn_index]);
+                this.end_turn(turn_ent, turncount);
+                /*
                 let sthis = this;
                 let interval = this.entities[this.turn_index].id == this.player_ent.id ? this.spell_speed * 5 : this.spell_speed;
                 setTimeout(function() {
-                    sthis.end_turn(sthis.entities[sthis.turn_index])
+                    sthis.end_turn(turn_ent, turncount)
                 }, interval);
+                */
             } else {
+                /*
                 let me = this;
                 this.checker_interval = setTimeout(function() {
                     me.check_spell_stack();
                 }, this.spell_speed);
+                */
             }
         }
     }
 
-    end_turn(ent_ending_turn, do_not_wait) {
+    end_turn(ent_ending_turn, turncount, do_not_wait) {
         // if (!this.enabled) {
         //     return;
         // }
 
         this.needs_main_view_update = true;
 
+        if (turncount != this.turncount) {
+            // ensure the turn end event was called for this specific turn
+            console.log(`rejected turn end because turncount didn't match: ${turncount} != ${this.turncount}`)
+            debugger;
+            return;
+        }
+
         if (ent_ending_turn.id != this.entities[this.turn_index].id) {
+            // ensure the entity ending the turn is the actual entity whose turn it is
+            console.log(`rejected turn end because entity didn't match: `, ent_ending_turn, `!=`, this.entities[this.turn_index])
+            debugger;
             return;
         }
 
@@ -5879,53 +6661,9 @@ class Game {
         this.spell_speed = this.max_spell_speed;
         this.spells_this_turn = 0;
         
-        this.entities[this.turn_index].do_end_turn();
-
-        clearTimeout(this.checker_interval);
-        this.checker_interval = null;
-
-        let valid_ent = false;
-        while (!valid_ent) {
-            this.turn_index = (this.turn_index + 1) % this.entities.length;
-            if (this.entities[this.turn_index].ai_level != 999) {
-                valid_ent = true;
-            }
-        }
-
-        /*
-        if (game.random() < (0.25 + (num_enemy_spawns / 100)) && this.entities[this.turn_index].id == this.player_ent.id) {
-            let loc = new Vector2(Math.floor(game.random() * game.board.dimensions.x), Math.floor(game.random() * game.board.dimensions.y));
-            let enemy = game.spawn_entity(get_entity_by_name("test enemy"), Teams.ENEMY, loc, false);
-            if (enemy) {
-                enemy.name = "spawned guy #" + num_enemy_spawns;
-
-                enemy.add_innate_spell([[
-                    core_spell(
-                        "Laser", "??", SpellSubtype.Core, "white", "red", "", 16, DmgType.Psychic, 6, 1,
-                        Shape.Line, 0
-                    )
-                ], 3, "Psycho-Laser", damage_type_cols["Psychic"]]);
-
-                num_enemy_spawns++;
-            }
-        }
-        */
-
-        this.check_wave_end();
-
-        if (renderer.selected_ent) {
-            console.log("game asked for turn-end right panel refresh");
-            renderer.refresh_right_panel = true;
-        }
-
-        if (do_not_wait && !this.player_ent.dead) {
-            this.begin_turn(true);
-        } else {
-            let sthis = this;
-            setTimeout(function() {
-                sthis.begin_turn();
-            });
-        }
+        this.turn_finished = true;
+        this.need_ai_call = true;
+        this.safe_to_skip_wait = Boolean(do_not_wait);
     }
 
     is_player_turn() {
@@ -7333,4 +8071,24 @@ function handle_resize(event) {
 // event chains, e.g. order of order 
 // death chain not working?
 // drag fragment to a position before the start of a spell (the little padding location) to append to the start
-// turns on enemies STILL sometimes skips. need to figure this Shit out 
+// 
+// show "dangerous" tiles (tiles on which enemies will target you) in an optional overlay on keypress
+// - status effects - currently not implemented at all
+// - open inventory after beating all enemies, try to figure out a way to make the transition cleaner
+// - more worldgen stuff
+// - spell trajectory visualiser needs to show multicasts
+//    (behind the back, triangle and square can all be done pretty easily)
+//    (how do we show chains? or arcs? or chaoscast? since they're random)
+//
+// there needs to be a brief time delay between a spell cast finishing and enemies moving. im getting confused lmao
+/*
+https://docs.google.com/spreadsheets/d/1HZQqG0wqTs9oZUu4H4hqChqNRa-kj8lPe9Y93V5l_z8/edit?usp=sharing
+*/
+
+/*
+TODO BUGS:
+- selftarget spells set target and origin to caster position when they shouldn't <= fixed, might have broken something else
+- tile and damage trigger should cast the spells with origin and target of the tile target, not just origin <= fixed, but might have broken something else
+
+- multicast stack arc and chain is fucked as always
+*/

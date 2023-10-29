@@ -177,9 +177,17 @@ class TileMap {
 }
 
 class Tile {
+    static Visibility = {
+        HIDDEN: 0,
+        SEEN: 1,
+        VISIBLE: 2
+    }
+    
     constructor() {
         this.tile_id = 0;
         this.entities = new Map();
+
+        this.visibility = Tile.Visibility.HIDDEN;
 
         this.blocks_los = false;
         this.passable = true;
@@ -209,6 +217,20 @@ class Tile {
 
     set_tile_id(to) {
         this.tile_id = to;
+    }
+
+    see() {
+        this.visibility = Tile.Visibility.VISIBLE
+    }
+
+    stop_seeing() {
+        if (this.visibility == Tile.Visibility.VISIBLE) {
+            this.visibility = Tile.Visibility.SEEN
+        }
+    }
+
+    hide() {
+        this.visibility = Tile.Visibility.HIDDEN
     }
 
     add_entity(entity) {
@@ -268,9 +290,10 @@ class Board {
 
     set_tile(pos, tile_id, blocks_los, passable) {
         let tile = this.get_tile(pos);
-        this.changed_tiles.add(pos.hash_code());
 
         if (tile) {
+            this.changed_tiles.add(pos.hash_code());
+
             tile.set_tile_id(tile_id);
 
             if (blocks_los === undefined) {
@@ -282,6 +305,30 @@ class Board {
             }
         } else {
             throw RangeError("Tried to set a tile that is out of bounds")
+        }
+    }
+
+    see_tile(pos) {
+        let tile = this.get_tile(pos);
+        if (tile) {
+            this.changed_tiles.add(pos.hash_code());
+            tile.see();
+        }
+    }
+
+    stop_seeing_tile(pos) {
+        let tile = this.get_tile(pos);
+        if (tile) {
+            this.changed_tiles.add(pos.hash_code());
+            tile.stop_seeing();
+        }
+    }
+
+    hide_tile(pos) {
+        let tile = this.get_tile(pos);
+        if (tile) {
+            this.changed_tiles.add(pos.hash_code());
+            tile.hide();
         }
     }
 
@@ -302,6 +349,55 @@ class Board {
     remove_entity_from_tile(pos, entity) {
         let tile = this.get_tile(pos);
         tile.remove_entity(entity);
+    }
+}
+
+class Game {
+    constructor(board) {
+        this.board = board
+
+        // for now we're going to just use a dummy pos
+        this.player = {position: new Vector2(127, 127), vision_range: 16};
+
+        this.current_los_tiles = [];
+    }
+
+    step() {
+        this.update_los();
+    }
+
+    // need to figure out some way to make wall vision work - currently the line stops asymmetrically when right up against a wall
+    update_los() {
+        let sr = this.player.vision_range+2
+
+        for (let xt=-sr; xt<sr; xt++) {
+            for (let yt=-sr; yt<sr; yt++) {
+                let vec = new Vector2(xt, yt)
+                if (vec.sqr_magnitude() < (this.player.vision_range * this.player.vision_range)) {
+                    let target = this.player.position.add(vec);
+                    this.board.stop_seeing_tile(target);
+
+                    let st = this;
+                    let line = make_line(this.player.position, target, undefined, coords => {
+                        if (coords.length > 0) {
+                            let pos = coords[coords.length-1];
+                            let tile = st.board.get_tile(pos);
+
+                            return tile.blocks_los
+                        }
+                    })
+
+                    line.forEach(pos => {
+                        st.board.see_tile(pos);
+                    })
+                } else {
+                    let target = this.player.position.add(vec);
+                    this.board.stop_seeing_tile(target);
+                }
+            }
+        }
+
+        this.board.see_tile(this.player.position);
     }
 }
 
@@ -337,9 +433,16 @@ function render_board(board, canvas, ctx, tilemap_override, center_pos, base_til
                 // also need to do entities, should be visible in the tile object
                 write_rotated_image(canvas, ctx, render_position.x, render_position.y, tile_empty, sprite_total_size.x, sprite_total_size.y)
                 if (tile) {
-                    let t = tilemap.get(tile.tile_id);
-                    if (t) {
-                        write_rotated_image(canvas, ctx, render_position.x, render_position.y, t.img[t.colour], sprite_total_size.x, sprite_total_size.y)
+                    let tilemap_img = tilemap.get(tile.tile_id);
+                    if (tilemap_img && tile.visibility != Tile.Visibility.HIDDEN) {
+                        let col = tile.visibility == Tile.Visibility.VISIBLE ? tilemap_img.img[tilemap_img.colour] : tilemap_img.img[0]
+                        
+                        // temp debug
+                        if (board_position.equals(game.player.position)) {
+                            col = tilemap.get(1).img[14]
+                        }
+
+                        write_rotated_image(canvas, ctx, render_position.x, render_position.y, col, sprite_total_size.x, sprite_total_size.y)
                     }
                 } else {
                     // nothing
@@ -361,7 +464,10 @@ let last_calc_time = Date.now();
 let last_frame_time = Date.now();
 
 let board = new Board(new Vector2(256, 256));
+let game = new Game(board);
+
 let offset = new Vector2(127, 127);
+game.player.position = offset;
 let zoom_level = 1;
 
 let test_tilemap = new TileMap(
@@ -369,35 +475,80 @@ let test_tilemap = new TileMap(
         0: new TileMapTile(full_texture_atlas[0], 15, true, true),
         1: new TileMapTile(full_texture_atlas[176], 9, true, false),
         2: new TileMapTile(full_texture_atlas[136], 2, false, false),
-        3: new TileMapTile(full_texture_atlas[135], 8, false, false)
+        3: new TileMapTile(full_texture_atlas[135], 8, false, false),
+        4: new TileMapTile(full_texture_atlas[52], 7, false, false)
     }
 )
 
+let test_full_tilemap = new TileMap(
+    16, {
+        0: new TileMapTile(full_texture_atlas[0], 15, true, true), // void (impassable, blocks los, black, should never be seen by the player)
+        1: new TileMapTile(full_texture_atlas[176], 7, true, true), // basic wall
+        2: new TileMapTile(full_texture_atlas[177], 7, true, true), // wall variation
+        3: new TileMapTile(full_texture_atlas[153], 7, true, true), // wall variation 2
+        4: new TileMapTile(full_texture_atlas[64], 9, true, true), // destructible wall (fire)
+        5: new TileMapTile(full_texture_atlas[66], 11, true, true), // destructible wall (electricity)
+        6: new TileMapTile(full_texture_atlas[172], 8, true, true), // destructible wall (blast)
+        7: new TileMapTile(full_texture_atlas[0], 15, true, true), // wall, reserved
+        8: new TileMapTile(full_texture_atlas[0], 15, true, true), // wall, reserved
+        9: new TileMapTile(full_texture_atlas[0], 15, true, true), // wall, reserved
+        10: new TileMapTile(full_texture_atlas[51], 8, false, true), // basic floor
+        11: new TileMapTile(full_texture_atlas[52], 8, false, true), // floor variation
+        12: new TileMapTile(full_texture_atlas[53], 8, false, true), // floor variation 2
+        13: new TileMapTile(full_texture_atlas[156], 2, true, true), // grass, tall
+        14: new TileMapTile(full_texture_atlas[148], 2, false, true), // grass, furrowed
+        15: new TileMapTile(full_texture_atlas[143], 1, false, true), // burnt remains
+        16: new TileMapTile(full_texture_atlas[39], 6, false, true), // water
+        17: new TileMapTile(full_texture_atlas[0], 15, true, true), // floor, reserved
+        18: new TileMapTile(full_texture_atlas[0], 15, true, true), // floor, reserved
+        19: new TileMapTile(full_texture_atlas[0], 15, true, true), // floor, reserved
+        20: new TileMapTile(full_texture_atlas[10], 9, true, true), // door
+        21: new TileMapTile(full_texture_atlas[10], 6, true, true), // door, alt (not flammable)
+        22: new TileMapTile(full_texture_atlas[10], 15, true, true), // door, alt2 (not flammable)   // TODO think about open and closed doors
+        23: new TileMapTile(full_texture_atlas[186], 15, false, true), // up stairs
+        24: new TileMapTile(full_texture_atlas[174], 15, false, true), // down stairs
+        25: new TileMapTile(full_texture_atlas[9], 14, false, false), // window 1  (anything which is impassable but doesn't block LOS)
+        26: new TileMapTile(full_texture_atlas[15], 13, false, false), // window 2
+        27: new TileMapTile(full_texture_atlas[185], 8, false, false), // window 3
+    }
+)
+
+board.active_tilemap = test_full_tilemap;
+
+/*
 board.active_tilemap = test_tilemap;
 
 board.set_pattern(new Vector2(117, 117), [
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-    [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-    [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 4, 4, 4, 4, 4, 4, 1, 4, 4],
+    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 4, 4, 1, 2, 4, 4, 4, 2, 4, 4],
+    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 4, 2, 4, 4, 4, 4, 4, 4, 4, 4],
+    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 4, 1, 4, 4, 4, 4, 4, 4, 4, 4],
+    [1, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 1, 4, 4, 4, 4, 4, 2, 1, 4, 2, 1],
+    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 4, 4, 4, 1, 4, 4, 4, 4, 4, 4],
+    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 4, 4, 4, 2, 4, 4, 2, 4, 4, 4],
+    [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 4, 1, 4, 4, 4, 4, 1, 4, 4, 4],
+    [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 4, 2, 4, 4, 4, 4, 4, 4, 1, 4],
+    [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 4, 4, 4, 4, 4, 4, 4, 4, 2, 4],
+    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 4, 4, 1, 1, 1, 1],
+    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1],
+    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1],
+    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1],
+    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 1],
+    [1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3, 1, 3, 4, 4, 4, 1],
+    [1, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 4, 4, 4, 3, 3, 3, 4, 4, 4, 1],
+    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1],
+    [1, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1],
+    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ])
+*/
+
+generate(board, new Vector2(127, 127), new GenerationRules(
+    22, 30, 8, 20, 0.1, 20, 30, [
+        new Generator(basic_starting_room, Generator.GenType.ROOM, [0]),
+        new Generator(basic_path, Generator.GenType.PATH, [3]),
+    ]
+))
 
 let need_to_redraw = true;
 
@@ -415,12 +566,7 @@ function game_loop() {
     last_calc_time = calc_start_time;
 
     // step game here
-    for (let i=0; i<1; i++) {
-        board.set_tile(new Vector2(
-            random_int(0, 256),
-            random_int(0, 256)
-        ), 1)
-    }
+    game.step();
 
     need_to_redraw = false;
 
@@ -542,6 +688,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 break;
         }
 
+        game.player.position = offset
         zoom_level = Math.max(0.25, zoom_level);
         need_to_redraw = true;
     });

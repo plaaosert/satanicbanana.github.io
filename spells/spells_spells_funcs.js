@@ -98,7 +98,11 @@ spells_funcs = {
 
     "Arc Lightning": [
         function(user, spell, stats) {
-            stats.multicasts["simultaneous"] += 3
+            // stats.multicasts["simultaneous"] += 3
+            stats.multicast_stack.push(
+                SpellMulticast.ARC,
+                SpellMulticast.ARC
+            )
         },
         no_target,
         no_hit,
@@ -107,7 +111,13 @@ spells_funcs = {
 
     "Chain Lightning": [
         function(user, spell, stats) {
-            stats.multicasts["chain"] += 4
+            // stats.multicasts["chain"] += 4
+            stats.multicast_stack.push(
+                SpellMulticast.CHAIN,
+                SpellMulticast.CHAIN,
+                SpellMulticast.CHAIN,
+                SpellMulticast.CHAIN
+            )
         },
         no_target,
         no_hit,
@@ -186,7 +196,11 @@ spells_funcs = {
 
     "Sonic Boom": [
         function(user, spell, stats) {
-            stats.multicasts["simultaneous"] += 2;
+            // stats.multicasts["simultaneous"] += 2;
+            stats.multicast_stack.push(
+                SpellMulticast.ARC,
+                SpellMulticast.ARC
+            )
         },
         no_target,
         function(caster, spell, stats, enemy, damage, dmgtype) {
@@ -644,7 +658,15 @@ spells_funcs = {
         function(user, spell, stats) {
             stats.specials.push(SpellSpecials.NEVERDAMAGE);
 
-            stats.multicasts["chain"] += 6;
+            // stats.multicasts["chain"] += 6;
+            stats.multicast_stack.push(
+                SpellMulticast.CHAIN,
+                SpellMulticast.CHAIN,
+                SpellMulticast.CHAIN,
+                SpellMulticast.CHAIN,
+                SpellMulticast.CHAIN,
+                SpellMulticast.CHAIN
+            )
         },
         no_target,
         no_hit,
@@ -1696,7 +1718,10 @@ spells_funcs = {
 
     "Behind the Back": [
         function(user, spell, stats) {
-            stats.multicasts["btb"] += 1
+            // stats.multicasts["btb"] += 1
+            stats.multicast_stack.push(
+                SpellMulticast.BEHINDTHEBACK
+            )
         },
         no_target,
         no_hit,
@@ -1705,7 +1730,23 @@ spells_funcs = {
 
     "Triangle Formation": [
         function(user, spell, stats) {
-            stats.multicasts["triangle"] += 1
+            /*
+            if (stats.multicasts["triangle"] >= 1 || stats.multicasts["square"] >= 1) {
+                stats.multicasts["triangle"] += 1
+            }
+            stats.multicasts["triangle"] += 2
+            */
+
+            if (stats.multicast_stack.length > 0) {
+                stats.multicast_stack.push(
+                    SpellMulticast.TRIANGLE
+                )
+            }
+
+            stats.multicast_stack.push(
+                SpellMulticast.TRIANGLE,
+                SpellMulticast.TRIANGLE
+            )
         },
         no_target,
         no_hit,
@@ -1714,7 +1755,24 @@ spells_funcs = {
 
     "Square Formation": [
         function(user, spell, stats) {
-            stats.multicasts["square"] += 1
+            /*
+            if (stats.multicasts["square"] >= 1 || stats.multicasts["triangle"] >= 1) {
+                stats.multicasts["square"] += 1
+            }
+            stats.multicasts["square"] += 3
+            */
+
+            if (stats.multicast_stack.length > 0) {
+                stats.multicast_stack.push(
+                    SpellMulticast.SQUARE
+                )
+            }
+
+            stats.multicast_stack.push(
+                SpellMulticast.SQUARE,
+                SpellMulticast.SQUARE,
+                SpellMulticast.SQUARE
+            )
         },
         no_target,
         no_hit,
@@ -1723,7 +1781,11 @@ spells_funcs = {
 
     "Chaotic Multicast x2": [
         function(user, spell, stats) {
-            stats.multicasts["unpredictable"] += 2
+            // stats.multicasts["unpredictable"] += 2
+            stats.multicast_stack.push(
+                SpellMulticast.CHAOSCAST,
+                SpellMulticast.CHAOSCAST
+            )
         },
         no_target,
         no_hit,
@@ -1732,7 +1794,14 @@ spells_funcs = {
 
     "Chaotic Multicast x5": [
         function(user, spell, stats) {
-            stats.multicasts["unpredictable"] += 5
+            // stats.multicasts["unpredictable"] += 5
+            stats.multicast_stack.push(
+                SpellMulticast.CHAOSCAST,
+                SpellMulticast.CHAOSCAST,
+                SpellMulticast.CHAOSCAST,
+                SpellMulticast.CHAOSCAST,
+                SpellMulticast.CHAOSCAST
+            )
         },
         no_target,
         no_hit,
@@ -1741,7 +1810,10 @@ spells_funcs = {
 
     "Multicast x1": [
         function(user, spell, stats) {
-            stats.multicasts["normal"] += 1
+            // stats.multicasts["normal"] += 1
+            stats.multicast_stack.push(
+                SpellMulticast.NORMAL
+            )
         },
         no_target,
         no_hit,
@@ -1750,7 +1822,11 @@ spells_funcs = {
 
     "Multicast x2": [
         function(user, spell, stats) {
-            stats.multicasts["normal"] += 2
+            // stats.multicasts["normal"] += 2
+            stats.multicast_stack.push(
+                SpellMulticast.NORMAL,
+                SpellMulticast.NORMAL
+            )
         },
         no_target,
         no_hit,
@@ -1759,7 +1835,13 @@ spells_funcs = {
 
     "Multicast x4": [
         function(user, spell, stats) {
-            stats.multicasts["normal"] += 4
+            // stats.multicasts["normal"] += 4
+            stats.multicast_stack.push(
+                SpellMulticast.NORMAL,
+                SpellMulticast.NORMAL,
+                SpellMulticast.NORMAL,
+                SpellMulticast.NORMAL
+            )
         },
         no_target,
         no_hit,
@@ -1768,7 +1850,17 @@ spells_funcs = {
 
     "Multicast x8": [
         function(user, spell, stats) {
-            stats.multicasts["normal"] += 8
+            // stats.multicasts["normal"] += 8
+            stats.multicast_stack.push(
+                SpellMulticast.NORMAL,
+                SpellMulticast.NORMAL,
+                SpellMulticast.NORMAL,
+                SpellMulticast.NORMAL,
+                SpellMulticast.NORMAL,
+                SpellMulticast.NORMAL,
+                SpellMulticast.NORMAL,
+                SpellMulticast.NORMAL
+            )
         },
         no_target,
         no_hit,
@@ -1777,7 +1869,12 @@ spells_funcs = {
 
     "Multicast x3 with Trigger": [
         function(user, spell, stats) {
-            stats.multicasts["normal"] += 3
+            // stats.multicasts["normal"] += 3
+            stats.multicast_stack.push(
+                SpellMulticast.NORMAL,
+                SpellMulticast.NORMAL,
+                SpellMulticast.NORMAL
+            )
         },
         no_target,
         no_hit,
@@ -1786,7 +1883,10 @@ spells_funcs = {
 
     "Micro Chain Spell": [
         function(user, spell, stats) {
-            stats.multicasts["chain"] += 1
+            // stats.multicasts["chain"] += 1
+            stats.multicast_stack.push(
+                SpellMulticast.CHAIN
+            )
         },
         no_target,
         no_hit,
@@ -1795,7 +1895,10 @@ spells_funcs = {
 
     "Micro Arc Spell": [
         function(user, spell, stats) {
-            stats.multicasts["simultaneous"] += 1
+            // stats.multicasts["simultaneous"] += 1
+            stats.multicast_stack.push(
+                SpellMulticast.ARC
+            )
         },
         no_target,
         no_hit,
@@ -1804,7 +1907,11 @@ spells_funcs = {
 
     "Mini Chain Spell": [
         function(user, spell, stats) {
-            stats.multicasts["chain"] += 2
+            // stats.multicasts["chain"] += 2
+            stats.multicast_stack.push(
+                SpellMulticast.CHAIN,
+                SpellMulticast.CHAIN
+            )
         },
         no_target,
         no_hit,
@@ -1813,7 +1920,11 @@ spells_funcs = {
 
     "Mini Arc Spell": [
         function(user, spell, stats) {
-            stats.multicasts["simultaneous"] += 2
+            // stats.multicasts["simultaneous"] += 2
+            stats.multicast_stack.push(
+                SpellMulticast.ARC,
+                SpellMulticast.ARC
+            )
         },
         no_target,
         no_hit,
@@ -1822,7 +1933,13 @@ spells_funcs = {
 
     "Chain Spell": [
         function(user, spell, stats) {
-            stats.multicasts["chain"] += 4
+            // stats.multicasts["chain"] += 4
+            stats.multicast_stack.push(
+                SpellMulticast.CHAIN,
+                SpellMulticast.CHAIN,
+                SpellMulticast.CHAIN,
+                SpellMulticast.CHAIN
+            )
         },
         no_target,
         no_hit,
@@ -1831,7 +1948,13 @@ spells_funcs = {
 
     "Arc Spell": [
         function(user, spell, stats) {
-            stats.multicasts["simultaneous"] += 4
+            // stats.multicasts["simultaneous"] += 4
+            stats.multicast_stack.push(
+                SpellMulticast.ARC,
+                SpellMulticast.ARC,
+                SpellMulticast.ARC,
+                SpellMulticast.ARC
+            )
         },
         no_target,
         no_hit,
@@ -1840,8 +1963,14 @@ spells_funcs = {
 
     "Chaos Intensifier": [
         function(user, spell, stats) {
-            stats.multicasts["unpredictable"] += stats.multicasts["normal"];
-            stats.multicasts["normal"] = 0;
+            // stats.multicasts["unpredictable"] += stats.multicasts["normal"];
+            // stats.multicasts["normal"] = 0;
+
+            stats.multicast_stack.forEach((v, i) => {
+                if (v == SpellMulticast.NORMAL) {
+                    stats.multicast_stack[i] = SpellMulticast.CHAOSCAST;
+                }
+            })
         },
         no_target,
         no_hit,
@@ -1850,8 +1979,18 @@ spells_funcs = {
 
     "Chain Refocus": [
         function(user, spell, stats) {
-            stats.multicasts["chain"] += Math.round(stats.multicasts["arc"] * 1.5);
-            stats.multicasts["arc"] = 0;
+            // stats.multicasts["chain"] += Math.round(stats.multicasts["arc"] * 1.5);
+            // stats.multicasts["arc"] = 0;
+
+            let original_length = stats.multicast_stack.length;
+            stats.multicast_stack = stats.multicast_stack.filter(v => {
+                return v != SpellMulticast.ARC;
+            });
+
+            let length_diff = Math.round((original_length - stats.multicast_stack.length) * 1.5);
+            for (let i=0; i<length_diff; i++) {
+                stats.multicast_stack.push(SpellMulticast.CHAIN);
+            }
         },
         no_target,
         no_hit,
@@ -1860,8 +1999,18 @@ spells_funcs = {
 
     "Arc Refocus": [
         function(user, spell, stats) {
-            stats.multicasts["arc"] += Math.round(stats.multicasts["chain"] * 1.5);
-            stats.multicasts["chain"] = 0;
+            // stats.multicasts["arc"] += Math.round(stats.multicasts["chain"] * 1.5);
+            // stats.multicasts["chain"] = 0;
+
+            let original_length = stats.multicast_stack.length;
+            stats.multicast_stack = stats.multicast_stack.filter(v => {
+                return v != SpellMulticast.CHAIN;
+            });
+
+            let length_diff = Math.round((original_length - stats.multicast_stack.length) * 1.5);
+            for (let i=0; i<length_diff; i++) {
+                stats.multicast_stack.push(SpellMulticast.ARC);
+            }
         },
         no_target,
         no_hit,
@@ -1874,6 +2023,7 @@ spells_funcs = {
                 stats.mutable_info["duplicator_consumption"] = 0
             }
 
+            /*
             let total_multicasts = 0;
 
             let multicast_types = Object.keys(stats.multicasts);
@@ -1883,9 +2033,13 @@ spells_funcs = {
             })
 
             stats.mutable_info["duplicator_consumption"] += total_multicasts;
+            */
+            
+            stats.mutable_info["duplicator_consumption"] += stats.multicast_stack.length;
+            stats.multicast_stack = [];
         },
         function(caster, spell, stats, position) {
-            caster.restore_mp(25 * stats.mutable_info["duplicator_consumption"])
+            caster.restore_mp(20 * stats.mutable_info["duplicator_consumption"])
         },
         no_hit,
         no_tiles
@@ -1896,7 +2050,11 @@ spells_funcs = {
             let pct = user.hp / user.max_hp;
             let amt = Math.floor(pct * 5);
 
-            stats.multicasts["normal"] += amt
+            // stats.multicasts["normal"] += amt
+
+            for (let i=0; i<amt; i++) {
+                stats.multicast_stack.push(SpellMulticast.NORMAL);
+            }
         },
         function(caster, spell, stats, position) {
             let amt_lose = Math.ceil(caster.hp * 0.005);
@@ -1918,7 +2076,17 @@ spells_funcs = {
 
     "Subsurface Chain": [
         function(user, spell, stats) {
-            stats.multicasts["chain"] += 6
+            // stats.multicasts["chain"] += 6
+
+            stats.multicast_stack.push(
+                SpellMulticast.CHAIN,
+                SpellMulticast.CHAIN,
+                SpellMulticast.CHAIN,
+                SpellMulticast.CHAIN,
+                SpellMulticast.CHAIN,
+                SpellMulticast.CHAIN
+            )
+
             stats.specials.push(SpellSpecials.NEVERDAMAGE)
         },
         no_target,
@@ -1928,7 +2096,17 @@ spells_funcs = {
 
     "Subsurface Arc": [
         function(user, spell, stats) {
-            stats.multicasts["simultaneous"] += 6
+            // stats.multicasts["simultaneous"] += 6
+
+            stats.multicast_stack.push(
+                SpellMulticast.ARC,
+                SpellMulticast.ARC,
+                SpellMulticast.ARC,
+                SpellMulticast.ARC,
+                SpellMulticast.ARC,
+                SpellMulticast.ARC
+            )
+
             stats.specials.push(SpellSpecials.NEVERDAMAGE)
         },
         no_target,
@@ -1940,11 +2118,16 @@ spells_funcs = {
         function(user, spell, stats) {
             let total_multicasts = 0;
 
+            /*
             let multicast_types = Object.keys(stats.multicasts);
             multicast_types.forEach(typ => {
                 total_multicasts += stats.multicasts[typ];
                 stats.multicasts[typ] = 0;
             })
+            */
+
+            total_multicasts = stats.multicast_stack.length;
+            stats.multicast_stack.length = [];
 
             stats.radius += 1 * total_multicasts;
             stats.range += 2 * total_multicasts;
@@ -2104,9 +2287,9 @@ spells_funcs = {
             let ent = game.board.get_pos(location);
             if (ent) {
                 for (let i=0; i<2; i++) {
-                    let push_dir = location.sub(spell.origin).normalized();
+                    let push_dir = location.sub(spell.cast_position).normalize();
 
-                    let new_pos = location.add(push_dir).round();
+                    let new_pos = ent.position.add(push_dir).round();
 
                     game.move_entity(ent, new_pos, false);
                 }
@@ -2142,7 +2325,7 @@ spells_funcs = {
 
     "Retarget: Self": [
         function(user, spell, stats) {
-            stats.retarget = RetargetType.Self;
+            stats.retargets.push(RetargetType.Self);
             stats.target_type = SpellTargeting.SelfTarget;
         },
         no_target,
@@ -2152,7 +2335,7 @@ spells_funcs = {
 
     "Retarget: Enemy": [
         function(user, spell, stats) {
-            stats.retarget = RetargetType.Enemy;
+            stats.retargets.push(RetargetType.Enemy);
         },
         no_target,
         no_hit,
@@ -2161,7 +2344,7 @@ spells_funcs = {
 
     "Retarget: Ally": [
         function(user, spell, stats) {
-            stats.retarget = RetargetType.Ally;
+            stats.retargets.push(RetargetType.Ally);
         },
         no_target,
         no_hit,
@@ -2170,7 +2353,7 @@ spells_funcs = {
 
     "Retarget: Weak": [
         function(user, spell, stats) {
-            stats.retarget = RetargetType.Weak;
+            stats.retargets.push(RetargetType.Weak);
         },
         no_target,
         no_hit,
@@ -2179,7 +2362,7 @@ spells_funcs = {
 
     "Retarget: Strong": [
         function(user, spell, stats) {
-            stats.retarget = RetargetType.Strong;
+            stats.retargets.push(RetargetType.Strong);
         },
         no_target,
         no_hit,
@@ -2188,7 +2371,7 @@ spells_funcs = {
 
     "Retarget: Native": [
         function(user, spell, stats) {
-            stats.retarget = RetargetType.Native;
+            stats.retargets.push(RetargetType.Native);
         },
         no_target,
         no_hit,
@@ -2197,7 +2380,7 @@ spells_funcs = {
 
     "Retarget: Pushback": [
         function(user, spell, stats) {
-            stats.retarget = RetargetType.Pushback;
+            stats.retargets.push(RetargetType.Pushback);
         },
         no_target,
         no_hit,
@@ -2206,7 +2389,7 @@ spells_funcs = {
 
     "Retarget: Magnetism": [
         function(user, spell, stats) {
-            stats.retarget = RetargetType.Magnetism;
+            stats.retargets.push(RetargetType.Magnetism);
         },
         no_target,
         no_hit,
@@ -2215,7 +2398,7 @@ spells_funcs = {
 
     "Retarget: Compact": [
         function(user, spell, stats) {
-            stats.retarget = RetargetType.Compact;
+            stats.retargets.push(RetargetType.Compact);
         },
         no_target,
         no_hit,
@@ -2224,7 +2407,7 @@ spells_funcs = {
 
     "Retarget: Sparse": [
         function(user, spell, stats) {
-            stats.retarget = RetargetType.Sparse;
+            stats.retargets.push(RetargetType.Sparse);
         },
         no_target,
         no_hit,
@@ -2233,7 +2416,7 @@ spells_funcs = {
 
     "Retarget: Mysterious": [
         function(user, spell, stats) {
-            stats.retarget = RetargetType.Mysterious;
+            stats.retargets.push(RetargetType.Mysterious);
         },
         no_target,
         no_hit,
@@ -2290,7 +2473,11 @@ spells_funcs = {
 
     "Uncontrolled Multicast x16": [
         function(user, spell, stats) {
-            stats.multicasts["unpredictable"] += 16;
+            // stats.multicasts["unpredictable"] += 16;
+
+            for (let i=0; i<16; i++) {
+                stats.multicast_stack.push(SpellMulticast.CHAOSCAST);
+            }
         },
         no_target,
         no_hit,

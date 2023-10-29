@@ -1424,19 +1424,19 @@ entities_specials = {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
+    "Castle Wall": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
+    "Chasm": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
+    "Corruption": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
+    "Tree": function(game, ent, event_info) {
         // None
     },
 

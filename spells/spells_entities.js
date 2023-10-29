@@ -1809,47 +1809,47 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Castle Wall", "##", "#ccc", "Probably used to be some kind of fortification, a long time ago.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Construct
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Castle Wall"],
+        entities_specials["Castle Wall"],
         "None",
-        1, false, false, 
+        999, true, true, 
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Chasm", "vv", "#666", "A bottomless pit.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Construct
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Chasm"],
+        entities_specials["Chasm"],
         "None",
-        1, false, false, 
+        999, false, true, 
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Corruption", "++", "#c4f", "You probably shouldn't step in this.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Construct
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Corruption"],
+        entities_specials["Corruption"],
         "None",
-        1, false, false, 
+        999, false, true, 
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Tree", "()", "#a70", "A normal tree.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Construct
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Tree"],
+        entities_specials["Tree"],
         "None",
-        1, false, false, 
+        999, true, true, 
     ),
 
     new EntityTemplate(

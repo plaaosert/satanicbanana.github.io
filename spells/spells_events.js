@@ -227,8 +227,8 @@ events_list_unsorted = [
                     // set flag here for the initiation event chain
                     return {
                         title: "- - THE ORDER OF ORDER: [#D5C2A5]INITIATE[clear] - -",
-                        text: `\"Thank you very much, sir! I promise you, this is the best decision you've ever made.\"\n\n` +
-                              `The wizard touches your arm and, before you have a chance to refuse, teleports you to what you assume is the [#D5C2A5]Order of Order's headquarters[clear].\n\n` +
+                        text: `[#0cf]\"Thank you very much, sir! I promise you, this is the best decision you've ever made.\"\n\n` +
+                              `[clear]The wizard touches your arm and, before you have a chance to refuse, teleports you to what you assume is the [#D5C2A5]Order of Order's headquarters[clear], somehow unaffected by the shattered state of the rest of existence.\n\n` +
                               `You live there for a time, learning their customs and the [#D5C2A5]Order's[clear] scripture, before you are sent back to your fight for your [#0cf]\"annual leave\"[clear]. Was it really that long?\n\n` +
                               `+ [#D5C2A5]Order[clear] affinity gained\n` +
                               `+ [#D5C2A5]+1[clear] indoctrination\n` +
@@ -264,9 +264,9 @@ events_list_unsorted = [
                     // set flag here for the initiation event chain
                     return {
                         title: "- - THE ORDER OF ORDER: [#D5C2A5]ELEVATION[clear] - -",
-                        text: `\"Thank you very much, sir! I promise you, this is the best decision you've ever made.\"\n\n` +
-                              `The wizard touches your arm and, before you have a chance to refuse, teleports you to what you assume is the [#D5C2A5]Order of Order's headquarters[clear].\n\n` +
-                              `You live there for a time, learning their customs and the [#D5C2A5]Order's[clear] scripture, before you are sent back to your fight for your [#0cf]\"annual leave\"[clear]. Was it really that long?\n\n` +
+                        text: `\"Very good. You have made a good decision. Further programs of study will be available to you immediately.\"\n\n` +
+                              `You feel a portion of your energy [#f00]drift away[clear] as you are transported back to your familiar living quarters.\n\n` +
+                              `You live there for a few years more, by your estimation anyway. By the time you're sent back to your battles, the Order of Order feels more important to you than your revenge against Efrit.\n\n` +
                               `+ [#D5C2A5]+2[clear] indoctrination\n` +
                               `+ Upgraded an [#4f4]emblem[clear]: {[#0cf]One allied [#dcd]Rock Titan[#0cf] spawns near you at the start of every combat[clear]}\n` +
                               `- [#f00]Max HP reduced by 20% (-[#f88]###[#f00])[clear]\n` +

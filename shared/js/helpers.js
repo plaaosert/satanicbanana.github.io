@@ -252,11 +252,17 @@ function random_on_circle(r, rand) {
     return new Vector2(x, y);
 }
 
+function random_from_array(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
 class Vector2 {
     constructor(x, y) {
         this.x = x;
         this.y = y;
     }
+
+    static zero = new Vector2(0, 0);
 
     static from_hash_code(code) {
         return new Vector2((code-1) % 1000000, Math.floor((code-1) / 1000000));

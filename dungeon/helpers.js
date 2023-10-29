@@ -136,7 +136,7 @@ function in_rect(tl, br, pos) {
 }
 
 // http://rosettacode.org/wiki/Bitmap/Bresenham%27s_line_algorithm#C
-function make_line(a, b, bound_rect) {
+function make_line(a, b, bound_rect, stop_predicate) {
     // need to later make radius too, which should just be a diamond from every point
     // pretty simple but im lazy rn
 
@@ -161,7 +161,7 @@ function make_line(a, b, bound_rect) {
             coords.push(coord);
         }
 
-        if ((x0==x1 && y0==y1) || (bound_rect && !in_rect(bound_rect.tl, bound_rect.br, new Vector2(x0, y0)))) {
+        if ((x0==x1 && y0==y1) || (stop_predicate && stop_predicate(coords)) || (bound_rect && !in_rect(bound_rect.tl, bound_rect.br, new Vector2(x0, y0)))) {
             //coords.push(b);
             return coords;
         }
