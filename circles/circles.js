@@ -771,11 +771,11 @@ document.addEventListener("DOMContentLoaded", function() {
     db = function() {
         if (ball_drop_cd <= 0) {
             board.spawn_ball(
-                new MergeGameBall(next_ball_level++),
+                new MergeGameBall(next_ball_level),
                 ball_drop_pos
             )
 
-            //next_ball_level = random_int(0, highest_ball_level);
+            next_ball_level = random_int(0, highest_ball_level);
             ball_drop_cd = 0.25;
         }
     }
