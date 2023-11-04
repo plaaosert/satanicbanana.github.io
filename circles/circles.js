@@ -23,7 +23,9 @@ const DEFAULT_BALL_FRICTION = 1 - (0.1 / PHYS_GRANULARITY);
 const fps = 60;
 
 const target_canvas_width = 300;
-const target_pixels_per_cm = 6;
+
+const descaling = 1000;
+const target_pixels_per_cm = (6/descaling);
 
 let pixels_per_cm = 6;
 
@@ -36,7 +38,7 @@ class Board {
         this.balls = [];
         this.particles = [];
 
-        this.gravity = new Vector2(0, 9.81*100);
+        this.gravity = new Vector2(0, 9.81*100*descaling);
     }
 
     spawn_ball(ball, position) {
@@ -336,22 +338,22 @@ class Ball {
 
 class MergeGameBall extends Ball {
     static level_properties = [
-        {mass: Math.pow(1.8, 0), radius: 2, colour: Colour.from_hex("#4f4")},
-        {mass: Math.pow(1.8, 1), radius: 3.5, colour: Colour.from_hex("#e63")},
-        {mass: Math.pow(1.8, 2), radius: 4.75, colour: Colour.from_hex("#16c")},
-        {mass: Math.pow(1.8, 3), radius: 6.5, colour: Colour.from_hex("#412")},
-        {mass: Math.pow(1.8, 4), radius: 7.25, colour: Colour.from_hex("#28e")},
-        {mass: Math.pow(1.8, 5), radius: 8, colour: Colour.from_hex("#48c")},
-        {mass: Math.pow(1.8, 6), radius: 9, colour: Colour.from_hex("#a47")},
-        {mass: Math.pow(1.8, 7), radius: 10, colour: Colour.from_hex("#ff0")},
-        {mass: Math.pow(1.8, 8), radius: 11, colour: Colour.from_hex("#e92")},
-        {mass: Math.pow(1.8, 9), radius: 13, colour: Colour.from_hex("#ad3")},
-        {mass: Math.pow(1.8, 10), radius: 15, colour: Colour.from_hex("#fd1")},
-        {mass: Math.pow(1.8, 11), radius: 17.5, colour: Colour.from_hex("#370")}
+        {mass: Math.pow(1.8, 0), radius: descaling*2, colour: Colour.from_hex("#4f4")},
+        {mass: Math.pow(1.8, 1), radius: descaling*3.5, colour: Colour.from_hex("#e63")},
+        {mass: Math.pow(1.8, 2), radius: descaling*4.75, colour: Colour.from_hex("#16c")},
+        {mass: Math.pow(1.8, 3), radius: descaling*6.5, colour: Colour.from_hex("#412")},
+        {mass: Math.pow(1.8, 4), radius: descaling*7.25, colour: Colour.from_hex("#28e")},
+        {mass: Math.pow(1.8, 5), radius: descaling*8, colour: Colour.from_hex("#6a0")},
+        {mass: Math.pow(1.8, 6), radius: descaling*9, colour: Colour.from_hex("#a47")},
+        {mass: Math.pow(1.8, 7), radius: descaling*10, colour: Colour.from_hex("#ff0")},
+        {mass: Math.pow(1.8, 8), radius: descaling*11, colour: Colour.from_hex("#e92")},
+        {mass: Math.pow(1.8, 9), radius: descaling*13, colour: Colour.from_hex("#ad3")},
+        {mass: Math.pow(1.8, 10), radius: descaling*15, colour: Colour.from_hex("#fd1")},
+        {mass: Math.pow(1.8, 11), radius: descaling*17.5, colour: Colour.from_hex("#370")}
     ]
 
     constructor(level) {
-        let lv_props = MergeGameBall.level_properties[level];
+        let lv_props = MergeGameBall.level_properties[Math.min(MergeGameBall.level_properties.length-1, level)];
         super(lv_props.mass, lv_props.radius, lv_props.colour);
 
         this.level = level;
@@ -382,7 +384,7 @@ class MergeGameBall extends Ball {
             this.level++;
             this.merge_cooldown = 0.1;
 
-            let lv_props = MergeGameBall.level_properties[this.level];
+            let lv_props = MergeGameBall.level_properties[Math.min(MergeGameBall.level_properties.length-1, this.level)];
 
             board.particles.push({
                 min_radius: other.radius,
@@ -511,7 +513,7 @@ function render_board(board, debug=false) {
             return;
         }
 
-        let w = (5/6) * pixels_per_cm;
+        let w = (5/6) * pixels_per_cm * descaling;
 
         ctx.beginPath();
         ctx.arc(ball.position.x * pixels_per_cm, ball.position.y * pixels_per_cm, (ball.radius * pixels_per_cm) - (w/2), 0, 2 * Math.PI, false);
@@ -548,7 +550,7 @@ function render_particles(board) {
     let ctx = layers.fg1.ctx;
 
     board.particles.forEach(part => {
-        let w = (5/6) * pixels_per_cm;
+        let w = (5/6) * pixels_per_cm * descaling;
 
         ctx.beginPath();
         ctx.arc(part.position.x * pixels_per_cm, part.position.y * pixels_per_cm, (part.radius * pixels_per_cm) - (w/2), 0, 2 * Math.PI, false);
@@ -556,7 +558,7 @@ function render_particles(board) {
         ctx.fillStyle = part.colour.css();
         ctx.fill();
 
-        ctx.lineWidth = (5/6) * pixels_per_cm;
+        ctx.lineWidth = w;
         ctx.strokeStyle = part.colour.lerp(Colour.black, 0.5).css();
         ctx.stroke();
         ctx.closePath();
@@ -582,8 +584,8 @@ function render_ui() {
         ctx.closePath();
 
 
-        let props = MergeGameBall.level_properties[next_ball_level];
-        let w = (5/6) * pixels_per_cm;
+        let props = MergeGameBall.level_properties[Math.min(MergeGameBall.level_properties.length-1, next_ball_level)];
+        let w = (5/6) * pixels_per_cm * descaling;
 
         ctx.beginPath();
         ctx.arc(
@@ -595,7 +597,7 @@ function render_ui() {
         ctx.fillStyle = props.colour.css();
         ctx.fill();
 
-        ctx.lineWidth = (5/6) * pixels_per_cm;
+        ctx.lineWidth = w;
         ctx.strokeStyle = props.colour.lerp(Colour.black, 0.5).css();
         ctx.stroke();
         ctx.closePath();
@@ -751,8 +753,8 @@ document.addEventListener("DOMContentLoaded", function() {
         ball_drop_pos = mouse_position.div(pixels_per_cm)
         ball_drop_pos.y = Math.floor(board.size.y * 0.2);
 
-        ball_drop_pos.x = Math.max(MergeGameBall.level_properties[next_ball_level].radius, Math.min(
-            board.size.x - MergeGameBall.level_properties[next_ball_level].radius, ball_drop_pos.x
+        ball_drop_pos.x = Math.max(MergeGameBall.level_properties[Math.min(MergeGameBall.level_properties.length-1, next_ball_level)].radius, Math.min(
+            board.size.x - MergeGameBall.level_properties[Math.min(MergeGameBall.level_properties.length-1, next_ball_level)].radius, ball_drop_pos.x
         ))
     }
 
