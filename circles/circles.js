@@ -338,18 +338,18 @@ class Ball {
 
 class MergeGameBall extends Ball {
     static level_properties = [
-        {mass: Math.pow(1.8, 0), radius: descaling*2, colour: Colour.from_hex("#4f4")},
-        {mass: Math.pow(1.8, 1), radius: descaling*3.5, colour: Colour.from_hex("#e63")},
-        {mass: Math.pow(1.8, 2), radius: descaling*4.75, colour: Colour.from_hex("#16c")},
-        {mass: Math.pow(1.8, 3), radius: descaling*6.5, colour: Colour.from_hex("#412")},
-        {mass: Math.pow(1.8, 4), radius: descaling*7.25, colour: Colour.from_hex("#28e")},
-        {mass: Math.pow(1.8, 5), radius: descaling*8, colour: Colour.from_hex("#6a0")},
-        {mass: Math.pow(1.8, 6), radius: descaling*9, colour: Colour.from_hex("#a47")},
-        {mass: Math.pow(1.8, 7), radius: descaling*10, colour: Colour.from_hex("#ff0")},
-        {mass: Math.pow(1.8, 8), radius: descaling*11, colour: Colour.from_hex("#e92")},
-        {mass: Math.pow(1.8, 9), radius: descaling*13, colour: Colour.from_hex("#ad3")},
-        {mass: Math.pow(1.8, 10), radius: descaling*15, colour: Colour.from_hex("#fd1")},
-        {mass: Math.pow(1.8, 11), radius: descaling*17.5, colour: Colour.from_hex("#370")}
+        {emote: "'-'", mass: Math.pow(1.8, 0), radius: descaling*2, colour: Colour.from_hex("#4f4")},
+        {emote: "-w-", mass: Math.pow(1.8, 1), radius: descaling*3.5, colour: Colour.from_hex("#e63")},
+        {emote: "^-^", mass: Math.pow(1.8, 2), radius: descaling*4.75, colour: Colour.from_hex("#e21")},
+        {emote: "( ◕▿◕ )", mass: Math.pow(1.8, 3), radius: descaling*6.5, colour: Colour.from_hex("#412")},
+        {emote: "(⌒_⌒;)", mass: Math.pow(1.8, 4), radius: descaling*7.25, colour: Colour.from_hex("#28e")},
+        {emote: "(＞﹏＜)", mass: Math.pow(1.8, 5), radius: descaling*8, colour: Colour.from_hex("#6a0")},
+        {emote: "(=^ ◡ ^=)", mass: Math.pow(1.8, 6), radius: descaling*9, colour: Colour.from_hex("#a47")},
+        {emote: "((╬◣﹏◢))", mass: Math.pow(1.8, 7), radius: descaling*10, colour: Colour.from_hex("#ff0")},
+        {emote: "٩(◕‿◕｡)۶", mass: Math.pow(1.8, 8), radius: descaling*11, colour: Colour.from_hex("#e92")},
+        {emote: "(ー_ー )", mass: Math.pow(1.8, 9), radius: descaling*13, colour: Colour.from_hex("#ad3")},
+        {emote: "(*・ω・)", mass: Math.pow(1.8, 10), radius: descaling*15, colour: Colour.from_hex("#fd1")},
+        {emote: "(￣ω￣)", mass: Math.pow(1.8, 11), radius: descaling*17.5, colour: Colour.from_hex("#370")}
     ]
 
     constructor(level) {
@@ -502,7 +502,7 @@ function render_diagnostics() {
     )
 }
 
-function render_board(board, debug=false) {
+function render_board(board, faces=false, debug=false) {
     layers.fg2.ctx.clearRect(0, 0, canvas_width, canvas_height); // balls
     
     let canvas = layers.fg2.canvas;
@@ -523,6 +523,16 @@ function render_board(board, debug=false) {
         ctx.strokeStyle = ball.colour.lerp(Colour.black, 0.5).css();
         ctx.stroke();
         ctx.closePath();
+
+        if (faces) {
+            let mg = MergeGameBall.level_properties[ball.level].emote;
+            let slen = mg.length;
+
+            write_text(
+                ctx, mg, (ball.position.x * pixels_per_cm) + 1, (ball.position.y * pixels_per_cm)+8, ball.colour.lerp(Colour.black, 0.9).css(), "MS Gothic", 24, true,
+                2, "white"
+            )
+        }
 
         if (debug) {
             let mg = `vel: ${(Math.round(ball.velocity.magnitude() * 100) / 100).toString()}`;
@@ -761,11 +771,11 @@ document.addEventListener("DOMContentLoaded", function() {
     db = function() {
         if (ball_drop_cd <= 0) {
             board.spawn_ball(
-                new MergeGameBall(next_ball_level),
+                new MergeGameBall(next_ball_level++),
                 ball_drop_pos
             )
 
-            next_ball_level = random_int(0, highest_ball_level);
+            //next_ball_level = random_int(0, highest_ball_level);
             ball_drop_cd = 0.25;
         }
     }

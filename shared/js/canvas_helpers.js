@@ -55,7 +55,7 @@ function write_rotated_image(canvas, ctx, x, y, image, w, h, angle_rad) {
     }
 }
 
-function write_text(ctx, text, x, y, colour, font, fontsize, centered) {
+function write_text(ctx, text, x, y, colour, font, fontsize, centered, stroke_w, stroke_style) {
     ctx.font = `${fontsize}px ${font}`;
     ctx.fillStyle = colour;
 
@@ -65,6 +65,14 @@ function write_text(ctx, text, x, y, colour, font, fontsize, centered) {
     if (centered) {
         let metrics = ctx.measureText(text);
         offset_x -= metrics.width / 2;
+    }
+    
+    if (stroke_w && stroke_style) {
+        ctx.miterLimit = stroke_w;
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = stroke_style;
+        ctx.lineWidth = stroke_w;
+        ctx.strokeText(text, x + offset_x, y + offset_y);
     }
 
     ctx.fillText(text, x + offset_x, y + offset_y)
