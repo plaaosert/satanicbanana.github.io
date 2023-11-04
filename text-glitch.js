@@ -39,6 +39,7 @@ aims = {
 	"8":">> a game about matching words in a box",
 	"9":">> not complete just yet!",
 	"10":">> it's time to spin...",
+	"11":">> drop circles onto a field and watch them merge",
 	"banner":"// \u00A0hello!\u00A0\u00A0 //"
 };
 

@@ -950,7 +950,7 @@ function game_loop() {
     if (framecount % 60 == 0) {
         renderer.refresh_left_panel = true;
         renderer.refresh_right_panel = true;
-        renderer.needs_main_view_update = true;
+        // game.needs_main_view_update = true;
     }
 
     renderer.render_borders();

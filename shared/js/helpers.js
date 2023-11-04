@@ -406,6 +406,13 @@ class Vector2 {
     divmask(x, y) {
         return new Vector2(this.x / x, this.y / y);
     }
+
+    lerp(to, amt) {
+        return new Vector2(
+            lerp(this.x, to.x, amt),
+            lerp(this.y, to.y, amt)
+        )
+    }
 }
 
 class Colour {
@@ -416,6 +423,22 @@ class Colour {
             arr[2],
             arr[3]
         )
+    }
+
+    // https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
+    static from_hex(hex) {
+        var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+        hex = hex.replace(shorthandRegex, function(m, r, g, b) {
+            return r + r + g + g + b + b;
+        });
+
+        var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? Colour.from_array([
+            parseInt(result[1], 16),
+            parseInt(result[2], 16),
+            parseInt(result[3], 16),
+            255
+        ]) : Colour.black;
     }
 
     constructor(r, g, b, a) {
@@ -434,4 +457,20 @@ class Colour {
         this.data[2] = this.b;
         this.data[3] = this.a;
     }
+
+    lerp(to, amt) {
+        return Colour.from_array(lerp_arr(this.data, to.data, amt, true));
+    }
+
+    css() {
+        let data = this.data;
+        return `rgba(${data[0]}, ${data[1]}, ${data[2]}, ${data[3]})`;
+    }
 }
+
+Colour.black = new Colour(0, 0, 0, 255);
+Colour.white = new Colour(255, 255, 255, 255);
+Colour.red = new Colour(255, 0, 0, 255);
+Colour.green = new Colour(0, 255, 0, 255);
+Colour.blue = new Colour(0, 0, 255, 255);
+Colour.empty = new Colour(0, 0, 0, 0);

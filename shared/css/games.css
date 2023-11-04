@@ -1,20 +1,20 @@
 @font-face {
     font-family: "ibm_vga";
-    src: url("/shared/fonts/Web437_IBM_VGA_8x16.woff") format("woff");
+    src: url("https://plaao.net/shared/fonts/Web437_IBM_VGA_8x16.woff") format("woff");
     font-weight: normal;
     font-style: normal;
 }
 
 @font-face {
     font-family: "nec_apc";
-    src: url("/shared/fonts/Web437_NEC_APC3_8x16.woff") format("woff");
+    src: url("https://plaao.net/shared/fonts/Web437_NEC_APC3_8x16.woff") format("woff");
     font-weight: normal;
     font-style: normal;
 }
 
 @font-face {
     font-family: "terminus";
-    src: url("/shared/fonts/Terminus.woff") format("woff");
+    src: url("https://plaao.net/shared/fonts/Terminus.woff") format("woff");
     font-weight: normal;
     font-style: normal;
 }

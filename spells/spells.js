@@ -73,7 +73,7 @@ const sbox = {
     "ml": "├",
     "mr": "┤",
     "tm": "┬",
-    "dm": "┴",
+    "bm": "┴",
     "c": "┼",
     "f": "█"
 }
@@ -88,15 +88,33 @@ const dbox = {
     "ml": "╠",
     "mr": "╣",
     "tm": "╦",
-    "dm": "╩",
+    "bm": "╩",
     "c": "╬",
     "f": "█"
 }
 
+const tbox = {
+    "h": "-",
+    "v": "|",
+    "tl": "+",
+    "tr": "+",
+    "bl": "+",
+    "br": "+",
+    "ml": "+",
+    "mr": "+",
+    "tm": "+",
+    "bm": "+",
+    "c": "+",
+    "f": "#"
+}
+
 const boxs = {
     "s": sbox,
-    "d": dbox
+    "d": dbox,
+    "t": tbox
 }
+
+let b = boxs["s"];
 
 pretty_print_trigger = {
     "at_target": "At target position",
@@ -403,12 +421,14 @@ class MessageBox {
 
 class Renderer {
     constructor(game, board, game_view_size, left_menu_len, right_menu_len, particle_speed) {
+        this.fontsiz = 16;
+
         this.game = game;
         this.board = board;
         this.game_view_size = game_view_size;
         this.default_text_col = "white"
 
-        this.position_optimisation = false;
+        this.position_optimisation = true;
 
         this.pixel_chars = [];
         this.left_menu_size = new Vector2(left_menu_len, game_view_size.y);
@@ -567,6 +587,9 @@ class Renderer {
 
                 if (this.position_optimisation) {
                     c.classList.add("gamepixel-abs");
+
+                    c.style.height = this.fontsiz + "px";
+                    c.style.width = `${this.fontsiz/2}px`;
                 }
 
                 c.classList.add("white");
@@ -582,10 +605,10 @@ class Renderer {
                 c.style.gridRow = y + 1;
 
                 if (this.position_optimisation) {
-                    document.getElementById("game").style.left = "17%";
+                    // document.getElementById("game").style.left = "0px";
 
-                    c.style.top = `${y*16}px`;
-                    c.style.left = `${x*8}px`;
+                    c.style.top = `${y*this.fontsiz}px`;
+                    c.style.left = `${x*this.fontsiz*0.5}px`;
                 }
 
                 let text = "\u00A0";
@@ -595,13 +618,29 @@ class Renderer {
                 ];
 
                 if (pipe_points.includes(x)) {
-                    text = "|";
+                    text = b.v;
                 }
 
                 let within_menu = x < this.left_menu_size.x || x >= this.left_menu_size.x + this.game_view_size.x;
 
                 if (within_menu && (y == 0 || y == this.total_size.y - 1)) {
-                    text = text == "|" ? "+" : "-";
+                    if (text == b.v) {
+                        // if it is vertical, change to the corresponding box drawing character
+                        // tl, tr, bl, br for corners
+                        // ml, mr, tm, dm for sides
+                        if (x==0) {
+                            // left facing corners
+                            text = y==0 ? b.tl : b.bl
+                        } else if (x==this.total_size.x-1) {
+                            // right facing corners
+                            text = y==0 ? b.tr : b.br
+                        } else {
+                            // top or bottom facing sides
+                            text = y==0 ? b.tm : b.bm
+                        }
+                    } else {
+                        text = b.h
+                    }
                 }
 
                 text = "\u00A0";
@@ -634,6 +673,17 @@ class Renderer {
             }
 
             //parent.appendChild(document.createElement("br"));
+        }
+
+        this.refresh_left_panel = true;
+        this.refresh_right_panel = true;
+        
+        this.game.needs_main_view_update = true;
+
+        if (this.game.inventory_open) {
+            renderer.render_game_checkerboard("black");
+        } else {
+            renderer.render_game_checkerboard("#222");
         }
     }
 
@@ -1571,7 +1621,7 @@ class Renderer {
         let pct = game.player_xp / game.get_xp_for_levelup(game.player_level);
         let pips = Math.max(0, Math.floor(bar_len * pct));
 
-        let bar_string = `[#8ff]{${"#".repeat(pips)}${"-".repeat(bar_len - pips)}}[clear]`;
+        let bar_string = `[#8ff]«${"#".repeat(pips)}${"-".repeat(bar_len - pips)}»[clear]`;
         this.set_pixel_text(
             xp_mount_pos,
             this.pad_str(bar_string, clearance_x)
@@ -2159,7 +2209,7 @@ class Renderer {
                     "white"
                 );
 
-                let player_record_key = this.game.player_ent.id + "|" + this.game.player_ent.name;
+                let player_record_key = this.game.player_ent.id + b.v + this.game.player_ent.name;
                 Object.keys(DmgType).forEach(typ => {
                     text_pos = text_pos.add(new Vector2(0, 1));
                     let dmg_amt_wave = 0;
@@ -2235,7 +2285,8 @@ class Renderer {
             let path = "";
             if (i < pevents.length-1) {
                 path += " "
-                path += "-".repeat(path_pad_size-2);
+                path += b.h.repeat(path_pad_size-2);
+                path += ""
 
                 if (i - pprog == -1) {
                     path += "[#fff]«[#888]"
@@ -2246,7 +2297,7 @@ class Renderer {
                 }
             }
 
-            path_str += `[${i < pprog ? "#444" : event_type_to_colour[evt]}]${event_type_to_icon[evt]}[#888]${path}`;
+            path_str += `[${i < pprog ? "#666" : event_type_to_colour[evt]}]${event_type_to_icon[evt]}[#888]${path}`;
         }
 
         if (pprog == pevents.length-1) {
@@ -2289,12 +2340,12 @@ class Renderer {
 
         this.set_pixel_text(
             mount_pos.sub(new Vector2(2, 2)),
-            "[white]" + "-".repeat(clearance_x + 4)
+            "[white]" + b.h.repeat(clearance_x + 4)
         );
 
         this.set_pixel_text(
             mount_pos.add(new Vector2(-2, this.game_view_size.y - 3)),
-            "[white]" + "-".repeat(clearance_x + 4)
+            "[white]" + b.h.repeat(clearance_x + 4)
         );
 
         let current_line = mount_pos.copy();
@@ -2802,22 +2853,49 @@ class Renderer {
         let right_border_bound = this.left_menu_size.x + this.game_view_size.x;
 
         for (let xn=0; xn<this.total_size.x; xn++) {
-            let char = null;
+            let char_top = null;
+            let char_bottom = null;
+
             if (xn < this.left_menu_size.x || xn >= right_border_bound) {
-                char = "-";
+                char_top = b.h;
+                char_bottom = b.h;
             }
 
             if (xn == 0 || xn == this.left_menu_size.x-1 || xn == right_border_bound || xn == this.total_size.x-1) {
-                char = "+";
+                char_top = b.c;
+                char_bottom = b.c;
+
+                // if it is vertical, change to the corresponding box drawing character
+                // tl, tr, bl, br for corners
+                // ml, mr, tm, dm for sides
+                if (xn==0) {
+                    // left facing corners
+                    char_top = b.tl;
+                    char_bottom = b.bl;
+                } else if (xn==this.total_size.x-1) {
+                    // right facing corners
+                    char_top = b.tr;
+                    char_bottom = b.br;
+                } else {
+                    // top or bottom facing sides
+                    // if the game board is currently open and we are at the right border bound, this needs to be corners instead
+                    if (xn == right_border_bound && !this.game.inventory_open) {
+                        char_top = b.tl;
+                        char_bottom = b.bl;
+                    } else {
+                        char_top = b.tm;
+                        char_bottom = b.bm;
+                    }
+                }
             }
 
-            if (char) {
-                this.set_pixel(new Vector2(xn, 0), char, "#fff");
-                this.set_pixel(new Vector2(xn, this.total_size.y-1), char, "#fff");
+            if (char_top && char_bottom) {
+                this.set_pixel(new Vector2(xn, 0), char_top, "#fff");
+                this.set_pixel(new Vector2(xn, this.total_size.y-1), char_bottom, "#fff");
             }
         }
 
-        let vertical_char = "|";
+        let vertical_char = b.v;
         for (let yn=1; yn<this.total_size.y-1; yn++) {
             this.set_pixel(new Vector2(0, yn), vertical_char, "#fff");
             this.set_pixel(new Vector2(this.left_menu_size.x-1, yn), vertical_char, "#fff");
@@ -2834,8 +2912,11 @@ class Renderer {
             let add_vec_tl = new Vector2(x, tl.y)
             let add_vec_br = new Vector2(x, br.y)
 
-            this.set_pixel(add_vec_tl, lines_added[add_vec_tl.hash_code()] ? "+" : "-", "#fff");
-            this.set_pixel(add_vec_br, lines_added[add_vec_br.hash_code()] ? "+" : "-", "#fff");
+            let corner_style_top = x==tl.x ? b.tl : (x==br.x ? b.tr : b.c);
+            let corner_style_bot = x==tl.x ? b.bl : (x==br.x ? b.br : b.c);
+
+            this.set_pixel(add_vec_tl, lines_added[add_vec_tl.hash_code()] ? corner_style_top : b.h, "#fff");
+            this.set_pixel(add_vec_br, lines_added[add_vec_br.hash_code()] ? corner_style_bot : b.h, "#fff");
             
             lines_added[add_vec_tl.hash_code()] = 1;
             lines_added[add_vec_br.hash_code()] = 1;
@@ -2845,8 +2926,11 @@ class Renderer {
             let add_vec_tl = new Vector2(tl.x, y)
             let add_vec_br = new Vector2(br.x, y)
 
-            this.set_pixel(add_vec_tl, lines_added[add_vec_tl.hash_code()] ? "+" : "|", "#fff");
-            this.set_pixel(add_vec_br, lines_added[add_vec_br.hash_code()] ? "+" : "|", "#fff");
+            let corner_style_l = y==tl.y ? b.tl : (y==br.y ? b.bl : b.c);
+            let corner_style_r = y==tl.y ? b.tr : (y==br.y ? b.br : b.c);
+
+            this.set_pixel(add_vec_tl, lines_added[add_vec_tl.hash_code()] ? corner_style_l : b.v, "#fff");
+            this.set_pixel(add_vec_br, lines_added[add_vec_br.hash_code()] ? corner_style_r : b.v, "#fff");
             
             lines_added[add_vec_tl.hash_code()] = 1;
             lines_added[add_vec_br.hash_code()] = 1;
@@ -2859,7 +2943,15 @@ class Renderer {
                 for (let x=tl.x; x<=br.x; x++) {
                     let add_vec = new Vector2(x, hline + tl.y)
                     
-                    this.set_pixel(add_vec, lines_added[add_vec.hash_code()] ? "+" : "-", "#fff");
+                    // hline describes the y position of the object
+                    // hline=0, top (so use tl/tr)
+                    // hline=(br.y-tl.y), bottom (so use bl/br)
+                    // otherwise, middle (so use ml/mr)
+
+                    let corner_style_l = hline==0 ? b.tl : (hline==(br.y-tl.y) ? b.bl : b.ml);
+                    let corner_style_r = hline==0 ? b.tr : (hline==(br.y-tl.y) ? b.br : b.mr);
+
+                    this.set_pixel(add_vec, lines_added[add_vec.hash_code()] ? (x==tl.x ? corner_style_l : corner_style_r) : b.h, "#fff");
                     lines_added[add_vec.hash_code()] = 1;
                 }
             }
@@ -2871,7 +2963,7 @@ class Renderer {
                 for (let y=tl.y; y<=br.y; y++) {
                     let add_vec = new Vector2(vline + tl.x, y)
                     
-                    this.set_pixel(add_vec, lines_added[add_vec.hash_code()] ? "+" : "|", "#fff");
+                    this.set_pixel(add_vec, lines_added[add_vec.hash_code()] ? b.c : b.v, "#fff");
                     lines_added[add_vec.hash_code()] = 1;
                 }
             }
@@ -3037,7 +3129,7 @@ class Renderer {
 
     test() {
         let cols = ["#fff", "#f00", "#0f0", "#00f", "#000"];
-        let chars = ["#", "&", "+", "-", "\u00A0"];
+        let chars = [b.f, "&", b.c, b.h, "\u00A0"];
         let sthis = this;
         
         for (let i=0; i<1024; i++) {
@@ -5749,8 +5841,8 @@ class Game {
                     new_ent.innate_primed_spells[i][1] = ps
                 })
 
-                let original_record_key = ent.id.toString() + "|" + (ent.name ? ent.name : new_ent.template.name);
-                let new_record_key = new_ent.id.toString() + "|" + new_ent.name;
+                let original_record_key = ent.id.toString() + b.v + (ent.name ? ent.name : new_ent.template.name);
+                let new_record_key = new_ent.id.toString() + b.v + new_ent.name;
 
                 new_game.recorded_damage[new_record_key] = new_game.recorded_damage[original_record_key];
 
@@ -7273,7 +7365,7 @@ ${names_str}\n[#666]----${renderer.make_location_path_string(sthis, clearance_x,
                 });
             }
 
-            let record_name = caster.id.toString() + "|" + caster.name;
+            let record_name = caster.id.toString() + b.v + caster.name;
             if (!this.recorded_damage[record_name]) {
                 this.recorded_damage[record_name] = {};
             }
@@ -8035,6 +8127,8 @@ function vmax(percent) {
 }
 
 function handle_resize(event) {
+    // if position optimisation is on, reset the canvas (!) after setting fontsize
+
     // scale font size such that total_size.x/y characters fit
     let vn_factor = 180;
     let font_upper_scale = 2;
@@ -8047,14 +8141,27 @@ function handle_resize(event) {
     // need to check for the smallest allowed font in both directions and pick the minimum
     let fontsize_y = font_upper_scale * vh(vn_factor) / renderer.total_size.y;
 
-    let fontsize = Math.min(fontsize_x, fontsize_y);
+    fontsize = Math.min(fontsize_x, fontsize_y);
 
     // console.log("fontsize before floor:", fontsize, "after: ", Math.floor(fontsize));
 
-    // MS Gothic: intervals of 1
+    // MS Gothic: intervals of 2 when using box drawing, 1 when not
     // Terminus: intervals of 6(?) needs more testing
     // nec_apc: intervals of 16
-    let fontsize_round = Math.floor(fontsize / 1) * 1;
+    let fontsize_round = Math.floor(fontsize / 2) * 2;
+    renderer.fontsiz = fontsize_round;
+
+    if (renderer.position_optimisation) {
+        renderer.setup();
+
+        let font_cvr_x = renderer.total_size.x * (fontsize_round/2);
+        let font_cvr_y = renderer.total_size.y * fontsize_round;
+
+        console.log(font_cvr_x, vw(100), ((vw(100) - font_cvr_x)/2) + "px");
+
+        document.getElementById("game").style.left = ((vw(100) - font_cvr_x)/2) + "px";
+        document.getElementById("game").style.top = (94 + (vh(100) - font_cvr_y)/2) + "px";
+    }
 
     let gamelines = document.getElementById("gamelines");
     let game = document.getElementById("game");
