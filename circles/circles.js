@@ -698,6 +698,10 @@ function game_loop() {
         lose_timer = 0;
     }
 
+    if (mouse_position) {
+        bdp();
+    }
+
     let calc_end_time = Date.now();
 
     time_deltas.push(delta_time);
@@ -756,29 +760,29 @@ let highscore_ever = 0;
 
 let lose_timer = 0;
 
+let bdp = function() {
+    ball_drop_pos = mouse_position.div(pixels_per_cm)
+    ball_drop_pos.y = Math.floor(board.size.y * 0.2);
+
+    ball_drop_pos.x = Math.max(MergeGameBall.level_properties[Math.min(MergeGameBall.level_properties.length-1, next_ball_level)].radius, Math.min(
+        board.size.x - MergeGameBall.level_properties[Math.min(MergeGameBall.level_properties.length-1, next_ball_level)].radius, ball_drop_pos.x
+    ))
+}
+
+let db = function() {
+    if (ball_drop_cd <= 0) {
+        board.spawn_ball(
+            new MergeGameBall(next_ball_level),
+            ball_drop_pos
+        )
+
+        next_ball_level = random_int(0, highest_ball_level);
+        ball_drop_cd = 0.25;
+    }
+}
+
 document.addEventListener("DOMContentLoaded", function() {
     get_canvases();
-
-    bdp = function() {
-        ball_drop_pos = mouse_position.div(pixels_per_cm)
-        ball_drop_pos.y = Math.floor(board.size.y * 0.2);
-
-        ball_drop_pos.x = Math.max(MergeGameBall.level_properties[Math.min(MergeGameBall.level_properties.length-1, next_ball_level)].radius, Math.min(
-            board.size.x - MergeGameBall.level_properties[Math.min(MergeGameBall.level_properties.length-1, next_ball_level)].radius, ball_drop_pos.x
-        ))
-    }
-
-    db = function() {
-        if (ball_drop_cd <= 0) {
-            board.spawn_ball(
-                new MergeGameBall(next_ball_level),
-                ball_drop_pos
-            )
-
-            next_ball_level = random_int(0, highest_ball_level);
-            ball_drop_cd = 0.25;
-        }
-    }
 
     layers.front.canvas.addEventListener("mousemove", function(event) {
         mouse_position = new Vector2(event.clientX-canvas_x, event.clientY-canvas_y);
