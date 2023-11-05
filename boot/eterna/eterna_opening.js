@@ -53,5 +53,3 @@ function load_icons() {
         }
     }, 1700);
 }
-
-load_eterna();

@@ -14,7 +14,7 @@ const bread_upgrades = {
         "id": "timespeed-plus",
         "desc": `All wheels spin <span class="yellow important">10%</span> faster. Percentage upgrades apply additively.`,
         "cost": 60,
-        "cost_mul": 1.42,
+        "cost_mul": 1.6,
         "currency": "bread",
         "affects": "timespeed",
         "fn": function(player, upgrade_count) {
@@ -31,7 +31,7 @@ const bread_upgrades = {
         "id": "timespeed-plus-2",
         "desc": `All wheels spin <span class="yellow important">1.05x</span> faster. Multiplier upgrades apply multiplicatively.`,
         "cost": 250,
-        "cost_mul": 1.5,
+        "cost_mul": 1.7,
         "currency": "bread",
         "affects": "timespeed",
         "fn": function(player, upgrade_count) {
@@ -48,7 +48,7 @@ const bread_upgrades = {
         "id": "bread-plus",
         "desc": `All <span class="important">Bread</span> gain is increased by <span class="yellow important">7%</span>.`,
         "cost": 10,
-        "cost_mul": 1.25,
+        "cost_mul": 1.4,
         "currency": "bread",
         "affects": "bread_mult",
         "fn": function(player, upgrade_count) {
@@ -65,7 +65,7 @@ const bread_upgrades = {
         "id": "orbs-plus",
         "desc": `All <span class="important">Orb</span> gain is increased by <span class="yellow important">1.01x</span>.`,
         "cost": 300,
-        "cost_mul": 1.1,
+        "cost_mul": 1.3,
         "currency": "bread",
         "affects": "orbs_mult",
         "fn": function(player, upgrade_count) {
@@ -82,7 +82,7 @@ const bread_upgrades = {
         "id": "static-plus",
         "desc": `Gain <span class="yellow important">+1</span> of each currency whenever you gain it.`,
         "cost": 1000,
-        "cost_mul": 2,
+        "cost_mul": 2.2,
         "currency": "bread",
         "affects": "all_plus",
         "fn": function(player, upgrade_count) {
@@ -99,7 +99,7 @@ const bread_upgrades = {
         "id": "bread-plus-from-all",
         "desc": `Gain more <span class="important">Bread</span> based on your <span class="important">Orb</span> value (<span class="yellow important">+0.25%</span> per <span class="important">Orb</span> per upgrade level)`,
         "cost": 100,
-        "cost_mul": 1.5,
+        "cost_mul": 1.9,
         "currency": "orbs",
         "affects": "bread_mult",
         "fn": function(player, upgrade_count) {
