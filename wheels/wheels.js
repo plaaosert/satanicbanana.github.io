@@ -386,7 +386,7 @@ const wheel_datas = [
             win_currency("insanium", 13),
             function(wheel, reward_id, player) {
                 // bones
-                SKULL();
+                SKULL("img/icons/BONES.png");
             },
             win_currency("orbs", 2),
             function(wheel, reward_id, player) {
@@ -723,9 +723,9 @@ function update_currency_view(player) {
     last_currency_values = {...player.currencies}
 }
 
-function SKULL() {
+function SKULL(url) {
     let img = document.createElement("img");
-    img.src = "img/icons/BONES.png";
+    img.src = url;
     img.className = "SKULL";
 
     document.body.appendChild(img);
