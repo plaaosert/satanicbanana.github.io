@@ -29,7 +29,7 @@ function load_icons() {
 
     // play opening sound (we allowed sound with the click so we can just play it)
     setTimeout(function() {
-        var audio = new Audio('eterna/audio/startup.mp3');
+        var audio = new Audio('audio/startup.mp3');
         audio.play();
     }, 1400);
 
