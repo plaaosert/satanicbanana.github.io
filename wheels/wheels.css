@@ -254,7 +254,7 @@ body {
 }
 
 .bread-upgrade-tab-button.expanded {
-	right: calc(-4px + 25% + max(450px, 50%));
+	right: calc(-3px + 25% + max(450px, 50%));
 
 	background-color: #040;
 	color:#4f4;
@@ -262,7 +262,7 @@ body {
 
 .bread-upgrades-list {
 	position: absolute;
-	right: calc(-4px + 25%);
+	right: calc(-3px + 25%);
 	top: 8px;
 	
 	width: max(450px, 50%);

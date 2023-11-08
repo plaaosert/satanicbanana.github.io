@@ -369,13 +369,26 @@ class Game {
     // need to figure out some way to make wall vision work - currently the line stops asymmetrically when right up against a wall
     update_los() {
         let sr = this.player.vision_range+2
+        let adjs = [
+            new Vector2(1, 0),
+            new Vector2(1, 1),
+            new Vector2(0, 1),
+            new Vector2(-1, 1),
+            new Vector2(-1, 0),
+            new Vector2(-1, 1),
+            new Vector2(0, -1),
+            new Vector2(1, -1)
+        ]
+
+        let tiles_to_see = new Set();
+        let tiles_to_unsee = new Set();
 
         for (let xt=-sr; xt<sr; xt++) {
             for (let yt=-sr; yt<sr; yt++) {
                 let vec = new Vector2(xt, yt)
                 if (vec.sqr_magnitude() < (this.player.vision_range * this.player.vision_range)) {
                     let target = this.player.position.add(vec);
-                    this.board.stop_seeing_tile(target);
+                    tiles_to_unsee.add(target.hash_code());
 
                     let st = this;
                     let line = make_line(this.player.position, target, undefined, coords => {
@@ -388,16 +401,35 @@ class Game {
                     })
 
                     line.forEach(pos => {
-                        st.board.see_tile(pos);
+                        tiles_to_see.add(pos.hash_code());
+
+                        // also see any solid tiles around the tile if this tile isn't solid
+                        if (!st.board.get_tile(pos).blocks_los) {
+                            adjs.forEach(d => {
+                                let p2 = pos.add(d);
+                                if (p2.sqr_distance(this.player.position) < (this.player.vision_range * this.player.vision_range) && st.board.get_tile(p2).blocks_los) {
+                                    tiles_to_see.add(p2.hash_code())
+                                }
+                            })
+                        }
                     })
                 } else {
                     let target = this.player.position.add(vec);
-                    this.board.stop_seeing_tile(target);
+                    tiles_to_unsee.add(target.hash_code());
                 }
             }
         }
 
-        this.board.see_tile(this.player.position);
+        tiles_to_see.add(this.player.position.hash_code());
+
+        let sthis = this;
+        tiles_to_unsee.forEach(p => {
+            sthis.board.stop_seeing_tile(Vector2.from_hash_code(p));
+        })
+
+        tiles_to_see.forEach(p => {
+            sthis.board.see_tile(Vector2.from_hash_code(p));
+        })
     }
 }
 
@@ -546,7 +578,7 @@ board.set_pattern(new Vector2(117, 117), [
 generate(board, new Vector2(127, 127), new GenerationRules(
     22, 30, 8, 20, 0.1, 20, 30, [
         new Generator(basic_starting_room, Generator.GenType.ROOM, [0]),
-        new Generator(basic_path, Generator.GenType.PATH, [3]),
+        new Generator(basic_path, Generator.GenType.PATH, [1]),
     ]
 ))
 
