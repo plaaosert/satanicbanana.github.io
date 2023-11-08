@@ -617,7 +617,7 @@ function render_ui() {
     ctx.moveTo(0, pixels_per_cm * board.size.y * 0.3);
     ctx.lineTo(board.size.x * pixels_per_cm, pixels_per_cm * board.size.y * 0.3);
 
-    ctx.lineWidth = 4 + (Math.sin(Math.pow(lose_timer, 3)/1.5) * 2);
+    ctx.lineWidth = 4 + (Math.sin(Math.pow(Math.min(lose_timer, 5), 3)/1.5) * 2);
     ctx.strokeStyle = "#f44";
     
     ctx.stroke();
@@ -629,16 +629,29 @@ function render_ui() {
     canvas = layers.ui1.canvas;
     ctx = layers.ui1.ctx;
 
+    let offset = 9;
+    if (ball_drop_cd > 999) {
+        write_text(
+            ctx, `you lost `, 10, 24, Colour.red.css(), "nec_apc", 16
+        )
+
+        write_text(
+            ctx, `with `, 10+(offset*8), 24, Colour.white.css(), "nec_apc", 16
+        )
+
+        offset += 5
+    } else {
+        write_text(
+            ctx, `you have `, 10, 24, Colour.white.css(), "nec_apc", 16
+        )
+    }
+
     write_text(
-        ctx, `you have `, 10, 24, Colour.white.css(), "nec_apc", 16
+        ctx, `${format_number(score, NumberFormat.SCIENTIFIC)}`, 10+(offset*8), 24, Colour.green.css(), "nec_apc", 16
     )
 
     write_text(
-        ctx, `${format_number(score, NumberFormat.SCIENTIFIC)}`, 10+(9*8), 24, Colour.green.css(), "nec_apc", 16
-    )
-
-    write_text(
-        ctx, ` points :)`, 10+(9*8)+(`${format_number(score, NumberFormat.SCIENTIFIC)}`.length*8), 24, Colour.white.css(), "nec_apc", 16
+        ctx, ` points :)`, 10+(offset*8)+(`${format_number(score, NumberFormat.SCIENTIFIC)}`.length*8), 24, Colour.white.css(), "nec_apc", 16
     )
 
     write_text(
@@ -685,14 +698,18 @@ function game_loop() {
     let lose_threshold = board.size.y * 0.27;
     if (board.balls.some(ball => ball.position.y-ball.radius <= lose_threshold)) {
         lose_timer += delta_time / 1000;
-        if (lose_timer > 5) {
-            board.balls = [];
-            board.particles = [];
+        if (lose_timer > 5 && ball_drop_cd < 999) {
+            setTimeout(function() {
+                board.balls = [];
+                board.particles = [];
+    
+                score = 0;
+                next_ball_level = 0;
+                highest_ball_level = 3;
+                ball_drop_cd = 0.5;
+            }, 4000)
 
-            score = 0;
-            next_ball_level = 0;
-            highest_ball_level = 3;
-            ball_drop_cd = 0.5;
+            ball_drop_cd = 999999;
         }
     } else {
         lose_timer = 0;
