@@ -119,5 +119,8 @@ function switch_main(id_old, id_new) {
 	switch_txt.textContent = cnv;
 }
 
-document.getElementById("ocean").style.display = "inline";
-start_funcs["ocean"]();
+def = "ocean";
+document.addEventListener("DOMContentLoaded", function() {
+	start_funcs[def]();
+	document.getElementById(def).style.display = "inline";
+})

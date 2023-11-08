@@ -76,6 +76,25 @@ a.disabled:hover {
 	color: #4f4; 
 }
 
+.intro-link {
+	color: #0cf;
+}
+
+.changelog-title-major {
+	font-size: 32px;
+	color: #4f4;
+}
+
+.changelog-title-minor {
+	font-size: 32px;
+	color: #0ad;
+}
+
+.changelog-text-small {
+	font-size: 24px;
+	color: #ccc;
+}
+
 h1 a {
 	color: #4391de;
 }

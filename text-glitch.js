@@ -40,6 +40,11 @@ aims = {
 	"9":">> not complete just yet!",
 	"10":">> it's time to spin...",
 	"11":">> drop circles onto a field and watch them merge",
+	"12":">> are you lost...?",
+	"13":">> information about some non-web games",
+	"14":">> all my web games :-)",
+	"15":">> what's changed since last time?",
+	"16":">> go back",
 	"banner":"// \u00A0hello!\u00A0\u00A0 //"
 };
 
@@ -49,7 +54,9 @@ num_glitch_elements = Object.keys(aims).length;
 // then set their onmouseover and onmouseout to handler (defined below)
 for (var i = 1; i <= num_glitch_elements; i++) {
 	var l = document.getElementById(i == num_glitch_elements ? "banner" : i);
-	l.onmouseover = l.onmouseout = handler;
+	if (l) {
+		l.onmouseover = l.onmouseout = handler;
+	}
 }
 
 // "grow/shrink" intervals currently active on each element so that they can be stopped
@@ -69,8 +76,10 @@ evts = {};
 origs = {}
 for (var i = 1; i <= num_glitch_elements; i++) {
 	var l = document.getElementById(i == num_glitch_elements ? "banner" : i);
-	origs[(i == num_glitch_elements ? "banner" : i).toString()] = l.textContent;
-	evts[(i == num_glitch_elements ? "banner" : i).toString()] = null;
+	if (l) {
+		origs[(i == num_glitch_elements ? "banner" : i).toString()] = l.textContent;
+		evts[(i == num_glitch_elements ? "banner" : i).toString()] = null;
+	}
 }
 
 /*
