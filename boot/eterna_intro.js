@@ -63,7 +63,7 @@ messages = [
 ]
 
 function printFinish() {
-    window.location.href = "eterna.html";
+    window.location.href = "eterna/eterna.html";
 }
 
 printMessage();
