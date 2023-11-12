@@ -13,26 +13,73 @@
     <meta content="#cccccc" data-react-helmet="true" name="theme-color" />
 </head>
 <body>
-	<script src="eterna_opening.js"></script>
-	<script src="eterna_main.js"></script>
+	<!-- External helpers -->
+	<script src="../../shared/js/helpers.js"></script>
 
-	<div id="loginform" class="loginform" style="visibility:hidden">
-		<p class="loginform-title">Enter Credentials</p>
-		<div class="loginform-row">
-			<div class="loginform-img">
-				<img src="sprites/ui/icons/eterna_icon_shrunk.png" alt="logo" class="loginform-img-logo">
+	<!-- Static constants -->
+	<script src="js/eterna_constants.js"></script>
+
+	<!-- Set up filesystem and other backbones -->
+	<script src="js/eterna_opening.js"></script>
+	<script src="js/eterna_fs.js"></script>
+
+	<!-- Program definitions and kernels -->
+	<script src="js/programs/shared.js"></script>
+	<script src="js/programs/shell.js"></script>
+	<script src="js/programs/filebrowse.js"></script>
+	<script src="js/programs/login.js"></script>
+
+	<!-- Display / system managers -->
+	<script src="js/eterna_windowmanager.js"></script>
+	<script src="js/eterna_processes.js"></script>
+	<script src="js/eterna_desktop.js"></script>
+
+	<!-- Launcher -->
+	<script src="js/eterna_launcher.js"></script>
+
+	<div style="display:none">
+		<div id="loginform" class="loginform" style="visibility:hidden">
+			<p class="loginform-title">Enter Credentials</p>
+			<div class="loginform-row">
+				<div class="loginform-img">
+					<img src="sprites/ui/icons/eterna_icon_shrunk.png" alt="logo" class="loginform-img-logo">
+				</div>
+				<div class="loginform-content">
+					<p>Please enter your credentials to access this system.</p>
+			
+					<input type="text" disabled	id="username" value="paul.w"/>
+					<input type="password" disabled	id="password" value="you're not meant to be looking here :-)"/>
+					<button id="loginform-button" onclick="load_icons()">Log in</button>
+				</div>
 			</div>
-			<div class="loginform-content">
-				<p>Please enter your credentials to access this system.</p>
-		
-				<input type="text" disabled	id="username" value="paul.w"/>
-				<input type="password" disabled	id="password" value="you're not meant to be looking here :-)"/>
-				<button id="loginform-button" onclick="load_icons()">Log in</button>
+			<br>
+			<p class="warning">Be aware that this is an SNTL <span style="color:#b00">internal</span> system. It is a crime to access any internal SNTL system without explicit permission.<br>
+			<br><i style="font-weight: bold; color: #020;">Hey! This is plaao. This is all I have on this thing for now. Please return back to the <a href="../../index.html">home page.</a></i></p>
+		</div>
+
+		<div id="window-0" class="eterna-window eterna-window-default" style="width:503px; height:256px; left:0px; top:0px; font-size: 12px;">
+			<p class="wnd-title">Window Title</p>
+			<div class="wnd-content">
+				<img src="sprites/ui/icons/eterna_icon_shrunk.png" alt="logo" style="left:16px; top:16px;">
+				<div style="width: 384px; height: 128px; left: 96px; top: 16px;">
+					<p style="top: 0px">Please enter your credentials to access this system.</p>
+			
+					<input type="text" disabled	id="username" value="paul.w" style="top: 24px; width: 100%;"/>
+					<input type="password" disabled	id="password" value="you're not meant to be looking here :-)" style="top: 48px; width: 100%;"/>
+				</div>
+				<button id="loginform-button" onclick="load_icons()" style="left: 37.5%; top: 96px; width: 25%; height: 24px;">Log in</button>
+				<p style="bottom:16px; left:16px;">Be aware that this is an SNTL <span style="display:contents; color:#b00">internal</span> system. It is a crime to access any internal SNTL system without explicit permission.</p>
 			</div>
 		</div>
-		<br>
-		<p class="warning">Be aware that this is an SNTL <span style="color:#b00">internal</span> system. It is a crime to access any internal SNTL system without explicit permission.<br>
-		<br><i style="font-weight: bold; color: #020;">Hey! This is plaao. This is all I have on this thing for now. Please return back to the <a href="../index.html">home page.</a></i></p>
+
+		<div id="window-filebrowse-debug" class="eterna-window eterna-window-default" style="width:503px; height:256px; left:260px; top:360px; font-size: 12px;">
+			<div class="wnd-title-container">
+				<p class="wnd-title">Should be filebrowse</p>
+			</div>
+			<div class="wnd-content">
+				
+			</div>
+		</div>
 	</div>
 
 	<div class="left-bar">

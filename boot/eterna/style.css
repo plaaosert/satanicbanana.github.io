@@ -74,6 +74,83 @@ body {
     color: #fff;
 }
 
+.eterna-window {
+    position: absolute;
+}
+
+.eterna-window * {
+    position: absolute;
+    font-size: 12px;
+
+    /* box-shadow:0px 0px 0px 1px black inset; */
+}
+
+.eterna-window-default {
+    user-select: none;
+    --bgcol: #bbb;
+
+    background-color: var(--bgcol);
+    
+    border: 2px solid #000;
+
+    box-shadow: inset 1px 1px 1px 0 rgba(255,255,255,0.5), inset -1px -1px 1px 0 rgba(0,0,0,0.5), -2px 2px 0px 0px #333;
+    -moz-box-shadow: inset 1px 1px 1px 0 rgba(255,255,255,0.5), inset -1px -1px 1px 0 rgba(0,0,0,0.5), -2px 2px 0px 0px #333;
+}
+
+.eterna-window-default>.wnd-title-container {
+    margin: 2px;
+    padding: 2px 0px 2px 4px;
+
+    width: calc(100% - 9px);
+    height: 18px;
+
+    background-color: #00f;
+    background: linear-gradient(45deg, rgb(100, 100, 100), rgb(100, 100, 100) 80%);
+    font-weight: bold;
+    color: #fff;
+}
+
+.eterna-window-default.focused>.wnd-title-container {
+    background: linear-gradient(45deg, rgb(0,0,255), rgb(96, 96, 255) 80%);
+}
+
+.eterna-window-default>.wnd-title-container>.wnd-title {
+    font-size: 16px;
+}
+
+.eterna-window-default>.wnd-content {
+    width: calc(100% - 5px);
+    height: calc(100% - 29px);
+
+    left: 2px;
+    top: 26px;
+
+    background-color: #bbb;
+}
+
+.eterna-window-element-disabled {
+    filter: opacity(0.75)
+}
+
+.eterna-window-element-disabled * {
+    filter: opacity(0.75)
+}
+
+@keyframes flash {
+    0%,49.999% {opacity: 1;}
+    50%,100% {opacity: 0;}
+}
+
+@keyframes flash2 {
+    0%,49.999% {opacity: 1;}
+    50%,100% {opacity: 0;}
+}
+
+@keyframes nothing {
+    from {opacity: 1;}
+    to {opacity: 0.99;}
+}
+
 .left-bar {
     height: 100vh;
     width: fit-content;

@@ -1,21 +1,23 @@
+const LOADSPEED = 25;
+
 function load_eterna() {
     // Animate the background image
     setTimeout(function() {
         document.body.style.backgroundColor = "#00202F";
-    }, 1800);
+    }, 1800 / LOADSPEED);
 
     setTimeout(function() {
         document.body.style.backgroundColor = "#00404F";
-    }, 2400);
+    }, 2400 / LOADSPEED);
 
     setTimeout(function() {
         document.body.style.backgroundColor = "#00807F";
-    }, 3200);
+    }, 3200 / LOADSPEED);
 
     setTimeout(function() {
         // Make "loginform" visible
         document.getElementById("loginform").style.visibility = "visible";
-    }, 4000);
+    }, 4000 / LOADSPEED);
 }
 
 function load_icons() {
@@ -25,13 +27,13 @@ function load_icons() {
     // Make "loginform" invisible
     setTimeout(function() {
         document.getElementById("loginform").style.display = "none";
-    }, 200);
+    }, 200 / LOADSPEED);
 
     // play opening sound (we allowed sound with the click so we can just play it)
     setTimeout(function() {
         var audio = new Audio('audio/startup.mp3');
         audio.play();
-    }, 1400);
+    }, 1400 / LOADSPEED);
 
     setTimeout(function() {
         // make all the icons visible, loading each one in turn with a random interval between
@@ -46,10 +48,10 @@ function load_icons() {
 
                 setTimeout(function() {
                     icon.style.visibility = "visible";
-                }, time_waited);
+                }, time_waited / LOADSPEED);
             };
 
             f(i);
         }
-    }, 1700);
+    }, 1700 / LOADSPEED);
 }

@@ -1,8 +1,12 @@
-function vh(percent) {
+function vh(percent, absolute) {
     // topbar, bottombar 128px + 64px
+    let offset = 128 + 64;
+    if (absolute) {
+        offset = 0;
+    }
 
     var h = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-    return (percent * (h - 128 - 64)) / 100;
+    return (percent * (h - offset)) / 100;
 }
 
 function vw(percent) {
@@ -10,12 +14,12 @@ function vw(percent) {
     return (percent * w) / 100;
 }
 
-function vmin(percent) {
-    return Math.min(vh(percent), vw(percent));
+function vmin(percent, absolute) {
+    return Math.min(vh(percent, absolute), vw(percent));
 }
 
-function vmax(percent) {
-    return Math.max(vh(percent), vw(percent));
+function vmax(percent, absolute) {
+    return Math.max(vh(percent, absolute), vw(percent));
 }
 
 function in_rect(tl, br, pos) {
