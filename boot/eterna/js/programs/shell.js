@@ -72,6 +72,10 @@ function runcmd(cmd, data, parameters, files_ctx) {
             case "DELETE":
                 break;
 
+            case "ECHO":
+                data.text_lines.push(operands.join(" "));
+                break;
+
             case "LS": {
                 let fp = operands.join(" ");
                 fp = fp.trim();

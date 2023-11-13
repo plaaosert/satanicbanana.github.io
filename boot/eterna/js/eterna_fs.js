@@ -461,7 +461,7 @@ ctx.create_directory("/", "SYSTEM", new EternaFSPermissions(true, false)).enter(
         ctx.add_file("", "Clock.xct", "/SYSTEM/ICONS/debug_32x32.img\nKERNEL clock", new EternaFSPermissions(true, false))
         ctx.add_file("", "filebrowse.xct", "/SYSTEM/ICONS/debug_32x32.img\nKERNEL filebrowse", new EternaFSPermissions(true, false))
         
-        ctx.add_file("", "xcttest.xct", "/SYSTEM/ICONS/debug_32x32.img\nCONSOLELOG i'm working!")
+        ctx.add_file("", "xcttest.xct", "/SYSTEM/ICONS/debug_32x32.img\nCONSOLELOG i'm working")
         ctx.cd("..")
     }
 

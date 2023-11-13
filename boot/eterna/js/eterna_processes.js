@@ -22,12 +22,39 @@ let kernels = {
     "shell": default_shell_kernel,
     "filebrowse": default_filebrowse_kernel,
     "login": default_login_kernel,
+    "clock": default_clock_kernel
 }
 
 const ProcessAlert = {
     CLOSE: 1
 }
 
+const MouseDisplayTypes = {
+    HIDDEN: 0,
+    NORMAL: 1, // normal ass mouse
+    POINT: 2,  // like the index finger point
+    HAND: 3,  // open hand for grabbing
+    HAND_CLOSED: 4,  // hand grabbing something
+    RESIZE_H: 5,  // "↕"
+    RESIZE_V: 6, // "↔"
+    RESIZE_VH: 7, // do you think you can guess
+    DENY: 8,  // "no entry" icon
+}
+
+// some (all) cursors dont have an origin of 0,0 - offset them here
+const MouseOffsets = [
+    new Vector2(1, 1),
+    new Vector2(1, 1),
+    new Vector2(5, 1),
+    new Vector2(7, 7),
+    new Vector2(7, 7),
+    new Vector2(7, 7),
+    new Vector2(7, 7),
+    new Vector2(7, 7),
+    new Vector2(8, 7)
+]
+
+let mouse_type = MouseDisplayTypes.NORMAL;
 let mouse_pos = new Vector2(0, 0);
 
 let wnd_spawn_pos = new Vector2(48, 48);
@@ -152,11 +179,15 @@ class EternaProcessHandle {
 
 function setup_global_keybindings() {
     document.addEventListener("keydown", function(event) {
-        focused_window.data.keypresses.push({from: "container", typ: "down", evt: event})   
+        if (focused_window) {
+            focused_window.data.keypresses.push({from: "container", typ: "down", evt: event})   
+        }
     })
 
     document.addEventListener("keyup", function(event) {
-        focused_window.data.keypresses.push({from: "container", typ: "up", evt: event})
+        if (focused_window) {
+            focused_window.data.keypresses.push({from: "container", typ: "up", evt: event})
+        }
     })
 }
 
@@ -183,7 +214,15 @@ function check_processes() {
             }
 
             if (process.status.dragged) {
-                process.set_pos(mouse_pos.add(process.status.drag_offset));
+                // make sure it doesn't get dragged offscreen
+                let drag_pos = mouse_pos.add(process.status.drag_offset);
+
+                drag_pos = new Vector2(
+                    Math.max(0, Math.min(drag_pos.x, vw(100) - 1 - process.data.size.x)),
+                    Math.max(0, Math.min(drag_pos.y, vh(100, true) - 1 - process.data.size.y))
+                )
+
+                process.set_pos(drag_pos);
             }
 
             processes.push(process);
@@ -214,7 +253,11 @@ function start_process(name, parameters, user) {
 }
 
 function change_focused_window(to) {
-    if (focused_window && focused_window.id == to.id) {
+    if (focused_window && to && focused_window.id == to.id) {
+        return;
+    }
+
+    if (!focused_window && !to) {
         return;
     }
 
@@ -233,7 +276,7 @@ function change_focused_window(to) {
         let w = p.wnd.container;
 
         if (w) {
-            if (w.style.zIndex <= focused_window.wnd.container.style.zIndex) {
+            if (!focused_window || w.style.zIndex <= focused_window.wnd.container.style.zIndex) {
                 w.classList.remove("focused");
                 return;
             }
@@ -241,11 +284,11 @@ function change_focused_window(to) {
             w.style.zIndex = Math.max(0, w.style.zIndex-1);
             w.classList.remove("focused");
         } else {
-            console.log("where is wnd")
+            // pass
         }
     })
 
-    if (!to.kernel.prefs.always_on_top) {
+    if (to && !to.kernel.prefs.always_on_top) {
         to.wnd.container.style.zIndex = processes_iter.length;
         focused_window.wnd.container.classList.add("focused");
     }

@@ -44,6 +44,10 @@ document.addEventListener("DOMContentLoaded", function() {
         mouse_pos = new Vector2(evt.clientX, evt.clientY);
     })
 
+    document.getElementById("eterna-desktop").addEventListener("mousedown", function(evt) {
+        change_focused_window(null);
+    })
+
     setup_global_keybindings();
 
     setInterval(check_processes, 1000/60);
@@ -54,6 +58,8 @@ document.addEventListener("DOMContentLoaded", function() {
     start_process("filebrowse", {location:"/SYSTEM/PROGRAMS"}, cur_user_ctx.user);
 
     start_process("shell", {workdir:"/users/paul.w"}, cur_user_ctx.user);
+
+    start_process("clock", {}, cur_user_ctx.user);
 
     // start_process("login", {lock_user: "paul.w", lock_pass: "you shouldn't be looking here :-)"}, ctx);
 })
