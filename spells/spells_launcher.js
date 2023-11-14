@@ -122,8 +122,9 @@ game.player_spells = [
     */
 ]
 
-game.player_ent.max_mp = 10000;
-game.player_ent.mp = 10000;
+
+// game.player_ent.max_mp = 10000;
+// game.player_ent.mp = 10000;
 
 
 game.player_add_spells_to_inv([
