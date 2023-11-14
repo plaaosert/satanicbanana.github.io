@@ -15,7 +15,8 @@ let shell_display_markup = new EternaDisplayMarkupContainer(
                             fontSize: "16px",
                             color: "white",
                             whiteSpace: "pre-wrap",
-                            wordBread: "break-all"
+                            wordBreak: "break-all",
+                            lineHeight: "16px"
                         }, false
                     )
                 ),

@@ -120,6 +120,10 @@ class EternaProcessHandle {
         window_content.classList.add("wnd-content");
         container.appendChild(window_content);
 
+        let vertical_resize_bar = document.createElement("div");
+        vertical_resize_bar.classList.add("vertical-resize-bar");
+        container.appendChild(vertical_resize_bar);
+
         // probably stick in some special div at some point
         document.body.appendChild(container);
 
