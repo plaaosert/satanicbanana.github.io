@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", function() {
     setInterval(check_processes, 1000/60);
 
     start_process("filebrowse", {}, cur_user_ctx.user);
-    start_process("filebrowse", {}, cur_user_ctx.user);
+    start_process("filebrowse", {location:"/SYSTEM/ICONS/CURSOR/triptych"}, cur_user_ctx.user);
     start_process("filebrowse", {location:"/users/paul.w/Desktop"}, cur_user_ctx.user);
     start_process("filebrowse", {location:"/SYSTEM/PROGRAMS"}, cur_user_ctx.user);
 

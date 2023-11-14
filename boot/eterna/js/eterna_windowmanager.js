@@ -122,7 +122,12 @@ function parse_styles(handle, target, styles) {
                 let img_content = handle.files_ctx.get_file(styles[k]).get_content();
                 target.style[k] = `url("${img_content}")`;
             } else if (k.startsWith("ott-tag-")) {
-                target[k.split("ott-tag-")[1]] = styles[k];
+                let ct = styles[k];
+                if (k == "ott-tag-src") {
+                    ct = handle.files_ctx.get_file(ct).get_content();
+                }
+
+                target[k.split("ott-tag-")[1]] = ct;
             } else {
                 target.style[k] = styles[k];
             }

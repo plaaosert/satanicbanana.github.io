@@ -375,13 +375,14 @@ let default_filebrowse_kernel = new EternaProcessKernel(
 
                         let element_children = [
                             new EternaDisplayMarkupElement(
-                                new EternaDisplayObject(`file${index}_img`, "div", {
+                                new EternaDisplayObject(`file${index}_img`, "img", {
                                     left: `${data.file_icon_size/2}px`,
                                     width: `${data.file_icon_size}px`,
                                     height: `${data.file_icon_size}px`,
-                                    backgroundImage: file_sprite,
+                                    "ott-tag-src": file_sprite,
+                                    objectFit: "contain",
                                     backgroundColor: "#fff",
-                                    backgroundSize: `${data.file_icon_size}px`,
+                                    // backgroundSize: `cover`,
                                     border: file.get_ext() == "img" ? "1px solid #888" : ""
                                 })
                             ),
