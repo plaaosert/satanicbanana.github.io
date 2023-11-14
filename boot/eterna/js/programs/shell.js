@@ -11,7 +11,7 @@ let shell_display_markup = new EternaDisplayMarkupContainer(
                     EternaDisplayObject.label(
                         "text_lines", "I should be replaced.",
                         2, 2, "calc(100% - 4px)", "calc(100% - 4px)", {
-                            fontFamily: "nec_apc, \"MS Gothic\", monospace",
+                            fontFamily: "\"MS Gothic\", nec_apc, monospace",
                             fontSize: "16px",
                             color: "white",
                             whiteSpace: "pre-wrap",
@@ -387,8 +387,8 @@ let default_shell_kernel = new EternaProcessKernel(
             let cur_x = 0;
             let cur_y = 1;
 
-            let max_x = Math.floor((data.size.x-9) / 8);
-            let max_y = Math.floor((data.size.y-33) / 16) + 1;
+            let max_x = Math.floor((data.content_size.x-4) / 8);
+            let max_y = Math.floor((data.content_size.y-4) / 16) + 1;
 
             let content_wrapped = "";
 

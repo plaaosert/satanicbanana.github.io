@@ -27,7 +27,7 @@ let clock_display_markup = new EternaDisplayMarkupContainer(
                             `50%`, `50%`,
                             9, 2, {
                                 backgroundColor: "black",
-                                transform: `rotate(${30*v}deg)`,
+                                transform: ``,
                                 transformOrigin: `0% 0%`
                             }
                         )
@@ -77,8 +77,10 @@ let default_clock_kernel = new EternaProcessKernel(
     clock_display_markup,
     // spawn
     function(data, parameters, files_ctx) {
-        data.size.x = data.size.y;
-        data.size.y = data.size.y + 24;
+        data.set_content_size(new Vector2(
+            data.content_size.y,
+            data.content_size.y
+        ))
 
         data.ready_to_close = false;
         
@@ -116,8 +118,8 @@ let default_clock_kernel = new EternaProcessKernel(
         let paint_data = {edits: []};
 
         // window styling rules
-        let real_xsiz = (data.size.x-5);
-        let real_ysiz = (data.size.y-33);
+        let real_xsiz = data.content_size.x;
+        let real_ysiz = data.content_size.y;
 
         if (data.need_initial_render) {
             // get the window size and use it to set the rotation offset of all 12 spokes

@@ -47,14 +47,20 @@ class EternaProcessHandle {
         this.started = false;
 
         this.kernel = kernel;
+        let sthis = this;
         this.data = {
+            set_content_size: function(newsiz) {
+                let diff = sthis.data.size.sub(sthis.data.content_size);
+                sthis.set_size(newsiz.add(diff), true);
+            },
             window_style: WindowStyle.DEFAULT,
             size: wnd_default_size.copy(),
+            content_size: wnd_default_size.copy(),
             position: wnd_spawn_pos.copy(),
             clicks: [],
             doubleclicks: [],
             keypresses: [],
-            alerts: []
+            alerts: [],
         };
 
         wnd_spawn_pos = wnd_spawn_pos.add(wnd_spawn_add);
@@ -76,22 +82,38 @@ class EternaProcessHandle {
         }
     }
 
-    set_pos(to) {
+    set_pos(to, do_not_alert) {
         this.data.position = to;
 
-        this.wnd.container.style.left = `${to.x}px`;
-        this.wnd.container.style.top = `${to.y}px`;
-    
-        this.data.alerts.push(ProcessAlert.MOVED);
+        if (this.wnd.container) {
+            this.wnd.container.style.left = `${to.x}px`;
+            this.wnd.container.style.top = `${to.y}px`;
+        }
+
+        if (!do_not_alert) {
+            this.data.alerts.push(ProcessAlert.MOVED);
+        }
     }
 
-    set_size(to) {
+    set_size(to, do_not_alert) {
         this.data.size = to;
 
-        this.wnd.container.style.width = `${to.x}px`;
-        this.wnd.container.style.height = `${to.y}px`;
+        if (this.wnd.container) {
+            this.wnd.container.style.width = `${to.x}px`;
+            this.wnd.container.style.height = `${to.y}px`;
+        }
 
-        this.data.alerts.push(ProcessAlert.RESIZED);
+        if (this.wnd.container) {
+            let r = this.wnd.container.getBoundingClientRect();
+            this.data.content_size = new Vector2(
+                r.width,
+                r.height,
+            )
+        }
+
+        if (!do_not_alert) {
+            this.data.alerts.push(ProcessAlert.RESIZED);
+        }
     }
 
     make_window() {
@@ -154,6 +176,12 @@ class EternaProcessHandle {
         this.wnd.container = container;
         this.wnd.title = title_text;
         this.wnd.content = window_content;
+
+        let r = window_content.getBoundingClientRect();
+        this.data.content_size = new Vector2(
+            r.width,
+            r.height,
+        )
 
         this.query_obj.get = function(id) {
             return sthis.wnd.content.querySelector(`#${id}`);

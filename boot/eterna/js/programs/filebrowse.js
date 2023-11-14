@@ -107,7 +107,7 @@ let filebrowse_display_markup = new EternaDisplayMarkupContainer(
                         "selected_file_options_container",
                         8, 26, "calc(100% - 16px)", 18*4, {
                             "ott-tag-className": "eterna-window-element-disabled",
-                            cursortype: MouseDisplayTypes.NORMAL
+                            cursortype: MouseDisplayTypes.DENY
                         }, false
                     ), ["Open_with---", "Properties", "Cut", "Copy", "Rename", "Delete"].map((t, i) => {
                         let children = [
@@ -336,7 +336,7 @@ let default_filebrowse_kernel = new EternaProcessKernel(
             paint_data.removals = ["files_list"]
 
             let sidebar_size = 144;
-            let main_size = data.size.x - sidebar_size - 10;
+            let main_size = data.content_size.x - sidebar_size;
 
             if (!data.cant_display && data.files.length > 0) {
                 paint_data.additions = new EternaDisplayMarkupElement(

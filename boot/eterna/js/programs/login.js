@@ -63,8 +63,7 @@ let default_login_kernel = new EternaProcessKernel(
     function(data, parameters, files_ctx) {
         data.window_style = WindowStyle.DEFAULT_NOCONTROLBUTTONS;
 
-        data.size.x = 400;
-        data.size.y = 192;
+        data.set_content_size(new Vector2(400, 192));
 
         data.position = windowsiz.div(2).sub(data.size.div(2));
 
