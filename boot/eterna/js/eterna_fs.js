@@ -236,10 +236,10 @@ class EternaFSContainerEditContext {
         return this.fs.get_object(this, fpath);
     }
 
-    add_file(path, name, permissions, content) {
+    add_file(path, name, content, permissions) {
         let fpath = path ? path : this.current_location
 
-        this.fs.add_file(this, fpath, name, permissions, content);
+        this.fs.add_file(this, fpath, name, content, permissions);
         this.temp_next_loc = name;
 
         return this;
@@ -445,6 +445,10 @@ ctx.create_directory("/", "SYSTEM", new EternaFSPermissions(true, false)).enter(
         ctx.cd("..")
     }
 
+    ctx.create_directory("", "test", new EternaFSPermissions(true, true)).enter(); {
+        ctx.cd("..")
+    }
+
     ctx.create_directory("", "ICONS", new EternaFSPermissions(true, false)).enter(); {
         ctx.add_file("", "debug_16x16.img", debug_16x16);
         ctx.add_file("", "debug_32x32.img", debug_32x32);
@@ -454,7 +458,22 @@ ctx.create_directory("/", "SYSTEM", new EternaFSPermissions(true, false)).enter(
 
         ctx.add_file("", "eterna_icon_large.img", eterna_icon);
         ctx.add_file("", "shortcut_icon.img", shortcut_icon);
-        ctx.cd("..")
+
+        ctx.create_directory("", "CURSOR").enter(); {
+            Object.keys(cursor_datas).forEach(k => {
+                ctx.create_directory("", k, new EternaFSPermissions(true, false)).enter(); {
+                    for (let i=0; i<9; i++) {
+                        ctx.add_file("", `${i}.img`, cursor_datas[k][i], new EternaFSPermissions(true, false));
+                    }
+                }
+
+                ctx.cd("..");
+            })
+
+            ctx.cd("..");
+        }
+
+        ctx.cd("..");
     }
 
     ctx.create_directory("", "PROGRAMS", new EternaFSPermissions(true, false)).enter(); {
