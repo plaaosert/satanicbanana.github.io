@@ -2,17 +2,18 @@ body {
     font-family: "Tahoma", "Arial", "Helvetica", "sans-serif";
     color: #000;
     font-smooth: never;
+
+    cursor:none;
 }
 
 * {
-    /*
+    cursor: none;
     image-rendering: optimizeSpeed;
     image-rendering: -moz-crisp-edges;
     image-rendering: -webkit-optimize-contrast;
     image-rendering: optimize-contrast;
     image-rendering: pixelated;
     -ms-interpolation-mode: nearest-neighbor;
-    */
 }
 
 .loginform {
@@ -83,6 +84,13 @@ body {
     background-color: #00f;
     font-weight: bold;
     color: #fff;
+}
+
+.eterna-cursor {
+    position: absolute;
+    pointer-events: none;
+    z-index: 100000;
+    transform: scale(1);
 }
 
 .eterna-window {

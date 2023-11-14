@@ -748,7 +748,7 @@ function game_loop() {
     wait_durations.push(time_to_wait);
     wait_durations = wait_durations.slice(-120);
 
-    setTimeout(game_loop, time_to_wait);
+    window.requestAnimationFrame(game_loop);
 }
 
 // TODO - figure out how to draw the individual countries, then figure out a method to show a zoomed view of the map at any zoom level and zoom center

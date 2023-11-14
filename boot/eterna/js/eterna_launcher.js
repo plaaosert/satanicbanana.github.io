@@ -2,6 +2,7 @@ let debug_filebrowse_handle = null;
 let cur_user_ctx = {user: {name: "paul.w"}};
 
 let windowsiz = new Vector2(1920, 1080);
+let cursor_obj = null;
 
 document.addEventListener("DOMContentLoaded", function() {
     load_eterna();
@@ -40,24 +41,56 @@ document.addEventListener("DOMContentLoaded", function() {
 
     windowsiz = new Vector2(vw(100), vh(100, true));
 
+    document.addEventListener("mousedown", function(evt) {
+        mouse_currently_down = true;
+    })
+
+    document.addEventListener("touchstart", function(evt) {
+        mouse_currently_down = true;
+        mouse_pos = new Vector2(evt.changedTouches[0].clientX, evt.changedTouches[0].clientY);
+    })
+
+    document.addEventListener("touchmove", function(evt) {
+        mouse_pos = new Vector2(evt.changedTouches[0].clientX, evt.changedTouches[0].clientY);
+    })
+
     document.addEventListener("mousemove", function(evt) {
         mouse_pos = new Vector2(evt.clientX, evt.clientY);
+        mouse_currently_down = evt.buttons != 0;
     })
+
+    document.addEventListener("touchend", function(evt) {
+        mouse_currently_down = false;
+    })
+
+    document.addEventListener("mouseup", function(evt) {
+        mouse_currently_down = false;
+    })
+
+    window.addEventListener("resize", handle_resize);
 
     document.getElementById("eterna-desktop").addEventListener("mousedown", function(evt) {
         change_focused_window(null);
     })
 
+    cursor_obj = document.getElementById("eterna-cursor");
+
     setup_global_keybindings();
 
-    setInterval(check_processes, 1000/60);
+    let anim = function() {
+        update_desktop();
+        check_processes();
+        window.requestAnimationFrame(anim);
+    }
+
+    window.requestAnimationFrame(anim);
 
     start_process("filebrowse", {}, cur_user_ctx.user);
     start_process("filebrowse", {location:"/SYSTEM/ICONS/CURSOR/triptych"}, cur_user_ctx.user);
-    start_process("filebrowse", {location:"/users/paul.w/Desktop"}, cur_user_ctx.user);
+    start_process("filebrowse", {location:"~/Desktop"}, cur_user_ctx.user);
     start_process("filebrowse", {location:"/SYSTEM/PROGRAMS"}, cur_user_ctx.user);
 
-    start_process("shell", {workdir:"/users/paul.w"}, cur_user_ctx.user);
+    start_process("shell", {workdir:"~"}, cur_user_ctx.user);
 
     start_process("clock", {}, cur_user_ctx.user);
 

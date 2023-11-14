@@ -4,6 +4,13 @@ changes = [
         "title": "Redesigned site",
         "typ": "major",
         "desc": "Added the changelog and decluttered the landing page a bit,\nincluding moving games into their own subcategory.\nFinally retired the oldass infopages for things I don't use anymore."
+    },
+
+    {
+        "ts": 1699928082,
+        "title": "Reworked rendering for games",
+        "typ": "minor",
+        "desc": "I just found out about window.requestAnimationFrame(). That's kind of cool.\nAll the newer plaao.net games (wheels, circles and\nall other incomplete projects) now use that!"
     }
 ]
 

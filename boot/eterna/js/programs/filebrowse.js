@@ -106,7 +106,8 @@ let filebrowse_display_markup = new EternaDisplayMarkupContainer(
                     EternaDisplayObject.div(
                         "selected_file_options_container",
                         8, 26, "calc(100% - 16px)", 18*4, {
-                            "ott-tag-className": "eterna-window-element-disabled"
+                            "ott-tag-className": "eterna-window-element-disabled",
+                            cursortype: MouseDisplayTypes.NORMAL
                         }, false
                     ), ["Open_with---", "Properties", "Cut", "Copy", "Rename", "Delete"].map((t, i) => {
                         let children = [
@@ -224,6 +225,9 @@ let default_filebrowse_kernel = new EternaProcessKernel(
         data.file_icon_size = parameters.file_icon_size ? parameters.file_icon_size : 32;
         data.curpath = parameters.location ? parameters.location : "/";
         data.curloc = files_ctx.get_file(data.curpath);
+
+        data.curpath = data.curloc.get_abs_path();
+
         data.files = [];
         data.need_refresh = true;
         data.ready_to_close = false;

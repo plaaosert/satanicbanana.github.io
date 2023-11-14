@@ -47,7 +47,7 @@ class EternaFSPermissions {
 
 // "safe", "server code"
 class EternaFSContainer {
-    static name_legal_regex = new RegExp("^\\w[\\w\\-\\_\\.]*(?:\\.\\w\\w\\w)?$");
+    static name_legal_regex = new RegExp("^[\\w\\-\\_\\.]+(?:\\.\\w\\w\\w)?$");
     static name_is_legal(name) {
         return this.name_legal_regex.test(name);
     }
@@ -73,9 +73,13 @@ class EternaFSContainer {
         return s;
     }
 
-    _resolve_path(path) {
-        // remove any double slashes here
-        let segs = path.replaceAll(/\/+/g, "/").split("/");
+    _resolve_path(ctx, path) {
+        // remove any double slashes here and
+        // expand out ~ to the user directory
+        let segs = path.replaceAll(/\/+/g, "/").replaceAll(
+            "~", `/users/${ctx.user.name}`
+        ).split("/");
+        
         let final_segs = [];
         segs.forEach(s => {
             switch (s) {
@@ -96,7 +100,7 @@ class EternaFSContainer {
     }
 
     _get_object(ctx, path) {
-        let segs = this._resolve_path(path);
+        let segs = this._resolve_path(ctx, path);
         let location = fs.root;
         segs.forEach(s => {
             let n = location.get_object(s);
@@ -133,8 +137,37 @@ class EternaFSContainer {
         }
     }
 
+    _write_to_file(ctx, path, data, clear, cursor_pos) {
+        let location = this._get_object(ctx, path);
+
+        if (location.can_write(ctx.user)) {
+            let content = location.get_content();
+            let cpos = cursor_pos ? cursor_pos : (
+                clear ? 0 : content.length
+            );
+
+            let new_content = data;
+
+            if (!clear) {
+                let new_content = content.slice(0, cpos) + data + content.slice(cpos);
+            }
+
+            location.set_content(new_content);
+        } else {
+            throw new EternaFSNoPermissionsError("the user in the current context cannot edit this object's contents");
+        }
+    }
+
     _parse_str(str) {
         return `${str}`;
+    }
+
+    _parse_int(v) {
+        if (!isNaN(v)) {
+            return Number.parseInt(v);
+        } else {
+            return 0;
+        }
     }
 
     _parse_permissions(permissions) {
@@ -146,7 +179,7 @@ class EternaFSContainer {
     }
 
     resolve_path(ctx, path) {
-        return this._resolve_path(this._parse_str(path));
+        return this._resolve_path(ctx, this._parse_str(path));
     }
 
     add_file(ctx, path, name, content, permissions) {
@@ -166,6 +199,14 @@ class EternaFSContainer {
     remove_object(ctx, path, recursive) {
         // need to walk the children of the object and delete as necessary
         // if the children of an object are not empty, we cannot delete the object
+    }
+
+    write_to_file(ctx, path, data, clear, cursor_pos) {
+        this._write_to_file(
+            ctx, this._parse_str(path),
+            this._parse_str(data), clear ? true : false,
+            this._parse_int(cursor_pos)
+        )
     }
 
     make_context(whoami) {
@@ -253,6 +294,12 @@ class EternaFSContainerEditContext {
 
         return this;
     }
+
+    write_to_file(path, data, clear, cursor_pos) {
+        this.fs.write_to_file(
+            this, path, data, clear, cursor_pos
+        )
+    }
 }
 
 class EternaFSObject {
@@ -305,6 +352,10 @@ class EternaFSObject {
         throw new EternaFSIllegalOperationError("object does not support this function");
     }
 
+    set_content() {
+        throw new EternaFSIllegalOperationError("object does not support this function");
+    }
+
     remove_object(objn) {
         throw new EternaFSIllegalOperationError("object does not support this function");
     }
@@ -322,6 +373,10 @@ class EternaFSFile extends EternaFSObject {
 
     get_content() {
         return this.data.content;
+    }
+
+    set_content(value) {
+        this.data.content = value; 
     }
 }
 
@@ -490,6 +545,11 @@ ctx.create_directory("/", "SYSTEM", new EternaFSPermissions(true, false)).enter(
 ctx.create_directory("/", "users", new EternaFSPermissions(true, false)).enter(); {
     ctx.create_directory("", "paul.w").enter().change_owner("", "paul.w"); {
         paul_ctx.cd("/users/paul.w");
+        paul_ctx.create_directory("", ".configs").enter(); {
+            paul_ctx.add_file("", "cursor.con", "source|/SYSTEM/ICONS/CURSOR/sntl/");
+            paul_ctx.cd("..")
+        }
+
         paul_ctx.create_directory("", "Desktop").enter(); {
             paul_ctx.add_file("", "Trash.lin", "/SYSTEM/ICONS/debug_32x32.img\n/SYSTEM/DAT/FLDR/TDEL/TRASH/")
             paul_ctx.add_file("", "Tools.lin", "/SYSTEM/ICONS/debug_foldericon.img\n/users/paul.w/Tools/")

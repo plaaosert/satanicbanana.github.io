@@ -627,7 +627,7 @@ function game_loop() {
     wait_durations.push(time_to_wait);
     wait_durations = wait_durations.slice(-120);
 
-    setTimeout(game_loop, time_to_wait);
+    window.requestAnimationFrame(game_loop);
 }
 
 document.addEventListener("DOMContentLoaded", function() {

@@ -117,7 +117,9 @@ function do_heartbeat(handle) {
 function parse_styles(handle, target, styles) {
     if (styles) {
         Object.keys(styles).forEach(k => {
-            if ((k == "background" || k == "backgroundImage") && styles[k].endsWith(".img")) {
+            if (k == "cursortype") {
+                cursor_change_bindings.get(handle.id).set(target.id, styles[k]);
+            } else if ((k == "background" || k == "backgroundImage") && styles[k].endsWith(".img")) {
                 // need to browse the filesystem. take the ctx from handle
                 let img_content = handle.files_ctx.get_file(styles[k]).get_content();
                 target.style[k] = `url("${img_content}")`;
@@ -175,10 +177,17 @@ function process_paint_result(handle, result) {
             let obj = add.object;
 
             let new_element = document.createElement(obj.typ);
+            new_element.id = obj.id;
+
+            new_element.addEventListener("mouseover", function() {
+                handle_element_mouse_event("mouseover", handle.id, new_element.id);
+            })
+
+            new_element.addEventListener("mouseleave", function() {
+                handle_element_mouse_event("mouseleave", handle.id, new_element.id);
+            })
 
             parse_styles(handle, new_element, obj.styles);
-
-            new_element.id = obj.id;
 
             if (obj.typ == "input") {
                 new_element.value = obj.content;

@@ -883,7 +883,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     let save_interval = Date.now() + 1000;
 
-    setInterval(function() {
+    let game_loop = function() {
         wheels.forEach(wheel => {
             if (wheel.update(loaded_player)) {
                 if (wheel.autospinning) {
@@ -907,5 +907,9 @@ document.addEventListener("DOMContentLoaded", function() {
             save_interval = Date.now() + 1000;
             save_all_data(loaded_player, wheels);
         }
-    }, 1000/60);
+
+        window.requestAnimationFrame(game_loop);
+    }
+
+    game_loop();
 })

@@ -80,7 +80,7 @@ function runcmd(cmd, data, parameters, files_ctx) {
                 let fp = operands.join(" ");
                 fp = fp.trim();
 
-                fp = fp.replaceAll("~", `/users/${files_ctx.user.name}/`)
+                // fp = fp.replaceAll("~", `/users/${files_ctx.user.name}/`)
 
                 let file_to_run = null;
                 if (fp) {
@@ -103,7 +103,7 @@ function runcmd(cmd, data, parameters, files_ctx) {
                 let fp = operands.join(" ");
                 fp = fp.trim();
 
-                fp = fp.replaceAll("~", `/users/${files_ctx.user.name}/`)
+                // fp = fp.replaceAll("~", `/users/${files_ctx.user.name}/`)
 
                 let file_to_run = null;
                 try {
@@ -297,6 +297,9 @@ let default_shell_kernel = new EternaProcessKernel(
     function(data, parameters, files_ctx) {
         // process commands if there are any
         data.workdir = parameters["workdir"] ? parameters["workdir"] : "/"
+        
+        data.workdir = files_ctx.get_object(data.workdir).get_abs_path();
+        
         data.ready_to_close = false;
         data.cmd_history = [];
         data.text_lines = [

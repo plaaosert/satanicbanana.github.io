@@ -48,7 +48,7 @@ function get_desktop_icons() {
     icons = [];
 
     // load every file in the current user's "Desktop" directory
-    let desktop_dir = fs.make_context(cur_user_ctx).get_file(`/users/${cur_user_ctx.user.name}/Desktop`);
+    let desktop_dir = fs.make_context(cur_user_ctx).get_file(`~/Desktop`);
     console.log(desktop_dir)
     desktop_dir.children.forEach(c => {
         console.log(c);

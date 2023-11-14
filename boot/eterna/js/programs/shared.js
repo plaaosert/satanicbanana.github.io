@@ -62,6 +62,10 @@ class EternaDisplayObject {
         this.disabled = disabled ? true : false;
         this.onclick_enabled = onclick_enabled ? true : false;
         this.keypress_enabled = keypress_enabled ? true : false;
+
+        if (this.onclick_enabled && !this.styles.cursortype) {
+            this.styles.cursortype = MouseDisplayTypes.POINT
+        }
     }
 
     to_initial_paint(parent_obj) {

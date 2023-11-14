@@ -25,35 +25,9 @@ let kernels = {
     "clock": default_clock_kernel
 }
 
-const ProcessAlert = {
-    CLOSE: 1
-}
+let cursor_change_bindings = new Map();
 
-const MouseDisplayTypes = {
-    HIDDEN: 0,
-    NORMAL: 1, // normal ass mouse
-    POINT: 2,  // like the index finger point
-    HAND: 3,  // open hand for grabbing
-    HAND_CLOSED: 4,  // hand grabbing something
-    RESIZE_H: 5,  // "↕"
-    RESIZE_V: 6, // "↔"
-    RESIZE_VH: 7, // do you think you can guess
-    DENY: 8,  // "no entry" icon
-}
-
-// some (all) cursors dont have an origin of 0,0 - offset them here
-const MouseOffsets = [
-    new Vector2(1, 1),
-    new Vector2(1, 1),
-    new Vector2(5, 1),
-    new Vector2(7, 7),
-    new Vector2(7, 7),
-    new Vector2(7, 7),
-    new Vector2(7, 7),
-    new Vector2(7, 7),
-    new Vector2(8, 7)
-]
-
+let last_mouse_type = MouseDisplayTypes.HIDDEN;
 let mouse_type = MouseDisplayTypes.NORMAL;
 let mouse_pos = new Vector2(0, 0);
 
@@ -61,6 +35,7 @@ let wnd_spawn_pos = new Vector2(48, 48);
 let wnd_spawn_add = new Vector2(24, 24);
 
 let wnd_default_size = new Vector2(552, 384);
+let mouse_currently_down = false;
 
 class EternaProcessHandle {
     static id_inc = 0;
@@ -106,6 +81,8 @@ class EternaProcessHandle {
 
         this.wnd.container.style.left = `${to.x}px`;
         this.wnd.container.style.top = `${to.y}px`;
+    
+        this.data.alerts.push(ProcessAlert.MOVED);
     }
 
     set_size(to) {
@@ -113,6 +90,8 @@ class EternaProcessHandle {
 
         this.wnd.container.style.width = `${to.x}px`;
         this.wnd.container.style.height = `${to.y}px`;
+
+        this.data.alerts.push(ProcessAlert.RESIZED);
     }
 
     make_window() {
@@ -151,6 +130,14 @@ class EternaProcessHandle {
             change_focused_window(sthis);
         });
 
+        title_container.addEventListener("mouseenter", function() {
+            mouse_type = MouseDisplayTypes.HAND;
+        });
+
+        title_container.addEventListener("mouseleave", function() {
+            mouse_type = MouseDisplayTypes.NORMAL;
+        })
+
         title_container.addEventListener("mousedown", function() {
             sthis.status.dragged = !sthis.kernel.prefs.disallow_move ? true : false;
             sthis.status.drag_offset = sthis.data.position.sub(mouse_pos)
@@ -185,10 +172,93 @@ function setup_global_keybindings() {
     })
 
     document.addEventListener("keyup", function(event) {
+        if (event.code == "KeyQ") {
+            fs.make_context(cur_user_ctx).write_to_file(
+                "~/.configs/cursor.con",
+                "source|/SYSTEM/ICONS/CURSOR/sntl/", true
+            )
+            
+            last_mouse_type = MouseDisplayTypes.HIDDEN;
+        }
+
+        if (event.code == "KeyA") {
+            fs.make_context(cur_user_ctx).write_to_file(
+                "~/.configs/cursor.con",
+                "source|/SYSTEM/ICONS/CURSOR/triptych/", true
+            )
+
+            last_mouse_type = MouseDisplayTypes.HIDDEN;
+        }
+
+        if (event.code == "KeyW") {
+            mouse_type = (mouse_type + 1) % 9;
+        }
+
+        if (event.code == "KeyS") {
+            mouse_type = (mouse_type - 1) % 9;
+            if (mouse_type < 0) {
+                mouse_type += 9;
+            }
+        }
+
         if (focused_window) {
             focused_window.data.keypresses.push({from: "container", typ: "up", evt: event})
         }
     })
+}
+
+function update_desktop() {
+    // cursor and icons
+    // icons will just link into the eterna_desktop functions
+    
+    // cursor
+    if (cursor_obj ) {
+        let mouse_type_final = mouse_type;
+        if (mouse_type == MouseDisplayTypes.HAND && processes.some(p => p.status.dragged)) {
+            mouse_type_final = MouseDisplayTypes.HAND_CLOSED;
+        }
+
+        if (last_mouse_type != mouse_type_final) {
+            // need to update the cursor obj
+            // load the cursor source from user directory -> .configs/cursor.con
+            last_mouse_type = mouse_type_final;
+            let fctx = fs.make_context(cur_user_ctx);
+
+            let config_content = fctx.get_file("~/.configs/cursor.con").get_content();
+            let config_lines = config_content.split("\n");
+            let config = {};
+            config_lines.forEach(line => {
+                let sp = line.split("|", 2);
+                config[sp[0]] = sp[1];
+            })
+
+            let cursorpath = config["source"];
+
+            let cursor_img = fctx.get_file(`${cursorpath}/${mouse_type_final}.img`).get_content();
+            cursor_obj.src = `${cursor_img}`;
+        }
+
+        // set cursor position, include offset
+        let cursor_obj_pos = mouse_pos.sub(MouseOffsets[mouse_type_final]);
+
+        cursor_obj.style.left = `${cursor_obj_pos.x}px`;
+        cursor_obj.style.top = `${cursor_obj_pos.y}px`;
+    }
+}
+
+function handle_element_mouse_event(typ, handleid, elemid) {
+    if (typ == "mouseleave") {
+        mouse_type = MouseDisplayTypes.NORMAL;
+        return;
+    }
+
+    let events = cursor_change_bindings.get(handleid);
+    if (events) {
+        let event = events.get(elemid);
+        if (event) {
+            mouse_type = event;
+        }
+    }
 }
 
 function check_processes() {
@@ -208,21 +278,28 @@ function check_processes() {
                 do_paint(process)
             } else {
                 process.started = false;
+                cursor_change_bindings.delete(process.id);
                 if (process.id == focused_window.id) {
                     focused_window = null;
                 }
             }
 
             if (process.status.dragged) {
-                // make sure it doesn't get dragged offscreen
-                let drag_pos = mouse_pos.add(process.status.drag_offset);
+                // if the mouse isn't down, just disable dragged and leave
+                if (mouse_currently_down) {
+                    // make sure it doesn't get dragged offscreen
+                    let drag_pos = mouse_pos.add(process.status.drag_offset);
 
-                drag_pos = new Vector2(
-                    Math.max(0, Math.min(drag_pos.x, vw(100) - 1 - process.data.size.x)),
-                    Math.max(0, Math.min(drag_pos.y, vh(100, true) - 1 - process.data.size.y))
-                )
+                    drag_pos = new Vector2(
+                        Math.max(-process.data.size.x + 96, Math.min(drag_pos.x, vw(100) - 96)),
+                        Math.max(0, Math.min(drag_pos.y, vh(100, true) - 96))
+                    )
 
-                process.set_pos(drag_pos);
+                    process.set_pos(drag_pos);
+                } else {
+                    process.status.dragged = false;
+                    mouse_type = MouseDisplayTypes.NORMAL;
+                }
             }
 
             processes.push(process);
@@ -237,6 +314,19 @@ function check_processes() {
     processes_iter = [...processes];
 }
 
+function handle_resize(evt) {
+    processes.forEach(process => {
+        let drag_pos = process.data.position;
+
+        drag_pos = new Vector2(
+            Math.max(-process.data.size.x + 96, Math.min(drag_pos.x, vw(100) - 96)),
+            Math.max(0, Math.min(drag_pos.y, vh(100, true) - 96))
+        )
+
+        process.set_pos(drag_pos);
+    })
+}
+
 function start_process(name, parameters, user) {
     console.log(`running ${name} with`, parameters, "as", user);
     let kernel = kernels[name];
@@ -244,6 +334,8 @@ function start_process(name, parameters, user) {
         let handle = new EternaProcessHandle(
             kernel, parameters, user
         );
+
+        cursor_change_bindings.set(handle.id, new Map());
 
         handle.start();
         processes.push(handle);
