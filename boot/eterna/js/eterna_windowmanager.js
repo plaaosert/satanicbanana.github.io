@@ -16,7 +16,8 @@
 
 const WindowStyle = {
     DEFAULT: "eterna-window-default",
-    DEFAULT_NOCONTROLBUTTONS: "eterna-window-default@"
+    DEFAULT_NOCONTROLBUTTONS: "eterna-window-default@",
+    NOBORDER: "eterna-window-noborder", 
 }
 
 const WindowStyleInitialPaints = new Map();
@@ -119,6 +120,7 @@ function parse_styles(handle, target, styles) {
         Object.keys(styles).forEach(k => {
             if (k == "cursortype") {
                 cursor_change_bindings.get(handle.id).set(target.id, styles[k]);
+                target.dataset.cursortype = styles[k];
             } else if ((k == "background" || k == "backgroundImage") && styles[k].endsWith(".img")) {
                 // need to browse the filesystem. take the ctx from handle
                 let img_content = handle.files_ctx.get_file(styles[k]).get_content();
@@ -179,13 +181,19 @@ function process_paint_result(handle, result) {
             let new_element = document.createElement(obj.typ);
             new_element.id = obj.id;
 
-            new_element.addEventListener("mouseover", function() {
+            new_element.addEventListener("mouseover", function(e) {
                 handle_element_mouse_event("mouseover", handle.id, new_element.id);
+                e.stopPropagation();
             })
 
-            new_element.addEventListener("mouseleave", function() {
+            new_element.addEventListener("mouseleave", function(e) {
                 handle_element_mouse_event("mouseleave", handle.id, new_element.id);
+                e.stopPropagation();
             })
+
+            if (target.dataset && target.dataset.cursortype && (!obj.styles["cursortype"] || target.dataset.cursortype != MouseDisplayTypes.NORMAL) ) {
+                obj.styles["cursortype"] = target.dataset.cursortype
+            }
 
             parse_styles(handle, new_element, obj.styles);
 
@@ -198,22 +206,32 @@ function process_paint_result(handle, result) {
             new_element.disabled = obj.disabled;
 
             if (obj.onclick_enabled) {
-                new_element.addEventListener("click", function(event) {
+                new_element.addEventListener("mousedown", function(event) {
+                    if (event.detail > 1) {
+                        handle.data.doubleclicks.push({from: obj.id, evt: event})
+                    }
+                    
                     handle.data.clicks.push({from: obj.id, evt: event})
+                    event.stopPropagation();
                 })
 
+                /*
                 new_element.addEventListener("dblclick", function(event) {
                     handle.data.doubleclicks.push({from: obj.id, evt: event})
+                    event.stopPropagation();
                 })
+                */
             }
 
             if (obj.keypress_enabled) {
                 new_element.addEventListener("keydown", function(event) {
                     handle.data.keypresses.push({from: obj.id, typ: "down", evt: event})
+                    event.stopPropagation();
                 })
 
                 new_element.addEventListener("keyup", function(event) {
                     handle.data.keypresses.push({from: obj.id, typ: "up", evt: event})
+                    event.stopPropagation();
                 })
             }
 

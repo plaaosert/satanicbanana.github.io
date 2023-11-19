@@ -22,20 +22,25 @@ let kernels = {
     "shell": default_shell_kernel,
     "filebrowse": default_filebrowse_kernel,
     "login": default_login_kernel,
-    "clock": default_clock_kernel
+    "clock": default_clock_kernel,
+    "texpad": default_texpad_kernel
 }
 
 let cursor_change_bindings = new Map();
 
 let last_mouse_type = MouseDisplayTypes.HIDDEN;
 let mouse_type = MouseDisplayTypes.NORMAL;
-let mouse_pos = new Vector2(0, 0);
+let mouse_pos = new Vector2(-64, -64);
+
+let window_current_size = new Vector2(1920, 1080);
 
 let wnd_spawn_pos = new Vector2(48, 48);
 let wnd_spawn_add = new Vector2(24, 24);
 
 let wnd_default_size = new Vector2(552, 384);
 let mouse_currently_down = false;
+
+let maximized_windows = new Set();
 
 class EternaProcessHandle {
     static id_inc = 0;
@@ -53,10 +58,18 @@ class EternaProcessHandle {
                 let diff = sthis.data.size.sub(sthis.data.content_size);
                 sthis.set_size(newsiz.add(diff), true);
             },
+            maximize: function() {
+                maximize_window(sthis);
+            },
+            set_pos: function(newpos) {
+                sthis.set_pos(newpos);
+            },
             window_style: WindowStyle.DEFAULT,
             size: wnd_default_size.copy(),
             content_size: wnd_default_size.copy(),
+            content_size_diff: new Vector2(0, 0),
             position: wnd_spawn_pos.copy(),
+            background: false,
             clicks: [],
             doubleclicks: [],
             keypresses: [],
@@ -64,6 +77,10 @@ class EternaProcessHandle {
         };
 
         wnd_spawn_pos = wnd_spawn_pos.add(wnd_spawn_add);
+        wnd_spawn_pos = new Vector2(
+            Math.max(64, wnd_spawn_pos.x % (0.4 * window_current_size.x)),
+            Math.max(64, wnd_spawn_pos.y % (0.4 * window_current_size.y))
+        )
 
         this.parameters = parameters,
         this.query_obj = {get: function(id) {return null}}
@@ -72,10 +89,20 @@ class EternaProcessHandle {
             dragged: false,
             drag_offset: new Vector2(0, 0)
         }
+
+        if (user.user && !user.name) {
+            console.log("invalid userctx!")
+            debugger;
+        }
+
         this.files_ctx = fs.make_context({user: user});
     }
 
-    start() {
+    start(custom_xy) {
+        if (custom_xy) {
+            this.data.position = custom_xy
+        }
+
         let result = do_spawn(this);
         if (!result || !result.endnow) {
             this.started = true;
@@ -85,10 +112,8 @@ class EternaProcessHandle {
     set_pos(to, do_not_alert) {
         this.data.position = to;
 
-        if (this.wnd.container) {
-            this.wnd.container.style.left = `${to.x}px`;
-            this.wnd.container.style.top = `${to.y}px`;
-        }
+        this.wnd.container.style.left = `${to.x}px`;
+        this.wnd.container.style.top = `${to.y}px`;
 
         if (!do_not_alert) {
             this.data.alerts.push(ProcessAlert.MOVED);
@@ -98,18 +123,10 @@ class EternaProcessHandle {
     set_size(to, do_not_alert) {
         this.data.size = to;
 
-        if (this.wnd.container) {
-            this.wnd.container.style.width = `${to.x}px`;
-            this.wnd.container.style.height = `${to.y}px`;
-        }
+        this.wnd.container.style.width = `${to.x}px`;
+        this.wnd.container.style.height = `${to.y}px`;
 
-        if (this.wnd.container) {
-            let r = this.wnd.container.getBoundingClientRect();
-            this.data.content_size = new Vector2(
-                r.width,
-                r.height,
-            )
-        }
+        this.data.content_size = to.sub(this.data.content_size_diff);
 
         if (!do_not_alert) {
             this.data.alerts.push(ProcessAlert.RESIZED);
@@ -152,24 +169,24 @@ class EternaProcessHandle {
         container.style.zIndex = this.kernel.prefs.always_on_top ? 9999 : 0;
 
         let sthis = this;
-        container.addEventListener("mousedown", function() {
+        container.addEventListener("mousedown", function(e) {
             change_focused_window(sthis);
         });
 
-        title_container.addEventListener("mouseenter", function() {
-            mouse_type = MouseDisplayTypes.HAND;
+        title_container.addEventListener("mouseenter", function(e) {
+            mouse_type = sthis.kernel.prefs.disallow_move ? MouseDisplayTypes.NORMAL : MouseDisplayTypes.HAND;
         });
 
-        title_container.addEventListener("mouseleave", function() {
+        title_container.addEventListener("mouseleave", function(e) {
             mouse_type = MouseDisplayTypes.NORMAL;
         })
 
-        title_container.addEventListener("mousedown", function() {
+        title_container.addEventListener("mousedown", function(e) {
             sthis.status.dragged = !sthis.kernel.prefs.disallow_move ? true : false;
             sthis.status.drag_offset = sthis.data.position.sub(mouse_pos)
         })
 
-        title_container.addEventListener("mouseup", function() {
+        title_container.addEventListener("mouseup", function(e) {
             sthis.status.dragged = false;
         })
 
@@ -182,6 +199,8 @@ class EternaProcessHandle {
             r.width,
             r.height,
         )
+
+        this.data.content_size_diff = this.data.size.sub(this.data.content_size);
 
         this.query_obj.get = function(id) {
             return sthis.wnd.content.querySelector(`#${id}`);
@@ -311,7 +330,7 @@ function check_processes() {
             } else {
                 process.started = false;
                 cursor_change_bindings.delete(process.id);
-                if (process.id == focused_window.id) {
+                if (focused_window && process.id == focused_window.id) {
                     focused_window = null;
                 }
             }
@@ -347,19 +366,33 @@ function check_processes() {
 }
 
 function handle_resize(evt) {
+    window_current_size = new Vector2(vw(100), vh(100, true));
+
     processes.forEach(process => {
-        let drag_pos = process.data.position;
+        if (maximized_windows.has(process.id)) {
+            process.set_pos(new Vector2(0, 0));
+            process.set_size(window_current_size);
+        } else {
+            let drag_pos = process.data.position;
 
-        drag_pos = new Vector2(
-            Math.max(-process.data.size.x + 96, Math.min(drag_pos.x, vw(100) - 96)),
-            Math.max(0, Math.min(drag_pos.y, vh(100, true) - 96))
-        )
-
-        process.set_pos(drag_pos);
+            drag_pos = new Vector2(
+                Math.max(-process.data.size.x + 96, Math.min(drag_pos.x, vw(100) - 96)),
+                Math.max(0, Math.min(drag_pos.y, vh(100, true) - 96))
+            )
+    
+            process.set_pos(drag_pos);
+        }
     })
 }
 
-function start_process(name, parameters, user) {
+function maximize_window(handle) {
+    maximized_windows.add(handle.id);
+
+    handle.set_pos(new Vector2(0, 0));
+    handle.set_size(window_current_size);
+}
+
+function start_process(name, parameters, user, custom_xy) {
     console.log(`running ${name} with`, parameters, "as", user);
     let kernel = kernels[name];
     if (kernel) {
@@ -369,7 +402,7 @@ function start_process(name, parameters, user) {
 
         cursor_change_bindings.set(handle.id, new Map());
 
-        handle.start();
+        handle.start(custom_xy);
         processes.push(handle);
     } else {
         // should show an error message once those exist
@@ -387,6 +420,11 @@ function change_focused_window(to) {
 
     // don't defocus from an always on top window
     if (focused_window && focused_window.kernel.prefs.always_on_top) {
+        return;
+    }
+
+    // don't focus onto a window with "background" on
+    if (to && to.data.background) {
         return;
     }
 
@@ -463,12 +501,16 @@ function open_file(userctx, path, origin) {
     X tex: open as texpad file:"[filepath]"
     X lin: open file linked, run open_file on that
     
-    X other: open as texpad file:"[filepath]"
+    O other: open as texpad file:"[filepath]"
            texpad warns if the file is not binary data (but everything is base64 so it should be fine anyway
     */
     let filecontent = file.get_content();
     let ext = file.get_ext();
     switch(ext) {
+        case "tex":
+            start_process("texpad", {file: file.get_abs_path()}, usr_ctx.user);
+            break;
+
         case "lin": {
             let lines = filecontent.split("\n");
             lines.slice(1).forEach(line => {

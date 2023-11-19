@@ -1,12 +1,11 @@
 let debug_filebrowse_handle = null;
 let cur_user_ctx = {user: {name: "paul.w"}};
 
-let windowsiz = new Vector2(1920, 1080);
 let cursor_obj = null;
 
-document.addEventListener("DOMContentLoaded", function() {
-    load_eterna();
+let debugging = true;
 
+document.addEventListener("DOMContentLoaded", function() {
     // debug
     /*
     debug_filebrowse_handle = {
@@ -38,8 +37,6 @@ document.addEventListener("DOMContentLoaded", function() {
     do_spawn(debug_filebrowse_handle);
     do_initial_paint(debug_filebrowse_handle);
     */
-
-    windowsiz = new Vector2(vw(100), vh(100, true));
 
     document.addEventListener("mousedown", function(evt) {
         mouse_currently_down = true;
@@ -76,6 +73,7 @@ document.addEventListener("DOMContentLoaded", function() {
     cursor_obj = document.getElementById("eterna-cursor");
 
     setup_global_keybindings();
+    handle_resize();
 
     let anim = function() {
         update_desktop();
@@ -85,14 +83,23 @@ document.addEventListener("DOMContentLoaded", function() {
 
     window.requestAnimationFrame(anim);
 
-    start_process("filebrowse", {}, cur_user_ctx.user);
-    start_process("filebrowse", {location:"/SYSTEM/ICONS/CURSOR/triptych"}, cur_user_ctx.user);
-    start_process("filebrowse", {location:"~/Desktop"}, cur_user_ctx.user);
-    start_process("filebrowse", {location:"/SYSTEM/PROGRAMS"}, cur_user_ctx.user);
+    if (debugging) {
+        /*
+        start_process("filebrowse", {desktopbrowse: "true", location:"~/Desktop"}, cur_user_ctx.user);
 
-    start_process("shell", {workdir:"~"}, cur_user_ctx.user);
+        start_process("filebrowse", {}, cur_user_ctx.user);
+        start_process("filebrowse", {location:"/SYSTEM/ICONS/CURSOR/triptych"}, cur_user_ctx.user);
+        start_process("filebrowse", {location:"~/Desktop"}, cur_user_ctx.user);
+        start_process("filebrowse", {location:"/SYSTEM/PROGRAMS"}, cur_user_ctx.user);
 
-    start_process("clock", {}, cur_user_ctx.user);
+        start_process("shell", {workdir:"~"}, cur_user_ctx.user);
 
-    // start_process("login", {lock_user: "paul.w", lock_pass: "you shouldn't be looking here :-)"}, ctx);
+        start_process("clock", {}, cur_user_ctx.user);
+        */
+
+        start_process("filebrowse", {desktopbrowse: "true", artificial_loading_delay: 0, location:"~/Desktop"}, cur_user_ctx.user);
+        load_eterna(true);
+    } else {
+        load_eterna();
+    }
 })

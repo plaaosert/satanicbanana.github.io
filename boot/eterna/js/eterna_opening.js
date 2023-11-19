@@ -1,6 +1,6 @@
-const LOADSPEED = 25;
+const LOADSPEED = 100;
 
-function load_eterna() {
+function load_eterna(ignore_login) {
     // Animate the background image
     setTimeout(function() {
         document.body.style.backgroundColor = "#00202F";
@@ -15,8 +15,9 @@ function load_eterna() {
     }, 3200 / LOADSPEED);
 
     setTimeout(function() {
-        // Make "loginform" visible
-        document.getElementById("loginform").style.visibility = "visible";
+        if (!ignore_login) {
+            start_process("login", {lock_user: "paul.w", lock_pass: "you shouldn't be looking here :-)"}, ctx.user);
+        }
     }, 4000 / LOADSPEED);
 }
 

@@ -50,7 +50,7 @@ let login_display_markup = new EternaDisplayMarkupContainer(
         new EternaDisplayMarkupElement(
             EternaDisplayObject.simple_elem(
                 "signin_button", "button",
-                "calc(((100% - 16px - 64px - 16px) / 2) - 12.5%)", 
+                "calc(((100%) / 2) - 12.5%)", 
                 96, "30%", 20, {}, true, "Log in"
             ), []
         ),
@@ -62,10 +62,6 @@ let default_login_kernel = new EternaProcessKernel(
     // spawn
     function(data, parameters, files_ctx) {
         data.window_style = WindowStyle.DEFAULT_NOCONTROLBUTTONS;
-
-        data.set_content_size(new Vector2(400, 192));
-
-        data.position = windowsiz.div(2).sub(data.size.div(2));
 
         data.login_delay = 60;
         data.login_success = false;
@@ -84,6 +80,9 @@ let default_login_kernel = new EternaProcessKernel(
 
     // process
     function(data, parameters, files_ctx, query_obj) {
+        data.set_content_size(new Vector2(400, 160));
+        data.set_pos(window_current_size.div(2).sub(data.size.div(2)));
+
         data.clicks.forEach(click => {
             console.log(click);
             switch (click.from) {
@@ -114,6 +113,17 @@ let default_login_kernel = new EternaProcessKernel(
 
         if (data.login_success) {
             data.login_delay--;
+        }
+
+        if (data.login_delay <= 0) {
+            setTimeout(function() {
+                var audio = new Audio('audio/startup.mp3');
+                audio.play();
+            }, 600)
+
+            setTimeout(function() {
+                start_process("filebrowse", {desktopbrowse: "true", artificial_loading_delay: 1000, location:"~/Desktop"}, cur_user_ctx.user);
+            }, 1000)
         }
 
         return data;

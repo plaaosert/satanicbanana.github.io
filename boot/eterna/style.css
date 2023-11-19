@@ -89,6 +89,7 @@ body {
 }
 
 .eterna-cursor {
+    user-select: none;
     position: absolute;
     pointer-events: none;
     z-index: 100000;
@@ -97,6 +98,7 @@ body {
 
 .eterna-window {
     position: absolute;
+    z-index: 2;
 }
 
 .eterna-window * {
@@ -145,8 +147,35 @@ body {
 
     left: 2px;
     top: 26px;
+}
 
-    background-color: #bbb;
+.eterna-window-noborder {
+    user-select: none;
+    z-index: 2;
+}
+
+.eterna-window-noborder>.wnd-title-container {
+    margin: 0px;
+    padding: 0px 0px 0px 0px;
+
+    width: 0;
+    height: 0;
+}
+
+.eterna-window-noborder.focused>.wnd-title-container {
+    visibility: hidden;
+}
+
+.eterna-window-noborder>.wnd-title-container>.wnd-title {
+    visibility: hidden;
+}
+
+.eterna-window-noborder>.wnd-content {
+    width: 100%;
+    height: 100%;
+
+    left: 0;
+    top: 0;
 }
 
 .eterna-window-element-disabled {

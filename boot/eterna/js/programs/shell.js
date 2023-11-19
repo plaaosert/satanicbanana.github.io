@@ -40,8 +40,8 @@ let shell_display_markup = new EternaDisplayMarkupContainer(
 function runcmd(cmd, data, parameters, files_ctx) {
     let command_unparsed = cmd;
     let commands = command_unparsed.split(";");
+    data.text_lines.push(`${data.workdir} >> ${data.cur_typed_cmd}`);
     commands.forEach(cmd => {
-        data.text_lines.push(`${data.workdir} >> ${data.cur_typed_cmd}`);
         /*
         X HELP - output help
         X RENAME X Y - rename X to Y. fails if already exists
@@ -57,10 +57,14 @@ function runcmd(cmd, data, parameters, files_ctx) {
                 - searches /SYSTEM/PROGRAMS for .xct files matching name
                 - gives up
         */
-        let segs = cmd.split(" ");
+        let segs = cmd.trim().split(" ");
         let operator = segs[0];
         let operands = segs.slice(1);
         switch (operator.toUpperCase()) {
+            case "WHOAMI":
+                data.text_lines.push(cur_user_ctx.user.name);
+                break;
+
             case "HELP":
                 break;
 
@@ -141,7 +145,7 @@ function runcmd(cmd, data, parameters, files_ctx) {
                     })
                 }
 
-                start_process(operands[0], params, files_ctx.userctx)
+                start_process(operands[0], params, files_ctx.user)
                 break;
 
             default:
@@ -212,9 +216,9 @@ function runcmd(cmd, data, parameters, files_ctx) {
                 }
                 break;
         }
-
-        data.text_lines.push(``);
     })
+
+    data.text_lines.push(``);
 }
 
 function typekey(data, parameters, files_ctx, kp) {

@@ -267,6 +267,15 @@ class EternaFSContainerEditContext {
         return this;
     }
 
+    does_file_exist(path) {
+        try {
+            let f = this.get_object(path);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
     get_file(path) {
         return this.get_object(path);
     }
@@ -275,6 +284,15 @@ class EternaFSContainerEditContext {
         let fpath = path ? path : this.current_location;
 
         return this.fs.get_object(this, fpath);
+    }
+
+    try_add_file(path, name, content, permissions) {
+        try {
+            this.add_file(path, name, content, permissions);
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     add_file(path, name, content, permissions) {
@@ -534,7 +552,9 @@ ctx.create_directory("/", "SYSTEM", new EternaFSPermissions(true, false)).enter(
     ctx.create_directory("", "PROGRAMS", new EternaFSPermissions(true, false)).enter(); {
         ctx.add_file("", "Clock.xct", "/SYSTEM/ICONS/debug_32x32.img\nKERNEL clock", new EternaFSPermissions(true, false))
         ctx.add_file("", "filebrowse.xct", "/SYSTEM/ICONS/debug_32x32.img\nKERNEL filebrowse", new EternaFSPermissions(true, false))
-        
+        ctx.add_file("", "shell.xct", "/SYSTEM/ICONS/debug_32x32.img\nKERNEL shell", new EternaFSPermissions(true, false))
+        ctx.add_file("", "texpad.xct", "/SYSTEM/ICONS/debug_32x32.img\nKERNEL texpad", new EternaFSPermissions(true, false))
+
         ctx.add_file("", "xcttest.xct", "/SYSTEM/ICONS/debug_32x32.img\nCONSOLELOG i'm working")
         ctx.cd("..")
     }
@@ -559,7 +579,8 @@ ctx.create_directory("/", "users", new EternaFSPermissions(true, false)).enter()
             paul_ctx.add_file("", "notes.tex.lin", "/SYSTEM/ICONS/debug_fileicon.img\n/users/paul.w/Notes/notes.tex")
             paul_ctx.add_file("", "Clock.lin", "/SYSTEM/ICONS/debug_32x32.img\n/SYSTEM/PROGRAMS/Clock.xct")
             paul_ctx.add_file("", "ETERNA.lin", "/SYSTEM/ICONS/eterna_icon_large.img\n/users/paul.w/Tools/ETERNA.xct")
-        
+            paul_ctx.add_file("", "Shell.lin", "/SYSTEM/ICONS/debug_32x32.img\n/SYSTEM/PROGRAMS/shell.xct")
+
             paul_ctx.cd("..")
         }
 
@@ -573,6 +594,7 @@ ctx.create_directory("/", "users", new EternaFSPermissions(true, false)).enter()
 
         paul_ctx.create_directory("", "Notes").enter(); {
             paul_ctx.add_file("", "guide.tex", "test...\nhi");
+            paul_ctx.add_file("", "notes.tex", patchnotes_content);
             paul_ctx.cd("..")
         }
 
