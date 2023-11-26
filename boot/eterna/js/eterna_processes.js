@@ -61,11 +61,16 @@ class EternaProcessHandle {
             maximize: function() {
                 maximize_window(sthis);
             },
+            toggle_maximize: function() {
+                toggle_maximize_window(sthis);
+            },
             set_pos: function(newpos) {
                 sthis.set_pos(newpos);
             },
             window_style: WindowStyle.DEFAULT,
             size: wnd_default_size.copy(),
+            saved_size: wnd_default_size.copy(), // used when disabling fullscreen
+            saved_pos: wnd_spawn_pos.copy(), // same as saved_size
             content_size: wnd_default_size.copy(),
             content_size_diff: new Vector2(0, 0),
             position: wnd_spawn_pos.copy(),
@@ -87,7 +92,11 @@ class EternaProcessHandle {
         this.wnd = {title: null, content: null, container: null}
         this.status = {
             dragged: false,
-            drag_offset: new Vector2(0, 0)
+            drag_offset: new Vector2(0, 0),
+            resizing: false,
+            resize_type: "",
+            resize_offset: new Vector2(0, 0),
+            resize_original_size: new Vector2(0, 0)
         }
 
         if (user.user && !user.name) {
@@ -121,6 +130,8 @@ class EternaProcessHandle {
     }
 
     set_size(to, do_not_alert) {
+        console.log(this.id, this.data.size, to);
+
         this.data.size = to;
 
         this.wnd.container.style.width = `${to.x}px`;
@@ -134,6 +145,8 @@ class EternaProcessHandle {
     }
 
     make_window() {
+        let sthis = this;
+
         // make the html
         let container = document.createElement("div");
         container.id = `window-${this.id}`;
@@ -159,16 +172,36 @@ class EternaProcessHandle {
         window_content.classList.add("wnd-content");
         container.appendChild(window_content);
 
-        let vertical_resize_bar = document.createElement("div");
-        vertical_resize_bar.classList.add("vertical-resize-bar");
-        container.appendChild(vertical_resize_bar);
+        ["horizontal", "vertical", "diagonal"].forEach((v, i) => {
+            let bar = document.createElement("div");
+            bar.classList.add(`${v}-resize-bar`);
+            container.appendChild(bar);
+
+            bar.addEventListener("mouseenter", function(e) {
+                mouse_type = (sthis.kernel.prefs.disallow_resize || maximized_windows.has(sthis.id)) ? MouseDisplayTypes.NORMAL : (MouseDisplayTypes.RESIZE_H + i);
+            });
+    
+            bar.addEventListener("mouseleave", function(e) {
+                mouse_type = MouseDisplayTypes.NORMAL;
+            })
+            
+            bar.addEventListener("mousedown", function(e) {
+                sthis.status.resizing = !sthis.kernel.prefs.disallow_resize ? true : false;
+                sthis.status.resize_type = v;
+                sthis.status.resize_offset = mouse_pos;
+                sthis.status.resize_original_size = sthis.data.size.copy();
+            })
+    
+            bar.addEventListener("mouseup", function(e) {
+                sthis.status.dragged = false;
+            })
+        })
 
         // probably stick in some special div at some point
         document.body.appendChild(container);
 
         container.style.zIndex = this.kernel.prefs.always_on_top ? 9999 : 0;
 
-        let sthis = this;
         container.addEventListener("mousedown", function(e) {
             change_focused_window(sthis);
         });
@@ -182,6 +215,18 @@ class EternaProcessHandle {
         })
 
         title_container.addEventListener("mousedown", function(e) {
+            if (maximized_windows.has(sthis.id)) {
+                // we want the window to demaximize such that its new position is the same distance
+                // across the total window size as it was before
+                // so, if it's 25% across the screen, demaximize then move the window drag offset 25% backwards from top left
+                let original_proportion = Math.min(mouse_pos.x, sthis.data.size.x - 160) / sthis.data.size.x;
+                let diff = mouse_pos.sub(sthis.data.position)
+
+                disable_maximize_window(sthis);
+
+                sthis.set_pos(mouse_pos.sub(new Vector2(original_proportion * sthis.data.size.x, diff.y)));
+            }
+
             sthis.status.dragged = !sthis.kernel.prefs.disallow_move ? true : false;
             sthis.status.drag_offset = sthis.data.position.sub(mouse_pos)
         })
@@ -223,6 +268,7 @@ function setup_global_keybindings() {
     })
 
     document.addEventListener("keyup", function(event) {
+        /*
         if (event.code == "KeyQ") {
             fs.make_context(cur_user_ctx).write_to_file(
                 "~/.configs/cursor.con",
@@ -251,6 +297,7 @@ function setup_global_keybindings() {
                 mouse_type += 9;
             }
         }
+        */
 
         if (focused_window) {
             focused_window.data.keypresses.push({from: "container", typ: "up", evt: event})
@@ -342,13 +389,45 @@ function check_processes() {
                     let drag_pos = mouse_pos.add(process.status.drag_offset);
 
                     drag_pos = new Vector2(
-                        Math.max(-process.data.size.x + 96, Math.min(drag_pos.x, vw(100) - 96)),
-                        Math.max(0, Math.min(drag_pos.y, vh(100, true) - 96))
+                        Math.max(-process.data.size.x + 96, Math.min(drag_pos.x, window_current_size.x - 96)),
+                        Math.max(0, Math.min(drag_pos.y, window_current_size.y - 96))
                     )
 
                     process.set_pos(drag_pos);
                 } else {
                     process.status.dragged = false;
+                    mouse_type = MouseDisplayTypes.NORMAL;
+                }
+            }
+
+            if (process.status.resizing) {
+                if (mouse_currently_down) {
+                    // window minimum size is 128x64
+                    // make sure size doesn't get bigger than the total desktop size either,
+                    // or out of bounds of the desktop
+                    let resize_pos = process.status.resize_original_size.add(mouse_pos.sub(process.status.resize_offset));
+
+                    // limit axes if we're horizontal or vertical
+                    switch (process.status.resize_type) {
+                        case "horizontal": {
+                            resize_pos.x = process.data.size.x;
+                            break;
+                        }
+
+                        case "vertical": {
+                            resize_pos.y = process.data.size.y;
+                            break;
+                        }
+                    }
+
+                    let resize_pos_final = new Vector2(
+                        Math.max(process.data.min_size ? process.data.min_size.x : 128, Math.min(window_current_size.x - process.data.position.x - 2, resize_pos.x)),
+                        Math.max(process.data.min_size ? process.data.min_size.y : 64, Math.min(window_current_size.y - process.data.position.y - 2, resize_pos.y))
+                    )
+
+                    process.set_size(resize_pos_final);
+                } else {
+                    process.status.resizing = false;
                     mouse_type = MouseDisplayTypes.NORMAL;
                 }
             }
@@ -368,16 +447,20 @@ function check_processes() {
 function handle_resize(evt) {
     window_current_size = new Vector2(vw(100), vh(100, true));
 
-    processes.forEach(process => {
+    processes_iter.forEach(process => {
+        if (!process.wnd.container) {
+            return;
+        }
+
         if (maximized_windows.has(process.id)) {
             process.set_pos(new Vector2(0, 0));
-            process.set_size(window_current_size);
+            process.set_size(window_current_size.sub(new Vector2(2, 2)));
         } else {
             let drag_pos = process.data.position;
 
             drag_pos = new Vector2(
-                Math.max(-process.data.size.x + 96, Math.min(drag_pos.x, vw(100) - 96)),
-                Math.max(0, Math.min(drag_pos.y, vh(100, true) - 96))
+                Math.max(-process.data.size.x + 96, Math.min(drag_pos.x, window_current_size.x - 96)),
+                Math.max(0, Math.min(drag_pos.y, window_current_size.y - 96))
             )
     
             process.set_pos(drag_pos);
@@ -385,11 +468,36 @@ function handle_resize(evt) {
     })
 }
 
+function toggle_maximize_window(handle) {
+    if (maximized_windows.has(handle.id)) {
+        disable_maximize_window(handle);
+    } else {
+        maximize_window(handle);
+    }
+}
+
+function disable_maximize_window(handle) {
+    if (!maximized_windows.has(handle.id)) {
+        return;
+    }
+
+    maximized_windows.delete(handle.id);
+
+    handle.set_size(handle.data.saved_size);
+    handle.set_pos(handle.data.saved_pos);
+
+    console.log(handle.data.size, handle.data.position);
+
+    handle_resize();
+}
+
 function maximize_window(handle) {
+    handle.data.saved_size = handle.data.size.copy();
+    handle.data.saved_pos = handle.data.position.copy();
+
     maximized_windows.add(handle.id);
 
-    handle.set_pos(new Vector2(0, 0));
-    handle.set_size(window_current_size);
+    handle_resize();
 }
 
 function start_process(name, parameters, user, custom_xy) {

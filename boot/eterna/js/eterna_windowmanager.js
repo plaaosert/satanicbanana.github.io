@@ -106,6 +106,10 @@ function do_process(handle) {
         if (click.from == "window_controls_close" && click.evt.button == 0) {
             handle.data.alerts.push(ProcessAlert.CLOSE);
         }
+
+        if (click.from == "window_controls_fullscreen" && click.evt.button == 0) {
+            handle.data.toggle_maximize();
+        }
     })
 
     handle.data = handle.kernel.process(handle.data, handle.parameters, handle.files_ctx, handle.query_obj)
@@ -206,7 +210,7 @@ function process_paint_result(handle, result) {
             new_element.disabled = obj.disabled;
 
             if (obj.onclick_enabled) {
-                new_element.addEventListener("mousedown", function(event) {
+                new_element.addEventListener("mouseup", function(event) {
                     if (event.detail > 1) {
                         handle.data.doubleclicks.push({from: obj.id, evt: event})
                     }

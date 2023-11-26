@@ -220,6 +220,8 @@ let default_filebrowse_kernel = new EternaProcessKernel(
     filebrowse_display_markup,
     // spawn
     function(data, parameters, files_ctx) {
+        data.min_size = new Vector2(384, 300);
+
         data.forced_location = "";
         data.show_toolbars = true;
         data.autorefresh_cooldown = 0;

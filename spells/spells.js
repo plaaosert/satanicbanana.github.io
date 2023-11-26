@@ -2209,7 +2209,7 @@ class Renderer {
                     "white"
                 );
 
-                let player_record_key = this.game.player_ent.id + b.v + this.game.player_ent.name;
+                let player_record_key = this.game.player_ent.id + "|" + this.game.player_ent.name;
                 Object.keys(DmgType).forEach(typ => {
                     text_pos = text_pos.add(new Vector2(0, 1));
                     let dmg_amt_wave = 0;
@@ -5777,6 +5777,9 @@ class Game {
         new_game.turncount = save.state.turncount;
         new_game.location_count = save.state.location_count;
 
+        new_game.player_location = new GameLocation(location_templates[save.state.player_location_id], save.state.player_location_events);
+        new_game.player_location_progress = save.state.player_location_progress
+
         new_game.turn_index = save.state.current_turn_entity;
         new_game.inventory_open = save.state.inventory_open;
         new_game.recorded_damage = save.state.recorded_damage;
@@ -5841,8 +5844,8 @@ class Game {
                     new_ent.innate_primed_spells[i][1] = ps
                 })
 
-                let original_record_key = ent.id.toString() + b.v + (ent.name ? ent.name : new_ent.template.name);
-                let new_record_key = new_ent.id.toString() + b.v + new_ent.name;
+                let original_record_key = ent.id.toString() + "|" + (ent.name ? ent.name : new_ent.template.name);
+                let new_record_key = new_ent.id.toString() + "|" + new_ent.name;
 
                 new_game.recorded_damage[new_record_key] = new_game.recorded_damage[original_record_key];
 
@@ -5909,6 +5912,10 @@ class Game {
         save.state.wavecount = this.wavecount;
         save.state.turncount = this.turncount;
         save.state.location_count = this.location_count;
+
+        save.state.player_location_id = this.player_location.template.id;
+        save.state.player_location_events = this.player_location.events;
+        save.state.player_location_progress = this.player_location_progress;
 
         save.state.current_turn_entity = this.turn_index;
         save.state.inventory_open = this.inventory_open;
@@ -7365,7 +7372,7 @@ ${names_str}\n[#666]----${renderer.make_location_path_string(sthis, clearance_x,
                 });
             }
 
-            let record_name = caster.id.toString() + b.v + caster.name;
+            let record_name = caster.id.toString() + "|" + caster.name;
             if (!this.recorded_damage[record_name]) {
                 this.recorded_damage[record_name] = {};
             }
@@ -8085,7 +8092,7 @@ function load_game(save_string) {
     renderer.game = new_game;
     renderer.board = new_game.board;
 
-    game.check_wave_end();
+    game.setup();
 
     game.player_commit_edits();
     game.recent_spells_gained = [];

@@ -58,6 +58,8 @@ let default_texpad_kernel = new EternaProcessKernel(
             }
         }
 
+        data.clicks = [];
+
         return data;
     },
 

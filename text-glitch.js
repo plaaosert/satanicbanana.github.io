@@ -1,14 +1,23 @@
+let six_moused = false;
+
 // event handler for both events needed
 function handler(event) {
 	// clear all intervals under this element
-	if (evts[event.target.id] != null)
+	if (evts[event.target.id] != null) {
 		clearInterval(evts[event.target.id]);
+	}
 
 	if (event.type == 'mouseover') {
 		evts[event.target.id] = setInterval(function() { run_text_grow(event.target); }, 1000/60);
+		if (event.target.id == "6") {
+			six_moused = true;
+		}
 	}
 	if (event.type == 'mouseout') {
 		evts[event.target.id] = setInterval(function() { run_text_shrink(event.target); }, 1000/60);
+		if (event.target.id == "6") {
+			six_moused = false;
+		}
 	}
 }
 
@@ -175,3 +184,35 @@ function run_text_shrink(el) {
 		}
 	}
 }
+
+function ominous() {
+	if (Math.random() <= 1) {
+		origs[6] = [
+			"## [come here...]",
+			"## [...]",
+			"## [help...]",
+			"## [hello...?]",
+			"## [please listen...]",
+			"## [it's dark...]",
+			"## [...]",
+			"## [click me...]",
+			"## [he's waiting...]",
+			"## [i need help...]"
+		][Math.floor(Math.random() * 10)];
+
+		if (!six_moused) {
+			clearInterval(evts["6"]);
+
+			document.getElementById("6").textContent = `## ..${" ".repeat(origs[6].length - 5)}`;
+			evts["6"] = setInterval(function() { run_text_shrink(document.getElementById("6")); }, 1000/60);
+		}
+
+		setTimeout(ominous, Math.random() * 7000 + 4000);
+	} else {
+		setTimeout(ominous, Math.random() * 1000 + 200);
+	}
+
+
+}
+
+setTimeout(ominous, Math.random() * 2000 + 500);

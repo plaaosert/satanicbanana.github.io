@@ -98,6 +98,8 @@ document.addEventListener("DOMContentLoaded", function() {
         */
 
         start_process("filebrowse", {desktopbrowse: "true", artificial_loading_delay: 0, location:"~/Desktop"}, cur_user_ctx.user);
+
+        start_process("filebrowse", {}, cur_user_ctx.user);
         load_eterna(true);
     } else {
         load_eterna();

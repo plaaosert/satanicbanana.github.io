@@ -108,6 +108,36 @@ body {
     /* box-shadow:0px 0px 0px 1px black inset; */
 }
 
+.eterna-window>.horizontal-resize-bar {
+    bottom: 0px;
+    left: 0px;
+
+    height: 8px;
+    width: 100%;
+
+    /* background-color: violet; */
+}
+
+.eterna-window>.vertical-resize-bar {
+    top: 0px;
+    right: 0px;
+
+    height: 100%;
+    width: 8px;
+
+    /* background-color: blue; */
+}
+
+.eterna-window>.diagonal-resize-bar {
+    bottom: 0px;
+    right: 0px;
+
+    height: 8px;
+    width: 8px;
+
+    /* background-color: lime; */
+}
+
 .eterna-window-default {
     user-select: none;
     --bgcol: #bbb;

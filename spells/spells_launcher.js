@@ -1006,6 +1006,7 @@ function game_loop() {
     let frame_duration = Date.now() - last_frame_time;
     //console.log("took", frame_duration, "so waiting", (1000/TARGET_FPS) - frame_duration);
 
+    // window.requestAnimationFrame(game_loop);
     setTimeout(game_loop, (1000/TARGET_FPS) - frame_duration);
     // setTimeout(game_loop);
 }
