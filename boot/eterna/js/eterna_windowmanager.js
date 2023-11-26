@@ -131,7 +131,7 @@ function parse_styles(handle, target, styles) {
                 target.style[k] = `url("${img_content}")`;
             } else if (k.startsWith("ott-tag-")) {
                 let ct = styles[k];
-                if (k == "ott-tag-src") {
+                if (k == "ott-tag-src" && styles[k].endsWith(".img")) {
                     ct = handle.files_ctx.get_file(ct).get_content();
                 }
 

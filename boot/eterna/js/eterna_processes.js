@@ -23,7 +23,8 @@ let kernels = {
     "filebrowse": default_filebrowse_kernel,
     "login": default_login_kernel,
     "clock": default_clock_kernel,
-    "texpad": default_texpad_kernel
+    "texpad": default_texpad_kernel,
+    "pocket": default_pocket_kernel
 }
 
 let cursor_change_bindings = new Map();
@@ -130,8 +131,6 @@ class EternaProcessHandle {
     }
 
     set_size(to, do_not_alert) {
-        console.log(this.id, this.data.size, to);
-
         this.data.size = to;
 
         this.wnd.container.style.width = `${to.x}px`;
