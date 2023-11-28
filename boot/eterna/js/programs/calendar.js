@@ -152,6 +152,8 @@ let default_calendar_kernel = new EternaProcessKernel(
 
     // spawn
     function(data, parameters, files_ctx) {
+        data.min_size = new Vector2(350, 350);
+
         const current_date = new Date();
         data.month = current_date.getMonth();
         data.year = current_date.getFullYear();
