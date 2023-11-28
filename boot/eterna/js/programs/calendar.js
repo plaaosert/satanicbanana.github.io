@@ -107,7 +107,6 @@ function dateElement(day_number, unique_identifier, highlight=false) {
                 display: 'flex',
                 'justify-content': 'center',
                 'align-items': 'center',
-                'font-size': '20px',
                 'line-height': '35px'
             }, false
         ), [
