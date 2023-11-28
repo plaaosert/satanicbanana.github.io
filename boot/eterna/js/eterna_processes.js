@@ -23,7 +23,8 @@ let kernels = {
     "filebrowse": default_filebrowse_kernel,
     "login": default_login_kernel,
     "clock": default_clock_kernel,
-    "texpad": default_texpad_kernel
+    "texpad": default_texpad_kernel,
+    "calendar": default_calendar_kernel,
 }
 
 let cursor_change_bindings = new Map();
