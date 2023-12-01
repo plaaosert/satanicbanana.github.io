@@ -82,6 +82,10 @@ class EternaDisplayObject {
             }
         }
     }
+
+    to_empty_markup() {
+        return EternaDisplayMarkupElement.childless(this);
+    }
 }
 
 class EternaDisplayMarkupElement {
