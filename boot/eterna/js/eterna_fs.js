@@ -531,6 +531,7 @@ ctx.create_directory("/", "SYSTEM", new EternaFSPermissions(true, false)).enter(
 
         ctx.add_file("", "eterna_icon_large.img", eterna_icon);
         ctx.add_file("", "shortcut_icon.img", shortcut_icon);
+        ctx.add_file("", "arrow_icon.img", arrow_icon);
 
         ctx.create_directory("", "CURSOR").enter(); {
             Object.keys(cursor_datas).forEach(k => {
@@ -554,6 +555,7 @@ ctx.create_directory("/", "SYSTEM", new EternaFSPermissions(true, false)).enter(
         ctx.add_file("", "filebrowse.xct", "/SYSTEM/ICONS/debug_32x32.img\nKERNEL filebrowse", new EternaFSPermissions(true, false))
         ctx.add_file("", "shell.xct", "/SYSTEM/ICONS/debug_32x32.img\nKERNEL shell", new EternaFSPermissions(true, false))
         ctx.add_file("", "texpad.xct", "/SYSTEM/ICONS/debug_32x32.img\nKERNEL texpad", new EternaFSPermissions(true, false))
+        ctx.add_file("", "calendar.xct", "/SYSTEM/ICONS/debug_32x32.img\nKERNEL calendar", new EternaFSPermissions(true, false))
 
         ctx.add_file("", "xcttest.xct", "/SYSTEM/ICONS/debug_32x32.img\nCONSOLELOG i'm working")
         ctx.cd("..")

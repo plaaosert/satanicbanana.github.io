@@ -24,6 +24,7 @@ let kernels = {
     "login": default_login_kernel,
     "clock": default_clock_kernel,
     "texpad": default_texpad_kernel,
+    "calendar": default_calendar_kernel,
     "pocket": default_pocket_kernel
 }
 

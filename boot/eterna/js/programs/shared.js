@@ -16,11 +16,11 @@ class EternaDisplayObject {
         return styles;
     }
 
-    static div(name, x, y, w, h, extra_styles, onclick_enabled) {
+    static div(name, x, y, w, h, extra_styles, onclick_enabled, text_content="") {
         let styles = EternaDisplayObject.create_styles(x, y, w, h, extra_styles);
 
         return new EternaDisplayObject(
-            name, "div", styles, "", false, onclick_enabled, false
+            name, "div", styles, text_content, false, onclick_enabled, false
         )
     }
 
