@@ -25,11 +25,11 @@ class EternaDisplayObject {
     }
 
     static image(name, path, x, y, w, h, extra_styles, onclick_enabled) {
-        extra_styles.backgroundImage = path;
+        extra_styles["ott-tag-src"] = path;
         let styles = EternaDisplayObject.create_styles(x, y, w, h, extra_styles);
 
         return new EternaDisplayObject(
-            name, "div", styles, "", false, onclick_enabled, false
+            name, "img", styles, "", false, onclick_enabled, false
         )
     }
 
@@ -81,6 +81,10 @@ class EternaDisplayObject {
                 keypress_enabled: this.keypress_enabled
             }
         }
+    }
+
+    to_empty_markup() {
+        return EternaDisplayMarkupElement.childless(this);
     }
 }
 
