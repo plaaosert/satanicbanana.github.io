@@ -1,0 +1,36 @@
+canvas {
+    transform: scale(8);
+    border: 0.125px solid white;
+
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.file-load-input-label {
+    position:absolute;
+    top: 128px;
+    left: 32px;
+
+    font-size: 32px;
+
+    padding: 4px;
+
+    border: 2px solid white;
+    color: white;
+}
+
+.file-load-input-label:hover {
+    top: 126px;
+    left: 30px;
+
+    border: 4px solid lime;
+    color: lime;
+}
+
+.file-load-input-label:active {
+    top: 129px;
+    left: 30px;
+
+    border: 4px solid limegreen;
+    color: limegreen;
+}

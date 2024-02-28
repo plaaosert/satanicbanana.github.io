@@ -449,7 +449,7 @@ class Colour {
         this.r = r;
         this.g = g;
         this.b = b;
-        this.a = a;
+        this.a = a == undefined ? 255 : a;
     
         this.data = Array(4);
         this.get_data();

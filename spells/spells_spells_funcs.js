@@ -2424,35 +2424,45 @@ spells_funcs = {
     ],
 
     "Spell Transference": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.specials.push(SpellSpecials.SPELLTRANSFERENCE)
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Arcane Echo": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.specials.push(SpellSpecials.ARCANEECHO)
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Spreading Arcana": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.specials.push(SpellSpecials.SPREADINGARCANA)
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Purity": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.specials.push(SpellSpecials.PURITY)
+        },
         no_target,
         no_hit,
         no_tiles
     ],
 
     "Unresolved Spell": [
-        no_stats,
+        function(user, spell, stats) {
+            stats.specials.push(SpellSpecials.UNRESOLVEDSPELL)
+        },
         no_target,
         no_hit,
         no_tiles

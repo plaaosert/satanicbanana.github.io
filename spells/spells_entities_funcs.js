@@ -1440,7 +1440,7 @@ entities_specials = {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
+    "Deep Water": function(game, ent, event_info) {
         // None
     },
 

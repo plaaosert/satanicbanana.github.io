@@ -124,6 +124,15 @@ pretty_print_trigger = {
 
 switch_checkerboard = 0;
 
+
+function random_from_arr(arr) {
+    return arr[Math.floor(game.random() * arr.length)];
+}
+
+function random_int(min_inc, max_exc) {
+    return Math.floor(min_inc + (game.random() * (max_exc - min_inc)));
+}
+
 // All seeded randomness from:
 // https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
 function cyrb128(str) {
@@ -3469,6 +3478,7 @@ class Entity {
         let finished_drawing = false;
 
         let manacost = 0;
+        let n_transferences = 0;
 
         for (let i=0; i<spells.length; i++) {
             if (finished_drawing) {
@@ -3477,12 +3487,26 @@ class Entity {
 
             let spell = spells[i];
 
+            if (spell.name == "Spell Transference") {
+                n_transferences++;
+            }
+
             manacost += spell.manacost;
 
             after_finishing_draws = spell.trigger_type ? spell.trigger_type : after_finishing_draws;
 
             if (spell.typ == SpellType.Core) {
-                cores_in_draw.push(spell);
+                if (n_transferences > 0) {
+                    n_transferences--;
+                    modifiers_in_draw.push(new Spell(
+                        spell.name, spell.icon, spell.col, spell.back_col,
+                        SpellType.Modifier, spell.subtyp, spell.desc, spell.manacost, spell.bonus_draws,
+                        spell.trigger_type, no_stats, spell.fns.at_target, spell.fns.on_hit, spell.fns.on_affected_tiles
+                    ))
+                    draws++;
+                } else {
+                    cores_in_draw.push(spell);
+                }
             } else {
                 modifiers_in_draw.push(spell);
             }
@@ -3742,6 +3766,14 @@ class Spell {
             on_hit: on_hit_fn,                       // when damaging an enemy; (user, spell, stats, enemy, damage, type)
             on_affected_tiles: on_affected_tiles_fn  // called on every aoe location including direct target; (user, spell, stats, location)
         }
+    }
+
+    copy() {
+        return new Spell(
+            this.name, this.icon, this.col, this.back_col,
+            this.typ, this.subtyp, this.desc, this.manacost, this.bonus_draws,
+            this.trigger_type, this.fns.to_stats, this.fns.at_target, this.fns.on_hit, this.fns.on_affected_tiles
+        )
     }
 
     is_corrupt() {
@@ -4719,7 +4751,12 @@ const SpellSpecials = {
     CHAOSINCANT: "CHAOSINCANT",
     NEVERDAMAGE: "NEVERDAMAGE",
     DEATHCHAIN: "DEATHCHAIN",
-    NEGATIVESPACE: "NEGATIVESPACE"
+    NEGATIVESPACE: "NEGATIVESPACE",
+    SPELLTRANSFERENCE: "SPELLTRANSFERENCE",
+    ARCANEECHO: "ARCANEECHO",
+    SPREADINGARCANA: "SPREADINGARCANA",
+    PURITY: "PURITY",
+    UNRESOLVEDSPELL: "UNRESOLVEDSPELL"
 }
 
 const SpellMulticast = {
@@ -4816,7 +4853,7 @@ class PrimedSpell {
 
         // REMEMBER: CORE ALWAYS FIRST, then modifiers
         // even though in the spell builder the core will be last
-        this.spells.forEach(spell => {
+        this.spells.forEach((spell, index) => {
             if (spell.fns.to_stats) {
                 spell.fns.to_stats(this.caster, spell, this.stats);
             }
@@ -4839,6 +4876,15 @@ class PrimedSpell {
             switch (special) {
                 case SpellSpecials.FLAMENOVA:
                     this.stats.damage += this.stats.radius * 5;
+                    break;
+                
+                case SpellSpecials.UNRESOLVEDSPELL:
+                    this.stats.damage = random_int(1, 200);
+                    this.stats.damage_type = random_damage_type();
+                    this.stats.range = random_int(6, 18);
+                    this.stats.radius = random_int(1, 6);
+                    // TODO perpline ?
+                    this.stats.shape = random_from_arr([Shape.Circle, Shape.Cone, Shape.Diamond, Shape.Line, Shape.Ring, Shape.Square])[1];
                     break;
             }
         })
@@ -5112,7 +5158,7 @@ class PrimedSpell {
             // position = caster.position;
         }
 
-        if (this.stats.target_type == SpellTargeting.UnitTarget && !board.get_pos(position)) {
+        if (this.stats.target_type == SpellTargeting.UnitTarget && !board.get_pos(position) && !this.stats.specials.includes(SpellSpecials.UNRESOLVEDSPELL)) {
             throw ReferenceError("Tried to cast a unit target spell with no unit at target position!")
         }
 
@@ -5172,11 +5218,15 @@ class PrimedSpell {
         })
 
         // we really want to sell the chaos effect so do chaos stuff here if needed
-        if (this.stats.specials.includes(SpellSpecials.CHAOSINCANT)) {
+        if (this.stats.specials.includes(SpellSpecials.CHAOSINCANT) || this.stats.specials.includes(SpellSpecials.UNRESOLVEDSPELL)) {
             this.spells.forEach(s => {
                 //console.log(s, s.unknown_incant_dmgtype);
                 // basically force a recalc on every cast
                 if (s.name == "Unknown Incantation") {
+                    this.stats = {};
+
+                    this.calculate();
+                } else if (s.name == "Unresolved Spell") {
                     this.stats = {};
 
                     this.calculate();
@@ -5233,10 +5283,27 @@ class PrimedSpell {
 
             // trigger affected tile functions
             sthis.spells.forEach(spell => {
+                if (spell.typ == SpellType.Core && sthis.stats.specials.includes(SpellSpecials.PURITY)) {
+                    return;
+                }
+
                 if (spell.fns.on_affected_tiles) {
                     spell.fns.on_affected_tiles(sthis.caster, sthis, sthis.stats, location);
                 }
+
+                if (spell.fns.at_target && sthis.stats.specials.includes(SpellSpecials.SPREADINGARCANA)) { 
+                    spell.fns.at_target(sthis.caster, sthis, sthis.stats, location);
+                }
+
+                if (spell.typ == SpellType.Core && sthis.stats.specials.includes(SpellSpecials.ARCANEECHO)) {
+                    spell.fns.on_affected_tiles(sthis.caster, sthis, sthis.stats, location);
+                }
             })
+
+            if (!sthis.stats.specials.includes(SpellSpecials.PURITY) && sthis.stats.specials.includes(SpellSpecials.UNRESOLVEDSPELL) && game.random() < 0.2) {
+                let spell = random_from_arr(spells_list.filter(s => s.is_normal() && s.typ == SpellType.Core));
+                spell.fns.on_affected_tiles(sthis.caster, sthis, sthis.stats, location);
+            }
 
             if (sthis.trigger[0] == "on_affected_tiles") {
                 sthis.trigger[1].origin = location;
@@ -5247,10 +5314,23 @@ class PrimedSpell {
 
         // trigger point target functions
         this.spells.forEach(spell => {
+            if (spell.typ == SpellType.Core && this.stats.specials.includes(SpellSpecials.PURITY)) {
+                return;
+            }
+
             if (spell.fns.at_target) { 
                 spell.fns.at_target(this.caster, this, this.stats, position);
             }
+
+            if (spell.typ == SpellType.Core && sthis.stats.specials.includes(SpellSpecials.ARCANEECHO)) {
+                spell.fns.at_target(this.caster, this, this.stats, position);
+            }
         })
+
+        if (!sthis.stats.specials.includes(SpellSpecials.PURITY) && this.stats.specials.includes(SpellSpecials.UNRESOLVEDSPELL) && game.random() < 0.8) {
+            let spell = random_from_arr(spells_list.filter(s => s.is_normal() && s.typ == SpellType.Core));
+            spell.fns.at_target(this.caster, this, this.stats, position);
+        }
 
         if (this.trigger[0] == "at_target") {
             this.trigger[1].origin = position;
@@ -5271,21 +5351,35 @@ class PrimedSpell {
 
             if (damaged_entities) {
                 keep_triggering_damage = true;
+                let sthis = this;
                 damaged_entities.forEach(dmg_instance => {
                     let ent = dmg_instance.ent;
                     let amt = dmg_instance.amt;
                     let typ = dmg_instance.typ;
 
-                    this.spells.forEach(spell => {
+                    sthis.spells.forEach(spell => {
+                        if (spell.typ == SpellType.Core && sthis.stats.specials.includes(SpellSpecials.PURITY)) {
+                            return;
+                        }
+
                         if (spell.fns.on_hit) {
-                            spell.fns.on_hit(this.caster, this, this.stats, ent, amt, typ);
+                            spell.fns.on_hit(sthis.caster, sthis, sthis.stats, ent, amt, typ);
+                        }
+
+                        if (spell.typ == SpellType.Core && sthis.stats.specials.includes(SpellSpecials.ARCANEECHO)) {
+                            spell.fns.on_hit(sthis.caster, sthis, sthis.stats, ent, amt, typ);
                         }
                     })
 
-                    if (this.trigger[0] == "on_hit") {
-                        this.trigger[1].origin = ent.position;
-                        this.trigger[1].original_cast_position = position;
-                        game.cast_primed_spell(this.trigger[1].copy(), ent.position, true);
+                    if (!sthis.stats.specials.includes(SpellSpecials.PURITY) && sthis.stats.specials.includes(SpellSpecials.UNRESOLVEDSPELL) && game.random() < 0.15) {
+                        let spell = random_from_arr(spells_list.filter(s => s.is_normal() && s.typ == SpellType.Core));
+                        spell.fns.on_hit(sthis.caster, sthis, sthis.stats, ent, amt, typ);
+                    }
+
+                    if (sthis.trigger[0] == "on_hit") {
+                        sthis.trigger[1].origin = ent.position;
+                        sthis.trigger[1].original_cast_position = position;
+                        game.cast_primed_spell(sthis.trigger[1].copy(), ent.position, true);
                     }
 
                     if (ent.dead && !entities_killed[ent.id]) {
@@ -5605,12 +5699,12 @@ class PrimedSpell {
 
 // TODO move to other file after we implement locations
 const EventType = {
-    Battle: "Battle",
-    Elite: "Elite",
-    Boss: "Boss",
-    Event: "Event",
-    GoodEvent: "Good Event",
-    RareEvent: "Rare Event",
+    Battle: "Battle",           
+    Elite: "Elite",             
+    Boss: "Boss",               
+    Event: "Event",             
+    GoodEvent: "Good Event",    
+    RareEvent: "Rare Event",    
 }
 
 const event_type_to_icon = {
@@ -6491,6 +6585,9 @@ class Game {
 
                     let algs = sthis.player_location.generators;
                     let alg = algs[Math.floor(game.random() * algs.length)];
+                    // TODO reset once, then each alg should do something to the map.
+                    // we're gonna have algs be functions that take in a tile type (or multiple) and return a generator for that tile type
+                    // so no more location.walls
                     sthis.reset_with_alg(
                         alg[0], alg[1] + (game.random() * (alg[2] - alg[1]))
                     )

@@ -1,6 +1,6 @@
 const PHYS_GRANULARITY = 64;
-const DEFAULT_BALL_RESTITUTION = 0.85;
-const DEFAULT_BALL_FRICTION = 0.995;
+const DEFAULT_BALL_RESTITUTION = 0.9;
+const DEFAULT_BALL_FRICTION = 0.994;
 
 const fps = 60;
 
@@ -18,6 +18,64 @@ class Board {
     constructor(size) {
         this.size = size;
         this.balls = [];
+        this.lines = [
+            // corner walls
+            {
+                // ax + by + c = 0
+                id: 0,
+
+                a: 1,
+                b: 0,
+                c: -20,
+
+                lbx: null,
+                ubx: null,
+                lby: null,
+                uby: null,
+            },
+
+            {
+                // ax + by + c = 0
+                id: 0,
+
+                a: 1,
+                b: 0,
+                c: -320,
+
+                lbx: null,
+                ubx: null,
+                lby: null,
+                uby: null,
+            },
+
+            {
+                // ax + by + c = 0
+                id: 1,
+
+                a: 0,
+                b: 1,
+                c: -192,
+
+                lbx: null,
+                ubx: null,
+                lby: null,
+                uby: null,
+            },
+
+            {
+                // ax + by + c = 0
+                id: 1,
+
+                a: 0,
+                b: 1,
+                c: -20,
+
+                lbx: null,
+                ubx: null,
+                lby: null,
+                uby: null,
+            }
+        ]
 
         this.gravity = new Vector2(0, 0);
     }
@@ -86,9 +144,16 @@ class Board {
 
         // check wall and ground bounces
         this.balls.forEach(ball => {
+            /*
             ball.check_ground_bounce(sthis);
             ball.check_ceiling_bounce(sthis);
             ball.check_sides_bounce(sthis);
+            */
+            sthis.lines.forEach(line => {
+                if (ball.collides_line(line)) {
+                    ball.resolve_line_collision(sthis, line);
+                }
+            })
         })
     }
 }
@@ -269,6 +334,104 @@ class Ball {
         this.check_right_bounce(board);
     }
 
+    collides_line(line) {
+        // a line is given mathematically as ax+by+c=0, with optional limits of x and/or y
+        // we naively get the distance and treat the line as fully 2d (so it cannot collide on the side).
+        // the only two cases we care about is "in front" and "behind" the line
+
+        // check coordinate bounds
+        // it's out of bounds if its position minus radius is > greater bound or position plus radius < lower bound
+        if (line.lbx && this.position.x + this.radius < line.lbx) {
+            return false;
+        }
+
+        if (line.lby && this.position.y + this.radius < line.lby) {
+            return false;
+        }
+
+        if (line.ubx && this.position.x - this.radius > line.ubx) {
+            return false;
+        }
+
+        if (line.uby && this.position.y - this.radius > line.uby) {
+            return false;
+        }
+
+        // https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+        let a = line.a;
+        let b = line.b;
+        let c = line.c;
+        let distance = Math.abs(this.position.x * a + this.position.y * b + c) / Math.sqrt(a*a + b*b);
+
+        if (this.position.y >= 145 && line.id == 1) {
+            //debugger;
+        }
+
+        if (distance < this.radius) {
+            // console.log("collision: distance", distance, "with line ID", line.id);
+        }
+
+        return distance < this.radius;
+    }
+
+    resolve_line_collision(board, line) {
+        // console.log("collided");
+
+        // https://stackoverflow.com/questions/573084/how-to-calculate-bounce-angle
+        // need the surface normal vector of the line. then, split the velocity into parallel and perpendicular components
+        let normal_vec = new Vector2(line.a, line.b).normalize();
+
+        // u is perpendicular to the line (so is the part we reverse, affected by restitution), w is parallel (affected by friction)
+        let u = normal_vec.mul(this.velocity.dot(normal_vec))
+        let w = this.velocity.sub(u);
+
+        let new_velocity = u.mul(-this.bounce_factor).add(w.mul(this.friction_factor));
+
+        /*
+        // need to get the incidence angle, then it's just year 11 mechanics
+        // incidence angle should just be the direction of motion; we then rotate that angle around the line's angle
+        // (angle mod is 180-line_angle, direction of mod is based on whether the angle of approach is > 180 (-1) or not (1))
+        let incidence_angle = this.velocity.angle();
+
+        let line_vector = new Vector2(line.b, line.a); // y=mx; x=1; y=m
+        let line_angle = line_vector.angle();
+
+        let angle_mod = Math.PI - line_angle;
+        let angle_mod_sign = line_vector.angle_between(this.velocity) < Math.PI ? -1 : 1;
+
+        let result_angle = incidence_angle + (angle_mod * angle_mod_sign);
+
+        // console.log(line_vector, incidence_angle / Math.PI * 180, line_angle / Math.PI * 180, angle_mod / Math.PI * 180);
+        // console.log(`incidence: ${incidence_angle / Math.PI * 180}  rebound: ${result_angle / Math.PI * 180}`);
+        */
+
+        // roll back position to the point at which it would intersect the line
+        let a = line.a;
+        let b = line.b;
+        let c = line.c;
+        let distance = Math.abs(this.position.x * a + this.position.y * b + c) / Math.sqrt(a*a + b*b);
+
+        let rollback_distance = this.radius - distance;
+
+        // console.log("original pos", this.position);
+
+        this.add_pos(this.velocity.mul(-rollback_distance));
+
+        // update velocity
+        this.velocity = new_velocity;
+
+        // console.log("rollback pos", this.position);
+
+        // add the rollback amount with the new velocity (this essentially simulates the time between steps if we're catching up with an object "stuck" in a line)
+        this.add_pos(this.velocity.mul(-rollback_distance));
+
+        // console.log("final pos", this.position);
+
+        // let distance_after_rollback = Math.abs(this.position.x * a + this.position.y * b + c) / Math.sqrt(a*a + b*b);
+        // console.log(`distance before rollback: ${distance} | after rollback: ${distance_after_rollback}`);
+        // console.log("velocity:", this.velocity);
+    }
+
     collides(other) {
         let radius_diff = this.radius + other.radius;
         let radius_diff_sqr = Math.pow(radius_diff, 2);
@@ -410,10 +573,30 @@ let default_pocket_kernel = new EternaProcessKernel(
         }
 
         if (data.keypresses.length > 2) {
-            data.game.balls[0].add_impulse(new Vector2(-400, 0));
-            data.game.balls[0].at_rest = false;
+            // data.game.balls[0].add_impulse(new Vector2(-100, 100));
+            // data.game.balls[0].at_rest = false;
 
             data.keypresses = [];
+        }
+
+        if (data.clicks.length > 0) {
+            let mousepos = new Vector2(data.clicks[0].evt.clientX, data.clicks[0].evt.clientY);
+
+            let table_tiles_obj = query_obj.get("table_tiles");
+            let game_area_rect = table_tiles_obj.getBoundingClientRect();
+
+            // TODO subtract the game area's position from here once we add the menu
+            let game_pos = mousepos.sub(new Vector2(game_area_rect.x, game_area_rect.y)).sub(new Vector2(0, 0)).div(2);
+
+            // make sure we're targeting the center of the balls, not the top left
+            let target_pos = (data.game.balls[0].position.sub(game_pos)).add(new Vector2(6, 6));
+            console.log(target_pos);
+
+            let impulse = target_pos.normalize().mul(200);
+            data.game.balls[0].add_impulse(impulse);
+            data.game.balls[0].at_rest = false;
+
+            data.clicks = [];
         }
 
         return data;

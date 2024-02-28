@@ -2188,15 +2188,11 @@ spells_list = [
         no_tiles,
     ),
 
-    modifier(
-        "Unresolved Spell", "*?", SpellSubtype.Misc,
+    core_spell(
+        "Unresolved Spell", "*?", SpellSubtype.Core,
         "#fe9", "#265",
-        "When this fragment is cast, it permanently becomes another random fragment.",
-        0,
-        no_stats,
-        no_target,
-        no_hit,
-        no_tiles,
+        "When this core is cast, it will have completely random stats, and might trigger random special effects from other cores. {You feel as if this might go horribly wrong.}",
+        0, DmgType.Physical, 0, 0, Shape.Diamond, 0
     ),
 
     core_spell(

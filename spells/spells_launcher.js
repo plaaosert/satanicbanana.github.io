@@ -1371,7 +1371,7 @@ let debug_msgbox_padding_test = new MessageBoxTemplate(
 
 let start_of_game_popup = new MessageBoxTemplate(
     "THE GAME'S TITLE SHOULD PROBABLY GO HERE",
-    "Your ancient confrontation with the lich Efrit is all you truly remember as you awaken from your centuries-long magical slumber.\n\nIn your absence, Efrit has run amok, tearing reality to shreds. Nothing remains in these shattered fragments of existence but your enemies and creatures driven mad by the chaos.\n\nYou must gather your senses, collect your lost magical power and flee from the encroaching corruption behind you.\n\nMaybe, with enough time, you may gather enough strength to live and confront him again.",
+    "Your ancient confrontation with the lich Efrit is all you truly remember as you awaken from your centuries-long magical slumber.\n\nIn your absence, Efrit has run amok, tearing reality to shreds. Nothing remains in these shattered fragments of existence but your enemies and innocent creatures driven mad by the chaos.\n\nYou must gather your senses, collect your lost magical power and flee from the encroaching corruption behind you.\n\nMaybe, with enough time, you may gather enough strength to live and confront him again.",
     ["OK", "Hey, wait, what? I need a tutorial."],
     ["#333", "#060"],
     [

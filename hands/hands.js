@@ -140,6 +140,8 @@ let hands_objects = [];
 
 let animations = [];
 
+let hand_to_hand_map = new Array(64).fill(0).map((v, i) => i);
+
 let hand_to_fn_map = [];
 let mutable_data = {};
 
@@ -162,12 +164,39 @@ function update_hand_obj(hand) {
     */
 }
 
+function update_all_hand_objs() {
+    hands_objects.flat().forEach(update_hand_obj);
+}
+
 function pos_valid(x, y) {
     return !(x < 0 || x >= GAME_WIDTH || y < 0 || y >= GAME_HEIGHT)
 }
 
 function swap_hands(x1, y1, x2, y2) {
+    // swap the values of the two hands, then swap the positions of the two hands' maps on the function map
+    let buff_hand = get_hand(x1, y1);
+    let buff = {}
+    Object.keys(buff_hand).forEach(k => {
+        if (k=="objs") {
+            return;
+        }
 
+        if (k == "col") {
+            buff[k] = buff_hand[k].slice();
+        } else {
+            buff[k] = buff_hand[k];
+        }
+    })
+
+    set_hand(x1, y1, get_hand(x2, y2));
+    set_hand(x2, y2, buff);
+
+    let idx1 = (x1 * GAME_HEIGHT) + y1;
+    let idx2 = (x2 * GAME_HEIGHT) + y2;
+
+    let fn_buff = hand_to_hand_map[idx1];
+    hand_to_hand_map[idx1] = hand_to_hand_map[idx2];
+    hand_to_hand_map[idx2] = fn_buff; 
 }
 
 function update_hand(x, y) {
@@ -179,7 +208,7 @@ function get_hand(x, y) {
     if (pos_valid(x, y)) {
         return hands_objects[y][x];
     } else {
-        return null;
+        return {error: "INVALID HAND COORD", col: [0, 0, 0], pos: 0, orient: 0, rot: 0};
     }
 }
 
@@ -192,7 +221,7 @@ function set_hand(x, y, to) {
 
     // update with all shared parameters
     Object.keys(to).forEach(k => {
-        if (k != "obj" && k in hand) {
+        if (k != "obj" && k != "objs" && k in hand) {
             hand[k] = to[k];
         }
     });
@@ -260,7 +289,9 @@ function setup_hand_sprites() {
 }
 
 function get_hand_fn(x, y) {
-    return hand_to_fn_map[(x*GAME_WIDTH) + y];
+    idx = hand_to_hand_map[(x*GAME_HEIGHT) + y]
+
+    return hand_to_fn_map[idx];
 }
 
 function setup_hand_to_fn_map() {
@@ -275,8 +306,8 @@ function setup_hand_to_fn_map() {
     }
 }
 
-function scramble_hand_to_fn_map() {
-    hand_to_fn_map = shuffle(hand_to_fn_map);
+function scramble_hand_to_hand_map() {
+    hand_to_hand_map = shuffle(hand_to_hand_map);
 }
 
 function update_animations() {
@@ -408,6 +439,25 @@ function hand_pulse_animation(data) {
     data.hand_pulses = new_pulses;
 }
 
+function save_hand_states() {
+    data = {
+        hand_states: hands_objects,
+        hand_to_hand_map: hand_to_hand_map
+    }
+
+    localStorage.setItem("hands_data", btoa(JSON.stringify(data)))
+}
+
+function load_hand_states() {
+    data = localStorage.getItem("hands_data");
+
+    if (data) {
+        return JSON.parse(atob(data));
+    } else {
+        return null;
+    }
+}
+
 let hand_pulse_data = {hand_pulses: []};
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -415,13 +465,30 @@ document.addEventListener("DOMContentLoaded", function() {
     hands_objects = setup_hand_sprites();
 
     setup_hand_to_fn_map();
-    
-    // scramble_hand_to_fn_map();
 
-    animations.push(new HandAnimation(
-        {speed: 60}, hand_random_animation_function, 1000/60, true
-    ))
-    
+    let loaded_data = load_hand_states();
+
+    if (false && loaded_data) {
+        for (let x=0; x<8; x++) {
+            for (let y=0; y<8; y++) {
+                Object.keys(loaded_data.hand_states[x][y]).forEach(k => {
+                    if (k != "objs") {
+                        hands_objects[x][y][k] = loaded_data.hand_states[x][y][k];
+                    }
+                })
+            }
+        }
+
+        hand_to_hand_map = loaded_data.hand_to_hand_map;
+        hands_clickable = true;
+    } else {
+        // scramble_hand_to_hand_map();
+
+        animations.push(new HandAnimation(
+            {speed: 60}, hand_random_animation_function, 1000/60, true
+        ))
+    }
+
     let pulse_anim = new HandAnimation(
         hand_pulse_data, hand_pulse_animation, 1000/60, true
     );
@@ -429,8 +496,12 @@ document.addEventListener("DOMContentLoaded", function() {
     pulse_anim.data = hand_pulse_data;
     animations.push(pulse_anim)
 
+    update_all_hand_objs();
+
     update_animations();
     setInterval(update_animations, 1000/60);
 
     hands_container.style.visibility = "visible";
+
+    setInterval(save_hand_states, 500);
 })

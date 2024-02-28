@@ -1853,14 +1853,14 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Deep Water", "~~", "#28d", "Deep, murky water.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Construct
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Deep Water"],
+        entities_specials["Deep Water"],
         "None",
-        1, false, false, 
+        999, false, true, 
     ),
 
     new EntityTemplate(
