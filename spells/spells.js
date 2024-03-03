@@ -133,6 +133,10 @@ function random_int(min_inc, max_exc) {
     return Math.floor(min_inc + (game.random() * (max_exc - min_inc)));
 }
 
+function random_float(min_inc, max_inc) {
+    return min_inc + (game.random() * (max_inc - min_inc));
+}
+
 // All seeded randomness from:
 // https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
 function cyrb128(str) {
@@ -3247,7 +3251,7 @@ class Board {
 class EntityTemplate {
     static id_inc = 0;
 
-    constructor(name, icon, col, desc, max_hp, max_mp, affinities, xp_value, spawn_credits, innate_spells, specials, specials_text, ai_level, blocks_los, untargetable, on_death) {
+    constructor(name, icon, col, desc, max_hp, max_mp, affinities, xp_value, spawn_credits, innate_spells, specials, specials_text, ai_level, blocks_los, untargetable, on_death, signup_broadcasts) {
         this.id = EntityTemplate.id_inc;
         EntityTemplate.id_inc++;
         
@@ -3267,6 +3271,7 @@ class EntityTemplate {
         this.blocks_los = blocks_los;
         this.untargetable = untargetable;
         this.on_death = on_death != undefined ? on_death : [];
+        this.signup_broadcasts = signup_broadcasts ? true : false;
     }
 }
 
@@ -3315,6 +3320,13 @@ class Entity {
         this.calculate_primed_spells(new Vector2(0, 0));
     }
 
+    trigger_special(game, event_typ, other_info) {
+        let evt_info = {event_type: event_typ, ...other_info};
+
+        // console.log(this, "triggering special", event_typ, "with info", evt_info);
+        this.specials(game, this, evt_info)
+    }
+
     add_innate_spell(spells) {
         this.innate_spells.push(spells);
         this.innate_primed_spells = [];
@@ -3336,6 +3348,9 @@ class Entity {
     }
 
     do_turn() {
+        // this is called when the turn starts, so do our SelfTurnBegan here
+        this.trigger_special(this, GameEventType.SelfTurnBegan);
+
         let turncount = game.turncount;
 
         this.calculate_primed_spells(game.player_ent.position);
@@ -3433,6 +3448,8 @@ class Entity {
     do_end_turn() {
         // for now just give some mp regen
         this.restore_mp(Math.min(Math.round(this.max_mp / 25)));
+        this.trigger_special(this, GameEventType.SelfTurnEnded);
+
         this.spawn_protection = false;
         this.took_damage_last_turn = false;
     }
@@ -3690,7 +3707,31 @@ class Entity {
 
         let died = this.lose_hp(final_damage);
         console.log(`${this.name} says "ow i took ${final_damage} ${damage_type} damage (multiplied by ${dmg_mult} from original ${damage}) from ${caster.name}`);
-        
+
+        let sthis = this;
+        this.trigger_special(game, GameEventType.SelfDamageTaken, {
+            dmg: final_damage,
+            dmgtyp: damage_type,
+            lethal: died
+        })
+
+        game.registered_broadcast_entities.forEach(ent => {
+            ent.trigger_special(game, GameEventType.AnyDamageTaken, {
+                ent: sthis,
+                dmg: final_damage,
+                dmgtyp: damage_type,
+                lethal: died
+            })
+        })
+
+        if (died) {
+            this.trigger_special(game, GameEventType.SelfDied)
+    
+            game.entities.forEach(ent => {
+                ent.trigger_special(game, GameEventType.AnyDied, {ent: sthis})
+            })
+        }
+
         renderer.refresh_right_panel = true;
         //console.log("game asked for right panel refresh");
         
@@ -3825,14 +3866,14 @@ class Spell {
 // TODO fire these events for every entity when something happens
 // [game, ent, event_info{event_type, other details, e.g. damage amount and type for DamageTaken}]
 const GameEventType = {
-    SelfSpawned: "SelfSpawned",  // TODO
-    SelfTurnBegan: "SelfTurnBegan",  // TODO
-    SelfTurnEnded: "SelfTurnEnded",  // TODO
-    AnyTurnEnded: "AnyTurnEnded",  // TODO
-    SelfDamageTaken: "SelfDamageTaken",  // TODO
-    AnyDamageTaken: "AnyDamageTaken",  // TODO
-    SelfDied: "SelfDied",  // TODO
-    AnyDied: "AnyDied"  // TODO
+    SelfSpawned: "SelfSpawned",  // TODO test
+    SelfTurnBegan: "SelfTurnBegan",  // TODO test
+    SelfTurnEnded: "SelfTurnEnded",  // TODO test
+    AnyTurnEnded: "AnyTurnEnded",  // TODO test
+    SelfDamageTaken: "SelfDamageTaken",  // TODO test
+    AnyDamageTaken: "AnyDamageTaken",  // TODO test
+    SelfDied: "SelfDied",  // TODO test
+    AnyDied: "AnyDied"  // TODO test
 }
 
 const SpellType = {
@@ -4428,8 +4469,8 @@ function propagate_diamond(origin, radius, los) {
     return positions.reverse();
 }
 
-function maze_gen(game, board, cvr, diagonals) {
-    let wall_remove_chance = cvr ? cvr : 0.1
+function maze_gen(tile, game, board, diagonals) {
+    let wall_remove_chance = 0;
 
     let walls_removed = new Set();
 
@@ -4482,14 +4523,13 @@ function maze_gen(game, board, cvr, diagonals) {
         }
     }
 
-    let walls = game.player_location.walls;
     let walls_placed = 0;
     for (let x=0; x<board.dimensions.x; x++) {
         for (let y=0; y<board.dimensions.y; y++) {
             let t = new Vector2(x, y);
             if (game.random() > wall_remove_chance && !walls_removed.has(t.hash_code())) {
-                let result = game.spawn_entity(
-                    walls[0], Teams.UNALIGNED, t
+                let result = game.place_worldgen_wall(
+                    tile, t
                 )
     
                 if (result) {
@@ -4498,11 +4538,6 @@ function maze_gen(game, board, cvr, diagonals) {
             }
         }
     }
-
-    walls_placed += flood_fill_inaccessible(game, walls);
-
-    // since the maze should always have a path to everywhere, it should never reject
-    return true;
 }
 
 function select_random_wall(game, walls) {
@@ -4516,9 +4551,11 @@ function select_random_wall(game, walls) {
     return w;
 }
 
-function flood_fill_inaccessible(game, walls) {
+function flood_fill_inaccessible(game, tile_override) {
     // check every tile. if it is not reachable from the player tile,
     // turn it into a wall.
+    let tile_to_fill = tile_override ? tile_override : get_entity_by_name("Obscured");
+
     let walls_placed = 0;
 
     let flood_set = {};
@@ -4563,7 +4600,7 @@ function flood_fill_inaccessible(game, walls) {
             let t = new Vector2(x, y);
             if (!flood_set[t.hash_code()]) {
                 let result = game.spawn_entity(
-                    walls[4], Teams.UNALIGNED, t
+                    tile_to_fill, Teams.UNALIGNED, t
                 )
     
                 if (result) {
@@ -4577,53 +4614,188 @@ function flood_fill_inaccessible(game, walls) {
 }
 
 const WorldGen = {
-    RandomWalls: function(game, board, cvr) {
-        let coverage = cvr ? cvr : 0.1
+    RandomWalls: function(tile, cvrmin, cvrmax) {
+        return function(game, board) {
+            let coverage = random_float(cvrmin, cvrmax);
 
-        let num_walls = (0.85 + (game.random() * 0.3)) * board.num_tiles * coverage;
-        num_walls = Math.floor(num_walls);
-
-        let walls = game.player_location.walls;
-
-        let walls_placed = 0;
-
-        for (let i=0; i<num_walls; i++) {
-            let pos = new Vector2(
-                Math.floor(game.random() * board.dimensions.x),
-                Math.floor(game.random() * board.dimensions.y)
-            );
-
-            let result = game.spawn_entity(
-                select_random_wall(game, walls), Teams.UNALIGNED, pos
-            )
-
-            if (result) {
-                walls_placed++;
+            let num_walls = board.num_tiles * coverage;
+            num_walls = Math.floor(num_walls);
+    
+            let walls_placed = 0;
+    
+            for (let i=0; i<num_walls; i++) {
+                let pos = new Vector2(
+                    Math.floor(game.random() * board.dimensions.x),
+                    Math.floor(game.random() * board.dimensions.y)
+                );
+    
+                let placing_successful = game.place_worldgen_wall(
+                    tile, pos
+                )
+    
+                if (placing_successful) {
+                    walls_placed++;
+                }
             }
         }
+    },
 
-        walls_placed += flood_fill_inaccessible(game, walls);
-
-        // finally, reject the generation if over 2x the number of tiles
-        // that should be empty are now filled
-        let expected_empty = board.num_tiles - num_walls;
-        let actual_empty = board.num_tiles - walls_placed;
-        if (actual_empty * 2 < expected_empty) {
-            // console.log(actual_empty, expected_empty, "worldgen fail");
-            return false;
+    Maze1: function(tile) {
+        return function(game, board) {
+            maze_gen(tile, game, board, false)
         }
-
-        // console.log(actual_empty, expected_empty, "worldgen success");
-        return true;
     },
 
-    Maze1: function(game, board, cvr) {
-        return maze_gen(game, board, cvr, false)
+    Maze1Diagonal: function(tile) {
+        return function(game, board) {
+            maze_gen(tile, game, board, true)
+        }
     },
 
-    Maze1Diagonal: function(game, board, cvr) {
-        return maze_gen(game, board, cvr, true)
+    IrregularSpots: function(tile, cvrmin, cvrmax, rmin, rmax, border) {
+        return function(game, board) {
+            // Generate a round shape with rmin-rmax radius in vertical and horizontal direction
+            // cvr is the chance for any single tile to be the origin of a spot.
+            // keep track of all spawned tiles, then if border, add the border tile to them
+            let placed_tiles = [];
+
+            let coverage = random_float(cvrmin, cvrmax);
+
+            let num_spots = board.num_tiles * coverage;
+            num_spots = Math.floor(num_spots);
+    
+            let walls_placed = 0;
+
+            for (let i=0; i<num_spots; i++) {
+                let rx = random_int(rmin, rmax);
+                let ry = random_int(rmin, rmax);
+
+                let pos = new Vector2(
+                    Math.floor(game.random() * board.dimensions.x),
+                    Math.floor(game.random() * board.dimensions.y)
+                );
+
+                console.log(rx, ry, pos);
+
+                for (let xt=-rx; xt<rx; xt++) {
+                    for (let yt=-ry; yt<ry; yt++) {
+                        let tile_pos = pos.add(new Vector2(
+                            xt, yt
+                        ));
+
+                        let threshold = random_float(0.88, 1.12);
+                        if ((Math.pow(xt, 2) / Math.pow(rx, 2)) + (Math.pow(yt, 2) / Math.pow(ry, 2)) <= threshold) {
+                            let placing_successful = game.place_worldgen_wall(
+                                tile, tile_pos
+                            )
+                
+                            if (placing_successful) {
+                                walls_placed++;
+                                placed_tiles.push(board.get_pos(tile_pos));
+                            }
+                        }
+                    }
+                }
+            }
+
+            placed_tiles.forEach(ent => {
+                let neighbours = [
+                    ent.position.add(new Vector2(0, 1)),
+                    ent.position.add(new Vector2(0, -1)),
+                    ent.position.add(new Vector2(-1, 0)),
+                    ent.position.add(new Vector2(1, 0)),
+                    ent.position.add(new Vector2(-1, -1)),
+                    ent.position.add(new Vector2(1, -1)),
+                    ent.position.add(new Vector2(-1, 1)),
+                    ent.position.add(new Vector2(1, 1)),
+                ];
+
+                if (!neighbours.every(pos => {
+                    return board.get_pos(pos) ? true : false;
+                })) {
+                    // if not touching anything in a cardinal direction, remove it
+                    let direct_neighbours = [
+                        ent.position.add(new Vector2(0, 1)),
+                        ent.position.add(new Vector2(0, -1)),
+                        ent.position.add(new Vector2(-1, 0)),
+                        ent.position.add(new Vector2(1, 0))
+                    ];
+
+                    if (!direct_neighbours.some(pos => {
+                        return board.get_pos(pos) ? true : false;
+                    })) {
+                        game.place_worldgen_wall(null, ent.position);
+                        walls_placed--;
+                    } else {
+                        // if border, replace with border
+                        game.place_worldgen_wall(border, ent.position, true);
+                    }
+                }
+            })
+
+            return walls_placed;
+        }
     },
+
+    SparseRooms: function(tile, cvrmin, cvrmax, rmin, rmax, exitcvr, exitmax) {
+        return function(game, board) {
+            // TODO rewrite this to make intersecting rooms connect
+            // can probably do that by checking placed tiles
+            // and destroying any that intersect 3+ tiles in cardinal directions
+            let walls_placed = 0;
+
+            let coverage = random_float(cvrmin, cvrmax);
+
+            let num_rooms = board.num_tiles * coverage;
+            num_rooms = Math.floor(num_rooms);
+
+            let placed_tiles = [];
+
+            for (let i=0; i<num_rooms; i++) {
+                let rx = random_int(rmin, rmax);
+                let ry = random_int(rmin, rmax);
+
+                let pos = new Vector2(
+                    Math.floor(game.random() * board.dimensions.x),
+                    Math.floor(game.random() * board.dimensions.y)
+                );
+
+                console.log(rx, ry, pos);
+
+                let exits_made = 0;
+
+                for (let xt=-rx; xt<rx; xt++) {
+                    for (let yt=-ry; yt<ry; yt++) {
+                        let tile_pos = pos.add(new Vector2(
+                            xt, yt
+                        ));
+
+                        if ((xt == -rx || xt == rx-1) || (yt == -ry || yt == ry-1)) {
+                            if (exits_made < exitmax && game.random() < exitcvr) {
+                                // "place" an exit (don't place anything)
+                                exits_made++;
+                            } else {
+                                console.log("placed sparserooms wall at", tile_pos);
+                                let placing_successful = game.place_worldgen_wall(
+                                    tile, tile_pos
+                                )
+                    
+                                if (placing_successful) {
+                                    walls_placed++;
+                                    placed_tiles.push(board.get_pos(tile_pos));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // look through placed_tiles and... idk...
+            // try to eliminate those intersections somehow lao
+
+            return walls_placed;
+        }
+    }
 }
 
 const Shape = {
@@ -5733,6 +5905,8 @@ class Game {
         this.board = board;
         this.player_ent = null;
         this.entities = [];
+        this.registered_broadcast_entities = new Map();
+
         this.recorded_damage = {};  // indexed by caster id and name
         this.current_wave_damage = {};
         this.damage_counts = {};    // indexed by spell id
@@ -6101,7 +6275,7 @@ class Game {
         }
     }
 
-    reset_with_alg(alg, cvr) {
+    reset_with_generators(generators) {
         for (let x=0; x<this.board.dimensions.x; x++) {
             for (let y=0; y<this.board.dimensions.y; y++) {
                 let p = new Vector2(x, y);
@@ -6119,17 +6293,49 @@ class Game {
 
         this.turn_index = 0;
 
-        this.worldgen(alg, cvr);
+        this.worldgen(generators);
     }
 
-    worldgen(alg, cvr) {
+    worldgen(generators) {
         let success = false;
+        let sthis = this;
 
-        for (let i=0; i<256; i++) {
-            // console.log(`Attempting worldgen (try #${i+1})`)
-            success = alg(this, this.board, cvr);
+        let max_tries = 32;
+        for (let i=0; i<max_tries; i++) {
+            console.log(`Attempting worldgen (try #${i+1})`)
+            generators.forEach(generator => {
+                generator(sthis, sthis.board);
+            });
+
+            let original_wall_count = sthis.entities.filter(ent => ent.has_team(Teams.UNALIGNED)).length;
+
+            // TODO flood fill inaccessible,
+            // then count the loss of tiles. if more than 25% of empty tiles ended up being flood filled, retry
+            let filled_count = flood_fill_inaccessible(sthis);
+
+            let pct_inaccessible_tiles_filled = filled_count / ((game.board.dimensions.x * game.board.dimensions.y) - original_wall_count);
+
+            let pct_walls = original_wall_count / sthis.board.num_tiles;
+
+            let success = pct_walls < 0.75 && pct_inaccessible_tiles_filled < 0.25;
+
+            console.log(`walls: ${pct_walls*100}%\ninaccessible: ${pct_inaccessible_tiles_filled*100}%\n${
+                success ? "SUCCESS" : "FAILURE"
+            }`);
+
             if (success) {
                 break;
+            }
+
+            // if not, reset!
+            for (let x=0; x<this.board.dimensions.x; x++) {
+                for (let y=0; y<this.board.dimensions.y; y++) {
+                    let p = new Vector2(x, y);
+                    let e = this.board.get_pos(p);
+                    if (e && e.id != this.player_ent.id) {
+                        this.kill(e, true);
+                    }
+                }
             }
         }
     }
@@ -6495,6 +6701,12 @@ class Game {
                 let ent = game.entities[game.turn_index]
                 ent.do_end_turn();
 
+                // TODO this kicks my ass with lag
+                let sthis = this;
+                game.registered_broadcast_entities.forEach(ent2 => {
+                    ent2.trigger_special(this, GameEventType.AnyTurnEnded, {ent: ent});
+                })
+
                 let can_skip_wait = game.safe_to_skip_wait;
                 game.safe_to_skip_wait = false;
 
@@ -6583,14 +6795,7 @@ class Game {
                     sthis.turn_processing = true;
                     sthis.begin_turn();
 
-                    let algs = sthis.player_location.generators;
-                    let alg = algs[Math.floor(game.random() * algs.length)];
-                    // TODO reset once, then each alg should do something to the map.
-                    // we're gonna have algs be functions that take in a tile type (or multiple) and return a generator for that tile type
-                    // so no more location.walls
-                    sthis.reset_with_alg(
-                        alg[0], alg[1] + (game.random() * (alg[2] - alg[1]))
-                    )
+                    sthis.reset_with_generators(sthis.player_location.generators);
 
                     sthis.progress_wave();
 
@@ -7251,6 +7456,12 @@ ${names_str}\n[#666]----${renderer.make_location_path_string(sthis, clearance_x,
         if (this.board.set_pos(position, ent_obj, overwrite)) {
             ent_obj.position = position;
             this.entities.push(ent_obj);
+
+            if (ent_obj.template.signup_broadcasts) {
+                this.registered_broadcast_entities.set(ent_obj.id, ent_obj);
+            }
+
+            ent_obj.trigger_special(this, GameEventType.SelfSpawned)
             return ent_obj;
         }
 
@@ -7262,6 +7473,16 @@ ${names_str}\n[#666]----${renderer.make_location_path_string(sthis, clearance_x,
         let pos = this.find_closest_free_point(position);
 
         return this.put_entity_obj(entity_object, pos);
+    }
+
+    place_worldgen_wall(ent_template, position, overwrite) {
+        // team is implied UNALIGNED, overwhite is implied false
+        // if ent_template is null, removes at position instead
+        if (ent_template) {
+            return this.spawn_entity(ent_template, Teams.UNALIGNED, position, overwrite ? true : false);
+        } else {
+            return this.force_kill_at(position);
+        }
     }
 
     spawn_entity(ent_template, team, position, overwrite) {
@@ -7492,6 +7713,16 @@ ${names_str}\n[#666]----${renderer.make_location_path_string(sthis, clearance_x,
         }
     }
 
+    force_kill_at(pos) {
+        let ent = this.board.get_pos(pos);
+        if (ent) {
+            this.kill(ent, true);
+            return true;
+        }
+
+        return false;
+    }
+
     kill(ent, ignore_ondeath) {
         let current_turn_entity = this.entities[this.turn_index];
         let new_entity_list = [];
@@ -7515,6 +7746,8 @@ ${names_str}\n[#666]----${renderer.make_location_path_string(sthis, clearance_x,
         }
 
         this.entities = new_entity_list;
+        this.registered_broadcast_entities.delete(ent.id);
+
         this.turn_index = this.turn_index % this.entities.length;
 
         this.board.clear_pos(ent.position);
