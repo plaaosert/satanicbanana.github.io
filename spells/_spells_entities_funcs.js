@@ -136,8 +136,8 @@ entities_spells = {
 
     "Flame Golem": [
         // Smash; 12 physical + 6 fire dmg; melee
-        // Flame Lash; 3 fire dmg; range 7; radius 0; 5 MP
-        // Core Ejection; 25 fire dmg; 10 turn cd; 40 MP
+        // Flame Lash; 3 fire dmg; range 7; line; 5 MP
+        // Core Ejection; 25 fire dmg; range 5; radius 2 burst; 10 turn cd; 40 MP
     ],
 
     "Flame Portal": [
@@ -145,7 +145,7 @@ entities_spells = {
     ],
 
     "Crazed Fire Demon": [
-        // Overcharged Infernal Beam; 20 fire dmg; ignores los; range 10; 60 MP; 2 turn cd
+        // Overcharged Infernal Beam; 20 fire dmg; line; ignores los; range 10; 60 MP; 2 turn cd
         // Flame Detonation; 14 fire dmg; radius 5 cone; range 6; 80 MP; 3 turn cd
     ],
 
@@ -185,8 +185,8 @@ entities_spells = {
     ],
 
     "Undead Viking Spearman": [
-        // Spear Strike; 2 range; 4 physical dmg
-        // Chilling Touch; 2 range; 9 ice dmg; 25 MP
+        // Spear Strike; 2 range; line; 4 physical dmg
+        // Chilling Touch; 2 range; radius 0 burst; 9 ice dmg; 25 MP
     ],
 
     "Frozen Ghost": [
@@ -199,22 +199,22 @@ entities_spells = {
     ],
 
     "Undead Viking Bowman": [
-        // Spear Strike; 9 range; 1 physical dmg
-        // Chilling Arrow; 9 range; 3 ice dmg; 25 MP
+        // Spear Strike; 9 range; 1 physical dmg; melee
+        // Chilling Arrow; 9 range; 3 ice dmg; line; 25 MP
     ],
 
     "Lightning Spirit": [
-        // Lightning Bolt; 3 range; 5 lightning dmg; 25 MP
+        // Lightning Bolt; 3 range; 5 lightning dmg; line; 25 MP
     ],
 
     "Spark Wraith": [
-        // Voltaic Discharge; 5 range; 7 lightning dmg; 75 MP
-        // Void Transmission; 2 range; 4 lightning dmg; 100% redeal dark; lightning damage causes targets to be teleported randomly within 10 tiles
+        // Voltaic Discharge; 5 range; 7 lightning dmg; line; 75 MP
+        // Void Transmission; 2 range; 4 lightning dmg; line; 100% redeal dark; lightning damage causes targets to be teleported randomly within 10 tiles
     ],
 
     "Charged Golem": [
         // Static Crush; 10 physical dmg + 10 lightning dmg; melee
-        // Eject Rod; 6 range; 8 physical dmg + 6 lightning dmg; removes 15% hp on cast; cooldown 4
+        // Eject Rod; 6 range; 8 physical dmg + 6 lightning dmg; line; removes 15% hp on cast; cooldown 4
         // Regenerate; apply Stunned to self for 3 turns and heal 30% max HP; 10 turn cooldown; only (and always) used when <30% HP
     ],
 
@@ -228,87 +228,107 @@ entities_spells = {
     ],
 
     "Arcane Aberration": [
-        // None
+        // Void Tear; 6 range; 8 arcane dmg; line; ignores los and destroys walls; cooldown 2 turns; 40 MP
+        // Void Rift; 10 range; line; ignores los; pulls affected units 1 tile closer to entity; 30 MP
+        // Detonation; 35 arcane dmg; self burst 2 radius; kills caster
     ],
 
     "Living Wand": [
-        // None
+        // [Generates according to special]
     ],
 
     "Magishroom": [
-        // None
+        // Nature Missile; 3 arcane dmg; line; range 5; 10 MP
     ],
 
     "Giant Magishroom": [
-        // None
+        // Verdant Beam; 10 arcane dmg; line; range 5; 70 MP
+        // Wrath; radius 4 self burst; 22 arcane dmg; 150 MP
     ],
 
     "Demonic Arcanist": [
-        // None
+        // [Generates 2 spells according to special]
     ],
 
     "Possessed Wand": [
-        // None
+        // [Generates according to special]
     ],
 
     "Arcane Spirit": [
-        // None
+        // Magic Missile; same as normal magic missile
     ],
 
     "Posessed Armour": [
-        // None
+        // Helm Strike; 12 physical dmg; melee; cooldown 3 turns
+        // Gauntlet Strike; 7 physical dmg; melee
     ],
 
     "Ghost Ghost Ghost": [
-        // None
+        // Dark Touch; 12 dark dmg; range 1
     ],
 
     "Revenant": [
-        // None
+        // Dark Projection; 2 dark dmg; range 7
+        // Raise Bretheren; summons Ghosts or Vengeful Ghosts on every surrounding tile; 60 MP
     ],
 
     "Restless Spirit": [
-        // None
+        // Dark Touch; 4 dark dmg; range 1
     ],
 
     "Ghastly Horseman": [
-        // None
+        // Axe Swing; 14 physical dmg; melee
+        // Necrotic Touch; 8 dark dmg; range 4; 20 MP; 3 turn cooldown
+        // Call Fallen; summons Ghosts, Ghost Ghosts, Spirit Amalgams, Wraiths, Vengeful Ghosts at random on surrounding tiles; 100 MP
     ],
 
     "Fallen Knight": [
-        // None
+        // Slash; 9 physical dmg; melee
+        // Throw Spear; 8 physical dmg; range 5; 8 turn cd
+        // Defensive Stance; gain 8 Bulwark; 12 turn cd
     ],
 
     "Angel of Fire": [
-        // None
+        // Flaming Strike; 7 physical, 5 fire dmg; melee
+        // Call Fire; 12 fire dmg; radius 2 burst; range 5; 50 MP
     ],
 
     "Angel of Lightning": [
-        // None
+        // Lightning Bolt; 4 lightning dmg; line; range 9; 20 MP
+        // Lightning Strike; 10 lightning dmg; radius 2 burst; range 5; 100 MP; stuns target for 1 turn
     ],
 
     "Angel of Judgement": [
-        // None
+        // Consecrate; same as normal consecrate in every way
+        // Holy Protection; radius 5 self square; heals Holy units by 30 HP and grants 15 Shield; 75 MP; cooldown 5 turns
     ],
 
     "High Angel of Fire": [
-        // None
+        // Searing Strike; 10 physical, 8 fire dmg; melee
+        // Call Wrath; 16 fire dmg; radius 3 burst; range 6; 50 MP
+        // Scouring Beam; 14 fire dmg; line; range 10; 160 MP; 3 turn cd
     ],
 
     "High Angel of Lightning": [
-        // None
+        // Discharge; 6 lightning dmg; radius 2 cone; range 9; 40 MP
+        // Thunder Strike; 16 lightning dmg; radius 2 burst; range 5; 200 MP; stuns target for 1 turn
     ],
 
     "Archangel": [
-        // None
+        // Call Heaven; 10 holy dmg; radius 3 square; ignores los; range 8; 100 MP; 3 turn cooldown
+        // Holy Protection; radius 5 self square; heals Holy units by 50 HP and grants 25 Shield; 150 MP; cooldown 5 turns
+        // Summon Angelic Legion; summons 1 of every other Angel (Fire, Lightning, Judgement, High Fire, High Lightning) near the caster; 400 MP; cooldown 10 turns
     ],
 
     "Holy Avatar": [
-        // None
+        // Sacred Beam; 8 holy dmg; line; range 7; 80 MP
+        // Sacred Lance; 16 holy dmg; line; range 7; 200 MP; cooldown 6 turns
+        // Divine Explosion; 40 holy dmg; 3 tile self burst; 750 MP
     ],
 
     "Priest": [
-        // None
+        // Lesser Consecrate; 4 radius self square; 10 holy dmg; 50 MP
+        // Divine Healing; 2 radius self square; heal allies by 10 HP; 40 MP; 1 turn cooldown
     ],
 
     "Idol": [
@@ -316,7 +336,8 @@ entities_spells = {
     ],
 
     "Doomsayer": [
-        // None
+        // Chaos Bolt; 4 chaos dmg; 1 radius burst; 5 range; 20 MP
+        // Call to Heaven; 12 chaos dmg 2 radius self burst; kills caster
     ],
 
     "High Priest": [
@@ -352,15 +373,21 @@ entities_spells = {
     ],
 
     "Flesh Golem": [
-        // None
+        // Consume; heal by 10% max HP; 6 turn cooldown
+        // Crush; 8 physical dmg; melee
     ],
 
     "Experiment": [
-        // None
+        // Consume; heal by 10% max HP; 6 turn cooldown
+        // Crush; 16 physical dmg; melee
+        // Unholy Speed; teleport 2 tiles towards target; 5 turn cooldown
     ],
 
     "Grand Experiment": [
-        // None
+        // Consume; heal by 10% max HP; 6 turn cooldown
+        // Crush; 30 physical dmg; melee
+        // Unholy Speed; teleport 2 tiles towards target; 4 turn cooldown
+        // Unholy Strength; become Invincible for 2 turns; 10 turn cooldown
     ],
 
     "Imp": [
@@ -417,7 +444,7 @@ entities_spells = {
 
     "Mistake": [
         // Sweep; 40 physical dmg; range 1
-        // Life Drain; 32 dark dmg; range 1; heals user by damage dealt
+        // Life Drain; 32 dark dmg; range 3; heals user by damage dealt
     ],
 
     "Locust Swarm": [
@@ -636,83 +663,68 @@ entities_spells = {
         // None
     ],
 
-    "Unnamed": [
+    "Target Dummy": [
         // None
     ],
 
-    "Unnamed": [
+    "Refticus": [
+        // It's So Over; 100 physical dmg; melee
+        // 11:00 PM; applies sleep to target for 5 turns, or caster if time is 11:00pm-6:00am; 99 range; 7 turn cooldown
+    ],
+
+    "Castle Wall": [
         // None
     ],
 
-    "Unnamed": [
+    "Chasm": [
         // None
     ],
 
-    "Unnamed": [
+    "Corruption": [
         // None
     ],
 
-    "Unnamed": [
+    "Tree": [
         // None
     ],
 
-    "Unnamed": [
+    "Deep Water": [
         // None
     ],
 
-    "Unnamed": [
+    "Rock Wall": [
         // None
     ],
 
-    "Unnamed": [
+    "Magical Wall": [
         // None
     ],
 
-    "Unnamed": [
+    "Pile of Bones": [
         // None
     ],
 
-    "Unnamed": [
+    "Cliff Edge": [
         // None
     ],
 
-    "Unnamed": [
+    "Elevated Mesa": [
         // None
     ],
 
-    "Unnamed": [
+    "Icy Wall": [
         // None
     ],
 
-    "Unnamed": [
+    "Magma": [
         // None
     ],
 
-    "Unnamed": [
+    "Obscured": [
         // None
     ],
 
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
+    "Solid Cloud": [
         // None
     ],
 
@@ -849,7 +861,7 @@ entities_specials = {
     },
 
     "Crazed Fire Demon": function(game, ent, event_info) {
-        // If witnessing any Fire damage, gains 2 Shield.
+        // If witnessing any Fire damage, gains 5 Shield.
     },
 
     "Flame Rift": function(game, ent, event_info) {
@@ -925,7 +937,7 @@ entities_specials = {
     },
 
     "Living Wand": function(game, ent, event_info) {
-        // None
+        // Every time this entity casts a spell, it will replace that with a new spell made up of 1-3 Common fragments.
     },
 
     "Magishroom": function(game, ent, event_info) {
@@ -937,11 +949,11 @@ entities_specials = {
     },
 
     "Demonic Arcanist": function(game, ent, event_info) {
-        // None
+        // Every time this entity casts a spell, it will replace that with a new spell made up of 2-4 Common or Uncommon fragments.
     },
 
     "Possessed Wand": function(game, ent, event_info) {
-        // None
+        // Every time this entity casts a spell, it will replace that with a new spell made up of 1-3 Common fragments.
     },
 
     "Arcane Spirit": function(game, ent, event_info) {
@@ -957,7 +969,7 @@ entities_specials = {
     },
 
     "Revenant": function(game, ent, event_info) {
-        // None
+        // If this entity would take damage of a type it is not weak against, it instead takes no damage.
     },
 
     "Restless Spirit": function(game, ent, event_info) {
@@ -965,7 +977,7 @@ entities_specials = {
     },
 
     "Ghastly Horseman": function(game, ent, event_info) {
-        // None
+        // Can move twice in a single turn.
     },
 
     "Fallen Knight": function(game, ent, event_info) {
@@ -973,11 +985,11 @@ entities_specials = {
     },
 
     "Angel of Fire": function(game, ent, event_info) {
-        // None
+        // Deals 3 Fire damage every turn to adjacent enemy units.
     },
 
     "Angel of Lightning": function(game, ent, event_info) {
-        // None
+        // If witnessing any Lightning damage, restores 10 HP.
     },
 
     "Angel of Judgement": function(game, ent, event_info) {
@@ -985,11 +997,11 @@ entities_specials = {
     },
 
     "High Angel of Fire": function(game, ent, event_info) {
-        // None
+        // If witnessing any Fire damage, restores 20 MP. Deals 5 Fire damage every turn to adjacent enemy units.
     },
 
     "High Angel of Lightning": function(game, ent, event_info) {
-        // None
+        // If witnessing any Lightning damage, restores 25 MP and 10 HP.
     },
 
     "Archangel": function(game, ent, event_info) {
@@ -997,7 +1009,7 @@ entities_specials = {
     },
 
     "Holy Avatar": function(game, ent, event_info) {
-        // None
+        // Any damage this entity takes first removes MP before removing HP.
     },
 
     "Priest": function(game, ent, event_info) {
@@ -1005,11 +1017,11 @@ entities_specials = {
     },
 
     "Idol": function(game, ent, event_info) {
-        // None
+        // Holy entities within line of sight heal 10 HP per turn. Dark entities within line of sight take 6 Holy damage per turn.
     },
 
     "Doomsayer": function(game, ent, event_info) {
-        // None
+        // Explodes in a 2 tile burst for 10 Chaos damage on death.
     },
 
     "High Priest": function(game, ent, event_info) {
@@ -1017,11 +1029,11 @@ entities_specials = {
     },
 
     "Necromancer": function(game, ent, event_info) {
-        // None
+        // Heals all Dark and Undead units within 3 tiles by 8 HP per turn.
     },
 
     "Thrall": function(game, ent, event_info) {
-        // None
+        // Heals from Dark damage.
     },
 
     "Tormentor": function(game, ent, event_info) {
@@ -1029,7 +1041,7 @@ entities_specials = {
     },
 
     "Dark Spirit": function(game, ent, event_info) {
-        // None
+        // Heals an equal amount to all damage it causes.
     },
 
     "Malicious Force": function(game, ent, event_info) {
@@ -1045,15 +1057,15 @@ entities_specials = {
     },
 
     "Flesh Golem": function(game, ent, event_info) {
-        // None
+        // Gains 5 max HP when witnessing the death of any Living entity.
     },
 
     "Experiment": function(game, ent, event_info) {
-        // None
+        // Gains 25 max HP when witnessing the death of any Living entity.
     },
 
     "Grand Experiment": function(game, ent, event_info) {
-        // None
+        // Gains 50 max HP when witnessing the death of any Living entity.
     },
 
     "Imp": function(game, ent, event_info) {
@@ -1328,83 +1340,67 @@ entities_specials = {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
+    "Target Dummy": function(game, ent, event_info) {
+        // Heals to max HP every turn.
+    },
+
+    "Refticus": function(game, ent, event_info) {
+        // Takes no damage except for Physical damage. Won't attack you if they are full HP.
+    },
+
+    "Castle Wall": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
+    "Chasm": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
+    "Corruption": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
+    "Tree": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
+    "Deep Water": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
+    "Rock Wall": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
+    "Magical Wall": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
+    "Pile of Bones": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
+    "Cliff Edge": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
+    "Elevated Mesa": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
+    "Icy Wall": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
+    "Magma": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
+    "Obscured": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_info) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_info) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_info) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_info) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_info) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_info) {
+    "Solid Cloud": function(game, ent, event_info) {
         // None
     },
 

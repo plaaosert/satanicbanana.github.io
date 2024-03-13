@@ -730,75 +730,64 @@ entities_spells = {
         // None
     ],
 
-    "Unnamed": [
+    "Refticus": [
+        // It's So Over; 100 physical dmg; melee
+        // 11:00 PM; applies sleep to target for 5 turns, or caster if time is 11:00pm-6:00am; 99 range; 7 turn cooldown
+    ],
+
+    "Castle Wall": [
         // None
     ],
 
-    "Unnamed": [
+    "Chasm": [
         // None
     ],
 
-    "Unnamed": [
+    "Corruption": [
         // None
     ],
 
-    "Unnamed": [
+    "Tree": [
         // None
     ],
 
-    "Unnamed": [
+    "Deep Water": [
         // None
     ],
 
-    "Unnamed": [
+    "Rock Wall": [
         // None
     ],
 
-    "Unnamed": [
+    "Magical Wall": [
         // None
     ],
 
-    "Unnamed": [
+    "Pile of Bones": [
         // None
     ],
 
-    "Unnamed": [
+    "Cliff Edge": [
         // None
     ],
 
-    "Unnamed": [
+    "Elevated Mesa": [
         // None
     ],
 
-    "Unnamed": [
+    "Icy Wall": [
         // None
     ],
 
-    "Unnamed": [
+    "Magma": [
         // None
     ],
 
-    "Unnamed": [
+    "Obscured": [
         // None
     ],
 
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
-        // None
-    ],
-
-    "Unnamed": [
+    "Solid Cloud": [
         // None
     ],
 
@@ -1420,8 +1409,8 @@ entities_specials = {
         // Heals to max HP every turn.
     },
 
-    "Unnamed": function(game, ent, event_info) {
-        // None
+    "Refticus": function(game, ent, event_info) {
+        // Takes no damage except for Physical damage. Won't attack you if they are full HP.
     },
 
     "Castle Wall": function(game, ent, event_info) {
@@ -1444,51 +1433,39 @@ entities_specials = {
         // None
     },
 
+    "Rock Wall": function(game, ent, event_info) {
+        // None
+    },
+
+    "Magical Wall": function(game, ent, event_info) {
+        // None
+    },
+
+    "Pile of Bones": function(game, ent, event_info) {
+        // None
+    },
+
+    "Cliff Edge": function(game, ent, event_info) {
+        // None
+    },
+
+    "Elevated Mesa": function(game, ent, event_info) {
+        // None
+    },
+
+    "Icy Wall": function(game, ent, event_info) {
+        // None
+    },
+
+    "Magma": function(game, ent, event_info) {
+        // None
+    },
+
     "Obscured": function(game, ent, event_info) {
         // None
     },
 
-    "Unnamed": function(game, ent, event_info) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_info) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_info) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_info) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_info) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_info) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_info) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_info) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_info) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_info) {
-        // None
-    },
-
-    "Unnamed": function(game, ent, event_info) {
+    "Solid Cloud": function(game, ent, event_info) {
         // None
     },
 

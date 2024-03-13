@@ -4775,7 +4775,7 @@ const WorldGen = {
                                 // "place" an exit (don't place anything)
                                 exits_made++;
                             } else {
-                                console.log("placed sparserooms wall at", tile_pos);
+                                // console.log("placed sparserooms wall at", tile_pos);
                                 let placing_successful = game.place_worldgen_wall(
                                     tile, tile_pos
                                 )
@@ -4792,6 +4792,22 @@ const WorldGen = {
 
             // look through placed_tiles and... idk...
             // try to eliminate those intersections somehow lao
+
+            return walls_placed;
+        }
+    },
+
+    Fill: function(tile) {
+        return function(game, board) {
+            let walls_placed = 0;
+            for (let x=0; x<board.dimensions.x; x++) {
+                for (let y=0; y<board.dimensions.y; y++) {
+                    let placing_successful = game.place_worldgen_wall(tile, new Vector2(x, y));
+                    if (placing_successful) {
+                        walls_placed++;
+                    }
+                }
+            }
 
             return walls_placed;
         }
@@ -5954,7 +5970,7 @@ class Game {
         }
 
         // TODO dummy data
-        this.player_location = new GameLocation(location_templates[0], [
+        this.player_location = new GameLocation(location_templates[1], [
             EventType.Battle,
             EventType.Elite,
             EventType.Boss,
@@ -6549,6 +6565,14 @@ class Game {
         this.wavecount++;
         this.player_location_progress++;
 
+        // figure out what to do with the event.
+        // battle; 1x spawn credits
+        // elite; 1.5x spawn credits
+        // boss; 1x spawn credits, free random enemy that costs 75%-100% of the total credits budget
+        // event; make msgbox with event, progress_wave after finishing (80% chance to be common, 20% chance to be uncommon)
+        // good event; event with "positive" tag, 40% chance to be uncommon, cannot be rare
+        // rare event; random event with "rare" tag
+
         let spawn_credits = this.spawn_credits_base;
         spawn_credits += this.spawn_credits_gain * this.wavecount;
         spawn_credits *= Math.pow(this.spawn_credits_mult, this.wavecount);
@@ -6562,6 +6586,7 @@ class Game {
 
         let picked_enemy_spawns = [];
         let spawning = true;
+        let sthis = this;
         while (spawning) {
             spawning = false;
 
@@ -6571,6 +6596,27 @@ class Game {
             let possible_spawns = entity_templates.filter(
                 template => template.spawn_credits >= lower_bound && template.spawn_credits <= upper_bound && !ids_already_picked.has(template.id)
             );
+
+            possible_spawns = possible_spawns.flatMap(ent_template => {
+                let spawn_chance = Object.entries(sthis.player_location.template.spawn_chance_mods).reduce((acc, cv) => {
+                    let k = cv[0];
+                    let v = cv[1];
+
+                    if (k.startsWith("~")) {
+                        if (ent_template.name.toLowerCase().includes(k.toLowerCase().substring(1))) {
+                            return acc * v;
+                        }
+                    } else {
+                        if (ent_template.affinities.includes(k)) {
+                            return acc * v;
+                        }
+                    }
+
+                    return acc;
+                }, 1);
+
+                return new Array(spawn_chance).fill(ent_template);
+            })
 
             if (possible_spawns.length > 0) {
                 spawning = true;
