@@ -239,7 +239,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Ghost", "o-", "#ddd", "A restless spirit unable to pass away from the world.",
+        "Ghost", "o-", "#ddd", "The spirit of one who has already died, unable to pass away from the world.",
         10, 0, [
             Affinity.Ghost
         ], 3, 6,
@@ -340,7 +340,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Fire Spirit", "\"S", "#d33", "More a force of nature than a spirit, these beings have just one goal: to burn away everything around them.",
+        "Fire Spirit", "\"\"\"S\"", "#d33", "More a force of nature than a spirit, these beings have just one goal: to burn away everything around them.",
         60, 50, [
             Affinity.Fire
         ], 30, 80,
@@ -394,7 +394,7 @@ entity_templates = [
         ], 200, 600,
         entities_spells["Crazed Fire Demon"],
         entities_specials["Crazed Fire Demon"],
-        "If witnessing any Fire damage, gains 2 Shield.",
+        "If witnessing any Fire damage, gains 5 Shield.",
         1, false, false, 
     ),
 
@@ -467,7 +467,7 @@ entity_templates = [
         entities_spells["Chilling Totem"],
         entities_specials["Chilling Totem"],
         "Deals 2 Ice damage per turn to all units within 2 tiles.",
-        1, false, false, 
+        4, false, false, 
     ),
 
     new EntityTemplate(
@@ -479,7 +479,7 @@ entity_templates = [
         entities_spells["Frozen Totem"],
         entities_specials["Frozen Totem"],
         "Deals 6 Ice damage per turn to all units within 2 tiles.",
-        1, false, false, 
+        4, false, false, 
     ),
 
     new EntityTemplate(
@@ -527,7 +527,7 @@ entity_templates = [
         entities_spells["Ice Demon"],
         entities_specials["Ice Demon"],
         "None",
-        1, false, false, 
+        2, false, false, 
     ),
 
     new EntityTemplate(
@@ -557,13 +557,13 @@ entity_templates = [
         "Spark Wraith", "W&", "#cc2", "Absorbing enough dark and lightning energy can empower a ghost into a creature of legend.",
         180, 200, [
             Affinity.Lightning,
-            Affinity.Undead,
+            Affinity.Ghost,
             Affinity.Dark
         ], 160, 400,
         entities_spells["Spark Wraith"],
         entities_specials["Spark Wraith"],
         "None",
-        1, false, false, 
+        2, false, false, 
     ),
 
     new EntityTemplate(
@@ -598,15 +598,15 @@ entity_templates = [
         entities_spells["Goblin Stormcrafter"],
         entities_specials["Goblin Stormcrafter"],
         "None",
-        1, false, false, 
+        2, false, false, 
     ),
 
     new EntityTemplate(
         "Arcane Aberration", "$%", "#f49", "A twisting, formless blob of arcane power, given a strange kind of intelligence through its immense complexity.",
-        1, 1, [
+        240, 200, [
             Affinity.Arcane,
             Affinity.Chaos
-        ], 0, -1,
+        ], 100, 140,
         entities_spells["Arcane Aberration"],
         entities_specials["Arcane Aberration"],
         "None",
@@ -615,68 +615,70 @@ entity_templates = [
 
     new EntityTemplate(
         "Living Wand", "=@", "#fac", "Wands may, over time, become saturated with magic and gain a form of intelligence. They generally do not appreciate their prior treatment.",
-        1, 1, [
+        50, 120, [
             Affinity.Arcane
-        ], 0, -1,
+        ], 30, 40,
         entities_spells["Living Wand"],
         entities_specials["Living Wand"],
-        "None",
+        "Every time this entity casts a spell, it will replace that with a new spell made up of 1-3 Common fragments.",
         1, false, false, 
     ),
 
     new EntityTemplate(
-        "Magishroom", "|>", "#8f9", "A walking mushroom, having absorbed enough magical energy to cast its own spells.",
-        1, 1, [
+        "Magishroom", "|>", "#8f9", "A walking, magical mushroom, having absorbed enough arcane energy to cast its own spells.",
+        40, 40, [
             Affinity.Natural,
             Affinity.Arcane
-        ], 0, -1,
+        ], 10, 15,
         entities_spells["Magishroom"],
         entities_specials["Magishroom"],
         "None",
-        1, false, false, 
+        2, false, false, 
     ),
 
     new EntityTemplate(
         "Giant Magishroom", "|]", "#8f9", "Magishrooms can grow big. Very big.",
-        1, 1, [
+        250, 300, [
             Affinity.Natural,
             Affinity.Arcane
-        ], 0, -1,
+        ], 100, 140,
         entities_spells["Giant Magishroom"],
         entities_specials["Giant Magishroom"],
         "None",
-        1, false, false, 
+        2, false, false, 
     ),
 
     new EntityTemplate(
-        "Demonic Arcanist", "D=", "#f26", "Demons able to resist their primal urges long enough can develop a more humanlike grasp on magic. For this reason, they are quite rare.",
-        1, 1, [
+        "Demonic Arcanist", "D=", "#f26", "Demons are able to develop a direct affinity to mana itself. This has a very different effect to elemental affinity, instead allowing the demon to cast varied magics.",
+        150, 200, [
             Affinity.Demon,
             Affinity.Arcane
-        ], 0, -1,
+        ], 120, 200,
         entities_spells["Demonic Arcanist"],
         entities_specials["Demonic Arcanist"],
-        "None",
-        1, false, false, 
+        "Every time this entity casts a spell, it will replace that with a new spell made up of 2-4 Common or Uncommon fragments.",
+        2, false, false, 
     ),
 
     new EntityTemplate(
-        "Possessed Wand", "=$", "#f8c", "Like all things, wands may be chosen as vessels for ghostly presences.",
-        1, 1, [
+        "Possessed Wand", "=$", "#f8c", "Like all things, wands may also be chosen as vessels for ghostly presences.",
+        80, 120, [
             Affinity.Arcane,
-            Affinity.Undead
-        ], 0, -1,
+            Affinity.Ghost
+        ], 30, 50,
         entities_spells["Possessed Wand"],
         entities_specials["Possessed Wand"],
-        "None",
-        1, false, false, 
+        "Every time this entity casts a spell, it will replace that with a new spell made up of 1-3 Common fragments.",
+        1, false, false, [
+            {name: "Ghost", cnt: 1}
+        ]
     ),
 
     new EntityTemplate(
         "Arcane Spirit", "]S", "#f49", "Magic is just as much a force of nature as fire or lightning - its manifestations also just as potent.",
-        1, 1, [
+        50, 60, [
             Affinity.Arcane
-        ], 0, -1,
+        ], 30, 50,
         entities_spells["Arcane Spirit"],
         entities_specials["Arcane Spirit"],
         "None",
@@ -685,46 +687,50 @@ entity_templates = [
 
     new EntityTemplate(
         "Posessed Armour", "U;", "#aaa", "For reasons unknown, ghosts are drawn to unworn sets of armour. Some suggest it may be because of their similarity to human forms.",
-        1, 1, [
-            Affinity.Undead,
+        120, 0, [
+            Affinity.Ghost,
             Affinity.Construct
-        ], 0, -1,
+        ], 25, 40,
         entities_spells["Posessed Armour"],
         entities_specials["Posessed Armour"],
         "None",
-        1, false, false, 
+        1, false, false, [
+            {name: "Ghost", cnt: 1}
+        ]
     ),
 
     new EntityTemplate(
-        "Ghost Ghost Ghost", "00", "#ddd", "Ghosts of ghosts can still die, after all!",
-        1, 1, [
+        "Ghost Ghost Ghost", "00", "#ddd", "Ghosts of ghosts may still die, after all!",
+        240, 80, [
             Affinity.Ghost,
             Affinity.Ghost,
             Affinity.Ghost
-        ], 0, -1,
+        ], 30, 100,
         entities_spells["Ghost Ghost Ghost"],
         entities_specials["Ghost Ghost Ghost"],
         "None",
-        1, false, false, 
+        1, false, false, [
+            {name: "Ghost Ghost", cnt: 1}
+        ]
     ),
 
     new EntityTemplate(
         "Revenant", "0!", "#888", "Often the byproducts of dark rituals, revenants form when latent echoes of dark magic meld with the vengeful death throes of human sacrifices.",
-        1, 1, [
+        90, 60, [
             Affinity.Dark,
             Affinity.Ghost
-        ], 0, -1,
+        ], 50, 120,
         entities_spells["Revenant"],
         entities_specials["Revenant"],
-        "None",
-        1, false, false, 
+        "If this entity would take damage of a type it is not weak against, it instead takes no damage.",
+        2, false, false, 
     ),
 
     new EntityTemplate(
         "Restless Spirit", "!o", "#a8a", "Some spirits are more driven than most, not content to simply drift with the tides of undeath.",
-        1, 1, [
+        20, 0, [
             Affinity.Ghost
-        ], 0, -1,
+        ], 5, 8,
         entities_spells["Restless Spirit"],
         entities_specials["Restless Spirit"],
         "None",
@@ -733,186 +739,188 @@ entity_templates = [
 
     new EntityTemplate(
         "Ghastly Horseman", "Ho", "#fbb", "It is said that when the time comes again for one who has cheated death, the horsemen ensure they do not escape a second time.",
-        1, 1, [
+        200, 100, [
             Affinity.Dark,
             Affinity.Undead
-        ], 0, -1,
+        ], 150, 350,
         entities_spells["Ghastly Horseman"],
         entities_specials["Ghastly Horseman"],
-        "None",
-        1, false, false, 
+        "Can move twice in a single turn.",
+        2, false, false, 
     ),
 
     new EntityTemplate(
-        "Fallen Knight", "Kv", "#faa", "A devoted knight serving a long-dead liege, still as stalwart in their mission as the day they pledged fealty.",
-        1, 1, [
+        "Fallen Knight", "Kv", "#faa", "A devoted knight serving a long-dead liege, still as stalwart in their mission as they were the day they pledged fealty.",
+        120, 0, [
             Affinity.Undead,
             Affinity.Order
-        ], 0, -1,
+        ], 70, 120,
         entities_spells["Fallen Knight"],
         entities_specials["Fallen Knight"],
         "None",
-        1, false, false, 
+        2, false, false, 
     ),
 
     new EntityTemplate(
         "Angel of Fire", "a\"", "#e82", "Angel magic is based on fealty. These angels devote themselves to the fiery wrath of the heavens.",
-        1, 1, [
+        300, 200, [
             Affinity.Holy,
             Affinity.Fire
-        ], 0, -1,
+        ], 140, 200,
         entities_spells["Angel of Fire"],
         entities_specials["Angel of Fire"],
-        "None",
-        1, false, false, 
+        "Deals 3 Fire damage every turn to adjacent enemy units.",
+        2, false, false, 
     ),
 
     new EntityTemplate(
         "Angel of Lightning", "a&", "#dd3", "Angel magic is based on devotion. These angels channel bolts of cleansing lightning from the heavens to the mortal plane.",
-        1, 1, [
+        300, 200, [
             Affinity.Holy,
             Affinity.Lightning
-        ], 0, -1,
+        ], 140, 200,
         entities_spells["Angel of Lightning"],
         entities_specials["Angel of Lightning"],
-        "None",
-        1, false, false, 
+        "If witnessing any Lightning damage, restores 10 HP.",
+        2, false, false, 
     ),
 
     new EntityTemplate(
         "Angel of Judgement", "a*", "#ffa", "Angel magic is based on purity. These angels consecrate the ground with bursts of holy energy.",
-        1, 1, [
+        500, 300, [
             Affinity.Holy
-        ], 0, -1,
+        ], 180, 300,
         entities_spells["Angel of Judgement"],
         entities_specials["Angel of Judgement"],
         "None",
-        1, false, false, 
+        2, false, false, 
     ),
 
     new EntityTemplate(
         "High Angel of Fire", "A\"", "#f70", "High angels command armies of lesser angels, blessed with greater power.",
-        1, 1, [
+        1000, 400, [
             Affinity.Holy,
             Affinity.Fire
-        ], 0, -1,
+        ], 320, 800,
         entities_spells["High Angel of Fire"],
         entities_specials["High Angel of Fire"],
-        "None",
-        1, false, false, 
+        "If witnessing any Fire damage, restores 20 MP. Deals 5 Fire damage every turn to adjacent enemy units.",
+        2, false, false, 
     ),
 
     new EntityTemplate(
         "High Angel of Lightning", "A&", "#ff3", "High angels command great armies of lesser angels, blessed with greater power.",
-        1, 1, [
+        1000, 400, [
             Affinity.Holy,
             Affinity.Lightning
-        ], 0, -1,
+        ], 320, 800,
         entities_spells["High Angel of Lightning"],
         entities_specials["High Angel of Lightning"],
-        "None",
-        1, false, false, 
+        "If witnessing any Lightning damage, restores 25 MP and 10 HP.",
+        2, false, false, 
     ),
 
     new EntityTemplate(
         "Archangel", "A*", "#ffa", "Commanding armies of high angels and overwhelming power alike, these warleaders are sent to combat only in the direst of circumstances.",
-        1, 1, [
+        2000, 800, [
             Affinity.Holy
-        ], 0, -1,
+        ], 600, 2000,
         entities_spells["Archangel"],
         entities_specials["Archangel"],
         "None",
-        1, false, false, 
+        2, false, false, [
+            {name: "Holy Avatar", cnt: 1}
+        ]
     ),
 
     new EntityTemplate(
         "Holy Avatar", "!A", "#ffa", "With their final breath, Archangels will willingly let themselves be consumed by the power that sustains them, giving their lives such that their enemy may be defeated.",
-        1, 1, [
+        1, 1000, [
             Affinity.Holy
-        ], 0, -1,
+        ], 400, -1,
         entities_spells["Holy Avatar"],
         entities_specials["Holy Avatar"],
-        "None",
+        "Any damage this entity takes first removes MP before removing HP.",
         1, false, false, 
     ),
 
     new EntityTemplate(
         "Priest", "p!", "#ffd", "Agents of the faith. Not quite mortal, but nowhere near angel.",
-        1, 1, [
+        60, 120, [
             Affinity.Living,
             Affinity.Holy
-        ], 0, -1,
+        ], 40, 70,
         entities_spells["Priest"],
         entities_specials["Priest"],
         "None",
-        1, false, false, 
+        2, false, false, 
     ),
 
     new EntityTemplate(
         "Idol", "[*", "#ffd", "False or not, the people's hopes have given it power.",
-        1, 1, [
+        50, 0, [
             Affinity.Holy,
             Affinity.Construct
-        ], 0, -1,
+        ], 20, 60,
         entities_spells["Idol"],
         entities_specials["Idol"],
-        "None",
-        1, false, false, 
+        "Holy entities within line of sight heal 10 HP per turn. Dark entities within line of sight take 6 Holy damage per turn.",
+        4, false, false, 
     ),
 
     new EntityTemplate(
-        "Doomsayer", "v!", "#f70", "Sometimes, a priest can become so enamoured with their sermons that they begin to ardently believe them. Soon they find their power stemming not from heaven but instead from within.",
-        1, 1, [
+        "Doomsayer", "v!", "#f70", "Sometimes, a priest can become so enamoured with their holy status that they begin to ardently believe themselves to be prophets. Soon they find their power stemming not from heaven but instead from chaos within.",
+        100, 160, [
             Affinity.Living,
             Affinity.Chaos
-        ], 0, -1,
+        ], 25, 40,
         entities_spells["Doomsayer"],
         entities_specials["Doomsayer"],
-        "None",
-        1, false, false, 
+        "Explodes in a 2 tile burst for 10 Chaos damage on death.",
+        2, false, false, 
     ),
 
     new EntityTemplate(
         "High Priest", "P!", "#ffa", "Trusted agents of the faith. Probably on first-name terms with at least one angel.",
-        1, 1, [
+        200, 400, [
             Affinity.Living,
             Affinity.Holy
-        ], 0, -1,
+        ], 60, 140,
         entities_spells["High Priest"],
         entities_specials["High Priest"],
         "None",
-        1, false, false, 
+        2, false, false, 
     ),
 
     new EntityTemplate(
-        "Necromancer", "N,", "#92c", "Mastery over life and death isn't so difficult, really. The hard part is staying on the right side of that line afterwards.",
-        1, 1, [
+        "Necromancer", "N,", "#92c", "Mastery over life and death isn't so difficult, really. The hard part is staying alive yourself afterwards.",
+        50, 300, [
             Affinity.Living,
             Affinity.Dark
-        ], 0, -1,
+        ], 40, 100,
         entities_spells["Necromancer"],
         entities_specials["Necromancer"],
-        "None",
-        1, false, false, 
+        "Heals all Dark and Undead units within 3 tiles by 8 HP per turn.",
+        2, false, false, 
     ),
 
     new EntityTemplate(
         "Thrall", "v>", "#44c", "Typical footsoldier of a necromancer. Usually just as fragile as their masters.",
-        1, 1, [
+        30, 0, [
             Affinity.Dark,
             Affinity.Undead
-        ], 0, -1,
+        ], 8, 12,
         entities_spells["Thrall"],
         entities_specials["Thrall"],
-        "None",
+        "Heals from Dark damage.",
         1, false, false, 
     ),
 
     new EntityTemplate(
         "Tormentor", "@(", "#62a", "Weak and unremarkable manifestations of dark energy. Most commonly found knocking things off tables or making hinges squeak.",
-        1, 1, [
+        16, 20, [
             Affinity.Dark
-        ], 0, -1,
+        ], 5, 8,
         entities_spells["Tormentor"],
         entities_specials["Tormentor"],
         "None",
@@ -920,21 +928,21 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Dark Spirit", "@S", "#62a", "Dark energy has no true opposite, unlike the elemental forces. Spirits of darkness are led mostly by a compulsion to engulf and destroy everything around them.",
-        1, 1, [
+        "Dark Spirit", "@S", "#62a", "Unlike the elemental forces, dark has no true opposite. Spirits of darkness are instead led mostly by a compulsion to engulf and destroy everything around them.",
+        80, 60, [
             Affinity.Dark
-        ], 0, -1,
+        ], 35, 60,
         entities_spells["Dark Spirit"],
         entities_specials["Dark Spirit"],
-        "None",
+        "Heals an equal amount to all damage it causes.",
         1, false, false, 
     ),
 
     new EntityTemplate(
         "Malicious Force", "#>", "#93b", "Whether from a vengeful wizard, a spiteful dying wish or a hateful curse, malicious forces are the result of negative emotions given power.",
-        1, 1, [
+        30, 100, [
             Affinity.Dark
-        ], 0, -1,
+        ], 40, 70,
         entities_spells["Malicious Force"],
         entities_specials["Malicious Force"],
         "None",
@@ -943,22 +951,22 @@ entity_templates = [
 
     new EntityTemplate(
         "Crow", "c~", "#84f", "Crows are agile and very intelligent. They and the forces of darkness have a truce of sorts.",
-        1, 1, [
+        45, 0, [
             Affinity.Living,
             Affinity.Dark
-        ], 0, -1,
+        ], 7, 14,
         entities_spells["Crow"],
         entities_specials["Crow"],
         "None",
-        1, false, false, 
+        2, false, false, 
     ),
 
     new EntityTemplate(
         "Corvid Abomination", "C~", "#84f", "The forces of darkness never promised they would leave the crows untouched, just unharmed.",
-        1, 1, [
+        240, 40, [
             Affinity.Living,
             Affinity.Dark
-        ], 0, -1,
+        ], 60, 150,
         entities_spells["Corvid Abomination"],
         entities_specials["Corvid Abomination"],
         "None",
@@ -967,43 +975,45 @@ entity_templates = [
 
     new EntityTemplate(
         "Flesh Golem", "F]", "#c4f", "Necromancers soon tire of playing with single corpses. It's much more fun to graft two or three together.",
-        1, 1, [
+        180, 0, [
             Affinity.Construct,
             Affinity.Undead
-        ], 0, -1,
+        ], 80, 200,
         entities_spells["Flesh Golem"],
         entities_specials["Flesh Golem"],
-        "None",
+        "Gains 5 max HP when witnessing the death of any Living entity.",
         1, false, false, 
     ),
 
     new EntityTemplate(
         "Experiment", "&]", "#c4f", "A bear rib here, a lion skull there... and why not include some eagle wings too?",
-        1, 1, [
+        600, 0, [
             Affinity.Construct,
             Affinity.Undead
-        ], 0, -1,
+        ], 200, 700,
         entities_spells["Experiment"],
         entities_specials["Experiment"],
-        "None",
+        "Gains 25 max HP when witnessing the death of any Living entity.",
         1, false, false, 
     ),
 
     new EntityTemplate(
         "Grand Experiment", "$}", "#c4f", "The longer a necromancer lives, the more lives must be defiled to entertain them. These grotesque constructions can be made of over a hundred separate corpses.",
-        1, 1, [
+        1500, 0, [
             Affinity.Construct,
             Affinity.Undead
-        ], 0, -1,
+        ], 400, 1300,
         entities_spells["Grand Experiment"],
         entities_specials["Grand Experiment"],
-        "None",
-        1, false, false, 
+        "Gains 50 max HP when witnessing the death of any Living entity.",
+        1, false, false, [
+            {name: "Experiment", cnt: 2}
+        ]
     ),
 
     new EntityTemplate(
         "Imp", "i-", "#e33", "I'll be honest, I hate these things. Nothing more to say on the matter.",
-        1, 1, [
+        25, 60, [
             Affinity.Demon
         ], 0, -1,
         entities_spells["Imp"],
@@ -1014,7 +1024,7 @@ entity_templates = [
 
     new EntityTemplate(
         "Fire Imp", "i\"", "#f64", "Small. Loud. Annoying. Knows Fireball.",
-        1, 1, [
+        40, 60, [
             Affinity.Demon,
             Affinity.Fire
         ], 0, -1,
@@ -1026,7 +1036,7 @@ entity_templates = [
 
     new EntityTemplate(
         "Frost Imp", "i>", "#8bb", "Small. Loud. Annoying. Knows Ice Ball.",
-        1, 1, [
+        40, 60, [
             Affinity.Demon,
             Affinity.Ice
         ], 0, -1,
@@ -1038,7 +1048,7 @@ entity_templates = [
 
     new EntityTemplate(
         "Chaotic Imp", "i%", "#f30", "They're everywhere.",
-        1, 1, [
+        40, 60, [
             Affinity.Demon,
             Affinity.Chaos
         ], 0, -1,
@@ -1049,8 +1059,8 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Primal Demon", "%D", "#e33", "A small subset of demons spend their entire lives sequestered away in the underworld, such that they never develop an affinity to any element. Such demons end up roughly like humans, barring the overwhelming strength advantage.",
-        1, 1, [
+        "Primal Demon", "%D", "#e33", "A small subset of demons spend their entire lives sequestered away in their realm, such that they never develop an affinity to any element. Such demons end up surprisingly similar to humans, barring the overwhelming strength advantage.",
+        500, 0, [
             Affinity.Demon
         ], 0, -1,
         entities_spells["Primal Demon"],
@@ -1061,7 +1071,7 @@ entity_templates = [
 
     new EntityTemplate(
         "Demon Mage", "%-", "#f33", "Of the demons who refuse to align to a specific element are those who use the added freedom to learn magic, just like a human.",
-        1, 1, [
+        160, 500, [
             Affinity.Demon
         ], 0, -1,
         entities_spells["Demon Mage"],
@@ -1071,8 +1081,8 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Demon Wizard", "%=", "#f33", "Surprisingly enough, demons with no affinity are just about on a level playing field with any other magic user. So this demon has been training for decades.",
-        1, 1, [
+        "Demon Wizard", "%=", "#f33", "Surprisingly enough, demons with no affinity are just about on a level playing field with any other magic user. Don't worry, though. This demon has been training for decades.",
+        180, 800, [
             Affinity.Demon
         ], 0, -1,
         entities_spells["Demon Wizard"],
@@ -1082,7 +1092,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Brimstone Elemental", "R!", "#c00", "This entity is corrupted and should not be here!",
+        "Brimstone Elemental", "R!", "#c00", "Elementals that form around volcanic eruptions command a special type of fire that burns stronger, longer and hotter than any other.",
         1, 1, [
             Affinity.Fire
         ], 0, -1,
@@ -1093,9 +1103,10 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Brimstone Demon", "R$", "#c00", "This entity is corrupted and should not be here!",
+        "Brimstone Demon", "R$", "#c00", "It is no coincidence that demons often build strongholds around areas of strong volcanic activity.",
         1, 1, [
-            Affinity.Demon
+            Affinity.Demon,
+            Affinity.Fire
         ], 0, -1,
         entities_spells["Brimstone Demon"],
         entities_specials["Brimstone Demon"],
@@ -1104,7 +1115,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Bone Shambler", "b,", "#bbb", "This entity is corrupted and should not be here!",
+        "Bone Shambler", "b,", "#bbb", "In areas of strong necromantic activity, dark power can seep into other surrounding corpses, creating mindless amalgamations of assorted bones.",
         1, 1, [
             Affinity.Construct,
             Affinity.Undead
@@ -1116,7 +1127,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Bone Construct", "b;", "#bbb", "This entity is corrupted and should not be here!",
+        "Bone Construct", "b;", "#bbb", "When flesh does not satisfy a necromancer's needs, they can instead construct their servants from pure bone.",
         1, 1, [
             Affinity.Construct,
             Affinity.Undead
@@ -1128,7 +1139,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Bone Hulk", "B,", "#bbb", "This entity is corrupted and should not be here!",
+        "Bone Hulk", "B,", "#bbb", "Left unchecked, errant bone amalgamations can absorb more and more, aggressively attacking the living to gather even more material.",
         1, 1, [
             Affinity.Construct,
             Affinity.Undead
@@ -1140,7 +1151,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Giant Bone Construct", "B;", "#bbb", "This entity is corrupted and should not be here!",
+        "Giant Bone Construct", "B;", "#bbb", "Unlike flesh, bone can be much more easily arranged into effective constructions.",
         1, 1, [
             Affinity.Construct,
             Affinity.Undead
@@ -1157,7 +1168,7 @@ entity_templates = [
             Affinity.Construct,
             Affinity.Dark,
             Affinity.Undead
-        ], 800, 20000,
+        ], 300, 1200,
         entities_spells["Mistake"],
         entities_specials["Mistake"],
         "None",
@@ -1165,7 +1176,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Locust Swarm", ":;", "#3c3", "This entity is corrupted and should not be here!",
+        "Locust Swarm", ":;", "#3c3", "Each bug is tiny on its own. Unfortunately, there's never just one of them.",
         1, 1, [
             Affinity.Living,
             Affinity.Insect
@@ -1177,7 +1188,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Giant Beetle", "O\\", "#3c3", "This entity is corrupted and should not be here!",
+        "Giant Beetle", "O\\", "#3c3", "Life energy accumulates in forests, twisting animals into larger and stronger forms.",
         1, 1, [
             Affinity.Living,
             Affinity.Insect
@@ -1189,7 +1200,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Lamia", "/O", "#6d3", "This entity is corrupted and should not be here!",
+        "Lamia", "/O", "#6d3", "A mythological creature with the body of a snake and the appetite of a dragon.",
         1, 1, [
             Affinity.Living
         ], 0, -1,
@@ -1200,7 +1211,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Frost Tiger", "Op", "#3dd", "This entity is corrupted and should not be here!",
+        "Frost Tiger", "Op", "#3dd", "Typical animals are also susceptible to magic. Entirely new species can be created by its influence.",
         1, 1, [
             Affinity.Living,
             Affinity.Ice
@@ -1212,7 +1223,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Voidtouched Lion", "Oq", "#d8f", "This entity is corrupted and should not be here!",
+        "Voidtouched Lion", "Oq", "#d8f", "While they may not cast spells in quite the same way, animals touched by pure magic can instinctively use it to much the same effect.",
         1, 1, [
             Affinity.Living,
             Affinity.Arcane
@@ -1224,7 +1235,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Treant", "/D", "#a60", "This entity is corrupted and should not be here!",
+        "Treant", "/D", "#a60", "Simple nature spirits that choose to possess young trees, supplanting their normal processes to use as a vessel.",
         1, 1, [
             Affinity.Natural
         ], 0, -1,
@@ -1235,7 +1246,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Stumpy Walker", "F\\", "#a60", "This entity is corrupted and should not be here!",
+        "Stumpy Walker", "F\\", "#a60", "Nature spirits make no distinction between living and dead trees. They can possess a fully grown oak just as well as a long-dead stump.",
         1, 1, [
             Affinity.Natural
         ], 0, -1,
@@ -1246,7 +1257,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Giant Flytrap", "FX", "#1a0", "This entity is corrupted and should not be here!",
+        "Giant Flytrap", "FX", "#1a0", "Not hugely efficient at catching flies. Much better at catching wizards, though.",
         1, 1, [
             Affinity.Living
         ], 0, -1,
@@ -1257,7 +1268,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Vine Lasher", "v/", "#1a0", "This entity is corrupted and should not be here!",
+        "Vine Lasher", "v/", "#1a0", "Usually parts of a much larger organism, vine lashers can grow great distances through subterranean root systems and act semi-autonomously.",
         1, 1, [
             Affinity.Living
         ], 0, -1,
@@ -1268,7 +1279,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Fire Flower", "@\"", "#ca0", "This entity is corrupted and should not be here!",
+        "Fire Flower", "@\"", "#ca0", "The sun is also a source of fire energy. These plants have learned to use that.",
         1, 1, [
             Affinity.Living
         ], 0, -1,
@@ -1279,7 +1290,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Posessed Sunflower", "@$", "#94f", "This entity is corrupted and should not be here!",
+        "Posessed Sunflower", "@$", "#94f", "I almost feel sorry for the ghost that thought it was a good idea to choose a plant as its host.",
         1, 1, [
             Affinity.Living,
             Affinity.Dark
@@ -1291,7 +1302,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Chimera", "H#", "#fa0", "This entity is corrupted and should not be here!",
+        "Chimera", "H#", "#fa0", "An amalgamation of animals, most often used as an example of the dangers of life energy.",
         1, 1, [
             Affinity.Living
         ], 0, -1,
@@ -1302,7 +1313,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Minotaur", "#R", "#950", "This entity is corrupted and should not be here!",
+        "Minotaur", "#R", "#950", "Huge, hulking beasts bred by mages to act as more corporeal guards for their treasures.",
         1, 1, [
             Affinity.Living
         ], 0, -1,
@@ -1313,7 +1324,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Werewolf", "W}", "#aaa", "This entity is corrupted and should not be here!",
+        "Werewolf", "W}", "#aaa", "Bearers of a magical curse linked to the deity of the moon.",
         1, 1, [
             Affinity.Living
         ], 0, -1,
@@ -1324,7 +1335,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Basilisk", "Ib", "#3b3", "This entity is corrupted and should not be here!",
+        "Basilisk", "Ib", "#3b3", "A mythical creature notable for its paralyzing gaze.",
         1, 1, [
             Affinity.Living
         ], 0, -1,
@@ -1335,7 +1346,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Kraken", "K~", "#99c", "This entity is corrupted and should not be here!",
+        "Kraken", "K~", "#99c", "Hideous, overgrown octopus-like creatures with a voracious appetite, stopped only by a need for water.",
         1, 1, [
             Affinity.Living
         ], 0, -1,
@@ -1346,7 +1357,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Ogre", "o/", "#3c3", "This entity is corrupted and should not be here!",
+        "Ogre", "o/", "#3c3", "Humanoid creatures, superior in all ways to humans aside from their affinity for magic.",
         1, 1, [
             Affinity.Living
         ], 0, -1,
@@ -1357,7 +1368,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Giant Ogre", "O/", "#3c3", "This entity is corrupted and should not be here!",
+        "Giant Ogre", "O/", "#3c3", "Due to their low control over magic, ogres are affected similarly to other beasts, growing to imposible sizes if exposed to arcane energy.",
         1, 1, [
             Affinity.Living
         ], 0, -1,
@@ -1368,7 +1379,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Tiny Ogre", "./", "#3c3", "This entity is corrupted and should not be here!",
+        "Tiny Ogre", "./", "#3c3", "Understand that \"small\" does not mean \"harmless\".",
         1, 1, [
             Affinity.Living
         ], 0, -1,
@@ -1379,9 +1390,10 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Gnome", ":.", "#2d2", "This entity is corrupted and should not be here!",
+        "Gnome", ":.", "#2d2", "While they may look like living creatures, they are in fact manifestations of magical energy. Hence why they can teleport.",
         1, 1, [
-            Affinity.Natural
+            Affinity.Natural,
+            Affinity.Arcane
         ], 0, -1,
         entities_spells["Gnome"],
         entities_specials["Gnome"],
@@ -1390,9 +1402,10 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Hypergnome", "|.", "#0f0", "This entity is corrupted and should not be here!",
+        "Hypergnome", "|.", "#0f0", "The average lifespan of a hypergnome is around one hour, and yet you still managed to run into one. Unlucky you.",
         1, 1, [
-            Affinity.Natural
+            Affinity.Natural,
+            Affinity.Arcane
         ], 0, -1,
         entities_spells["Hypergnome"],
         entities_specials["Hypergnome"],
@@ -1401,7 +1414,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Centaur Courser", "H=", "#a60", "This entity is corrupted and should not be here!",
+        "Centaur Courser", "H=", "#a60", "In the society of centaurs, coursers are the largest and strongest, wielding heavy axes to overwhelm enemy ranks.",
         1, 1, [
             Affinity.Living
         ], 0, -1,
@@ -1412,7 +1425,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Centaur Bowman", "H}", "#a60", "This entity is corrupted and should not be here!",
+        "Centaur Bowman", "H}", "#a60", "Bowmen are highly respected in centaur culture - and highly effective in battle.",
         1, 1, [
             Affinity.Living
         ], 0, -1,
@@ -1423,7 +1436,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Centaur Spearman", "H-", "#a60", "This entity is corrupted and should not be here!",
+        "Centaur Spearman", "H-", "#a60", "In centaur culture, spears are considered holy, regal weapons, typically wielded only by royal guards.",
         1, 1, [
             Affinity.Living
         ], 0, -1,
@@ -1434,8 +1447,9 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Phoenix", "\\P", "#f63", "This entity is corrupted and should not be here!",
+        "Phoenix", "\\P", "#f63", "While they may only be distant cousins of the great birds of old, the modern Phoenix shares much with its ancestor - including the power of rebirth.",
         1, 1, [
+            Affinity.Living,
             Affinity.Fire
         ], 0, -1,
         entities_spells["Phoenix"],
@@ -1445,8 +1459,9 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Ice Phoenix", "\\P", "#aff", "This entity is corrupted and should not be here!",
+        "Ice Phoenix", "\\P", "#aff", "In mortal peril, an Ice Phoenix is able to retreat into an impenetrable shell and fully restore its health in a matter of moments.",
         1, 1, [
+            Affinity.Living,
             Affinity.Ice
         ], 0, -1,
         entities_spells["Ice Phoenix"],
@@ -1456,7 +1471,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Hydra", "!/", "#6d6", "This entity is corrupted and should not be here!",
+        "Hydra", "!/", "#6d6", "I understand it may be quite shocking to see one of these in the flesh. Please don't be alarmed. Also, please use fire. It can't regenerate if it's on fire.",
         1, 1, [
             Affinity.Living
         ], 0, -1,
@@ -1467,7 +1482,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Scorpion", "S_", "#d80", "This entity is corrupted and should not be here!",
+        "Scorpion", "S_", "#d80", "Nature always finds a way to put the deadliest poisons in the smallest creatures.",
         1, 1, [
             Affinity.Living,
             Affinity.Insect
@@ -1479,10 +1494,11 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Lightning Scorpion", "&_", "#fc0", "This entity is corrupted and should not be here!",
+        "Lightning Scorpion", "&_", "#fc0", "In the storm-swept mesas at the edge of the world, lightning energy is dense enough to penetrate even the smallest beings.",
         1, 1, [
             Affinity.Living,
-            Affinity.Insect
+            Affinity.Insect,
+            Affinity.Lightning
         ], 0, -1,
         entities_spells["Lightning Scorpion"],
         entities_specials["Lightning Scorpion"],
@@ -1491,7 +1507,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Acidic Scorpion", "$_", "#ac0", "This entity is corrupted and should not be here!",
+        "Acidic Scorpion", "$_", "#ac0", "Acidic poison. About ten times as bad as normal poison. Give or take.",
         1, 1, [
             Affinity.Living,
             Affinity.Insect
@@ -1503,7 +1519,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Towering Isopod", "#+", "#b90", "This entity is corrupted and should not be here!",
+        "Towering Isopod", "#+", "#b90", "Some places provide the perfect evolutionary crucible to cultivate the strangest beings. These insects, around five times the size of a human, are an example.",
         1, 1, [
             Affinity.Living,
             Affinity.Insect
@@ -1515,7 +1531,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Giant Mantis", "M}", "#3c3", "This entity is corrupted and should not be here!",
+        "Giant Mantis", "M}", "#3c3", "If there's one thing magical energy loves to do, it's \"making things bigger\".",
         1, 1, [
             Affinity.Living,
             Affinity.Insect
@@ -1527,7 +1543,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Chaotic Construct", "%]", "#e90", "This entity is corrupted and should not be here!",
+        "Chaotic Construct", "%]", "#e90", "A reality-defying construction made by some chaotic force long ago.",
         1, 1, [
             Affinity.Construct,
             Affinity.Chaos
@@ -1539,7 +1555,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Dark Idol", "v]", "#93a", "This entity is corrupted and should not be here!",
+        "Dark Idol", "v]", "#93a", "A once-holy idol, corrupted by sin and neglect.",
         1, 1, [
             Affinity.Construct,
             Affinity.Dark
@@ -1551,7 +1567,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Flesh Totem", "K]", "#d6f", "This entity is corrupted and should not be here!",
+        "Flesh Totem", "K]", "#d6f", "The sure sign of a necromancer. They often use these grotesque towers of fused flesh and bone to mark their territory.",
         1, 1, [
             Affinity.Construct,
             Affinity.Dark,
@@ -1576,7 +1592,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Spider", "m^", "#84c", "This entity is corrupted and should not be here!",
+        "Spider", "m^", "#84c", "A small but deadly insect that thrives on ambushes.",
         1, 1, [
             Affinity.Insect
         ], 0, -1,
@@ -1587,7 +1603,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Giant Spider", "M^", "#84c", "This entity is corrupted and should not be here!",
+        "Giant Spider", "M^", "#84c", "A spider that has grown to incredible size as a result of magical meddling.",
         1, 1, [
             Affinity.Insect
         ], 0, -1,
@@ -1602,7 +1618,7 @@ entity_templates = [
         5000, 0, [
             Affinity.Construct,
             Affinity.Insect
-        ], 2500, 10000,
+        ], 500, 5000,
         entities_spells["Giant Enemy Spider"],
         entities_specials["Giant Enemy Spider"],
         "None",
@@ -1610,9 +1626,10 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Skeleton", "s#", "#ccc", "This entity is corrupted and should not be here!",
+        "Skeleton", "s#", "#ccc", "A haphazardly animated construct of various chunks of bone.",
         1, 1, [
-            Affinity.Undead
+            Affinity.Undead,
+            Affinity.Dark
         ], 0, -1,
         entities_spells["Skeleton"],
         entities_specials["Skeleton"],
@@ -1621,7 +1638,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Giant Skeleton", "S#", "#ccc", "This entity is corrupted and should not be here!",
+        "Giant Skeleton", "S#", "#ccc", "If in doubt, just add more bone!",
         1, 1, [
             Affinity.Undead
         ], 0, -1,
@@ -1632,7 +1649,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Seraphim", "A^", "#ffa", "This entity is corrupted and should not be here!",
+        "Seraphim", "A^", "#ffa", "Greatly weakened by the travel between worlds. It still recognises you as its leader, though.",
         1, 1, [
             Affinity.Holy
         ], 0, -1,
@@ -1703,7 +1720,7 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Bronze Colossus", "|>", "#c73", "With enough devotion, a Wizard of the Order of Order can perform the same golemcraft rituals as lesser adherents using solid metal.",
+        "Bronze Colossus", "|>", "#c73", "With enough devotion, a Wizard of the Order of Order can perform the same golemcraft rituals as lesser adherents using solid metal rather than rock.",
         1, 1, [
             Affinity.Construct,
             Affinity.Order
@@ -1787,223 +1804,180 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Target Dummy", "@!", "#fff", "He doesn't mind if you hit him.",
+        1000000, 1000, [
+            Affinity.Construct
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
+        entities_spells["Target Dummy"],
+        entities_specials["Target Dummy"],
+        "Heals to max HP every turn.",
+        4, false, false, 
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
+        "Refticus", "@>", "#965", "Looks like a normal pigeon. Is probably a normal pigeon.",
+        1000, 100, [
+            Affinity.Living,
+            Affinity.Chaos
+        ], 1000, 5000,
+        entities_spells["Refticus"],
+        entities_specials["Refticus"],
+        "Takes no damage except for Physical damage. Won't attack you if they are full HP.",
+        2, false, false, 
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Castle Wall", "[]", "#ccc", "Probably used to be some kind of fortification, a long time ago.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Construct
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Castle Wall"],
+        entities_specials["Castle Wall"],
         "None",
-        1, false, false, 
+        999, true, true, 
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Chasm", "vv", "#666", "A bottomless pit.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Construct
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Chasm"],
+        entities_specials["Chasm"],
         "None",
-        1, false, false, 
+        999, true, true, 
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Corruption", "++", "#c4f", "You probably shouldn't step in this.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Dark
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Corruption"],
+        entities_specials["Corruption"],
         "None",
-        1, false, false, 
+        999, true, true, 
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
+        "Tree", "()", "#a70", "A normal tree.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
             Affinity.Living
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Tree"],
+        entities_specials["Tree"],
         "None",
-        1, false, false, 
+        999, true, true, 
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Deep Water", "~~", "#28d", "Deep, murky water.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Construct
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Deep Water"],
+        entities_specials["Deep Water"],
         "None",
-        1, false, false, 
+        999, true, true, 
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Rock Wall", "[]", "#b87", "A rough blockage made from rock.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Ice
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Rock Wall"],
+        entities_specials["Rock Wall"],
         "None",
-        1, false, false, 
+        999, true, true, 
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Magical Wall", "[]", "#f5a", "A magical forcefield.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Arcane
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Magical Wall"],
+        entities_specials["Magical Wall"],
         "None",
-        1, false, false, 
+        999, true, true, 
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Pile of Bones", "@@", "#ccc", "A towering pile of discarded bones.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Undead
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Pile of Bones"],
+        entities_specials["Pile of Bones"],
         "None",
-        1, false, false, 
+        999, true, true, 
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Cliff Edge", "</", "#da9", "The face of a sheer cliff.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Construct
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Cliff Edge"],
+        entities_specials["Cliff Edge"],
         "None",
-        1, false, false, 
+        999, true, true, 
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Elevated Mesa", "..", "#da9", "The top of a flat mesa, far above you.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Construct
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Elevated Mesa"],
+        entities_specials["Elevated Mesa"],
         "None",
-        1, false, false, 
+        999, true, true, 
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Icy Wall", "[]", "#aff", "A barrier of thick, hard ice.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Ice
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Icy Wall"],
+        entities_specials["Icy Wall"],
         "None",
-        1, false, false, 
+        999, true, true, 
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Magma", "~~", "#f50", "Boiling, churning magma.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Fire
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Magma"],
+        entities_specials["Magma"],
         "None",
-        1, false, false, 
+        999, true, true, 
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Obscured", "--", "#222", "You can't see anything here.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Construct
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Obscured"],
+        entities_specials["Obscured"],
         "None",
-        1, false, false, 
+        999, true, true, 
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Solid Cloud", "00", "#dff", "Clouds so thick they block everything.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Construct
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Solid Cloud"],
+        entities_specials["Solid Cloud"],
         "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
+        999, true, true, 
     ),
 
 

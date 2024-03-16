@@ -53,9 +53,8 @@ with open("entities.tsv", "r") as f:
         blocks_los = "true" if ai_lvl == "999" else "false"
         untargetable = "true" if (ai_lvl == "999" or ai_lvl == "998") else "false"
 
-        if (ai_lvl == "998") {
+        if (ai_lvl == "998"):
             ai_lvl = "999"
-        }
 
         if (on_death and on_death != "None"):
             on_death_parsed = "[\n" + ",\n".join(

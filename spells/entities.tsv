@@ -28,7 +28,7 @@ Giant Goblin	G!	#3d3	Through some aberration of nature, goblins can reach toweri
 Titanic Goblin	GG	#3d3	Due to their high susceptibility to magic, goblins in the vicinity of huge magical outflows can become truly gigantic beasts.	500	0	Living			120	700	Regenerates 12 HP per turn.	Crush; 30 physical dmg; range 1	1	None
 Bat	b^	#84f	Annoying flappy things with a nasty bite.	30	0	Living	Dark		5	10	None	Bite; 6 physical dmg; range 1	1	None
 Giant Bat	B^	#84f	Bats should not be this big.	120	0	Living	Dark		30	70	None	Bite; 18 physical dmg; range 1	1	None
-Ghost	o-	#ddd	A restless spirit unable to pass away from the world.	10	0	Ghost			3	6	None	Dark Touch; 3 dark dmg; range 1	1	None
+Ghost	o-	#ddd	The spirit of one who has already died, unable to pass away from the world.	10	0	Ghost			3	6	None	Dark Touch; 3 dark dmg; range 1	1	None
 Vengeful Ghost	o!	#f77	When a being dies with great hatred in their heart, they may refuse to pass on and instead exact vengeance on the living.	60	25	Ghost	Dark		48	70	Deals 2 Dark damage every turn to adjacent units.	"Fire Bolt; 5 fire dmg; range 3; 10 MP
 Soul Sucker; 12 dark dmg; range 1; -5 MP"	1	None
 Wraith	O.	#444	If a ghost remains near dark energy sources long enough, they can regain a semblance of corporeality.	80	20	Ghost	Undead	Dark	40	60	None	Terror; 8 dark dmg; radius 2 burst; selftarget; 15 MP	1	None
@@ -40,15 +40,15 @@ Ghost Ghost	0O	#ddd	Even ghosts may die, after all.	100	50	Ghost	Ghost		20	50	No
 Demonic Spirit	$o	#e33	Souls claimed by demons can retain this taint even through death of the body.	60	40	Ghost	Demon		30	120	If alive for 16 turns, explodes in a 3 tile burst for 16 Fire damage. (Turns remaining: [[explosion_turns_left]])	Energy Lance; 8 chaos dmg; line; range 6; 20 MP	1	None
 Spirit Caller	O<	#c77	Through mysticism and a little magic, some mages can commune with, or even bring back, spirits of the departed.	80	200	Living	Dark		60	140	None	"Summon Ghost; spawn ghost near target; selftarget radius 0; 30 MP
 Summon Vengeful Ghost; same but with venge ghost; 100 MP; 4 turn cd"	1	None
-Fire Spirit	"S	#d33	More a force of nature than a spirit, these beings have just one goal: to burn away everything around them.	60	50	Fire			30	80	If witnessing any Fire damage, heals 2 HP.	"Flame Detonation; 8 fire dmg; 2 radius self burst; 10 MP
+Fire Spirit	"""S"	#d33	More a force of nature than a spirit, these beings have just one goal: to burn away everything around them.	60	50	Fire			30	80	If witnessing any Fire damage, heals 2 HP.	"Flame Detonation; 8 fire dmg; 2 radius self burst; 10 MP
 Fireball; 6 fire dmg; 1 radius burst; range 6; 6 MP; 2 turn cd"	1	None
 Fire Demon	$d	#f00	Demons generally have a natural affinity to a single element. Can you guess this one's affinity?	200	100	Demon	Fire		120	260	None	"Infernal Beam; 5 fire dmg; line; ignores los; range 8; 40 MP
 Detonation; 13 fire dmg; 2 radius burst; range 5; 25 MP; 3 turn cd"	2	None
 Flame Golem	#"	#d33	Likely created long ago by an unknown artificer, the patchwork rocky exoskeleton of these golems is filled with a roaring fire.	160	40	Fire	Construct		70	220	None	"Smash; 12 physical + 6 fire dmg; melee
-Flame Lash; 3 fire dmg; range 7; radius 0; 5 MP
-Core Ejection; 25 fire dmg; 10 turn cd; 40 MP"	1	None
+Flame Lash; 3 fire dmg; range 7; line; 5 MP
+Core Ejection; 25 fire dmg; range 5; radius 2 burst; 10 turn cd; 40 MP"	1	None
 Flame Portal	()	#e00	Small-scale dimensional disturbances that can spit all manner of flame denizens from inside them.	300	0	Fire	Construct		120	400	None	Incursion; spawn 1-4 Demonic Spirit / Fire Spirit / Fire Demon / Flame Golem; 7 turn cd	4	None
-Crazed Fire Demon	$D	#f08	Similarly to a typical mage, if a demon attempts to channel too much energy, they may be overwhelmed by its intensity and reshaped into a new, primal form.	600	200	Demon	Fire		200	600	If witnessing any Fire damage, gains 2 Shield.	"Overcharged Infernal Beam; 20 fire dmg; ignores los; range 10; 60 MP; 2 turn cd
+Crazed Fire Demon	$D	#f08	Similarly to a typical mage, if a demon attempts to channel too much energy, they may be overwhelmed by its intensity and reshaped into a new, primal form.	600	200	Demon	Fire		200	600	If witnessing any Fire damage, gains 5 Shield.	"Overcharged Infernal Beam; 20 fire dmg; line; ignores los; range 10; 60 MP; 2 turn cd
 Flame Detonation; 14 fire dmg; radius 5 cone; range 6; 80 MP; 3 turn cd"	1	None
 Flame Rift	<>	#e00	Jagged tears in reality spouting endless roaring flames... and monsters.	1000	0	Fire	Construct		250	1000	None	Incursion; spawn 3-6 of the flame portal pool, 1-3 Crazed Fire Demon or 1 Firebug Broodmother; 10 turn cd	4	None
 Firebug	.,	#a00	Mostly harmless, but their red-hot mandibles are not to be underestimated in swarms.	12	0	Living	Fire	Insect	1	2	None	Bite; 2 fire dmg; melee	1	None
@@ -56,147 +56,171 @@ Firebug Broodmother	B,	#c00	The breeding cycle of firebugs is not well-studied, 
 Rally Firebugs; radius 4; self burst; (range 999); doubles max hp of firebugs hit in burst and fully heals them; 4 turn cd"	2	None
 Goblin Fire Mage	G~	#f60	You thought only humans could use magic?	120	100	Living			80	140	None	"Fireball; 7 fire dmg; range 7; 3 radius burst; 25 MP
 Searing Touch; 24 fire dmg; melee; 40 MP"	2	None
-Ice Spirit	>S	#aff	Amalgamations of frigid energy, willing and eager to turn you into an icicle.	75	70	Ice			30	60	None	Ice Ball; same as normal ice ball in every way		
-Chilling Totem	n|	#8bb	Totems seem to appear in response to conflict. You seem to be evidence of this.	80	0	Ice	Construct		25	75	Deals 2 Ice damage per turn to all units within 2 tiles.	Chilling Wind; summon an Ice Wall at a random adjacent position; 6 turn cooldown		
-Frozen Totem	N|	#8dd	Frozen totems are more powerful than their chilling variants, being able to freeze any would-be assailants solid.	240	0	Ice	Construct		120	300	Deals 6 Ice damage per turn to all units within 2 tiles.	Freezing Wind; summon 5 Ice Walls randomly in a radius of 2; 6 turn cooldown		
+Ice Spirit	>S	#aff	Amalgamations of frigid energy, willing and eager to turn you into an icicle.	75	70	Ice			30	60	None	Ice Ball; same as normal ice ball in every way	1	None
+Chilling Totem	n|	#8bb	Totems seem to appear in response to conflict. You seem to be evidence of this.	80	0	Ice	Construct		25	75	Deals 2 Ice damage per turn to all units within 2 tiles.	Chilling Wind; summon an Ice Wall at a random adjacent position; 6 turn cooldown	4	None
+Frozen Totem	N|	#8dd	Frozen totems are more powerful than their chilling variants, being able to freeze any would-be assailants solid.	240	0	Ice	Construct		120	300	Deals 6 Ice damage per turn to all units within 2 tiles.	Freezing Wind; summon 5 Ice Walls randomly in a radius of 2; 6 turn cooldown	4	None
 Polar Bear	B*	#aff	Every bit as powerful and hungry as its reputation.	300	0	Living	Ice		80	200	Heals 25 HP per turn while Frozen.	"Bite; 16 physical dmg; melee
-Hibernate; apply frozen to self for 5 turns; cooldown 10 turns"		
-Undead Viking Spearman	V-	#dff	Many a ship has sunk in these waters. Well-preserved in ice, they have waited for your arrival.	80	25	Undead	Ice		30	60	Immune to Frozen.	"Spear Strike; 2 range; 4 physical dmg
-Chilling Touch; 2 range; 9 ice dmg; 25 MP"		
-Frozen Ghost	o>	#bdd	Ghosts are especially malleable when it comes to magical energy, moulded into specific elements by their surroundings.	25	80	Ghost	Ice		16	40	Immune to Frozen.	Freezing Touch; melee; apply Frozen to target for 2 turns; 80 MP		
+Hibernate; apply frozen to self for 5 turns; cooldown 10 turns"	1	None
+Undead Viking Spearman	V-	#dff	Many a ship has sunk in these waters. Well-preserved in ice, they have waited for your arrival.	80	25	Undead	Ice		30	60	Immune to Frozen.	"Spear Strike; 2 range; line; 4 physical dmg
+Chilling Touch; 2 range; radius 0 burst; 9 ice dmg; 25 MP"	1	None
+Frozen Ghost	o>	#bdd	Ghosts are especially malleable when it comes to magical energy, moulded into specific elements by their surroundings.	25	80	Ghost	Ice		16	40	Immune to Frozen.	Freezing Touch; melee; apply Frozen to target for 2 turns; 80 MP	1	None
 Ice Demon	$i	#fdf	Demons with an affinity to Ice can learn its magic just as well as any other.	200	100	Demon	Ice		120	260	None	"Ice Ball; same as normal ice ball in every way
-Frostbite; same as normal frostbite in every way"		
-Undead Viking Bowman	V}	#dff	Somehow, even after centuries entombed in frost, their bowstrings work just as well.	60	25	Undead	Ice		30	60	Immune to Frozen.	"Spear Strike; 9 range; 1 physical dmg
-Chilling Arrow; 9 range; 3 ice dmg; 25 MP"		
-Lightning Spirit	&S	#ff3	Crackling with power, just waiting for a victim to draw near.	50	100	Lightning			30	60	None	Lightning Bolt; 3 range; 5 lightning dmg; 25 MP		
-Spark Wraith	W&	#cc2	Absorbing enough dark and lightning energy can empower a ghost into a creature of legend.	180	200	Lightning	Undead	Dark	160	400	None	"Voltaic Discharge; 5 range; 7 lightning dmg; 75 MP
-Void Transmission; 2 range; 4 lightning dmg; 100% redeal dark; lightning damage causes targets to be teleported randomly within 10 tiles"		
+Frostbite; same as normal frostbite in every way"	2	None
+Undead Viking Bowman	V}	#dff	Somehow, even after centuries entombed in frost, their bowstrings work just as well.	60	25	Undead	Ice		30	60	Immune to Frozen.	"Spear Strike; 9 range; 1 physical dmg; melee
+Chilling Arrow; 9 range; 3 ice dmg; line; 25 MP"	1	None
+Lightning Spirit	&S	#ff3	Crackling with power, just waiting for a victim to draw near.	50	100	Lightning			30	60	None	Lightning Bolt; 3 range; 5 lightning dmg; line; 25 MP	1	None
+Spark Wraith	W&	#cc2	Absorbing enough dark and lightning energy can empower a ghost into a creature of legend.	180	200	Lightning	Ghost	Dark	160	400	None	"Voltaic Discharge; 5 range; 7 lightning dmg; line; 75 MP
+Void Transmission; 2 range; 4 lightning dmg; line; 100% redeal dark; lightning damage causes targets to be teleported randomly within 10 tiles"	2	None
 Charged Golem	&]	#cc7	Metal plates and rods embedded into solid stone, held together by crackling arcs of electricity.	220	140	Lightning	Construct		80	240	None	"Static Crush; 10 physical dmg + 10 lightning dmg; melee
-Eject Rod; 6 range; 8 physical dmg + 6 lightning dmg; removes 15% hp on cast; cooldown 4
-Regenerate; apply Stunned to self for 3 turns and heal 30% max HP; 10 turn cooldown; only (and always) used when <30% HP"		
-Amphibious Eel	~&	#ce2	It's "a slight annoyance" until it delivers a deadly shock straight into your chest.	40	40	Living	Lightning		12	40	None	Shock; 4 lightning dmg; melee		
+Eject Rod; 6 range; 8 physical dmg + 6 lightning dmg; line; removes 15% hp on cast; cooldown 4
+Regenerate; apply Stunned to self for 3 turns and heal 30% max HP; 10 turn cooldown; only (and always) used when <30% HP"	1	None
+Amphibious Eel	~&	#ce2	It's "a slight annoyance" until it delivers a deadly shock straight into your chest.	40	40	Living	Lightning		12	40	None	Shock; 4 lightning dmg; melee	1	None
 Goblin Stormcrafter	G&	#cd5	Don't be fooled by the ritual garb and mysticism. This is very real magic.	120	160	Living			80	140	None	"Lightning Bolt; as normal spell
-Hypercharge; as normal spell"		
-Arcane Aberration	$%	#f49	A twisting, formless blob of arcane power, given a strange kind of intelligence through its immense complexity.			Arcane	Chaos							
-Living Wand	=@	#fac	Wands may, over time, become saturated with magic and gain a form of intelligence. They generally do not appreciate their prior treatment.			Arcane								
-Magishroom	|>	#8f9	A walking mushroom, having absorbed enough magical energy to cast its own spells.			Natural	Arcane							
-Giant Magishroom	|]	#8f9	Magishrooms can grow big. Very big.			Natural	Arcane							
-Demonic Arcanist	D=	#f26	Demons able to resist their primal urges long enough can develop a more humanlike grasp on magic. For this reason, they are quite rare.			Demon	Arcane							
-Possessed Wand	=$	#f8c	Like all things, wands may be chosen as vessels for ghostly presences.			Arcane	Undead							
-Arcane Spirit	]S	#f49	Magic is just as much a force of nature as fire or lightning - its manifestations also just as potent.			Arcane								
-Posessed Armour	U;	#aaa	For reasons unknown, ghosts are drawn to unworn sets of armour. Some suggest it may be because of their similarity to human forms.			Undead	Construct							
-Ghost Ghost Ghost	00	#ddd	Ghosts of ghosts can still die, after all!			Ghost	Ghost	Ghost						
-Revenant	0!	#888	Often the byproducts of dark rituals, revenants form when latent echoes of dark magic meld with the vengeful death throes of human sacrifices.			Dark	Ghost							
-Restless Spirit	!o	#a8a	Some spirits are more driven than most, not content to simply drift with the tides of undeath.			Ghost								
-Ghastly Horseman	Ho	#fbb	It is said that when the time comes again for one who has cheated death, the horsemen ensure they do not escape a second time.			Dark	Undead							
-Fallen Knight	Kv	#faa	A devoted knight serving a long-dead liege, still as stalwart in their mission as the day they pledged fealty.			Undead	Order							
-Angel of Fire	a"	#e82	Angel magic is based on fealty. These angels devote themselves to the fiery wrath of the heavens.			Holy	Fire							
-Angel of Lightning	a&	#dd3	Angel magic is based on devotion. These angels channel bolts of cleansing lightning from the heavens to the mortal plane.			Holy	Lightning							
-Angel of Judgement	a*	#ffa	Angel magic is based on purity. These angels consecrate the ground with bursts of holy energy.			Holy								
-High Angel of Fire	A"	#f70	High angels command armies of lesser angels, blessed with greater power.			Holy	Fire							
-High Angel of Lightning	A&	#ff3	High angels command great armies of lesser angels, blessed with greater power.			Holy	Lightning							
-Archangel	A*	#ffa	Commanding armies of high angels and overwhelming power alike, these warleaders are sent to combat only in the direst of circumstances.			Holy								
-Holy Avatar	!A	#ffa	With their final breath, Archangels will willingly let themselves be consumed by the power that sustains them, giving their lives such that their enemy may be defeated.			Holy								
-Priest	p!	#ffd	Agents of the faith. Not quite mortal, but nowhere near angel.			Living	Holy							
-Idol	[*	#ffd	False or not, the people's hopes have given it power.			Holy	Construct							
-Doomsayer	v!	#f70	Sometimes, a priest can become so enamoured with their sermons that they begin to ardently believe them. Soon they find their power stemming not from heaven but instead from within.			Living	Chaos							
-High Priest	P!	#ffa	Trusted agents of the faith. Probably on first-name terms with at least one angel.			Living	Holy							
-Necromancer	N,	#92c	Mastery over life and death isn't so difficult, really. The hard part is staying on the right side of that line afterwards.			Living	Dark							
-Thrall	v>	#44c	Typical footsoldier of a necromancer. Usually just as fragile as their masters.			Dark	Undead							
-Tormentor	@(	#62a	Weak and unremarkable manifestations of dark energy. Most commonly found knocking things off tables or making hinges squeak.			Dark								
-Dark Spirit	@S	#62a	Dark energy has no true opposite, unlike the elemental forces. Spirits of darkness are led mostly by a compulsion to engulf and destroy everything around them.			Dark								
-Malicious Force	#>	#93b	Whether from a vengeful wizard, a spiteful dying wish or a hateful curse, malicious forces are the result of negative emotions given power.			Dark								
-Crow	c~	#84f	Crows are agile and very intelligent. They and the forces of darkness have a truce of sorts.			Living	Dark							
-Corvid Abomination	C~	#84f	The forces of darkness never promised they would leave the crows untouched, just unharmed.			Living	Dark							
-Flesh Golem	F]	#c4f	Necromancers soon tire of playing with single corpses. It's much more fun to graft two or three together.			Construct	Undead							
-Experiment	&]	#c4f	A bear rib here, a lion skull there... and why not include some eagle wings too?			Construct	Undead							
-Grand Experiment	$}	#c4f	The longer a necromancer lives, the more lives must be defiled to entertain them. These grotesque constructions can be made of over a hundred separate corpses.			Construct	Undead							
-Imp	i-	#e33	I'll be honest, I hate these things. Nothing more to say on the matter.			Demon								
-Fire Imp	i"	#f64	Small. Loud. Annoying. Knows Fireball.			Demon	Fire							
-Frost Imp	i>	#8bb	Small. Loud. Annoying. Knows Ice Ball.			Demon	Ice							
-Chaotic Imp	i%	#f30	They're everywhere.			Demon	Chaos							
-Primal Demon	%D	#e33	A small subset of demons spend their entire lives sequestered away in the underworld, such that they never develop an affinity to any element. Such demons end up roughly like humans, barring the overwhelming strength advantage.			Demon								
-Demon Mage	%-	#f33	Of the demons who refuse to align to a specific element are those who use the added freedom to learn magic, just like a human.			Demon								
-Demon Wizard	%=	#f33	Surprisingly enough, demons with no affinity are just about on a level playing field with any other magic user. So this demon has been training for decades.			Demon								
-Brimstone Elemental	R!	#c00				Fire								
-Brimstone Demon	R$	#c00				Demon								
-Bone Shambler	b,	#bbb				Construct	Undead							
-Bone Construct	b;	#bbb				Construct	Undead							
-Bone Hulk	B,	#bbb				Construct	Undead							
-Giant Bone Construct	B;	#bbb				Construct	Undead							
-Mistake	$!	#93a	A terrifying amalgam of flesh, bone and magical energy. Though clearly a failed experiment of a dark wizard, the magic coursing through it still grants it immense strength.	1000	0	Construct	Dark	Undead	800	20000	None	"Sweep; 40 physical dmg; range 1
-Life Drain; 32 dark dmg; range 1; heals user by damage dealt"	1	None
-Locust Swarm	:;	#3c3				Living	Insect							
-Giant Beetle	O\	#3c3				Living	Insect							
-Lamia	/O	#6d3				Living								
-Frost Tiger	Op	#3dd				Living	Ice							
-Voidtouched Lion	Oq	#d8f				Living	Arcane							
-Treant	/D	#a60				Natural								
-Stumpy Walker	F\	#a60				Natural								
-Giant Flytrap	FX	#1a0				Living								
-Vine Lasher	v/	#1a0				Living								
-Fire Flower	@"	#ca0				Living								
-Posessed Sunflower	@$	#94f				Living	Dark							
-Chimera	H#	#fa0				Living								
-Minotaur	#R	#950				Living								
-Werewolf	W}	#aaa				Living								
-Basilisk	Ib	#3b3				Living								
-Kraken	K~	#99c				Living								
-Ogre	o/	#3c3				Living								
-Giant Ogre	O/	#3c3				Living								
-Tiny Ogre	./	#3c3				Living								
-Gnome	:.	#2d2				Natural								
-Hypergnome	|.	#0f0				Natural								
-Centaur Courser	H=	#a60				Living								
-Centaur Bowman	H}	#a60				Living								
-Centaur Spearman	H-	#a60				Living								
-Phoenix	\P	#f63				Fire								
-Ice Phoenix	\P	#aff				Ice								
-Hydra	!/	#6d6				Living								
-Scorpion	S_	#d80				Living	Insect							
-Lightning Scorpion	&_	#fc0				Living	Insect							
-Acidic Scorpion	$_	#ac0				Living	Insect							
-Towering Isopod	#+	#b90				Living	Insect							
-Giant Mantis	M}	#3c3				Living	Insect							
-Chaotic Construct	%]	#e90				Construct	Chaos							
-Dark Idol	v]	#93a				Construct	Dark							
-Flesh Totem	K]	#d6f				Construct	Dark	Undead						
+Hypercharge; as normal spell"	2	None
+Arcane Aberration	$%	#f49	A twisting, formless blob of arcane power, given a strange kind of intelligence through its immense complexity.	240	200	Arcane	Chaos		100	140	None	"Void Tear; 6 range; 8 arcane dmg; line; ignores los and destroys walls; cooldown 2 turns; 40 MP
+Void Rift; 10 range; line; ignores los; pulls affected units 1 tile closer to entity; 30 MP
+Detonation; 35 arcane dmg; self burst 2 radius; kills caster"	1	None
+Living Wand	=@	#fac	Wands may, over time, become saturated with magic and gain a form of intelligence. They generally do not appreciate their prior treatment.	50	120	Arcane			30	40	Every time this entity casts a spell, it will replace that with a new spell made up of 1-3 Common fragments.	[Generates according to special]	1	None
+Magishroom	|>	#8f9	A walking, magical mushroom, having absorbed enough arcane energy to cast its own spells.	40	40	Natural	Arcane		10	15	None	Nature Missile; 3 arcane dmg; line; range 5; 10 MP	2	None
+Giant Magishroom	|]	#8f9	Magishrooms can grow big. Very big.	250	300	Natural	Arcane		100	140	None	"Verdant Beam; 10 arcane dmg; line; range 5; 70 MP
+Wrath; radius 4 self burst; 22 arcane dmg; 150 MP"	2	None
+Demonic Arcanist	D=	#f26	Demons are able to develop a direct affinity to mana itself. This has a very different effect to elemental affinity, instead allowing the demon to cast varied magics.	150	200	Demon	Arcane		120	200	Every time this entity casts a spell, it will replace that with a new spell made up of 2-4 Common or Uncommon fragments.	[Generates 2 spells according to special]	2	None
+Possessed Wand	=$	#f8c	Like all things, wands may also be chosen as vessels for ghostly presences.	80	120	Arcane	Ghost		30	50	Every time this entity casts a spell, it will replace that with a new spell made up of 1-3 Common fragments.	[Generates according to special]	1	Ghost x1
+Arcane Spirit	]S	#f49	Magic is just as much a force of nature as fire or lightning - its manifestations also just as potent.	50	60	Arcane			30	50	None	Magic Missile; same as normal magic missile	1	None
+Posessed Armour	U;	#aaa	For reasons unknown, ghosts are drawn to unworn sets of armour. Some suggest it may be because of their similarity to human forms.	120	0	Ghost	Construct		25	40	None	"Helm Strike; 12 physical dmg; melee; cooldown 3 turns
+Gauntlet Strike; 7 physical dmg; melee"	1	Ghost x1
+Ghost Ghost Ghost	00	#ddd	Ghosts of ghosts may still die, after all!	240	80	Ghost	Ghost	Ghost	30	100	None	Dark Touch; 12 dark dmg; range 1	1	Ghost Ghost x1
+Revenant	0!	#888	Often the byproducts of dark rituals, revenants form when latent echoes of dark magic meld with the vengeful death throes of human sacrifices.	90	60	Dark	Ghost		50	120	If this entity would take damage of a type it is not weak against, it instead takes no damage.	"Dark Projection; 2 dark dmg; range 7
+Raise Bretheren; summons Ghosts or Vengeful Ghosts on every surrounding tile; 60 MP"	2	None
+Restless Spirit	!o	#a8a	Some spirits are more driven than most, not content to simply drift with the tides of undeath.	20	0	Ghost			5	8	None	Dark Touch; 4 dark dmg; range 1	1	None
+Ghastly Horseman	Ho	#fbb	It is said that when the time comes again for one who has cheated death, the horsemen ensure they do not escape a second time.	200	100	Dark	Undead		150	350	Can move twice in a single turn.	"Axe Swing; 14 physical dmg; melee
+Necrotic Touch; 8 dark dmg; range 4; 20 MP; 3 turn cooldown
+Call Fallen; summons Ghosts, Ghost Ghosts, Spirit Amalgams, Wraiths, Vengeful Ghosts at random on surrounding tiles; 100 MP"	2	None
+Fallen Knight	Kv	#faa	A devoted knight serving a long-dead liege, still as stalwart in their mission as they were the day they pledged fealty.	120	0	Undead	Order		70	120	None	"Slash; 9 physical dmg; melee
+Throw Spear; 8 physical dmg; range 5; 8 turn cd
+Defensive Stance; gain 8 Bulwark; 12 turn cd"	2	None
+Angel of Fire	a"	#e82	Angel magic is based on fealty. These angels devote themselves to the fiery wrath of the heavens.	300	200	Holy	Fire		140	200	Deals 3 Fire damage every turn to adjacent enemy units.	"Flaming Strike; 7 physical, 5 fire dmg; melee
+Call Fire; 12 fire dmg; radius 2 burst; range 5; 50 MP"	2	None
+Angel of Lightning	a&	#dd3	Angel magic is based on devotion. These angels channel bolts of cleansing lightning from the heavens to the mortal plane.	300	200	Holy	Lightning		140	200	If witnessing any Lightning damage, restores 10 HP.	"Lightning Bolt; 4 lightning dmg; line; range 9; 20 MP
+Lightning Strike; 10 lightning dmg; radius 2 burst; range 5; 100 MP; stuns target for 1 turn"	2	None
+Angel of Judgement	a*	#ffa	Angel magic is based on purity. These angels consecrate the ground with bursts of holy energy.	500	300	Holy			180	300	None	"Consecrate; same as normal consecrate in every way
+Holy Protection; radius 5 self square; heals Holy units by 30 HP and grants 15 Shield; 75 MP; cooldown 5 turns"	2	None
+High Angel of Fire	A"	#f70	High angels command armies of lesser angels, blessed with greater power.	1000	400	Holy	Fire		320	800	If witnessing any Fire damage, restores 20 MP. Deals 5 Fire damage every turn to adjacent enemy units.	"Searing Strike; 10 physical, 8 fire dmg; melee
+Call Wrath; 16 fire dmg; radius 3 burst; range 6; 50 MP
+Scouring Beam; 14 fire dmg; line; range 10; 160 MP; 3 turn cd"	2	None
+High Angel of Lightning	A&	#ff3	High angels command great armies of lesser angels, blessed with greater power.	1000	400	Holy	Lightning		320	800	If witnessing any Lightning damage, restores 25 MP and 10 HP.	"Discharge; 6 lightning dmg; radius 2 cone; range 9; 40 MP
+Thunder Strike; 16 lightning dmg; radius 2 burst; range 5; 200 MP; stuns target for 1 turn"	2	None
+Archangel	A*	#ffa	Commanding armies of high angels and overwhelming power alike, these warleaders are sent to combat only in the direst of circumstances.	2000	800	Holy			600	2000	None	"Call Heaven; 10 holy dmg; radius 3 square; ignores los; range 8; 100 MP; 3 turn cooldown
+Holy Protection; radius 5 self square; heals Holy units by 50 HP and grants 25 Shield; 150 MP; cooldown 5 turns
+Summon Angelic Legion; summons 1 of every other Angel (Fire, Lightning, Judgement, High Fire, High Lightning) near the caster; 400 MP; cooldown 10 turns"	2	Holy Avatar x1
+Holy Avatar	!A	#ffa	With their final breath, Archangels will willingly let themselves be consumed by the power that sustains them, giving their lives such that their enemy may be defeated.	1	1000	Holy			400	-1	Any damage this entity takes first removes MP before removing HP.	"Sacred Beam; 8 holy dmg; line; range 7; 80 MP
+Sacred Lance; 16 holy dmg; line; range 7; 200 MP; cooldown 6 turns
+Divine Explosion; 40 holy dmg; 3 tile self burst; 750 MP"	1	None
+Priest	p!	#ffd	Agents of the faith. Not quite mortal, but nowhere near angel.	60	120	Living	Holy		40	70	None	"Lesser Consecrate; 4 radius self square; 10 holy dmg; 50 MP
+Divine Healing; 2 radius self square; heal allies by 10 HP; 40 MP; 1 turn cooldown"	2	None
+Idol	[*	#ffd	False or not, the people's hopes have given it power.	50	0	Holy	Construct		20	60	Holy entities within line of sight heal 10 HP per turn. Dark entities within line of sight take 6 Holy damage per turn.	None	4	None
+Doomsayer	v!	#f70	Sometimes, a priest can become so enamoured with their holy status that they begin to ardently believe themselves to be prophets. Soon they find their power stemming not from heaven but instead from chaos within.	100	160	Living	Chaos		25	40	Explodes in a 2 tile burst for 10 Chaos damage on death.	"Chaos Bolt; 4 chaos dmg; 1 radius burst; 5 range; 20 MP
+Call to Heaven; 12 chaos dmg 2 radius self burst; kills caster"	2	None
+High Priest	P!	#ffa	Trusted agents of the faith. Probably on first-name terms with at least one angel.	200	400	Living	Holy		60	140	None		2	None
+Necromancer	N,	#92c	Mastery over life and death isn't so difficult, really. The hard part is staying alive yourself afterwards.	50	300	Living	Dark		40	100	Heals all Dark and Undead units within 3 tiles by 8 HP per turn.		2	None
+Thrall	v>	#44c	Typical footsoldier of a necromancer. Usually just as fragile as their masters.	30	0	Dark	Undead		8	12	Heals from Dark damage.		1	None
+Tormentor	@(	#62a	Weak and unremarkable manifestations of dark energy. Most commonly found knocking things off tables or making hinges squeak.	16	20	Dark			5	8	None		1	None
+Dark Spirit	@S	#62a	Unlike the elemental forces, dark has no true opposite. Spirits of darkness are instead led mostly by a compulsion to engulf and destroy everything around them.	80	60	Dark			35	60	Heals an equal amount to all damage it causes.		1	None
+Malicious Force	#>	#93b	Whether from a vengeful wizard, a spiteful dying wish or a hateful curse, malicious forces are the result of negative emotions given power.	30	100	Dark			40	70	None		1	None
+Crow	c~	#84f	Crows are agile and very intelligent. They and the forces of darkness have a truce of sorts.	45	0	Living	Dark		7	14	None		2	None
+Corvid Abomination	C~	#84f	The forces of darkness never promised they would leave the crows untouched, just unharmed.	240	40	Living	Dark		60	150	None		1	None
+Flesh Golem	F]	#c4f	Necromancers soon tire of playing with single corpses. It's much more fun to graft two or three together.	180	0	Construct	Undead		80	200	Gains 5 max HP when witnessing the death of any Living entity.	"Consume; heal by 10% max HP; 6 turn cooldown
+Crush; 8 physical dmg; melee"	1	None
+Experiment	&]	#c4f	A bear rib here, a lion skull there... and why not include some eagle wings too?	600	0	Construct	Undead		200	700	Gains 25 max HP when witnessing the death of any Living entity.	"Consume; heal by 10% max HP; 6 turn cooldown
+Crush; 16 physical dmg; melee
+Unholy Speed; teleport 2 tiles towards target; 5 turn cooldown"	1	None
+Grand Experiment	$}	#c4f	The longer a necromancer lives, the more lives must be defiled to entertain them. These grotesque constructions can be made of over a hundred separate corpses.	1500	0	Construct	Undead		400	1300	Gains 50 max HP when witnessing the death of any Living entity.	"Consume; heal by 10% max HP; 6 turn cooldown
+Crush; 30 physical dmg; melee
+Unholy Speed; teleport 2 tiles towards target; 4 turn cooldown
+Unholy Strength; become Invincible for 2 turns; 10 turn cooldown"	1	Experiment x2
+Imp	i-	#e33	I'll be honest, I hate these things. Nothing more to say on the matter.	25	60	Demon								
+Fire Imp	i"	#f64	Small. Loud. Annoying. Knows Fireball.	40	60	Demon	Fire							
+Frost Imp	i>	#8bb	Small. Loud. Annoying. Knows Ice Ball.	40	60	Demon	Ice							
+Chaotic Imp	i%	#f30	They're everywhere.	40	60	Demon	Chaos							
+Primal Demon	%D	#e33	A small subset of demons spend their entire lives sequestered away in their realm, such that they never develop an affinity to any element. Such demons end up surprisingly similar to humans, barring the overwhelming strength advantage.	500	0	Demon								
+Demon Mage	%-	#f33	Of the demons who refuse to align to a specific element are those who use the added freedom to learn magic, just like a human.	160	500	Demon								
+Demon Wizard	%=	#f33	Surprisingly enough, demons with no affinity are just about on a level playing field with any other magic user. Don't worry, though. This demon has been training for decades.	180	800	Demon								
+Brimstone Elemental	R!	#c00	Elementals that form around volcanic eruptions command a special type of fire that burns stronger, longer and hotter than any other.			Fire								
+Brimstone Demon	R$	#c00	It is no coincidence that demons often build strongholds around areas of strong volcanic activity.			Demon	Fire							
+Bone Shambler	b,	#bbb	In areas of strong necromantic activity, dark power can seep into other surrounding corpses, creating mindless amalgamations of assorted bones.			Construct	Undead							
+Bone Construct	b;	#bbb	When flesh does not satisfy a necromancer's needs, they can instead construct their servants from pure bone.			Construct	Undead							
+Bone Hulk	B,	#bbb	Left unchecked, errant bone amalgamations can absorb more and more, aggressively attacking the living to gather even more material.			Construct	Undead							
+Giant Bone Construct	B;	#bbb	Unlike flesh, bone can be much more easily arranged into effective constructions.			Construct	Undead							
+Mistake	$!	#93a	A terrifying amalgam of flesh, bone and magical energy. Though clearly a failed experiment of a dark wizard, the magic coursing through it still grants it immense strength.	1000	0	Construct	Dark	Undead	300	1200	None	"Sweep; 40 physical dmg; range 1
+Life Drain; 32 dark dmg; range 3; heals user by damage dealt"	1	None
+Locust Swarm	:;	#3c3	Each bug is tiny on its own. Unfortunately, there's never just one of them.			Living	Insect							
+Giant Beetle	O\	#3c3	Life energy accumulates in forests, twisting animals into larger and stronger forms.			Living	Insect							
+Lamia	/O	#6d3	A mythological creature with the body of a snake and the appetite of a dragon.			Living								
+Frost Tiger	Op	#3dd	Typical animals are also susceptible to magic. Entirely new species can be created by its influence.			Living	Ice							
+Voidtouched Lion	Oq	#d8f	While they may not cast spells in quite the same way, animals touched by pure magic can instinctively use it to much the same effect.			Living	Arcane							
+Treant	/D	#a60	Simple nature spirits that choose to possess young trees, supplanting their normal processes to use as a vessel.			Natural								
+Stumpy Walker	F\	#a60	Nature spirits make no distinction between living and dead trees. They can possess a fully grown oak just as well as a long-dead stump.			Natural								
+Giant Flytrap	FX	#1a0	Not hugely efficient at catching flies. Much better at catching wizards, though.			Living								
+Vine Lasher	v/	#1a0	Usually parts of a much larger organism, vine lashers can grow great distances through subterranean root systems and act semi-autonomously.			Living								
+Fire Flower	@"	#ca0	The sun is also a source of fire energy. These plants have learned to use that.			Living								
+Posessed Sunflower	@$	#94f	I almost feel sorry for the ghost that thought it was a good idea to choose a plant as its host.			Living	Dark							
+Chimera	H#	#fa0	An amalgamation of animals, most often used as an example of the dangers of life energy.			Living								
+Minotaur	#R	#950	Huge, hulking beasts bred by mages to act as more corporeal guards for their treasures.			Living								
+Werewolf	W}	#aaa	Bearers of a magical curse linked to the deity of the moon.			Living								
+Basilisk	Ib	#3b3	A mythical creature notable for its paralyzing gaze.			Living								
+Kraken	K~	#99c	Hideous, overgrown octopus-like creatures with a voracious appetite, stopped only by a need for water.			Living								
+Ogre	o/	#3c3	Humanoid creatures, superior in all ways to humans aside from their affinity for magic.			Living								
+Giant Ogre	O/	#3c3	Due to their low control over magic, ogres are affected similarly to other beasts, growing to imposible sizes if exposed to arcane energy.			Living								
+Tiny Ogre	./	#3c3	Understand that "small" does not mean "harmless".			Living								
+Gnome	:.	#2d2	While they may look like living creatures, they are in fact manifestations of magical energy. Hence why they can teleport.			Natural	Arcane							
+Hypergnome	|.	#0f0	The average lifespan of a hypergnome is around one hour, and yet you still managed to run into one. Unlucky you.			Natural	Arcane							
+Centaur Courser	H=	#a60	In the society of centaurs, coursers are the largest and strongest, wielding heavy axes to overwhelm enemy ranks.			Living								
+Centaur Bowman	H}	#a60	Bowmen are highly respected in centaur culture - and highly effective in battle.			Living								
+Centaur Spearman	H-	#a60	In centaur culture, spears are considered holy, regal weapons, typically wielded only by royal guards.			Living								
+Phoenix	\P	#f63	While they may only be distant cousins of the great birds of old, the modern Phoenix shares much with its ancestor - including the power of rebirth.			Living	Fire							
+Ice Phoenix	\P	#aff	In mortal peril, an Ice Phoenix is able to retreat into an impenetrable shell and fully restore its health in a matter of moments.			Living	Ice							
+Hydra	!/	#6d6	I understand it may be quite shocking to see one of these in the flesh. Please don't be alarmed. Also, please use fire. It can't regenerate if it's on fire.			Living								
+Scorpion	S_	#d80	Nature always finds a way to put the deadliest poisons in the smallest creatures.			Living	Insect							
+Lightning Scorpion	&_	#fc0	In the storm-swept mesas at the edge of the world, lightning energy is dense enough to penetrate even the smallest beings.			Living	Insect	Lightning						
+Acidic Scorpion	$_	#ac0	Acidic poison. About ten times as bad as normal poison. Give or take.			Living	Insect							
+Towering Isopod	#+	#b90	Some places provide the perfect evolutionary crucible to cultivate the strangest beings. These insects, around five times the size of a human, are an example.			Living	Insect							
+Giant Mantis	M}	#3c3	If there's one thing magical energy loves to do, it's "making things bigger".			Living	Insect							
+Chaotic Construct	%]	#e90	A reality-defying construction made by some chaotic force long ago.			Construct	Chaos							
+Dark Idol	v]	#93a	A once-holy idol, corrupted by sin and neglect.			Construct	Dark							
+Flesh Totem	K]	#d6f	The sure sign of a necromancer. They often use these grotesque towers of fused flesh and bone to mark their territory.			Construct	Dark	Undead						
 Bugbeast	B|	#1b1	A towering entity comprised of many smaller swarm insects, all moving as one.			Construct	Insect							
-Spider	m^	#84c				Insect								
-Giant Spider	M^	#84c				Insect								
-Giant Enemy Spider	M%	#F04031	The giant enemy spider...	5000	0	Construct	Insect		2500	10000	None	Trample; 500 physical dmg; range 1	1	None
-Skeleton	s#	#ccc				Undead								
-Giant Skeleton	S#	#ccc				Undead								
-Seraphim	A^	#ffa				Holy								
+Spider	m^	#84c	A small but deadly insect that thrives on ambushes.			Insect								
+Giant Spider	M^	#84c	A spider that has grown to incredible size as a result of magical meddling.			Insect								
+Giant Enemy Spider	M%	#F04031	The giant enemy spider...	5000	0	Construct	Insect		500	5000	None	Trample; 500 physical dmg; range 1	1	None
+Skeleton	s#	#ccc	A haphazardly animated construct of various chunks of bone.			Undead	Dark							
+Giant Skeleton	S#	#ccc	If in doubt, just add more bone!			Undead								
+Seraphim	A^	#ffa	Greatly weakened by the travel between worlds. It still recognises you as its leader, though.			Holy								
 Rock Golem	|.	#dca	Perfectly formed golems raised in service of the Order of Order.			Construct	Order							
 Acolyte of Order	c|	#fda	As lowly as they are, these acolytes are just as capable of performing the Incantations of Order.			Living	Order							
 Rock Titan	|]	#dcd	Titanic constructions of magically hewn stone, raised in service of the Order of Order.			Construct	Order							
 Granite Titan	|&	#dcd	Only to be fabricated by the most orderly of the Order of Order, their construction of pure granite grants them even greater strength.			Construct	Order							
 Mud Titan	|~	#a66	Created specifically to oppose demons of fire and chaos, the mud titan is a necessary evil for the Order of Order to employ.			Construct	Order							
-Bronze Colossus	|>	#c73	With enough devotion, a Wizard of the Order of Order can perform the same golemcraft rituals as lesser adherents using solid metal.			Construct	Order							
+Bronze Colossus	|>	#c73	With enough devotion, a Wizard of the Order of Order can perform the same golemcraft rituals as lesser adherents using solid metal rather than rock.			Construct	Order							
 Steel Colossus	|#	#ccd	The apex of order. Only a Master of Order could hope to bend steel into such a form.			Construct	Order							
 Faithful of Order	f|	#fda	The last rank in the Order of Order one can achieve by study alone. Well-trained in sorceries and rituals alike.			Living	Order							
 Wizard of Order	w|	#fda	Wizards of Order are allowed access to the Order of Order's secret texts as thanks for their contributions. With them, they can become even more useful to the Order.			Living	Order							
 High Wizard of Order	W|	#fda	Only a few High Wizards of Order are selected out of the Order of Order every year. They form the Council of Order.			Living	Order							
 Master of Order	M|	#fda	Masters of Order are those in the Order of Order who have achieved the feat of creating a perfect Steel Colossus. The Order of Order bows to their wisdom.			Living	Order							
 Ice Wall	[]	#aff	A wall made out of pure ice.	50	0	Ice	Construct		0	-1	None	None	4	None
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
-														
+Target Dummy	@!	#fff	He doesn't mind if you hit him.	1000000	1000	Construct			0	-1	Heals to max HP every turn.	None	4	None
+Refticus	@>	#965	Looks like a normal pigeon. Is probably a normal pigeon.	1000	100	Living	Chaos		1000	5000	Takes no damage except for Physical damage. Won't attack you if they are full HP.	"It's So Over; 100 physical dmg; melee
+11:00 PM; applies sleep to target for 5 turns, or caster if time is 11:00pm-6:00am; 99 range; 7 turn cooldown"	2	None
+Castle Wall	[]	#ccc	Probably used to be some kind of fortification, a long time ago.	Inf	Inf	Construct			0	-1	None	None	999	None
+Chasm	vv	#666	A bottomless pit.	Inf	Inf	Construct			0	-1	None	None	999	None
+Corruption	++	#c4f	You probably shouldn't step in this.	Inf	Inf	Dark			0	-1	None	None	999	None
+Tree	()	#a70	A normal tree.	Inf	Inf	Living			0	-1	None	None	999	None
+Deep Water	~~	#28d	Deep, murky water.	Inf	Inf	Construct			0	-1	None	None	999	None
+Rock Wall	[]	#b87	A rough blockage made from rock.	Inf	Inf	Ice			0	-1	None	None	999	None
+Magical Wall	[]	#f5a	A magical forcefield.	Inf	Inf	Arcane			0	-1	None	None	999	None
+Pile of Bones	@@	#ccc	A towering pile of discarded bones.	Inf	Inf	Undead			0	-1	None	None	999	None
+Cliff Edge	</	#da9	The face of a sheer cliff.	Inf	Inf	Construct			0	-1	None	None	999	None
+Elevated Mesa	..	#da9	The top of a flat mesa, far above you.	Inf	Inf	Construct			0	-1	None	None	999	None
+Icy Wall	[]	#aff	A barrier of thick, hard ice.	Inf	Inf	Ice			0	-1	None	None	999	None
+Magma	~~	#f50	Boiling, churning magma.	Inf	Inf	Fire			0	-1	None	None	999	None
+Obscured	--	#222	You can't see anything here.	Inf	Inf	Construct			0	-1	None	None	999	None
+Solid Cloud	00	#dff	Clouds so thick they block everything.	Inf	Inf	Construct			0	-1	None	None	999	None

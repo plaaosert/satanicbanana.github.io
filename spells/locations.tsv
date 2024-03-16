@@ -1,0 +1,41 @@
+Grassy Flatlands	#7f0	#250	Echoes of a grassy plain.	RandomWalls("Tree", 0.025, 0.075) 	Natural x2
+Dense Jungle	#5a0	#130	Echoes of a jungle teeming with wildlife.	RandomWalls("Tree", 0.2, 0.35)	Natural, Insect, Living x2
+Ravaged Town	#ddd	#333	Echoes of a town that suffered a great calamity.	"SparseRooms(""Wall"", 0.0075, 0.015, 5, 10)
+RandomWalls(""Tree"", 0.05, 0.075)
+RandomWalls(null, 0.2, 0.35)"	All
+Spirit Realm	#f49	#502	Echoes of a realm of arcane creatures.	Maze1Diagonal("Magical Wall")	Arcane x2
+Underworld	#aaa	#222	Echoes of nether reaches far below mortal ground. 	"RandomWalls(""Pile of Bones"", 0.03, 0.08)
+IrregularSpots(""Chasm"", 0.001, 0.0025, 4, 8)"	Undead, Ghost x2
+Mass Grave	#74a	#102	Echoes of graves stacked upon graves.	IrregularSpots("Pile of Bones", 0.001, 0.0025, 4, 8)	Undead, Ghost x2; Dark x3
+Arcane Academy	#f8c	#534	Echoes of a place of rest and learning for magic-wielding beings.	SparseRooms("Magical Wall", 0.02, 0.04, 4, 12)	"""Mage"", ""Wizard"" enemies x3"
+Bustling City	#ddd	#333	Echoes of a sprawling capital city.	SparseRooms("Wall", 0.02, 0.04, 4, 12)	Living x2
+Stormswept Mesa	#d80	#420	Echoes of a dry land scoured by storm and wind.	"IrregularSpots(""Elevated Mesa"", 0.001, 0.0025, 12, 20, ""Cliff Edge"")
+RandomWalls(""Rock Wall"", 0.02, 0.04)"	Lightning x2
+Frigid Tundra	#aff	#244	Echoes of a place where frost takes all.	"IrregularSpots(""Icy Wall"", 0.001, 0.0025, 12, 20)
+IrregularSpots(""Ice Wall"", 0.0015, 0.003, 6, 8)"	Ice x2
+Icy Cave	#8ff	#044	Echoes of a frozen cave's deepest reaches.	"Fill(""Icy Wall"")
+IrregularSpots(null, 0.001, 0.002, 8, 14)
+IrregularSpots(null, 0.01, 0.02, 3, 5)"	Ice x2
+Heaven's Gate	#ff9	#442	Echoes of apotheosis and divinity.	RandomWalls("Solid Cloud", 0.2, 0.3)	Holy x3
+Demonic Realm	#f00	#300	Echoes of violence and sin.	"SparseRooms(""Rock Wall"", 0.02, 0.05, 6, 10)
+IrregularSpots(""Magma"", 0.003, 0.006, 4, 12)"	Demon x3
+Deep Cave	#bbb	#222	Echoes of dark depths.	"Fill(""Rock Wall"")
+IrregularSpots(null, 0.001, 0.002, 8, 14)
+IrregularSpots(null, 0.01, 0.02, 3, 5)"	All
+Forested Grasslands	#5d0	#130	Echoes of deep forest shade.	"RandomWalls(""Tree"", 0.15, 0.3)
+IrregularSpots(null, 0.001, 0.002, 8, 14)"	All
+Fae Maze	#f5a	#523	Echoes of a labyrinth half-submerged in the realm of spirits.	"Maze1(""Magical Wall"")
+IrregularSpots(null, 0.001, 0.002, 6, 10)"	All
+Jails of Purgatory	#aaa	#222	Echoes of cells and chains built for the criminals of the afterlife.	"SparseRooms(""Wall"", 0.02, 0.05, 6, 10)
+RandomWalls(null, 0.015, 0.03)
+IrregularSpots(""Chasm"", 0.003, 0.006, 4, 12)"	Undead, Ghost x3
+Catacombs	#95a	#204	Echoes of sprawling underground hallways filled with tombs.	"IrregularSpots(""Pile of Bones"", 0.001, 0.002, 8, 14)
+IrregularSpots(""Chasm"", 0.001, 0.002, 8, 14)"	Undead, Dark x3
+Infested Mineshaft	#4a0	#120	Echoes of a mineshaft crawling with aggressive insects.	"RandomWalls(""Wall"", 0.075, 0.2)
+RandomWalls(""Rock Wall"", 0.1, 0.15)"	Insect x3
+Ancient Castle	#bbb	#333	Echoes of a castle built by a long-dead society.	"SparseRooms(""Castle Wall"", 0.02, 0.04, 4, 12)
+RandomWalls(null, 0.005, 0.01)"	All
+Profaned Fortress	#f50	#410	Echoes of a demon family's home in the mortal realm.	"SparseRooms(""Castle Wall"", 0.02, 0.04, 4, 12)
+RandomWalls(null, 0.005, 0.01)
+IrregularSpots(""Magma"", 0.003, 0.006, 4, 12)
+IrregularSpots(""Chasm"", 0.001, 0.002, 4, 8)"	Demon x2

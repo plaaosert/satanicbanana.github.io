@@ -1378,7 +1378,7 @@ let start_of_game_popup = new MessageBoxTemplate(
         function() {
             // NOTHING
             game.player_location = new GameLocation(
-                location_templates[0],
+                location_templates[1],
                 [
                     EventType.Battle,
                     EventType.Battle,

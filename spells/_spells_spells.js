@@ -321,7 +321,7 @@ spells_list = [
     core_spell(
         "Unknown Incantation", "!?", SpellSubtype.Core,
         "#e90", "#000",
-        "\"This core will have a random bonus effect on cast that changes every time it is used by ANYONE.\nNext effect: [#4df]Nothing.[clear]\"",
+        "\"This core will have a random bonus effect on cast that changes every time it is used by ANYONE.\nNext effect: [#4df]Nothing.[clear]\",
         20, DmgType.Chaos,
         10, 2, Shape.Diamond,
         30,
@@ -2015,7 +2015,7 @@ spells_list = [
     modifier(
         "Reconversion", "8~", SpellSubtype.Misc,
         "#fff", "#265",
-        "Any non-player entity at the target position of the core will have all its affinities reversed. For example, [#e52]Fire[clear] will become [#aff]Ice[clear].",
+        "Any non-player entity at the target position of the core will have all its affinities reversed. For example, [#e25822]Fire[clear] will become [#A5F2F3]Ice[clear].",
         150,
         no_stats,
         no_target,

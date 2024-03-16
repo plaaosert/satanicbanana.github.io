@@ -1789,7 +1789,7 @@ entity_templates = [
     new EntityTemplate(
         "Target Dummy", "@!", "#fff", "He doesn't mind if you hit him.",
         1000000, 1000, [
-            
+            Affinity.Construct
         ], 0, -1,
         entities_spells["Target Dummy"],
         entities_specials["Target Dummy"],
@@ -1798,18 +1798,19 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
+        "Refticus", "@>", "#965", "Looks like a normal pigeon. Is probably a normal pigeon.",
+        1000, 100, [
+            Affinity.Living,
+            Affinity.Chaos
+        ], 1000, 5000,
+        entities_spells["Refticus"],
+        entities_specials["Refticus"],
+        "Takes no damage except for Physical damage. Won't attack you if they are full HP.",
+        2, false, false, 
     ),
 
     new EntityTemplate(
-        "Castle Wall", "##", "#ccc", "Probably used to be some kind of fortification, a long time ago.",
+        "Castle Wall", "[]", "#ccc", "Probably used to be some kind of fortification, a long time ago.",
         Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
             Affinity.Construct
         ], 0, -1,
@@ -1827,24 +1828,24 @@ entity_templates = [
         entities_spells["Chasm"],
         entities_specials["Chasm"],
         "None",
-        999, false, true, 
+        999, true, true, 
     ),
 
     new EntityTemplate(
         "Corruption", "++", "#c4f", "You probably shouldn't step in this.",
         Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
-            Affinity.Construct
+            Affinity.Dark
         ], 0, -1,
         entities_spells["Corruption"],
         entities_specials["Corruption"],
         "None",
-        999, false, true, 
+        999, true, true, 
     ),
 
     new EntityTemplate(
         "Tree", "()", "#a70", "A normal tree.",
         Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
-            Affinity.Construct
+            Affinity.Living
         ], 0, -1,
         entities_spells["Tree"],
         entities_specials["Tree"],
@@ -1860,11 +1861,88 @@ entity_templates = [
         entities_spells["Deep Water"],
         entities_specials["Deep Water"],
         "None",
-        999, false, true, 
+        999, true, true, 
     ),
 
     new EntityTemplate(
-        "Obscured", "##", "#444", "You can't see anything here.",
+        "Rock Wall", "[]", "#b87", "A rough blockage made from rock.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Ice
+        ], 0, -1,
+        entities_spells["Rock Wall"],
+        entities_specials["Rock Wall"],
+        "None",
+        999, true, true, 
+    ),
+
+    new EntityTemplate(
+        "Magical Wall", "[]", "#f5a", "A magical forcefield.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Arcane
+        ], 0, -1,
+        entities_spells["Magical Wall"],
+        entities_specials["Magical Wall"],
+        "None",
+        999, true, true, 
+    ),
+
+    new EntityTemplate(
+        "Pile of Bones", "@@", "#ccc", "A towering pile of discarded bones.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Undead
+        ], 0, -1,
+        entities_spells["Pile of Bones"],
+        entities_specials["Pile of Bones"],
+        "None",
+        999, true, true, 
+    ),
+
+    new EntityTemplate(
+        "Cliff Edge", "</", "#da9", "The face of a sheer cliff.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Construct
+        ], 0, -1,
+        entities_spells["Cliff Edge"],
+        entities_specials["Cliff Edge"],
+        "None",
+        999, true, true, 
+    ),
+
+    new EntityTemplate(
+        "Elevated Mesa", "..", "#da9", "The top of a flat mesa, far above you.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Construct
+        ], 0, -1,
+        entities_spells["Elevated Mesa"],
+        entities_specials["Elevated Mesa"],
+        "None",
+        999, true, true, 
+    ),
+
+    new EntityTemplate(
+        "Icy Wall", "[]", "#aff", "A barrier of thick, hard ice.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Ice
+        ], 0, -1,
+        entities_spells["Icy Wall"],
+        entities_specials["Icy Wall"],
+        "None",
+        999, true, true, 
+    ),
+
+    new EntityTemplate(
+        "Magma", "~~", "#f50", "Boiling, churning magma.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Fire
+        ], 0, -1,
+        entities_spells["Magma"],
+        entities_specials["Magma"],
+        "None",
+        999, true, true, 
+    ),
+
+    new EntityTemplate(
+        "Obscured", "--", "#222", "You can't see anything here.",
         Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
             Affinity.Construct
         ], 0, -1,
@@ -1875,135 +1953,14 @@ entity_templates = [
     ),
 
     new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
+        "Solid Cloud", "00", "#dff", "Clouds so thick they block everything.",
+        Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, [
+            Affinity.Construct
         ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
+        entities_spells["Solid Cloud"],
+        entities_specials["Solid Cloud"],
         "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
-    ),
-
-    new EntityTemplate(
-        "Unnamed", "??", "#f00", "This entity is corrupted and should not be here!",
-        1, 1, [
-            Affinity.Living
-        ], 0, -1,
-        entities_spells["Unnamed"],
-        entities_specials["Unnamed"],
-        "None",
-        1, false, false, 
+        999, true, true, 
     ),
 
 
