@@ -521,6 +521,31 @@ function handle_debug_command() {
                 debug_response = `#0f0progressed location progress`;
                 break;
 
+            case "se": {
+                let segs = data.split(" ")
+                let status = StatusEffect[segs[0].toUpperCase()];
+                if (!status) {
+                    debug_response = `#f00couldn't find status "${segs[0].toUpperCase()}"`;
+                } else {
+                    let duration = Number.parseInt(segs[1]);
+                    if (!duration) {
+                        duration = 1;
+                    }
+
+                    let ent = null;
+                    if (renderer.selected_ent) {
+                        ent = renderer.selected_ent;
+                    } else {
+                        ent = game.player_ent;
+                    }
+    
+                    ent.apply_status(status, duration);
+    
+                    debug_response = `#0f0effect applied to ${ent.name}`;
+                }
+                break;
+            }
+
             case "m":
                 if (data) {
                     let msgbox = messagebox_templates[data]
@@ -951,6 +976,12 @@ function game_loop() {
     if (framecount % 60 == 0) {
         renderer.refresh_left_panel = true;
         renderer.refresh_right_panel = true;
+        
+        if (game.selected_player_spell && game.selected_player_spell.some(sp => sp.name == "Unresolved Spell")) {
+            let spell_id = game.selected_id
+            game.selected_id = -1;
+            game.select_player_spell(spell_id);
+        }
         // game.needs_main_view_update = true;
     }
 
@@ -1278,7 +1309,7 @@ let debug_help_msgbox_game = new MessageBoxTemplate(
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]m <msgbox_name>        [#ddd]| spawn a messagebox with name                                             | [#0cf]m debug
 [#4f4]                       [#ddd]|                                                                          | 
-[#4f4]                       [#ddd]|                                                                          | 
+[#4f4]se <effect> <duration> [#ddd]| apply a status effect to entity under the cursor (defaults to player)    | [#0cf]se POLARITY_PHYSICAL 3
 [#4f4]                       [#ddd]|                                                                          | 
 [#4f4]                       [#ddd]|                                                                          |
 [#4f4]                       [#ddd]|                                                                          | 
@@ -1378,7 +1409,9 @@ let start_of_game_popup = new MessageBoxTemplate(
         function() {
             // NOTHING
             game.player_location = new GameLocation(
-                location_templates[1],
+                /* location_templates[0] */ location_templates[
+                    Math.floor(game.random() * location_templates.length)
+                ],
                 [
                     EventType.Battle,
                     EventType.Battle,

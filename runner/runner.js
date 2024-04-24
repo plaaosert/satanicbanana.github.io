@@ -192,7 +192,7 @@ class Game {
         this.player_fall_maxspeed = 6/60;
         this.player_gravity = (60/60)/1000;
 
-        this.player_jump_speed = 6/60;
+        this.player_jump_speed = 5/60;
         this.player_jump_float = 0;
         this.player_jump_float_max = 100;
         this.player_jump_timeout_max = 200;

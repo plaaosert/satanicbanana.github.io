@@ -1,0 +1,229 @@
+body * {
+    
+}
+
+#options_container_template {
+    display: none;
+}
+
+.game-container canvas {
+    border: none;
+}
+
+.time-title {
+    font-size: 20vmin;
+    color: #aaa;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    margin-bottom: 0px;
+    margin-top: 0px;
+
+    animation: linear 1s;
+}
+
+.time-title-small {
+    font-size: 5vmin;
+    color: #aaa;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    margin-top: 0px;
+}
+
+.NONE {
+    color: #aaa;
+}
+
+.CLICK {
+    color: #fff;
+}
+
+.LIGHT {
+    color: #57f;
+}
+
+.MEDIUM {
+    color: #0c0;
+
+    text-shadow: 0px 0px 1vmin #0c0
+}
+
+.LARGE {
+    color: #cf5;
+
+    text-shadow: 0px 0px 1vmin #cf5;
+    animation: pulse_small 0.5s normal;
+}
+
+.HUGE {
+    color: #fc5;
+
+    text-shadow: 0px 0px 1vmin #fc5, 0px 0px 2vmin #fc5;
+    animation: pulse 0.8s normal;
+}
+
+@keyframes pulse {
+    0%{
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.5);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes pulse_small {
+    0%{
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.options-entry {
+    user-select: none;
+}
+
+.options-entry:hover {
+    filter: brightness(1.75);
+}
+
+.options-entry:active {
+    filter: brightness(0.6);
+}
+
+.mode-select:hover {
+    filter: brightness(2);
+}
+
+.options-entry.disabled:hover {
+    filter: brightness(0.75);
+}
+
+.options-entry.disabled:active {
+    filter: brightness(0.3);
+}
+
+.mode-select:active {
+    filter: brightness(0.75);
+}
+
+.disabled {
+    filter: brightness(0.5);
+}
+
+.everything-container {
+    display: flex;
+    flex-direction: column;
+
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: stretch;
+    align-content: stretch;
+
+    position: absolute;
+    top: 0px;
+    left: 0px;
+
+    height: 100vh;
+    width: 100vw;
+}
+
+.options-container {
+    display: flex;
+}
+
+.options-subcontainer {
+    display: flex;
+    flex-wrap: wrap;
+
+    flex-grow: 1;
+    
+    margin-left: 2vmin;
+    margin-right: 2vmin;
+
+    justify-content: center;
+    align-items: flex-start;
+    align-content: flex-start;
+
+    min-width: calc(50% - 4vmin);
+}
+
+.options-subcontainer.right {
+    justify-content: center;
+}
+
+.options-title {
+    color: white;
+    text-decoration: underline;
+    font-size: 4vmin;
+
+    text-align: center;
+
+    width: 100%;
+}
+
+.options-entry {
+    color: white;
+    background-color: #222;
+
+    font-size: 2vmin;
+
+    margin-left: 2vmin;
+    margin-right: 2vmin;
+
+    margin-top: 1vmin;
+    margin-bottom: 1vmin;
+
+    min-width: 16vmin;
+    min-height: 4vmin;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.options-entry .leftside {
+    margin-left: 2vmin;
+    margin-right: 2vmin;
+}
+
+.options-entry .rightside {
+
+}
+
+.options-entry .mode-select {
+    height: 4vmin;
+    width: 4vmin;
+
+    margin: 1vmin 1vmin 1vmin 1vmin;
+
+    background-color: greenyellow;
+    border: 1px solid black;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    filter: brightness(1);
+}
+
+.mode-select p {
+    font-size: 2vmin;
+
+    text-shadow: 0px 0px 2px black, 0px 0px 2px black, 0px 0px 2px black, 0px 0px 2px black, 0px 0px 2px black, 0px 0px 2px black, 0px 0px 2px black; 
+
+    margin: 0;
+}

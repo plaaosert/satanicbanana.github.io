@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang = "en-US">
+<head>
+	<meta charset = "UTF-8">
+	<title>plorp</title>
+	<meta content="plaao.net >> plorp" property="og:title" />
+    <meta content="plorp!!!!!!!!!!!!!!" property="og:description" />
+    <meta content="https://plaao.net" property="og:url" />
+    <meta content="https://plaao.net/bej/green_funny.png" property="og:image" />
+    <meta content="#cccccc" data-react-helmet="true" name="theme-color" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+
+	<link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=00"/>
+	<link rel="stylesheet" type="text/css" href="plorp.css?v=00"/>
+</head>
+<body>
+	<div class="topbar" style="display: none;">
+		<p class="right-text" style="font-size: 2vmin; top:-8px; color:#ccc;">you have been actively playing for <span class="important" id="session-time">00:00:00</span> in this session, <span class="important" id="all-time">00:00:00:00</span> total and <span class="important" id="global-time">00:00:00:00</span> across all plaao.net games</p>
+	</div>
+
+	<canvas width="8" height="8" id="hidden-prerender-canvas" style="display:none"></canvas>
+
+	<div class="game-container" id="game-container" style="display: none;">
+		<canvas class="game-canvas" id="game-canvas-bg3">
+            This canvas needs to be viewed to be displayed.
+        </canvas>
+        <canvas class="game-canvas" id="game-canvas-bg2">
+            This canvas needs to be viewed to be displayed.
+        </canvas>
+        <canvas class="game-canvas" id="game-canvas-bg1">
+            This canvas needs to be viewed to be displayed.
+        </canvas>
+        <canvas class="game-canvas" id="game-canvas-fg3">
+            This canvas needs to be viewed to be displayed.
+        </canvas>
+        <canvas class="game-canvas" id="game-canvas-fg2">
+            This canvas needs to be viewed to be displayed.
+        </canvas>
+        <canvas class="game-canvas" id="game-canvas-fg1">
+            This canvas needs to be viewed to be displayed.
+        </canvas>
+        <canvas class="game-canvas" id="game-canvas-ui2">
+            This canvas needs to be viewed to be displayed.
+        </canvas>
+		<canvas class="game-canvas" id="game-canvas-ui1">
+            This canvas needs to be viewed to be displayed.
+        </canvas>
+        <canvas class="game-canvas" id="game-canvas-debug_back">
+            This canvas needs to be viewed to be displayed.
+        </canvas>
+        <canvas class="game-canvas" id="game-canvas-debug_front">
+            This canvas needs to be viewed to be displayed.
+        </canvas>
+        <canvas class="game-canvas" id="game-canvas-front">
+            This canvas needs to be viewed to be displayed.
+        </canvas>
+	</div>
+
+	<div class="bottombar" id="normal-bottombar" style="display: none;">
+		<p class="left-text" style="font-size: 3vmin; bottom: -8px">plorp v1.0 | plorp<br>
+            <!--
+			<span class="white" style="font-size: 2vmin;">fonts by VileR <a style="position: relative; bottom: 0px; top: 0px; left: 0px;" href="https://int10h.org/oldschool-pc-fonts/">https://int10h.org/oldschool-pc-fonts/</a>. subject to CC-SA 4.0</span>
+            -->
+        </p>
+		<p class="right-text" style="bottom:30px; font-size: 2vmin; color:#ccc;">written in pure JS/HTML</p>
+		<p style="font-size: 2vmin"><a class="right-text" style="top:89px; color:#f20; font-size: 2vmin" href="../index.html" > << go back >> </a></p>
+	</div>
+	
+	<script src="../shared/js/helpers.js?v=00"></script>
+	<script src="../shared/js/canvas_helpers.js?v=00"></script>
+	
+    <script src="plorp_core.js"></script>
+
+	<script src="../shared/js/playtime.js?v=00"></script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+@font-face {
+    font-family: "ibm_vga";
+    src: url("Web437_IBM_VGA_8x16.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "nec_apc";
+    src: url("Web437_NEC_APC3_8x16.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "terminus";
+    src: url("Terminus.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
+.game-container {
+	position: absolute;
+	top: 48%;
+	left: 50%;
+	margin-right: -50%;
+	transform: translate(-50%, -50%);
+
+	--abs-pos: 17%;
+	--abs-round-interval: 1px;
+
+	--fontsiz: 16px;
+	font-size: var(--fontsiz);
+
+	color: #fff;
+	
+	-moz-user-select: -moz-none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+	
+    justify-content: center;
+}
+
+.game-background {
+	padding: 0px 0px 0px 0px;
+	position: absolute;
+	z-index: 1;
+}
+
+.gamepixel {
+	padding: 0px 0px 0px 0px;
+	position: absolute;
+	height: 16px;
+	width: 8px;
+}

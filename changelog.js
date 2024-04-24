@@ -11,6 +11,13 @@ changes = [
         "title": "Reworked rendering for games",
         "typ": "minor",
         "desc": "I just found out about window.requestAnimationFrame(). That's kind of cool.\nAll the newer plaao.net games (wheels, circles and\nall other incomplete projects) now use that!"
+    },
+
+    {
+        "ts": 1713984095,
+        "title": "Fighting my motivation",
+        "typ": "minor",
+        "desc": "If you take a look around this website's source code,\nyou'll see SO MANY more pages that aren't linked to anywhere.\nI'm working on them. In the meantime, <a class=\"new-thing\" href=\"time/index.html\">time</a>. (funny little thing, not a game)"
     }
 ]
 

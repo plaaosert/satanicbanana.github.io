@@ -1628,8 +1628,24 @@ class Renderer {
             )
         }
 
+        // status effects
+        let status_effects = Object.keys(p.active_statuses).map(k => [k, p.get_status_duration(k)]).sort((a, b) => a[1] - b[1]);
+        for (let i=0; i<Math.min(5, status_effects.length); i++) {
+            let st = `[${status_effect_to_colour[status_effects[i][0]][0]}]${status_effects[i][0]} «${status_effects[i][1]}»`;
+            this.set_pixel_text(
+                left_mount_pos.add(new Vector2(0, 4+i)),
+                this.pad_str(st, clearance_x),
+            )
+
+            this.set_back_set(
+                left_mount_pos.add(new Vector2(0, 4+i)),
+                left_mount_pos.add(new Vector2(this.code_string_len(st)-1, 4+i)),
+                status_effect_to_colour[status_effects[i][0]][1]
+            )
+        }
+
         // xp and bar
-        let xp_mount_pos = left_mount_pos.add(new Vector2(0, 4));
+        let xp_mount_pos = left_mount_pos.add(new Vector2(0, 9));
         let bar_len = clearance_x - 2; // for affinities
         let pct = game.player_xp / game.get_xp_for_levelup(game.player_level);
         let pips = Math.max(0, Math.floor(bar_len * pct));
@@ -3298,6 +3314,8 @@ class Entity {
         this.innate_spells = template.innate_spells.slice();
         this.innate_primed_spells = [];
 
+        this.active_statuses = {};
+
         this.specials = template.specials;
         this.specials_text = template.specials_text;
 
@@ -3355,11 +3373,18 @@ class Entity {
 
         this.calculate_primed_spells(game.player_ent.position);
 
+        // if we have frozen, sleeping or stunned, just skip instantly
+        if (this.has_status(StatusEffect.FREEZE) || this.has_status(StatusEffect.STUN) || this.has_status(StatusEffect.SLEEP)) {
+            game.end_turn(this, turncount, this.ai_level != 0);
+            return;
+        }
+
         // sends stuff to the game if necessary, based on ai level
         //console.log("doing turn for", this.name, this.ai_level);
         switch (this.ai_level) {
             case 0:
                 // player
+                renderer.refresh_left_panel = true;
                 break;
             
             case 1:
@@ -3448,6 +3473,8 @@ class Entity {
     do_end_turn() {
         // for now just give some mp regen
         this.restore_mp(Math.min(Math.round(this.max_mp / 25)));
+        this.progress_statuses();
+
         this.trigger_special(this, GameEventType.SelfTurnEnded);
 
         this.spawn_protection = false;
@@ -3593,15 +3620,6 @@ class Entity {
         }
     }
 
-    has_status(status) {
-        return false
-        // TODO this
-    }
-
-    cleanse_effects() {
-        // TODO something
-    }
-
     refresh() {
         if (!this.dead) {
             this.hp = this.max_hp;
@@ -3622,7 +3640,17 @@ class Entity {
     change_hp(amount) {
         let old_hp = this.hp;
 
-        this.hp += amount;
+        let final_amount = amount;
+        if (amount > 0) {
+            // poison might block this healing
+            let poison_amount = this.get_status_duration(StatusEffect.POISON);
+            let block = Math.min(poison_amount, amount);
+
+            final_amount -= block;
+            this.reduce_status(StatusEffect.POISON, block);
+        }
+
+        this.hp += final_amount;
         this.hp = Math.max(0, Math.min(this.max_hp, this.hp));
 
         return this.hp - old_hp;
@@ -3637,6 +3665,11 @@ class Entity {
     }
 
     lose_hp(amount) {
+        if (amount < 0) {
+            this.restore_hp(-amount);
+            return false;
+        }
+
         this.change_hp(-amount);
         if (this.hp <= 0) {
             this.die();
@@ -3683,8 +3716,71 @@ class Entity {
         this.affinities.forEach(affinity => {
             dmg_mult *= affinity_weaknesses[affinity][damage_type]
         });
+        
+        if (damage_type == DmgType.Physical && this.has_status(StatusEffect.FREEZE)) {
+            dmg_mult *= 2;
+        }
+
+        if (damage_type == DmgType.Lightning && this.has_status(StatusEffect.HYPERCHARGED)) {
+            dmg_mult *= 1.5
+        }
+
+        if (this.has_status(StatusEffect[`RESISTANCE_${damage_type}`.toUpperCase()])) {
+            dmg_mult *= 0;
+        }
+
+        if (this.has_status(StatusEffect[`POLARITY_${damage_type}`.toUpperCase()])) {
+            dmg_mult *= 2;
+        }
 
         return dmg_mult;
+    }
+
+    get_status_duration(status) {
+        return this.active_statuses[status] ? this.active_statuses[status] : 0;
+    }
+
+    has_status(status) {
+        return this.active_statuses[status] ? true : false;
+    }
+
+    apply_status(status, amount) {
+        let cur_duration = this.get_status_duration(status);
+
+        this.active_statuses[status] = cur_duration + amount;
+    }
+
+    reduce_status(status, amount) {
+        let cur_duration = this.get_status_duration(status);
+
+        this.active_statuses[status] = cur_duration - amount;
+        if (this.get_status_duration(status) <= 0) {
+            delete this.active_statuses[status];
+        }
+    }
+
+    clear_status(status) {
+        delete this.active_statuses[status];
+    }
+
+    progress_statuses() {
+        let sthis = this;
+        Object.keys(this.active_statuses).forEach(k => {
+            switch (k) {
+                case StatusEffect.POISON:
+                    let dmg = Math.ceil(sthis.get_status_duration(k) * 0.25);
+                    game.deal_damage(sthis, sthis, sthis.id, dmg, undefined)
+
+                    sthis.reduce_status(k, dmg);
+                    break;
+
+                case StatusEffect.BLEED:
+                    game.deal_damage(sthis, sthis, sthis.id, Math.ceil(sthis.get_status_duration(k) * 0.10), undefined)
+                    break;
+            }
+
+            sthis.reduce_status(k, 1);
+        })
     }
 
     take_damage(caster, damage, damage_type) {
@@ -3694,19 +3790,46 @@ class Entity {
 
         // compare damage type to affinities and determine total multiplier
         let dmg_mult = 1;
-        this.affinities.forEach(affinity => {
-            dmg_mult *= affinity_weaknesses[affinity][damage_type]
-        });
+        if (damage_type) {
+            dmg_mult *= this.get_damage_mult(damage_type);
+        }
 
         // spell source might change damage but not right now
         let final_damage = Math.round(damage * dmg_mult);
+
+        // reduce with bulwark / shield / invincible
+        if (this.has_status(StatusEffect.BULWARK)) {
+            final_damage = 0;
+            this.reduce_status(StatusEffect.BULWARK, 1);
+        }
+
+        let shield = this.get_status_duration(StatusEffect.SHIELD);
+        if (shield > 0 && final_damage > 0) {
+            let reduction = Math.min(final_damage, shield);
+            final_damage -= reduction;
+            this.reduce_status(StatusEffect.SHIELD, reduction);
+        }
+
+        if (this.has_status(StatusEffect.INVULNERABLE)) {
+            final_damage = 0;
+        }
 
         if (final_damage == 0) {
             return 0;
         }
 
+        // remove frozen if damage is fire, physical or chaos and > 0
+        if (final_damage > 0 && (damage_type == DmgType.Physical || damage_type == DmgType.Fire || damage_type == DmgType.Chaos)) {
+            this.clear_status(StatusEffect.FREEZE);
+        }
+
+        // remove sleeping if damage is > 0
+        if (final_damage > 0) {
+            this.clear_status(StatusEffect.SLEEP);
+        }
+
         let died = this.lose_hp(final_damage);
-        console.log(`${this.name} says "ow i took ${final_damage} ${damage_type} damage (multiplied by ${dmg_mult} from original ${damage}) from ${caster.name}`);
+        console.log(`${this.name} says "ow i took ${final_damage} ${damage_type ? damage_type : "untyped"} damage (multiplied by ${dmg_mult} from original ${damage}) from ${caster.name}`);
 
         let sthis = this;
         this.trigger_special(game, GameEventType.SelfDamageTaken, {
@@ -4202,20 +4325,37 @@ console.log(Object.keys(DmgType).map(t => {
 }).join("\n"))
 
 const StatusEffect = {
-    FREEZE: "Frozen",
-    SLEEP: "Sleeping",
-    STUN: "Stunned",
-    POISON: "Poison",
-    BULWARK: "Bulwark",
-    SHIELD: "Shield",
-    OVERCHARGE: "Overcharge",  // +50% lightning damage dealt and taken
-    BLEED: "Bleed",
-    INVULNERABLE: "Invulnerable",
+    FREEZE: "Frozen",               // if not 100% resistant to Ice, take 2x Physical damage. skip every turn. fire, physical or chaos damage will instantly thaw
+    SLEEP: "Sleeping",              // skip every turn. wake immediately if taking damage
+    STUN: "Stunned",                // skip every turn
+    POISON: "Poisoned",             // take 25% of poison damage as untyped damage, then lose that amount of poison. healing reduces poison first before healing
+    BULWARK: "Bulwark",             // block all of a single damage instance then lose 1 bulwark
+    SHIELD: "Shield",               // reduce shield before HP - damage blocked by shield is not counted as damage
+    HYPERCHARGED: "Hypercharged",   // +50% lightning damage dealt and taken
+    BLEED: "Bleeding",              // take 15% of bleed amount as untyped damage
+    INVULNERABLE: "Invulnerable",   // all damage taken reduced to 0
 }
 
 Object.keys(DmgType).forEach(typ => {
     StatusEffect["RESISTANCE_" + typ.toUpperCase()] = `Resistance (${DmgType[typ]})`;
     StatusEffect["POLARITY_" + typ.toUpperCase()] = `Polarity (${DmgType[typ]})`;
+})
+
+const status_effect_to_colour = {
+    [StatusEffect.FREEZE]: ["#aff", "#244"],
+    [StatusEffect.SLEEP]: ["#ddd", "#333"],
+    [StatusEffect.STUN]: ["#ff9", "#442"],
+    [StatusEffect.POISON]: ["#95a", "#103"],
+    [StatusEffect.BULWARK]: ["#fff", "#444"],
+    [StatusEffect.SHIELD]: ["#d80", "#420"],
+    [StatusEffect.HYPERCHARGED]: ["#ff0", "#440"],
+    [StatusEffect.BLEED]: ["#f00", "#300"],
+    [StatusEffect.INVULNERABLE]: ["#f8c", "#534"],
+}
+
+Object.keys(DmgType).forEach(typ => {
+    status_effect_to_colour[StatusEffect["RESISTANCE_" + typ.toUpperCase()]] = [damage_type_cols[typ], "#130"]
+    status_effect_to_colour[StatusEffect["POLARITY_" + typ.toUpperCase()]] = [damage_type_cols[typ], "#300"]
 })
 
 function make_square(target, radius, predicate) {
@@ -5067,9 +5207,9 @@ class PrimedSpell {
                     break;
                 
                 case SpellSpecials.UNRESOLVEDSPELL:
-                    this.stats.damage = random_int(1, 200);
+                    this.stats.damage = random_int(1, 20);
                     this.stats.damage_type = random_damage_type();
-                    this.stats.range = random_int(6, 18);
+                    this.stats.range = 12;
                     this.stats.radius = random_int(1, 6);
                     // TODO perpline ?
                     this.stats.shape = random_from_arr([Shape.Circle, Shape.Cone, Shape.Diamond, Shape.Line, Shape.Ring, Shape.Square])[1];
@@ -5488,9 +5628,11 @@ class PrimedSpell {
                 }
             })
 
-            if (!sthis.stats.specials.includes(SpellSpecials.PURITY) && sthis.stats.specials.includes(SpellSpecials.UNRESOLVEDSPELL) && game.random() < 0.2) {
-                let spell = random_from_arr(spells_list.filter(s => s.is_normal() && s.typ == SpellType.Core));
-                spell.fns.on_affected_tiles(sthis.caster, sthis, sthis.stats, location);
+            for (let i=0; i<3; i++) {
+                if (!sthis.stats.specials.includes(SpellSpecials.PURITY) && sthis.stats.specials.includes(SpellSpecials.UNRESOLVEDSPELL) && game.random() < 0.1) {
+                    let spell = random_from_arr(spells_list.filter(s => s.is_normal() && s.typ == SpellType.Core));
+                    spell.fns.on_affected_tiles(sthis.caster, sthis, sthis.stats, location);
+                }
             }
 
             if (sthis.trigger[0] == "on_affected_tiles") {
@@ -5515,9 +5657,11 @@ class PrimedSpell {
             }
         })
 
-        if (!sthis.stats.specials.includes(SpellSpecials.PURITY) && this.stats.specials.includes(SpellSpecials.UNRESOLVEDSPELL) && game.random() < 0.8) {
-            let spell = random_from_arr(spells_list.filter(s => s.is_normal() && s.typ == SpellType.Core));
-            spell.fns.at_target(this.caster, this, this.stats, position);
+        for (let i=0; i<3; i++) {
+            if (!sthis.stats.specials.includes(SpellSpecials.PURITY) && this.stats.specials.includes(SpellSpecials.UNRESOLVEDSPELL) && game.random() < 0.5) {
+                let spell = random_from_arr(spells_list.filter(s => s.is_normal() && s.typ == SpellType.Core));
+                spell.fns.at_target(this.caster, this, this.stats, position);
+            }
         }
 
         if (this.trigger[0] == "at_target") {
@@ -5559,9 +5703,11 @@ class PrimedSpell {
                         }
                     })
 
-                    if (!sthis.stats.specials.includes(SpellSpecials.PURITY) && sthis.stats.specials.includes(SpellSpecials.UNRESOLVEDSPELL) && game.random() < 0.15) {
-                        let spell = random_from_arr(spells_list.filter(s => s.is_normal() && s.typ == SpellType.Core));
-                        spell.fns.on_hit(sthis.caster, sthis, sthis.stats, ent, amt, typ);
+                    for (let i=0; i<3; i++) {
+                        if (!sthis.stats.specials.includes(SpellSpecials.PURITY) && sthis.stats.specials.includes(SpellSpecials.UNRESOLVEDSPELL) && game.random() < 0.05) {
+                            let spell = random_from_arr(spells_list.filter(s => s.is_normal() && s.typ == SpellType.Core));
+                            spell.fns.on_hit(sthis.caster, sthis, sthis.stats, ent, amt, typ);
+                        }
                     }
 
                     if (sthis.trigger[0] == "on_hit") {
@@ -6597,6 +6743,7 @@ class Game {
                 template => template.spawn_credits >= lower_bound && template.spawn_credits <= upper_bound && !ids_already_picked.has(template.id)
             );
 
+            console.log(`original spawn list length: ${possible_spawns.length}`);
             possible_spawns = possible_spawns.flatMap(ent_template => {
                 let spawn_chance = Object.entries(sthis.player_location.template.spawn_chance_mods).reduce((acc, cv) => {
                     let k = cv[0];
@@ -6617,6 +6764,8 @@ class Game {
 
                 return new Array(spawn_chance).fill(ent_template);
             })
+
+            console.log(`spawn list length after location rules: ${possible_spawns.length}`);
 
             if (possible_spawns.length > 0) {
                 spawning = true;
@@ -6826,6 +6975,8 @@ class Game {
                     Math.floor(sthis.board.dimensions.x / 2),
                     Math.floor(sthis.board.dimensions.x / 2),
                 ))
+                sthis.player_ent.active_statuses = {};
+                renderer.refresh_left_panel = true;
 
                 sthis.open_inventory();
                 sthis.deselect_player_spell();
@@ -7721,9 +7872,15 @@ ${names_str}\n[#666]----${renderer.make_location_path_string(sthis, clearance_x,
     }
 
     deal_damage(target, caster, user_id, damage, damage_type, do_not_count) {
-        let dmg_taken = target.take_damage(caster, damage, damage_type);
+        // amplify damage by some sources
+        let final_damage = damage;
+        if (caster.has_status(StatusEffect.HYPERCHARGED)) {
+            final_damage *= 1.5
+        }
 
-        if (dmg_taken > 0) {
+        let dmg_taken = target.take_damage(caster, final_damage, damage_type);
+
+        if (dmg_taken > 0 && damage_type) {
             if (!do_not_count) {
                 if (!this.damage_counts[user_id]) {
                     this.damage_counts[user_id] = [];
@@ -7868,7 +8025,10 @@ let no_tiles = function(a, b, c, d) {return null};
 function apply_status(caster, target, status, turns) {
     // applying status effects should add to the status if already present or add it otherwise
     // call a thing in the entity, though, since we might have status immunity stuff
-    console.log(`- UNIMPLEMENTED - Applying status ${status} to ${target.name} for ${turns} turns`);
+    console.log(`- Applying status ${status} to ${target.name} for ${turns} turns`);
+
+    target.apply_status(status, turns);
+
     return;
 }
 

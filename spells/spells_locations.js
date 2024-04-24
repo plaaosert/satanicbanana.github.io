@@ -47,6 +47,7 @@ class GameLocation {
 }
 
 let location_templates = [
+    /*
     new LocationTemplate(
         "test location", "#fff", "#ddd", "This is a test location :3", [
             //WorldGen.IrregularSpots(get_entity_by_name("Deep Water"), 0.001, 0.001, 3, 20, get_entity_by_name("Chasm")),
@@ -55,6 +56,7 @@ let location_templates = [
             //WorldGen.RandomWalls(get_entity_by_name("Wall"), 0.02, 0.03),    
         ]
     ),
+    */
     
     new LocationTemplate(
         "Grassy Flatlands", "#7f0", "#250",

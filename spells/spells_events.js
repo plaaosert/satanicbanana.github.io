@@ -113,11 +113,13 @@ events_list_unsorted = [
         )
     ),
 
+    // Events beyond this point ARE NOT COMPLETED!!! TODO COMPLETE THEM!!!
+
     // Rare
     // Affinity
     new MsgboxEvent(
         "necromancer_tome",
-        ["rare", "neutral", "permanent", "affinity"],
+        ["rare", "neutral", "permanent", "affinity", Affinity.Dark],
         new MessageBoxTemplate(
             "- - NECROMANCER'S TOME - -",
             "A small wooden shack somehow remains standing here.\n" +
@@ -151,7 +153,7 @@ events_list_unsorted = [
 
     new MsgboxEvent(
         "elementalist_tower",
-        ["rare", "neutral", "permanent", "affinity"],
+        ["rare", "neutral", "permanent", "affinity", Affinity.Fire, Affinity.Ice, Affinity.Lightning],
         new MessageBoxTemplate(
             "- - ELEMENTALIST'S TOWER - -",
             "This tower stood guard over your last conflict, protected from the outside by a powerful shield. When fighting ceased the shield dissipated, allowing you inside.\n\n" +
@@ -165,7 +167,7 @@ events_list_unsorted = [
                 function() {
                     return {
                         title: "- - ELEMENTALIST'S TOWER: [#fff]PURITY[clear] - -",
-                        text: `You'd rather stay unaligned in the end. You leave the tower the same way you came in.`
+                        text: `You'd rather stay unaligned in the end. You leave the tower in the same state you came in.`
                     }
                 },
         
@@ -204,7 +206,7 @@ events_list_unsorted = [
     
     new MsgboxEvent(
         "1_order_of_order",
-        ["rare", "neutral", "permanent", "affinity"],
+        ["rare", "neutral", "permanent", "affinity", Affinity.Order],
         new MessageBoxTemplate(
             "- - THE ORDER OF ORDER: INITIATION - -",
             "You are approached by a sharply-dressed wizard. How did he even get here?\n\n" +
@@ -271,6 +273,37 @@ events_list_unsorted = [
                               `+ Upgraded an [#4f4]emblem[clear]: {[#0cf]One allied [#dcd]Rock Titan[#0cf] spawns near you at the start of every combat[clear]}\n` +
                               `- [#f00]Max HP reduced by 20% (-[#f88]###[#f00])[clear]\n` +
                               `- [#f00]Max MP reduced by 20% (-[#f88]###[#f00])[clear]\n` 
+                    }
+                },
+            ]
+        )
+    ),
+
+    new MsgboxEvent(
+        "superboss_choices",
+        ["superboss_choices"],
+        new MessageBoxTemplate(
+            "- - PORTENTS OF RUIN - -",
+            "You have come far, fleeing the ceaseless wave of corruption as you inch closer to Efrit's presence. You can feel it. He's close.\n\n" +
+            "But here, in the depths of this world beyond your understanding, you see a new rift form - something different, something primal. Something that should not exist, even in this world devoid of reason.\n\n" +
+            "[#e20]What do you see?[clear]",
+            ["[#ecb]Birds and beds[clear]", "[#2f2]Creation[clear]"],
+            ["#421", "#151"],
+            [
+                function() {
+                    // remove initiation event chain flag
+                    return {
+                        title: "- - AVATAR OF RUIN: Refticus - -",
+                        text: `Fight, fight before time runs out. You can do this.`
+                    }
+                },
+        
+                function() {
+                    // upgrade the order of order and pay the cost (1/5th max hp/mp)
+                    // set flag here for the initiation event chain
+                    return {
+                        title: "- - AVATAR OF RUIN: plaaosert - -",
+                        text: `Prove you control this reality.`
                     }
                 },
             ]
