@@ -63,7 +63,7 @@ function do_display(target, mode) {
     // then showing the options on each trigger
     // each trigger option should have an option to change the intensity (coloured box with a number inside)
     // and an option to toggle the trigger on or off (just click the trigger anywhere except the intensity option)
-    if (navigator.userActivation.hasBeenActive) {
+    if (!navigator.userActivation || navigator.userActivation.hasBeenActive) {
         DisplayModeInfo[mode].snd?.play();
     }
 
