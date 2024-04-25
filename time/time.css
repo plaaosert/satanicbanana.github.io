@@ -132,11 +132,9 @@ body * {
     align-items: stretch;
     align-content: stretch;
 
-    position: absolute;
-    top: 0px;
-    left: 0px;
+    margin-top: 10vh;
+    margin-left: -8px;
 
-    height: 100vh;
     width: 100vw;
 }
 
@@ -147,6 +145,28 @@ body * {
 .options-subcontainer {
     display: flex;
     flex-wrap: wrap;
+    flex: 0 1 auto;
+    
+    overflow: auto;
+
+    flex-grow: 1;
+    
+    margin-left: 2vmin;
+    margin-right: 2vmin;
+
+    justify-content: center;
+    align-items: flex-start;
+    align-content: flex-start;
+
+    min-width: calc(50% - 4vmin);
+}
+
+.options-optioncontainer {
+    display: flex;
+    flex-wrap: wrap;
+    flex: 0 1 auto;
+    
+    overflow: auto;
 
     flex-grow: 1;
     
@@ -174,7 +194,7 @@ body * {
     width: 100%;
 }
 
-.options-entry {
+.options-entry-truescale {
     color: white;
     background-color: #222;
 
@@ -194,6 +214,26 @@ body * {
     align-items: center;
 }
 
+.options-entry {
+    color: white;
+    background-color: #222;
+
+    font-size: 16px;
+
+    margin-left: 8px;
+    margin-right: 8px;
+
+    margin-top: 8px;
+    margin-bottom: 8px;
+
+    min-width: 128px;
+    min-height: 32px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 .options-entry .leftside {
     margin-left: 2vmin;
     margin-right: 2vmin;
@@ -204,10 +244,10 @@ body * {
 }
 
 .options-entry .mode-select {
-    height: 4vmin;
-    width: 4vmin;
+    height: 32px;
+    width: 32px;
 
-    margin: 1vmin 1vmin 1vmin 1vmin;
+    margin: 8px 8px 8px 8px;
 
     background-color: greenyellow;
     border: 1px solid black;
@@ -221,7 +261,7 @@ body * {
 }
 
 .mode-select p {
-    font-size: 2vmin;
+    font-size: 16px;
 
     text-shadow: 0px 0px 2px black, 0px 0px 2px black, 0px 0px 2px black, 0px 0px 2px black, 0px 0px 2px black, 0px 0px 2px black, 0px 0px 2px black; 
 

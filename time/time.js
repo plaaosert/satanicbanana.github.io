@@ -19,34 +19,34 @@ const DisplayModeInfo = {
 }
 
 let triggers_hhmm = [
-    {name: "Palindrome", mode: DisplayMode.LARGE, enabled: true, predicate: t => t == t.split("").reverse().join("")},
-    {name: "11:11", mode: DisplayMode.HUGE, enabled: true, predicate: t => t == "11:11"},
-    {name: "22:22", mode: DisplayMode.LARGE, enabled: true, predicate: t => t == "22:22"},
-    {name: "XY:XY", mode: DisplayMode.MEDIUM, enabled: true, predicate: t => t[0] == t[3] && t[1] == t[4]},
-    {name: "Exact hour", mode: DisplayMode.LIGHT, enabled: true, predicate: t => t.endsWith(":00")},
-    {name: "Midnight", mode: DisplayMode.MEDIUM, enabled: true, predicate: t => t == "00:00"},
-    {name: "Noon", mode: DisplayMode.MEDIUM, enabled: true, predicate: t => t == "12:00"},
-    {name: "13:37", mode: DisplayMode.LARGE, enabled: true, predicate: t => t == "13:37"},
-    {name: "Sums to 60", mode: DisplayMode.LIGHT, enabled: true, predicate: t => t.split(":").reduce((p, c) => p + Number.parseInt(c), 0) == 60},
-    {name: "15 minutes", mode: DisplayMode.LIGHT, enabled: true, predicate: t => Number.parseInt(t.split(":")[1]) % 15 == 0},
-    {name: "Work's done", mode: DisplayMode.MEDIUM, enabled: true, predicate: t => t == "17:00"},
-    {name: "Even", mode: DisplayMode.CLICK, enabled: true, predicate: t => Number.parseInt(t[t.length-1]) % 2 == 0},
-    {name: "Multiple of 3", mode: DisplayMode.LIGHT, enabled: true, predicate: t => Number.parseInt(t.split(":")[0]) % 3 == 0 || Number.parseInt(t.split(":")[1]) % 3 == 0},
-    {name: "1 1", mode: DisplayMode.CLICK, enabled: true, predicate: t => t.split("1").length == 2}
+    {element: null, name: "Palindrome", mode: DisplayMode.LARGE, enabled: true, predicate: t => t == t.split("").reverse().join("")},
+    {element: null, name: "11:11", mode: DisplayMode.HUGE, enabled: true, predicate: t => t == "11:11"},
+    {element: null, name: "22:22", mode: DisplayMode.LARGE, enabled: true, predicate: t => t == "22:22"},
+    {element: null, name: "XY:XY", mode: DisplayMode.MEDIUM, enabled: true, predicate: t => t[0] == t[3] && t[1] == t[4]},
+    {element: null, name: "Exact hour", mode: DisplayMode.LIGHT, enabled: true, predicate: t => t.endsWith(":00")},
+    {element: null, name: "Midnight", mode: DisplayMode.MEDIUM, enabled: true, predicate: t => t == "00:00"},
+    {element: null, name: "Noon", mode: DisplayMode.MEDIUM, enabled: true, predicate: t => t == "12:00"},
+    {element: null, name: "13:37", mode: DisplayMode.LARGE, enabled: true, predicate: t => t == "13:37"},
+    {element: null, name: "Sums to 60", mode: DisplayMode.LIGHT, enabled: true, predicate: t => t.split(":").reduce((p, c) => p + Number.parseInt(c), 0) == 60},
+    {element: null, name: "15 minutes", mode: DisplayMode.LIGHT, enabled: true, predicate: t => Number.parseInt(t.split(":")[1]) % 15 == 0},
+    {element: null, name: "Work's done", mode: DisplayMode.MEDIUM, enabled: true, predicate: t => t == "17:00"},
+    {element: null, name: "Even", mode: DisplayMode.CLICK, enabled: true, predicate: t => Number.parseInt(t[t.length-1]) % 2 == 0},
+    {element: null, name: "Multiple of 3", mode: DisplayMode.LIGHT, enabled: true, predicate: t => Number.parseInt(t.split(":")[0]) % 3 == 0 || Number.parseInt(t.split(":")[1]) % 3 == 0},
+    {element: null, name: "1 1", mode: DisplayMode.CLICK, enabled: true, predicate: t => t.split("1").length == 2}
 ]
 
 let triggers_hhmmss = [
-    {name: "Palindrome", mode: DisplayMode.HUGE, enabled: true, predicate: t => t == t.split("").reverse().join("")},
-    {name: "11:11:11", mode: DisplayMode.HUGE, enabled: true, predicate: t => t == "11:11:11"},
-    {name: "22:22:22", mode: DisplayMode.HUGE, enabled: true, predicate: t => t == "22:22:22"},
-    {name: "XY:XY:XY", mode: DisplayMode.LARGE, enabled: true, predicate: t => (t[0] == t[3] && t[3] == t[6]) && (t[1] == t[4] && t[4] == t[7])},
-    {name: "Sums to 60", mode: DisplayMode.LARGE, enabled: true, predicate: t => t.split(":").reduce((p, c) => p + Number.parseInt(c), 0) == 60},
-    {name: "Fizz", mode: DisplayMode.CLICK, enabled: true, predicate: t => Number.parseInt(t.split(":")[2]) % 3 == 0},
-    {name: "Buzz", mode: DisplayMode.LIGHT, enabled: true, predicate: t => Number.parseInt(t.split(":")[2]) % 5 == 0},
-    {name: "Fizzbuzz", mode: DisplayMode.MEDIUM, enabled: true, predicate: t => Number.parseInt(t.split(":")[2]) % 15 == 0},
-    {name: "Even", mode: DisplayMode.CLICK, enabled: true, predicate: t => Number.parseInt(t[t.length - 1]) % 2 == 0},
-    {name: "Exact minute", mode: DisplayMode.MEDIUM, enabled: true, predicate: t => t.split(":")[2] == "00"},
-    {name: "(H-S)*M multiple of 7", mode: DisplayMode.LARGE, enabled: true, predicate: t => ((Number.parseInt(t.split(":"))[0] - Number.parseInt(t.split(":"))[2]) * Number.parseInt(t.split(":"))[1]) % 7 == 0}
+    {element: null, name: "Palindrome", mode: DisplayMode.HUGE, enabled: true, predicate: t => t == t.split("").reverse().join("")},
+    {element: null, name: "11:11:11", mode: DisplayMode.HUGE, enabled: true, predicate: t => t == "11:11:11"},
+    {element: null, name: "22:22:22", mode: DisplayMode.HUGE, enabled: true, predicate: t => t == "22:22:22"},
+    {element: null, name: "XY:XY:XY", mode: DisplayMode.LARGE, enabled: true, predicate: t => (t[0] == t[3] && t[3] == t[6]) && (t[1] == t[4] && t[4] == t[7])},
+    {element: null, name: "Sums to 60", mode: DisplayMode.LARGE, enabled: true, predicate: t => t.split(":").reduce((p, c) => p + Number.parseInt(c), 0) == 60},
+    {element: null, name: "Fizz", mode: DisplayMode.CLICK, enabled: true, predicate: t => Number.parseInt(t.split(":")[2]) % 3 == 0},
+    {element: null, name: "Buzz", mode: DisplayMode.LIGHT, enabled: true, predicate: t => Number.parseInt(t.split(":")[2]) % 5 == 0},
+    {element: null, name: "Fizzbuzz", mode: DisplayMode.MEDIUM, enabled: true, predicate: t => Number.parseInt(t.split(":")[2]) % 15 == 0},
+    {element: null, name: "Even", mode: DisplayMode.CLICK, enabled: true, predicate: t => Number.parseInt(t[t.length - 1]) % 2 == 0},
+    {element: null, name: "Exact minute", mode: DisplayMode.MEDIUM, enabled: true, predicate: t => t.split(":")[2] == "00"},
+    {element: null, name: "((H-S)^(M+S)+7) multiple of 827", mode: DisplayMode.LARGE, enabled: true, predicate: t => (7 + Math.pow(Number.parseInt(t.split(":")[0]) - Number.parseInt(t.split(":")[2]), Number.parseInt(t.split(":")[1]) + Number.parseInt(t.split(":")[2]))) % 827 == 0}
 ]
 
 let formatter = new Intl.DateTimeFormat("en-GB", {
@@ -87,10 +87,14 @@ function update_time_display() {
 
     triggers_hhmm.forEach(trigger => {
         if (trigger.enabled && trigger.predicate(element.textContent)) {
+            trigger.element.style.outline = "1px solid white";
+
             if (trigger.mode >= hhmm_display_mode) {
                 hhmm_display_mode = trigger.mode;
                 hhmm_display_trigger = trigger.name;
             }
+        } else {
+            trigger.element.style.outline = "";
         }
     });
 
@@ -99,10 +103,14 @@ function update_time_display() {
 
     triggers_hhmmss.forEach(trigger => {
         if (trigger.enabled && trigger.predicate(element2.textContent)) {
+            trigger.element.style.outline = "1px solid white";
+
             if (trigger.mode >= hhmmss_display_mode) {
                 hhmmss_display_mode = trigger.mode;
                 hhmmss_display_trigger = trigger.name;
             }
+        } else {
+            trigger.element.style.outline = "";
         }
     });
 
@@ -197,6 +205,8 @@ function setup_option_displays() {
                 evt.preventDefault();
                 evt.stopPropagation();
             })
+
+            trigger.element = elem;
         })
     })
 }

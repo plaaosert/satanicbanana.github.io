@@ -85,7 +85,7 @@ body {
     bottom: 0px;
 	left: 0px;
     display:block;
-    height: 16vh;
+    height: 128px;
     width: 100%;
 
 	pointer-events: none;
@@ -105,7 +105,7 @@ body {
     top: 0px;
 	left:0px;
     display:block;
-    height: 8vh;
+    height: 64px;
     width: 100%;
 	
 	pointer-events: none;
@@ -113,10 +113,6 @@ body {
 	z-index: 1;
 
 	background: linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 66%, rgba(0,0,0,0) 100%);
-}
-
-.topbar .right-text {
-	top: -1vh;
 }
 
 .game {
@@ -154,8 +150,8 @@ a:hover {
 	color: #0cf;
 	position: absolute;
 	font-size: 2.5vmin;
-	bottom: 2vh;
-	right: 2vw;
+	bottom: 12px;
+	right: 16px;
 	text-align: right;
 }
 
@@ -163,8 +159,8 @@ a:hover {
 	color: #0cf;
 	position: absolute;
 	font-size: 2.5vmin;
-	bottom: 0vh;
-	left: 2vw;
+	bottom: 12px;
+	left: 16px;
 	text-align: left;
 }
 
