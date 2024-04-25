@@ -18,7 +18,14 @@ changes = [
         "title": "Fighting my motivation",
         "typ": "minor",
         "desc": "If you take a look around this website's source code,\nyou'll see SO MANY more pages that aren't linked to anywhere.\nI'm working on them. In the meantime, <a class=\"new-thing\" href=\"time/index.html\">time</a>. (funny little thing, not a game)"
-    }
+    },
+
+    {
+        "ts": 1714049903,
+        "title": "Fixing my old mistakes",
+        "typ": "minor",
+        "desc": "I fixed a bunch of different problems regarding sizing of the top and bottom bar on games.\nNow, zooming in and out shouldn't make those borders unstable.\nMost notable on <a class=\"new-thing\" href=\"time/index.html\">time</a> - I'll fix the rest of the games later."
+    },
 ]
 
 changes = changes.sort((a,b) => b.ts-a.ts);
