@@ -32,7 +32,8 @@ let triggers_hhmm = [
     {element: null, name: "Work's done", mode: DisplayMode.MEDIUM, enabled: true, predicate: t => t == "17:00"},
     {element: null, name: "Even", mode: DisplayMode.CLICK, enabled: true, predicate: t => Number.parseInt(t[t.length-1]) % 2 == 0},
     {element: null, name: "Multiple of 3", mode: DisplayMode.LIGHT, enabled: true, predicate: t => Number.parseInt(t.split(":")[0]) % 3 == 0 || Number.parseInt(t.split(":")[1]) % 3 == 0},
-    {element: null, name: "1 1", mode: DisplayMode.CLICK, enabled: true, predicate: t => t.split("1").length == 2}
+    {element: null, name: "1 1", mode: DisplayMode.CLICK, enabled: true, predicate: t => t.split("1").length == 2},
+    {element: null, name: "Prime", mode: DisplayMode.MEDIUM, enabled: true, predicate: t => {n = Number.parseInt(t.split(":")[0]) * 100 + Number.parseInt(t.split(":")[1]); for(let i = 2, s = Math.sqrt(n); i <= s; i++) {if(n % i === 0) return false;} return true;}}
 ]
 
 let triggers_hhmmss = [
@@ -46,7 +47,8 @@ let triggers_hhmmss = [
     {element: null, name: "Fizzbuzz", mode: DisplayMode.MEDIUM, enabled: true, predicate: t => Number.parseInt(t.split(":")[2]) % 15 == 0},
     {element: null, name: "Even", mode: DisplayMode.CLICK, enabled: true, predicate: t => Number.parseInt(t[t.length - 1]) % 2 == 0},
     {element: null, name: "Exact minute", mode: DisplayMode.MEDIUM, enabled: true, predicate: t => t.split(":")[2] == "00"},
-    {element: null, name: "((H-S)^(M+S)+7) multiple of 827", mode: DisplayMode.LARGE, enabled: true, predicate: t => (7 + Math.pow(Number.parseInt(t.split(":")[0]) - Number.parseInt(t.split(":")[2]), Number.parseInt(t.split(":")[1]) + Number.parseInt(t.split(":")[2]))) % 827 == 0}
+    {element: null, name: "((H-S)^(M+S)+7) multiple of 827", mode: DisplayMode.LARGE, enabled: true, predicate: t => (7 + Math.pow(Number.parseInt(t.split(":")[0]) - Number.parseInt(t.split(":")[2]), Number.parseInt(t.split(":")[1]) + Number.parseInt(t.split(":")[2]))) % 827 == 0},
+    {element: null, name: "Prime", mode: DisplayMode.MEDIUM, enabled: true, predicate: t => {n = Number.parseInt(t.split(":")[0]) * 10000 + Number.parseInt(t.split(":")[1]) * 100 + Number.parseInt(t.split(":")[2]); for(let i = 2, s = Math.sqrt(n); i <= s; i++) {if(n % i === 0) return false;} return true;}}
 ]
 
 let formatter = new Intl.DateTimeFormat("en-GB", {
