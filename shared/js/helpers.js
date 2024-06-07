@@ -248,7 +248,7 @@ function in_bounds(val, lo, hi) {
 }
 
 function random_on_circle(r, rand) {
-    let theta = (rand ? rand.random() : Math.random()) * 2 * Math.PI;
+    let theta = (rand ? (rand.random ? rand.random() : rand()) : Math.random()) * 2 * Math.PI;
 
     let x = r * Math.cos(theta);
     let y = r * Math.sin(theta);
@@ -338,6 +338,11 @@ class Vector2 {
 
     distance(other) {
         return this.sub(other).magnitude();
+    }
+
+    round_dp(dp) {
+        let f = Math.pow(10, dp);
+        return new Vector2(Math.round(this.x * f) / f, Math.round(this.y * f) / f);
     }
 
     round() {

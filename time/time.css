@@ -166,7 +166,9 @@ body * {
     flex-wrap: wrap;
     flex: 0 1 auto;
     
-    overflow: auto;
+    overflow-y: scroll;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 
     flex-grow: 1;
     
@@ -178,6 +180,11 @@ body * {
     align-content: flex-start;
 
     min-width: calc(50% - 4vmin);
+}
+
+.options-optioncontainer::-webkit-scrollbar {
+    width: 0;
+    height: 0;
 }
 
 .options-subcontainer.right {
