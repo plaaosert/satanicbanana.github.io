@@ -132,8 +132,8 @@ class SimulationController {
             (0*256*256*256) + (0*256*256) + (0*256) + 255,
             (255*256*256*256) + (255*256*256) + (255*256) + 255
         ];
-        let num_new_symbols_needed = this.num_symbols - 3;
-        for (let i=0; i<num_new_symbols_needed; i++) {
+        let num_new_symbols_needed = this.num_symbols - 3 + 1;
+        for (let i=1; i<num_new_symbols_needed; i++) {
             // rotate hsv
             let rgb = hsvToRgb(i / num_new_symbols_needed, 1, 1);
 
