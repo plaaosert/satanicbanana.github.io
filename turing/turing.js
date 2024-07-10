@@ -128,16 +128,19 @@ class SimulationController {
         this.num_symbols = num_symbols;
 
         this.palette = [
-            (128*256*256*256) + (0*256*256) + (0*256) + 255,
-            (0*256*256*256) + (0*256*256) + (0*256) + 255,
-            (255*256*256*256) + (255*256*256) + (255*256) + 255
+            (255 << 24 >>> 0) + (0 << 16) + (0 << 8) + 255,
+            (0 << 24 >>> 0) + (0 << 16) + (0 << 8) + 255,
+            (255 << 24 >>> 0) + (255 << 16) + (255 << 8) + 255
         ];
         let num_new_symbols_needed = this.num_symbols - 3 + 1;
         for (let i=1; i<num_new_symbols_needed; i++) {
             // rotate hsv
+            // console.log(i / num_new_symbols_needed);
             let rgb = hsvToRgb(i / num_new_symbols_needed, 1, 1);
+            rgb[3] = 255;
+            // console.log(rgb);
 
-            this.palette.push((rgb[0]*256*256*256) + (rgb[1]*256*256) + (rgb[2]*256) + 255);
+            this.palette.push((rgb[3] << 24 >>> 0) + (rgb[2] << 16) + (rgb[1] << 8) + (rgb[0] << 1));
         }
 
         this.sim_steps = 0;
@@ -161,7 +164,7 @@ class SimulationController {
 }
 
 function mod_simulation_speed(event, mul) {
-    console.log(event);
+    // console.log(event);
     if (event && event.shiftKey) {
         mul = (mul - 1) * Number.POSITIVE_INFINITY;
     }
