@@ -666,8 +666,8 @@ f_squadron.heading = new Vector2(1, 0);
 
 combat.squadrons.push(f_squadron);
 
-let t_planes = Array(12).fill(0).map(_ => new Aircraft(0, aircraft_lookup["Little Guy"]));
-let t_squadron = new Squadron(0, `Little Guys`, t_planes);
+let t_plane = new Aircraft(0, aircraft_lookup["Little Guy"]);
+let t_squadron = new Squadron(0, `Little Guy`, [t_plane]);
 
 t_squadron.position = combat.zoom_offset.sub(new Vector2(20, 5));
 t_squadron.heading = new Vector2(1, 0);
