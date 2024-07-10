@@ -1,5 +1,5 @@
 body * {
-    
+    color: white;
 }
 
 .everything-container {
@@ -11,7 +11,7 @@ body * {
     align-items: stretch;
     align-content: stretch;
 
-    margin-top: 4vh;
+    margin-top: 12vh;
     margin-left: -8px;
 
     width: 100vw;
@@ -25,6 +25,9 @@ body * {
     justify-content: end;
     min-width: calc((100vw - 512px) / 2);
 
+    min-height: 516px;
+    max-height: 516px;
+
     margin-right: 32px;
 }
 
@@ -35,6 +38,9 @@ body * {
 
     justify-content: start;
     min-width: calc((100vw - 512px) / 2);
+
+    min-height: 516px;
+    max-height: 516px;
 
     margin-left: 32px;
 }
@@ -87,17 +93,44 @@ body * {
 
     border: 1px solid lightgray;
     color: lightgray;
-    background-color: dimgray;
+    background-color: #666;
 
     user-select: none;
 }
 
 .button:hover {
-    background-color: #aaa;
+    background-color: #888;
 }
 
 .button:active {
-    background-color: #444;
+    background-color: #555;
+}
+
+.button.disabled {
+    background-color: #555;
+}
+
+.button.palered {
+    height: 24px;
+    width: 24px;
+
+    border: 1px solid #d66;
+    color: #d66;
+    background-color: #622;
+
+    user-select: none;
+}
+
+.button.palered:hover {
+    background-color: #833;
+}
+
+.button.palered:active {
+    background-color: #411;
+}
+
+.button.palered.disabled {
+    background-color: #411;
 }
 
 .speed-control {
@@ -125,4 +158,55 @@ body * {
 
 .grey {
     color: gray;
+}
+
+.rows {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+}
+
+.columns {
+    display: flex;
+    flex-direction: column;
+}
+
+input.veryshort {
+    font-family:  "MS Gothic", "terminus", "nec_apc";
+
+    background-color: black;
+    color: white;
+
+    box-shadow: none;
+
+    font-size: 16px;
+    width: 48px;
+    height: 16px;
+
+    margin-left: 16px;
+}
+
+input.veryshort[type="checkbox"] {
+    width: 16px;
+
+    min-width: 16px;
+
+    accent-color: dimgray;
+}
+
+.leftside .rows {
+    width: 224px;
+
+    margin-top: 0px;
+    height: 32px;
+}
+
+.button.longer {
+    width: auto;
+
+    align-content: center;
+    text-align: center;
+
+    filter: contrast(2);
 }

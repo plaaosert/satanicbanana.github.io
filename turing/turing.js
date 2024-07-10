@@ -60,11 +60,27 @@ class Board {
 
 class Machine {
     constructor() {
-        
+        this.type = "Unknown";
     }
 
     step(board) {
         // do nothing
+    }
+
+    static random() {
+        return Machine();
+    }
+
+    reset() {
+
+    }
+
+    status_string() {
+        return "";
+    }
+
+    to_url_params() {
+        return "";
     }
 }
 
@@ -75,6 +91,8 @@ class TuringMachine extends Machine {
     constructor(instructions, num_symbols) {
         super();
 
+        this.type = "turing";
+
         this.instructions = instructions;
 
         this.num_symbols = num_symbols;
@@ -82,6 +100,36 @@ class TuringMachine extends Machine {
 
         this.head_position = new Vector2(0, 0);
         this.state = 0;
+    }
+
+    static random(num_states, num_symbols, include_cardinal=true, include_diagonal=false, include_neutral=false) {
+        // make states x symbols sets of 3
+        // newstate is [0, max_state),
+        // symbol_to_write is [1, max_symbol),
+        // movement direction is [0, 4) if cardinal, +[4, 8) if diagonal included and +[8] if neutral included
+        let dir_choices = [];
+        if (include_cardinal) {
+            dir_choices = [...dir_choices, ...new Array(4).fill(0).map((_, i) => i)];
+        }
+
+        if (include_diagonal) {
+            dir_choices = [...dir_choices, ...new Array(4).fill(0).map((_, i) => i+4)];
+        }
+
+        if (include_neutral) {
+            dir_choices.push(8);
+        }
+
+        let instructions = [];
+
+        let num_transitions = num_states * num_symbols;
+        for (let i=0; i<num_transitions; i++) {
+            instructions.push(random_int(0, num_states));
+            instructions.push(random_int(1, num_symbols));
+            instructions.push(random_from_array(dir_choices));
+        }
+
+        return new TuringMachine(instructions, num_symbols);
     }
 
     mod_x(by) {
@@ -115,6 +163,19 @@ class TuringMachine extends Machine {
         let vec = movement_vectors[mov_dir];
         this.mod_x(vec.x);
         this.mod_y(vec.y);
+    }
+
+    reset() {
+        this.head_position = new Vector2(0, 0);
+        this.state = 0;
+    }
+
+    status_string() {
+        return `machine_type: turing\nnum_states:  ${this.num_states}\nnum_symbols: ${this.num_symbols}`
+    }
+
+    to_url_params() {
+        return `machine=${this.type}&num_symbols=${this.num_symbols}&instructions=${this.instructions.join(",")}`;
     }
 }
 
@@ -170,7 +231,7 @@ function mod_simulation_speed(event, mul) {
     }
 
     max_updates_per_interval *= mul;
-    max_updates_per_interval = Math.max(1562.5, Math.min(6400000, max_updates_per_interval));
+    max_updates_per_interval = Math.max(12.20703125, Math.min(6400000, max_updates_per_interval));
 
     update_sim_speed_display();
 }
@@ -192,6 +253,75 @@ function update_sim_speed_display() {
     document.getElementById("speed_display_detailed").textContent = `${Math.floor(max_updates_per_interval).toLocaleString()} steps / ${max_time_wait}ms (${update_batch_size.toLocaleString()} per batch)`;
 }
 
+function generate_new_random() {
+    switch (machine_type) {
+        case MachineType.TURING:
+        default:
+            let num_states = Number.parseInt(document.getElementById("turing_num_states").value);
+            let num_symbols = Number.parseInt(document.getElementById("turing_num_symbols").value) + 1;
+
+            machine = TuringMachine.random(
+                num_states, num_symbols, 
+                document.getElementById("turing_dir_cardinal").checked,
+                document.getElementById("turing_dir_diagonal").checked,
+                document.getElementById("turing_dir_neutral").checked
+            );
+            break;
+    }
+
+    reset();
+}
+
+function reset() {
+    machine.reset();
+    sim_controller = new SimulationController(
+        new Board(new Vector2(canvas_size, canvas_size)), machine, display_canvas, machine.num_symbols
+    )
+
+    display_canvas.getContext("2d").clearRect(0, 0, canvas_size, canvas_size);
+    canvas_img = new ImageData(canvas_size, canvas_size);
+    canvas_img_buff = new Uint32Array(canvas_img.data.buffer);
+
+    update_status_display();
+
+    if (document.getElementById("autoset_url").checked) {
+        copy_machine_url(true);
+    }
+}
+
+function update_status_display() {
+    let status_str = machine.status_string();
+
+    document.getElementById("status_display").textContent = status_str;
+    document.getElementById("machine_hash").textContent = `Hash: ${get_machine_hash()}`;
+}
+
+function copy_machine_url(straight_to_querybar=false) {
+    let base = location.toString().replace(location.search, "");
+
+    let full_url = `${base}?${machine.to_url_params()}`;
+    
+    if (straight_to_querybar) {
+        window.history.replaceState(null, "", full_url);
+    } else {
+        navigator.clipboard.writeText(full_url).then(function() {
+            document.getElementById("copy_button").innerHTML = "Copied!";
+            document.getElementById("copy_button").classList.add("disabled");
+            
+            setTimeout(function() {
+                document.getElementById("copy_button").innerHTML = "Copy machine URL"
+                document.getElementById("copy_button").classList.remove("disabled");
+            }, 1500);
+        }, function(err) {
+            console.error('Failed due to error: ', err);
+        });
+    }
+}
+
+function get_machine_hash() {
+    return cyrb128(machine.to_url_params()).map(t => t.toString(16)).join("");
+}
+
 let sim_controller = null;
 let t = Date.now();
 
@@ -209,31 +339,39 @@ let max_time_wait = 25;
 
 const url_params = new URLSearchParams(window.location.search);
 
+let machine_type = null;
+let machine = null;
+
 document.addEventListener("DOMContentLoaded", function(e) {
     display_canvas = document.getElementById("display-canvas");
 
-    canvas_img = new ImageData(canvas_size, canvas_size);
-    canvas_img_buff = new Uint32Array(canvas_img.data.buffer);
-
-    let machine_type = url_params.get("machine");
-    let instructions = url_params.get("instructions");
-    let num_symbols = Number.parseInt(url_params.get("num_symbols"));
+    machine_type = url_params.get("machine");
 
     switch (machine_type) {
         case MachineType.TURING:
-            let instructions_parsed = instructions.replaceAll(" ", "").split(",").map(t => Number.parseInt(t));
+            let instructions = url_params.get("instructions");
 
-            sim_controller = new SimulationController(
-                new Board(new Vector2(canvas_size, canvas_size)),
-                new TuringMachine(instructions_parsed, num_symbols),
-                display_canvas, num_symbols
-            )
+            if (instructions) {
+                let num_symbols = Number.parseInt(url_params.get("num_symbols"));
+                let instructions_parsed = instructions.replaceAll(" ", "").split(",").map(t => Number.parseInt(t));
+                machine = new TuringMachine(instructions_parsed, num_symbols);
+            }
             break;
 
         default:
-            alert(`Unrecognised machine type (${machine_type})`);
+            if (machine_type) {
+                alert(`Unrecognised machine type (${machine_type})`);
+            }
             break;
     }
+
+    if (!machine) {
+        generate_new_random();
+    }
+
+    machine_type = machine.type;
+
+    reset();
 
     update_sim_speed_display();
 

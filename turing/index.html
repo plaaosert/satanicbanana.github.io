@@ -15,17 +15,37 @@
 </head>
 <body>
 	<div class="topbar" style="">
-		<p class="right-text" style="font-size: 2vmin; color:#ccc;">you have been looking at the soul of a machine for <span class="important" id="session-time">00:00:00</span> in this session, <span class="important" id="all-time">00:00:00:00</span> total and <span class="important" id="global-time">00:00:00:00</span> across all plaao.net games</p>
+		<p class="right-text" style="font-size: 2vmin; color:#ccc;">you have been staring into the soul of a machine for <span class="important" id="session-time">00:00:00</span> in this session, <span class="important" id="all-time">00:00:00:00</span> total and <span class="important" id="global-time">00:00:00:00</span> across all plaao.net games</p>
 	</div>
-
-    <div id="options_container_template" class="options-entry">
-        <p class="leftside option-name">thing</p>
-        <div class="rightside mode-select"><p>4</p></div>
-    </div>
 
     <div class="everything-container">
         <div class="leftside">
-            <p style="color:white">aaaaaaaaaaaaaaaaaaaaaaaaa</p>
+            <div class="columns">
+                <div class="hideable-tab" id="options_turing">
+                    <div class="rows">
+                        <p>Num. States</p>
+                        <input class="veryshort" type="number" value="4" id="turing_num_states">
+                    </div>
+                    <div class="rows">
+                        <p>Num. Symbols</p>
+                        <input class="veryshort" type="number" value="2" id="turing_num_symbols">
+                    </div>
+                    <div class="rows">
+                        <p>Cardinal movements</p>
+                        <input class="veryshort" checked="true" type="checkbox" id="turing_dir_cardinal">
+                    </div>
+                    <div class="rows">
+                        <p>Diagonal movements</p>
+                        <input class="veryshort" type="checkbox" id="turing_dir_diagonal">
+                    </div>
+                    <div class="rows">
+                        <p>Include "no movement"</p>
+                        <input class="veryshort" type="checkbox" id="turing_dir_neutral">
+                    </div>
+                </div>
+                <p class="button longer" style="margin-top: 8px" onclick="generate_new_random()">Random</p>
+                <p class="button longer" style="margin-top: 0px" onclick="alert('sorry, not yet!')">Find "interesting"</p>
+            </div>
         </div>
         <div class="middle">
             <canvas class="display-canvas" id="display-canvas" width="512" height="512"></canvas>
@@ -40,7 +60,18 @@
             </div>
         </div>
         <div class="rightside">
-            <p style="color:white">tesasssssstsasa2</p>
+            <div class="columns" style="width: 320px;">
+                <p style="color: #2df">Current machine properties</p>
+                <p style="white-space: pre-wrap;" id="status_display">.</p>
+                <p style="color:#2f2" id="machine_hash">Hash: 123</p>
+                <p class="button longer" id="copy_button" onclick="copy_machine_url()">Copy machine URL</p>
+                <div class="rows">
+                    <p>Automatically set URL when generating machine</p>
+                    <input class="veryshort" type="checkbox" id="autoset_url">
+                </div>
+                
+                <p class="button longer" style="margin-top: auto" onclick="reset()">Reset</p>
+            </div>
         </div>
     </div>
 
