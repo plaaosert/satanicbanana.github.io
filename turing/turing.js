@@ -47,6 +47,8 @@ class Board {
     render(to_canvas, palette) {
         let ctx = to_canvas.getContext("2d");
 
+        // TODO uninitialised pixels aren't rendered on first reset
+
         // draw all the changes to the board since last render, then clear the changes list
         this.changes.forEach(change => {
             canvas_img_buff[change] = palette[this.grid[change]]
@@ -279,6 +281,7 @@ function reset() {
     )
 
     display_canvas.getContext("2d").clearRect(0, 0, canvas_size, canvas_size);
+    
     canvas_img = new ImageData(canvas_size, canvas_size);
     canvas_img_buff = new Uint32Array(canvas_img.data.buffer);
 
