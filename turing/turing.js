@@ -276,6 +276,8 @@ function generate_new_random() {
 
 function reset() {
     machine.reset();
+    machine_type = machine.type;
+
     sim_controller = new SimulationController(
         new Board(new Vector2(canvas_size, canvas_size)), machine, display_canvas, machine.num_symbols
     )
@@ -292,6 +294,7 @@ function reset() {
     }
 
     update_status_display();
+    update_options_display();
 
     if (document.getElementById("autoset_url").checked) {
         copy_machine_url(true);
@@ -303,6 +306,19 @@ function update_status_display() {
 
     document.getElementById("status_display").textContent = status_str;
     document.getElementById("machine_hash").textContent = `Hash: ${get_machine_hash()}`;
+}
+
+function update_options_display() {
+    switch (machine_type) {
+        case MachineType.TURING:
+            document.getElementById("turing_num_states").value = machine.num_states
+            document.getElementById("turing_num_symbols").value = machine.num_symbols - 1;
+
+            document.getElementById("turing_dir_cardinal").checked = machine.instructions.some((t, i) => i % 3 == 2 && t >= 0 && t < 4),
+            document.getElementById("turing_dir_diagonal").checked = machine.instructions.some((t, i) => i % 3 == 2 && t >= 4 && t < 8),
+            document.getElementById("turing_dir_neutral").checked = machine.instructions.some((t, i) => i % 3 == 2 && t == 8)
+            break;
+    }
 }
 
 function copy_machine_url(straight_to_querybar=false) {
