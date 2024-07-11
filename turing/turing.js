@@ -173,7 +173,7 @@ class TuringMachine extends Machine {
     }
 
     status_string() {
-        return `machine_type: turing\nnum_states:  ${this.num_states}\nnum_symbols: ${this.num_symbols}`
+        return `machine_type: turing\nnum_states:  ${this.num_states}\nnum_symbols: ${this.num_symbols-1}`
     }
 
     to_url_params() {
@@ -191,7 +191,7 @@ class SimulationController {
         this.num_symbols = num_symbols;
 
         this.palette = [
-            (255 << 24 >>> 0) + (0 << 16) + (0 << 8) + 255,
+            (128 << 24 >>> 0) + (0 << 16) + (0 << 8) + 255,
             (0 << 24 >>> 0) + (0 << 16) + (0 << 8) + 255,
             (255 << 24 >>> 0) + (255 << 16) + (255 << 8) + 255
         ];
@@ -284,6 +284,12 @@ function reset() {
     
     canvas_img = new ImageData(canvas_size, canvas_size);
     canvas_img_buff = new Uint32Array(canvas_img.data.buffer);
+
+    for (let x=0; x<canvas_size; x++) {
+        for (let y=0; y<canvas_size; y++) {
+            canvas_img_buff[(y * canvas_size) + x] = sim_controller.palette[0];
+        }
+    }
 
     update_status_display();
 
