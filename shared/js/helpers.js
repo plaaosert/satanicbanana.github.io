@@ -260,6 +260,17 @@ function random_from_array(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function weighted_random_from_arr(arr) {
+    // assumes weights are in the first index of the array
+    let val = Math.random();
+    for (let i=0; i<arr.length; i++) {
+        val -= arr[i][0];
+        if (val < 0) {
+            return arr[i];
+        }
+    }
+}
+
 class Vector2 {
     constructor(x, y) {
         this.x = x;

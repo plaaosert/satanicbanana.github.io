@@ -11,40 +11,99 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 
 	<link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=01"/>
-	<link rel="stylesheet" type="text/css" href="turing.css?v=02"/>
+	<link rel="stylesheet" type="text/css" href="turing.css?v=03"/>
 </head>
 <body>
-	<div class="topbar" style="">
+	<div class="topbar">
 		<p class="right-text" style="font-size: 2vmin; color:#ccc;">you have been staring into the soul of a machine for <span class="important" id="session-time">00:00:00</span> in this session, <span class="important" id="all-time">00:00:00:00</span> total and <span class="important" id="global-time">00:00:00:00</span> across all plaao.net games</p>
 	</div>
 
     <div class="everything-container">
         <div class="leftside">
             <div class="columns">
-                <div class="hideable-tab" id="options_turing">
-                    <div class="rows">
-                        <p>Num. States</p>
-                        <input class="veryshort" type="number" value="4" id="turing_num_states">
+                <div id="machine_settings_menu" class="tab-menu">
+                    <div id="machine_select_buttons" class="rows tab-options">
+                        <p id="turing_select_button" class="button longer" onclick="set_selected_machine_type('turing');">Turing</p>
+                        <p id="et001b_select_button" class="button longer selected" onclick="set_selected_machine_type('et001b');">ET001B</p>
                     </div>
-                    <div class="rows">
-                        <p>Num. Symbols</p>
-                        <input class="veryshort" type="number" value="2" id="turing_num_symbols">
+
+                    <div class="hideable-tab" id="options_turing">
+                        <div class="rows">
+                            <p>Num. States</p>
+                            <input class="veryshort" type="number" value="4" id="turing_num_states">
+                        </div>
+                        <div class="rows">
+                            <p>Num. Symbols</p>
+                            <input class="veryshort" type="number" value="3" id="turing_num_symbols">
+                        </div>
+                        <div class="rows">
+                            <p>Cardinal movements</p>
+                            <input class="veryshort" checked="true" type="checkbox" id="turing_dir_cardinal">
+                        </div>
+                        <div class="rows">
+                            <p>Diagonal movements</p>
+                            <input class="veryshort" type="checkbox" id="turing_dir_diagonal">
+                        </div>
+                        <div class="rows">
+                            <p>Include "no movement"</p>
+                            <input class="veryshort" type="checkbox" id="turing_dir_neutral">
+                        </div>
                     </div>
-                    <div class="rows">
-                        <p>Cardinal movements</p>
-                        <input class="veryshort" checked="true" type="checkbox" id="turing_dir_cardinal">
-                    </div>
-                    <div class="rows">
-                        <p>Diagonal movements</p>
-                        <input class="veryshort" type="checkbox" id="turing_dir_diagonal">
-                    </div>
-                    <div class="rows">
-                        <p>Include "no movement"</p>
-                        <input class="veryshort" type="checkbox" id="turing_dir_neutral">
+                    <div class="hideable-tab" id="options_et001b">
+                        <div class="rows">
+                            <p>Num. Registers</p>
+                            <input class="veryshort" type="number" value="8" id="et001b_num_registers">
+                        </div>
+                        <div class="rows">
+                            <p>Num. Symbols</p>
+                            <input class="veryshort" type="number" value="3" id="et001b_num_symbols">
+                        </div>
+                        <div class="rows">
+                            <p>Num. Instructions</p>
+                            <input class="veryshort" type="number" value="128" id="et001b_num_instructions">
+                        </div>
+                        <div class="rows">
+                            <p>Memory block size</p>
+                            <input class="veryshort" type="number" value="4" id="et001b_memory_block_size">
+                        </div>
+                        <div class="rows">
+                            <p>Use MUL and DIV</p>
+                            <input class="veryshort" checked="true" type="checkbox" id="et001b_muldiv">
+                        </div>
+                        <div class="rows">
+                            <p>Use INC and DEC</p>
+                            <input class="veryshort" checked="true" type="checkbox" id="et001b_incdec">
+                        </div>
+                        <div class="rows">
+                            <p>Prepend increment instrs. for registers</p>
+                            <input class="veryshort" checked="true" type="checkbox" id="et001b_constantly_increment_registers">
+                        </div>
+                        <div class="rows">
+                            <p>Register start state</p>
+                            <select id="et001b_register_start_state">
+                                <option value="ZERO">Zero</option>
+                                <option value="ONE">One</option>
+                                <option value="RANDOM">Random</option>
+                            </select>
+                        </div>
+                        <div class="rows">
+                            <p>Memory start state</p>
+                            <select id="et001b_memory_start_state">
+                                <option value="ZERO">Zero</option>
+                                <option value="ONE">One</option>
+                                <option value="RANDOM">Random</option>
+                            </select>
+                        </div>
+                        <div class="rows">
+                            <p>Random seed</p>
+                            <input class="veryshort long" type="text" value="abcdefg" id="et001b_random_seed">
+                        </div>
                     </div>
                 </div>
-                <p class="button longer" style="margin-top: 8px" onclick="generate_new_random()">Random</p>
-                <p class="button longer" style="margin-top: 0px" onclick="alert('sorry, not yet!')">Find "interesting"</p>
+                <div class="" id="generation_options">
+                    <p class="button longer" style="margin-top: 8px" onclick="generate_new_random()">Random</p>
+                    <p class="button longer" style="margin-top: 0px" onclick="alert('sorry, not yet!')">Find "interesting"</p>
+                </div>
             </div>
         </div>
         <div class="middle">
@@ -57,6 +116,7 @@
                     <p class="speed-control button" onclick="mod_simulation_speed(event, 2)">+</p>
                 </div>
                 <p class="speed-control label grey" id="speed_display_detailed">-</p>
+                <p class="speed-control label grey" id="speed_display_detailed_avg">Average</p>
             </div>
         </div>
         <div class="rightside">
@@ -64,18 +124,18 @@
                 <p style="color: #2df">Current machine properties</p>
                 <p style="white-space: pre-wrap;" id="status_display">.</p>
                 <p style="color:#2f2" id="machine_hash">Hash: 123</p>
-                <p class="button longer" id="copy_button" onclick="copy_machine_url()">Copy machine URL</p>
-                <div class="rows">
+                <p class="button longer splitpoint" id="copy_button" onclick="copy_machine_url()" style="margin-bottom: 0px;">Copy machine URL</p>
+                <div class="rows" style="margin-bottom: 16px;">
                     <p>Automatically set URL when generating machine</p>
                     <input class="veryshort" type="checkbox" id="autoset_url">
                 </div>
                 
-                <p class="button longer" style="margin-top: auto" onclick="reset()">Reset</p>
+                <p class="button longer" onclick="reset()">Reset</p>
             </div>
         </div>
     </div>
 
-	<div class="bottombar" id="normal-bottombar" style="">
+	<div class="bottombar" id="normal-bottombar">
 		<p class="left-text" style="font-size: 3vmin">turing v1.0 | turing<br>
 			<span class="white" style="font-size: 2vmin;">original idea: <a style="position: relative; bottom: 0px; top: 0px; left: 0px; color: #08d" href="https://maximecb.github.io/Turing-Drawings">https://maximecb.github.io/Turing-Drawings</a></span>
         </p>
@@ -85,7 +145,8 @@
 	
 	<script src="../shared/js/helpers.js?v=00"></script>
 	
-    <script src="turing.js?v=03"></script>
+    <script src="turing.js?v=04"></script>
+    <script src="et001b.js?v=01"></script>
 
 	<script src="../shared/js/playtime.js?v=00"></script>
 </body>

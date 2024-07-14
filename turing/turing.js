@@ -19,7 +19,8 @@ const movement_vectors = [
 ]
 
 const MachineType = {
-    TURING: "turing"
+    TURING: "turing",
+    ET001B: "et001b"
 }
 
 class Board {
@@ -47,7 +48,12 @@ class Board {
     render(to_canvas, palette) {
         let ctx = to_canvas.getContext("2d");
 
-        // TODO uninitialised pixels aren't rendered on first reset
+        switch (machine_type) {
+            case MachineType.ET001B: {
+                machine.render_memory_cells(this);
+                break;
+            }
+        }
 
         // draw all the changes to the board since last render, then clear the changes list
         this.changes.forEach(change => {
@@ -63,6 +69,7 @@ class Board {
 class Machine {
     constructor() {
         this.type = "Unknown";
+        this.running = true;
     }
 
     step(board) {
@@ -255,8 +262,20 @@ function update_sim_speed_display() {
     document.getElementById("speed_display_detailed").textContent = `${Math.floor(max_updates_per_interval).toLocaleString()} steps / ${max_time_wait}ms (${update_batch_size.toLocaleString()} per batch)`;
 }
 
+function update_avg() {
+    let avg = prev_steps_count.reduce((p, c) => p + c, 0) / prev_steps_count.length;
+    average_element.textContent = `Actual performance: ${avg.toLocaleString()}`;
+    if (avg < max_updates_per_interval-3) {
+        average_element.classList.add("darkred");
+        average_element.classList.remove("darkgreen");
+    } else {
+        average_element.classList.remove("darkred");
+        average_element.classList.add("darkgreen");
+    }
+}
+
 function generate_new_random() {
-    switch (machine_type) {
+    switch (next_gen_machine_type) {
         case MachineType.TURING:
         default:
             let num_states = Number.parseInt(document.getElementById("turing_num_states").value);
@@ -269,12 +288,32 @@ function generate_new_random() {
                 document.getElementById("turing_dir_neutral").checked
             );
             break;
+
+        case MachineType.ET001B: {
+            let rss = document.getElementById("et001b_register_start_state");
+            let mss = document.getElementById("et001b_memory_start_state")
+
+            machine = ET001BMachine.random(
+                Number.parseInt(document.getElementById("et001b_num_registers").value),
+                Number.parseInt(document.getElementById("et001b_num_symbols").value) + 1,
+                Number.parseInt(document.getElementById("et001b_memory_block_size").value),
+                Number.parseInt(document.getElementById("et001b_num_instructions").value),
+                document.getElementById("et001b_random_seed").value,
+                document.getElementById("et001b_muldiv").checked,
+                document.getElementById("et001b_incdec").checked,
+                document.getElementById("et001b_constantly_increment_registers").checked,
+                ET001BMachine.StartState[rss.options[rss.selectedIndex].value],
+                ET001BMachine.StartState[mss.options[mss.selectedIndex].value],
+            )
+
+            break;
+        }
     }
 
     reset();
 }
 
-function reset() {
+function reset(update_options=false) {
     machine.reset();
     machine_type = machine.type;
 
@@ -294,7 +333,10 @@ function reset() {
     }
 
     update_status_display();
-    update_options_display();
+
+    if (update_options) {
+        update_options_display();
+    }
 
     if (document.getElementById("autoset_url").checked) {
         copy_machine_url(true);
@@ -317,6 +359,21 @@ function update_options_display() {
             document.getElementById("turing_dir_cardinal").checked = machine.instructions.some((t, i) => i % 3 == 2 && t >= 0 && t < 4),
             document.getElementById("turing_dir_diagonal").checked = machine.instructions.some((t, i) => i % 3 == 2 && t >= 4 && t < 8),
             document.getElementById("turing_dir_neutral").checked = machine.instructions.some((t, i) => i % 3 == 2 && t == 8)
+            break;
+
+        case MachineType.ET001B:
+            document.getElementById("et001b_register_start_state").selectedIndex = Object.entries(ET001BMachine.StartState).sort((a, b) => a[1] - b[1])[machine.register_start_state][1];
+            document.getElementById("et001b_memory_start_state").selectedIndex = Object.entries(ET001BMachine.StartState).sort((a, b) => a[1] - b[1])[machine.memory_start_state][1];
+
+            document.getElementById("et001b_num_registers").value = machine.num_registers;
+            document.getElementById("et001b_num_symbols").value = machine.num_symbols - 1;
+            document.getElementById("et001b_memory_block_size").value = machine.memory_block_size;
+            document.getElementById("et001b_num_instructions").value = machine.instructions.length - machine.additional_instruction_count;
+            document.getElementById("et001b_random_seed").value = machine.random_seed;
+            document.getElementById("et001b_muldiv").checked = machine.instructions.some(i => i[0] == ET001BMachine.Instruction.MUL || i[0] == ET001BMachine.Instruction.DIV);
+            document.getElementById("et001b_incdec").checked = machine.instructions.some(i => i[0] == ET001BMachine.Instruction.INC || i[0] == ET001BMachine.Instruction.DEC);;
+            document.getElementById("et001b_constantly_increment_registers").checked = machine.additional_instruction_count > 0;
+
             break;
     }
 }
@@ -347,6 +404,26 @@ function get_machine_hash() {
     return cyrb128(machine.to_url_params()).map(t => t.toString(16)).join("");
 }
 
+function set_selected_machine_type(typ) {
+    next_gen_machine_type = typ;
+
+    document.querySelectorAll("#machine_select_buttons>*").forEach(e => {
+        if (e.id == `${typ}_select_button`) {
+            e.classList.add("selected");
+        } else {
+            e.classList.remove("selected");
+        }
+    })
+
+    document.querySelectorAll("#machine_settings_menu>.hideable-tab").forEach(e => {
+        if (e.id == `options_${typ}`) {
+            e.classList.add("visible");
+        } else {
+            e.classList.remove("visible");
+        }
+    })
+}
+
 let sim_controller = null;
 let t = Date.now();
 
@@ -354,7 +431,7 @@ const original_max_updates = 50000;
 let max_updates_per_interval = original_max_updates;
 
 const original_update_batch_size = 10000;
-const min_update_batch_size = 5000;
+const min_update_batch_size = 3125;
 
 let paused = false;
 
@@ -365,11 +442,18 @@ let max_time_wait = 25;
 const url_params = new URLSearchParams(window.location.search);
 
 let machine_type = null;
+let next_gen_machine_type = null;
+
 let machine = null;
+
+let prev_steps_count = new Array(10).fill(50000);
+let average_element = null;
 
 document.addEventListener("DOMContentLoaded", function(e) {
     display_canvas = document.getElementById("display-canvas");
 
+    average_element = document.getElementById("speed_display_detailed_avg");
+    
     machine_type = url_params.get("machine");
 
     switch (machine_type) {
@@ -383,6 +467,28 @@ document.addEventListener("DOMContentLoaded", function(e) {
             }
             break;
 
+        case MachineType.ET001B: {
+            let instructions = url_params.get("instructions");
+
+            if (instructions) {
+                let num_registers = Number.parseInt(url_params.get("num_registers"));
+                let num_symbols = Number.parseInt(url_params.get("num_symbols"));
+                let memory_block_size = Number.parseInt(url_params.get("memory_block_size"));
+                let random_seed = url_params.get("random_seed");
+                let instructions_parsed = ET001BMachine.parse_string(url_params.get("instructions"));
+                let additional_instruction_count = Number.parseInt(url_params.get("additional_instruction_count"));
+
+                let register_start_state = Number.parseInt(url_params.get("register_start_state"));
+                let memory_start_state = Number.parseInt(url_params.get("memory_start_state"));
+
+                machine = new ET001BMachine(
+                    num_registers, num_symbols, memory_block_size, instructions_parsed, additional_instruction_count, random_seed, register_start_state, memory_start_state
+                )
+            }
+
+            break;
+        }
+
         default:
             if (machine_type) {
                 alert(`Unrecognised machine type (${machine_type})`);
@@ -395,24 +501,33 @@ document.addEventListener("DOMContentLoaded", function(e) {
     }
 
     machine_type = machine.type;
+    set_selected_machine_type(machine_type);
 
-    reset();
+    reset(true);
 
     update_sim_speed_display();
 
     frame_fn = function() {
-        if (!paused) {
-            let start_time = Date.now();
+        if (!paused && machine.running) {
+            try {
+                let start_time = Date.now();
 
-            let num_updates = 0;
-            while (Date.now() - start_time < max_time_wait && num_updates < max_updates_per_interval) {
-                sim_controller.step(update_batch_size);
-                num_updates += update_batch_size
+                let num_updates = 0;
+                while (Date.now() - start_time < max_time_wait && num_updates < max_updates_per_interval-1) {
+                    sim_controller.step(update_batch_size);
+                    num_updates += update_batch_size
+                }
+
+                prev_steps_count.push(num_updates);
+                prev_steps_count.shift();
+            } catch (e) {
+                machine.running = false;
             }
     
             sim_controller.board.render(sim_controller.canvas, sim_controller.palette);
         }
 
+        update_avg();
         window.requestAnimationFrame(frame_fn);
     };
 
