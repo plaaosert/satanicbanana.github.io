@@ -26,6 +26,13 @@ changes = [
         "typ": "minor",
         "desc": "I fixed a bunch of different problems regarding sizing of the top and bottom bar on games.\nNow, zooming in and out shouldn't make those borders unstable.\nMost notable on <a class=\"new-thing\" href=\"time/index.html\">time</a> - I'll fix the rest of the games later."
     },
+
+    {
+        "ts": 1721330429,
+        "title": "A new \"game\"",
+        "typ": "major",
+        "desc": "I have created a new... thing. <a class=\"new-thing\" href=\"turing/index.html\">turing</a> is an interactive visualiser for\nTuring machines and other assorted things, including the ET001B, a tiny (fake) CPU. Take a look."
+    },
 ]
 
 changes = changes.sort((a,b) => b.ts-a.ts);

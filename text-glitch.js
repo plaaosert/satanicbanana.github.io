@@ -55,6 +55,7 @@ aims = {
 	"15":">> what's changed since last time?",
 	"16":">> go back",
 	"17":">> this isn't actually a game, really",
+	"18":">> peer into the soul of a machine",
 	"banner":"// \u00A0hello!\u00A0\u00A0 //"
 };
 
