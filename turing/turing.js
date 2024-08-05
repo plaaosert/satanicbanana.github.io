@@ -4,7 +4,7 @@ let display_canvas = null;
 let canvas_img = null;
 let canvas_img_buff = null;
 
-let canvas_size = 512;
+let canvas_size = 1;
 
 const movement_vectors = [
     new Vector2(1, 0),    // R
@@ -451,6 +451,7 @@ let average_element = null;
 
 document.addEventListener("DOMContentLoaded", function(e) {
     display_canvas = document.getElementById("display-canvas");
+    canvas_size = display_canvas.width;
 
     average_element = document.getElementById("speed_display_detailed_avg");
     
@@ -497,7 +498,11 @@ document.addEventListener("DOMContentLoaded", function(e) {
     }
 
     if (!machine) {
-        generate_new_random();
+        // load the default demo machine
+        let instructions = "1,1,3,3,3,0,3,1,2,2,3,0,2,2,1,3,3,1,2,3,0,3,3,2,0,1,0,3,3,2,3,2,1,0,1,0,1,2,1,1,2,2,2,3,3,2,1,0";
+        let num_symbols = 4;
+        let instructions_parsed = instructions.replaceAll(" ", "").split(",").map(t => Number.parseInt(t));
+        machine = new TuringMachine(instructions_parsed, num_symbols);
     }
 
     machine_type = machine.type;
