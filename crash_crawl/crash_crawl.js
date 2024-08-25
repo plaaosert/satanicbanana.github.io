@@ -9,7 +9,7 @@
 // ATK - physical base attack, used for physical abilities (as well as other scalers).
 // STR - used for strength-scaling abilities, and increases HP.
 // DEX - used for dexterity-scaling abilities, increases the base speed of abilities and reduces starting global delay.
-// MAG - used for magic-scaling abilities, and increases MDEF.
+// MAG - used for magic-scaling abilities, and increases magical defense.
 // WIS - used for wisdom-scaling abilities, and reduces the cooldown of abilities.
 // OCC - used for occult-scaling abilities, and increases luck (better chance for positive outcomes)
 // DEF - used for defense against physical abilities.
@@ -51,6 +51,13 @@ class Battle {
             ent.try_take_turn();
         })
     }
+}
+
+
+const DamageType = {
+    PHYSICAL: 0,
+    MAGICAL: 1,
+    UNTYPED: 2,
 }
 
 
@@ -175,6 +182,26 @@ class Entity {
         return Math.min(this.delay, this.cooldown);
     }
 
+    calc_damage(dmg, dmgtype, def_ignore_flat, def_ignore_mul) {
+        let def = 0;
+        switch (dmgtype) {
+            case DamageType.PHYSICAL:
+                def = this.stats.DEF;
+                break;
+
+            case DamageType.MAGICAL:
+                def = this.stats.MDEF + (0.2 * this.stats.MAG)
+                break;
+        }
+
+        def = def - def_ignore_flat - (def * def_ignore_mul);
+
+        let f = 100;
+        let final_dmg = dmg * (f / (def + f));
+
+        return final_dmg;
+    }
+
     pass_time(time) {
         this.delay -= time
         this.cooldown -= time;
@@ -201,6 +228,9 @@ class Entity {
 
                     case NUM_KILLABLE_TARGETS:
                         // need to implement some sort of move damage testing function, so implement using moves first before moving forward here
+                        // move damage calculation is done, need to make a "use_move" and "try_use_move" on the Ability class
+                        // then implement these choices here, and make sure the moves actually end up getting used
+                        // this also means looking at status effects and stuff
                         break;
 
                     case TARGET_MISSING_HP:
@@ -301,7 +331,8 @@ class Ability {
         MOST_HP_MISSING: 3,
         LEAST_HP_MISSING: 4,
         MOST_PHYS_DAMAGE: 5,
-        MOST_MAG_DAMAGE: 6
+        MOST_MAG_DAMAGE: 6,
+        DEAD_ALLY: 7,
     }
 
     // Combined with one parameter if relevant. Most of these mean "at least one valid target meets these conditions",
@@ -320,7 +351,7 @@ class Ability {
         NUM_ENEMIES_DEAD: 8,
     }
 
-    constructor(name, target_advice, target_all=false, can_target_enemies=true, can_target_allies=false, can_target_self=false, unique_effect=null) {
+    constructor(name, target_advice, target_all=false, can_target_enemies=true, can_target_allies=false, can_target_self=false) {
         this.name = name;
         this.description = "";
 
@@ -335,7 +366,7 @@ class Ability {
         this.can_target_allies = can_target_allies;
         this.can_target_self = can_target_self;
 
-        this.unique_effect = unique_effect;
+        this.unique_effects = [];
     }
 
     and_scale_on(stat, mul) {
@@ -350,6 +381,10 @@ class Ability {
 
     and_apply_effect(effect, chance, duration) {
         this.status_effects.push({effect: effect, chance: chance, duration: duration});
+    }
+
+    add_unique_effect(unique, p1=null) {
+        this.unique_effects.push({effect: unique, p1: p1});
     }
 
     add_weighting(weight, amount) {
@@ -391,8 +426,12 @@ class Ability {
             this.description += `\n\n${status_effects_text}`;
         }
 
-        if (this.unique_effect) {
-            this.description += `\n\n${this.unique_effect}`;
+        let unique_effects_text = this.unique_effects.map(e => {
+            return `${e.effect.replace("$P1", e.p1)}`;
+        }).join("\n");
+
+        if (unique_effects_text) {
+            this.description += `\n\n${unique_effects_text}`;
         }
 
         this.description += `\n\nCan target enemies: ${this.can_target_enemies ? (this.target_all ? "affects all enemies" : "yes") : "no"}`;
