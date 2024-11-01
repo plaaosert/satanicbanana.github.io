@@ -1,0 +1,389 @@
+body * {
+    color: white;
+}
+
+.everything-container {
+    display: flex;
+    flex-direction: row;
+
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: stretch;
+    align-content: stretch;
+
+    margin-top: 12vh;
+    margin-left: -8px;
+
+    width: 100vw;
+}
+
+.everything-container .leftside {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+
+    justify-content: end;
+    min-width: calc((100vw - 512px) / 2);
+
+    min-height: 516px;
+    max-height: 516px;
+
+    margin-right: 32px;
+}
+
+.everything-container .rightside {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+
+    justify-content: start;
+    min-width: calc((100vw - 512px) / 2);
+
+    min-height: 516px;
+    max-height: 516px;
+
+    margin-left: 32px;
+}
+
+.everything-container .middle {
+    min-width: 512px;
+    max-width: 512px;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.display-canvas {
+    color: #aaa;
+
+    border: none;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    height: 512px;
+    width: 512px;
+
+    margin-bottom: 0px;
+    margin-top: 0px;
+
+    border: 2px solid white;
+}
+
+.speed-controls {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+
+    margin-top: 16px;
+}
+
+.speed-controls .buttons {
+    display: flex;
+    justify-content: center;
+    
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.button {
+    height: 24px;
+    width: 24px;
+
+    border: 1px solid lightgray;
+    color: lightgray;
+    background-color: #666;
+
+    user-select: none;
+}
+
+.button:hover {
+    background-color: #888;
+}
+
+.button:active {
+    background-color: #555;
+}
+
+.button.disabled {
+    background-color: #555;
+}
+
+.button.palered {
+    height: 24px;
+    width: 24px;
+
+    border: 1px solid #d66;
+    color: #d66;
+    background-color: #622;
+
+    user-select: none;
+}
+
+.button.palered:hover {
+    background-color: #833;
+}
+
+.button.palered:active {
+    background-color: #411;
+}
+
+.button.palered.disabled {
+    background-color: #411;
+}
+
+.speed-control {
+    color: white;
+
+    align-content: center;
+    text-align: center;
+}
+
+.speed-controls p {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+.speed-control.label {
+    margin-left: 32px;
+    margin-right: 32px;
+}
+
+#speed_display {
+    width: 128px;
+
+    user-select: none;
+}
+
+.grey {
+    color: gray;
+}
+
+.darkred {
+    color: darkred;
+}
+
+.darkgreen {
+    color: darkgreen;
+}
+
+.rows {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+}
+
+.columns {
+    display: flex;
+    flex-direction: column;
+}
+
+.panel .columns {
+    justify-content: space-between;
+}
+
+input.veryshort {
+    font-family:  "MS Gothic", "terminus", "nec_apc";
+
+    background-color: black;
+    color: white;
+
+    box-shadow: none;
+
+    font-size: 16px;
+    width: 48px;
+    height: 16px;
+
+    margin-left: 16px;
+}
+
+input.veryshort.long {
+    font-family:  "MS Gothic", "terminus", "nec_apc";
+
+    background-color: black;
+    color: white;
+
+    box-shadow: none;
+
+    font-size: 16px;
+    width: unset;
+    height: 16px;
+
+    margin-left: 16px;
+}
+
+input.veryshort[type="checkbox"] {
+    width: 16px;
+
+    min-width: 16px;
+
+    accent-color: dimgray;
+}
+
+.panel .rows {
+    margin-top: 0px;
+    height: 32px;
+}
+
+.button.longer {
+    width: auto;
+
+    align-content: center;
+    text-align: center;
+
+    filter: contrast(2);
+}
+
+.splitpoint {
+    margin-top: auto;
+}
+
+select {
+    background-color: black;
+    color: white;
+
+    font-family: "MS Gothic", "terminus", "nec_apc";
+
+    height: 20px;
+}
+
+.panel .tab-menu {
+    width: calc(384px + 32px);
+    display: flex;
+    flex-direction: column;
+}
+
+.tab-options {
+    justify-content: left;
+
+    background-color: #333;
+    border: 1px solid gray;
+
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.tab-options .button {
+    padding-left: 8px;
+    padding-right: 8px;
+
+    margin-left: 8px;
+}
+
+.tab-options .selected {
+    height: 25px;
+
+    z-index: 999;
+    margin-bottom: 7px;
+    padding-bottom: 9px;
+
+    color: white;
+
+    border: 1px solid gray;
+    border-bottom: unset;
+
+    background-color: #111;
+
+    filter: unset;
+}
+
+.panel .hideable-tab {
+    display: none;
+
+    background-color: #111;
+    border: 1px solid gray;
+}
+
+.panel .hideable-tab.visible {
+    display: block;
+}
+
+.panel .hideable-tab .rows {
+    margin-left: 8px;
+    margin-right: 8px;
+}
+
+.option {
+    display: flex;
+    flex-direction: row;
+
+    margin: 8px 8px 8px 8px;
+}
+
+.option * {
+    margin: 0px;
+    font-family: "MS Gothic";
+}
+
+.option.short-input {
+    justify-content: space-between;
+    align-items: center;
+}
+
+.option.checkbox {
+    justify-content: space-between;
+    align-items: center;
+}
+
+.option.input {
+    flex-direction: column;
+    align-items: start;
+}
+
+.option.hstack-input {
+    flex-direction: row;
+    align-items: start;
+}
+
+.option.hstack-input .short {
+    width: 48px;
+}
+
+.option.hstack-input .longer {
+    width: 128px;
+}
+
+.option.short-input input, .option.hstack-input input {
+    font-family: "MS Gothic", "terminus", "nec_apc";
+    background-color: black;
+    color: white;
+    box-shadow: none;
+    font-size: 16px;
+    width: 64px;
+    margin-left: 16px;
+}
+
+.option.checkbox input {
+    width: 16px;
+    min-width: 16px;
+    min-height: 16px;
+    height: 16px;
+    accent-color: dimgray;
+}
+
+.option.input input {
+    font-family: "MS Gothic", "terminus", "nec_apc";
+    background-color: black;
+    color: white;
+    box-shadow: none;
+    font-size: 16px;
+    width: calc(100% - 8px);
+    margin-top: 4px;
+}
+
+.option.opt-list {
+    flex-direction: column;
+}
+
+.option.opt-list .opts {
+    display: flex;
+    flex-direction: column;
+
+    margin-top: 8px;
+}
+
+.option.opt-list .opts {
+    margin-left: 32px;
+}

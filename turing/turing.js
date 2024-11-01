@@ -210,7 +210,7 @@ class SimulationController {
             rgb[3] = 255;
             // console.log(rgb);
 
-            this.palette.push((rgb[3] << 24 >>> 0) + (rgb[2] << 16) + (rgb[1] << 8) + (rgb[0] << 1));
+            this.palette.push((rgb[3] << 24 >>> 0) + (rgb[2] << 16) + (rgb[1] << 8) + (rgb[0] << 0));
         }
 
         this.sim_steps = 0;

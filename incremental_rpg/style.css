@@ -1,0 +1,43 @@
+.panel {
+    display: inline-flex;
+
+    background-color: #114;
+}
+
+.panel .panel-inner {
+    margin: 8px 8px 8px 8px;
+}
+
+.panel .panel-inner * {
+    margin: 0;
+}
+
+.panel .panel-inner {
+    font-family: "MS Gothic";
+    font-size: 16px;
+    color: white;
+
+    background-color: #226;
+}
+
+.shadow {
+    text-shadow: 1px 1px black;
+}
+
+.line {
+    display: block;
+    white-space: pre;
+}
+
+.stacked {
+    display: grid;
+}
+
+.stacked * {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.line.bar * {
+    white-space: pre;
+}

@@ -271,6 +271,17 @@ function weighted_random_from_arr(arr) {
     }
 }
 
+function weighted_seeded_random_from_arr(arr, rand) {
+    // assumes weights are in the first index of the array
+    let val = rand();
+    for (let i=0; i<arr.length; i++) {
+        val -= arr[i][0];
+        if (val < 0) {
+            return arr[i];
+        }
+    }
+}
+
 class Vector2 {
     constructor(x, y) {
         this.x = x;
@@ -443,6 +454,145 @@ class Vector2 {
     }
 }
 
+class Vector3 {
+    constructor(x, y, z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+
+    static zero = new Vector3(0, 0, 0);
+
+    static from_hash_code(code) {
+        return new Vector3(
+            (code-1) % (1000000*1000000),
+            Math.floor((code-1) / 1000000) % 1000000,
+            Math.floor((code-1) / (1000000*1000000)),
+        );
+    }
+
+    static from_angles(alpha_rad, beta_rad, r) {
+        throw Error("not implemented");
+    }
+
+    toString() {
+        return `(${this.x}, ${this.y}, ${this.z})`;
+    }
+
+    hash_code() {
+        return (this.z * 1000000 * 1000000) + (this.y * 1000000) + this.x + 1;
+    }
+
+    equals(other) {
+        return this.x == other.x && this.y == other.y && this.z == other.z;
+    }
+
+    copy() {
+        return new Vector3(this.x, this.y, this.z);
+    }
+
+    neg() {
+        return new Vector3(-this.x, -this.y, -this.z);
+    }
+
+    add(other) {
+        return new Vector3(this.x + other.x, this.y + other.y, this.z + other.z);
+    }
+
+    sub(other) {
+        return this.add(other.neg());
+    }
+
+    mul(other) {
+        return new Vector3(this.x * other, this.y * other, this.z * other);
+    }
+
+    div(other) {
+        return new Vector3(this.x / other, this.y / other, this.z / other);
+    }
+
+    sqr_magnitude() {
+        return Math.pow(this.x, 2) + Math.pow(this.y, 2) + Math.pow(this.z, 2)
+    }
+
+    magnitude() {
+        return Math.sqrt(this.sqr_magnitude());
+    }
+
+    normalize() {
+        if (this.sqr_magnitude() == 0) {
+            return this;
+        }
+
+        return this.div(this.magnitude());
+    }
+
+    sqr_distance(other) {
+        return this.sub(other).sqr_magnitude();
+    }
+
+    distance(other) {
+        return this.sub(other).magnitude();
+    }
+
+    round_dp(dp) {
+        let f = Math.pow(10, dp);
+        return new Vector3(Math.round(this.x * f) / f, Math.round(this.y * f) / f, Math.round(this.z * f) / f);
+    }
+
+    round() {
+        return new Vector3(Math.round(this.x), Math.round(this.y), Math.round(this.z));
+    }
+
+    floor() {
+        return new Vector3(Math.floor(this.x), Math.floor(this.y), Math.floor(this.z));
+    }
+
+    ceil() {
+        return new Vector3(Math.ceil(this.x), Math.ceil(this.y), Math.ceil(this.z));
+    }
+
+    wrap(bounds) {
+        return new Vector2(this.x % bounds.x, this.y % bounds.y, this.z % bounds.z);
+    }
+
+    rotate_towards(other, theta_max, return_angle_rotated=false) {
+        throw Error("not implemented");
+    }
+
+    rotate(rad) {
+        throw Error("not implemented");
+    }
+
+    angle() {
+        throw Error("not implemented");
+    }
+
+    dot(other) {
+        return (this.x * other.x) + (this.y * other.y) + (this.z * other.z);
+    }
+
+    angle_between(other) {
+        throw Error("not implemented");
+    }
+
+    mask(x, y, z) {
+        return new Vector2(this.x * x, this.y * y, this.z * z);
+    }
+
+    divmask(x, y) {
+        return new Vector2(this.x / x, this.y / y, this.z / z);
+    }
+
+    lerp(to, amt) {
+        return new Vector3(
+            lerp(this.x, to.x, amt),
+            lerp(this.y, to.y, amt),
+            lerp(this.z, to.z, amt)
+        )
+    }
+}
+
 class Colour {
     static from_array(arr) {
         return new Colour(
@@ -488,6 +638,10 @@ class Colour {
 
     lerp(to, amt) {
         return Colour.from_array(lerp_arr(this.data, to.data, amt, true));
+    }
+
+    copy() {
+        return new Colour(this.r, this.g, this.b, this.a);
     }
 
     css() {

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang = "en-US">
+<head>
+	<meta charset = "UTF-8">
+	<title>turing</title>
+	<meta content="plaao.net >> particles" property="og:title" />
+    <meta content="individual agents en masse" property="og:description" />
+    <meta content="https://plaao.net" property="og:url" />
+    <meta content="https://plaao.net/bej/green_funny.png" property="og:image" />
+    <meta content="#cccccc" data-react-helmet="true" name="theme-color" />
+	<meta name="viewport" content="width=1920, initial-scale=1, user-scalable=yes" />
+
+	<link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=01"/>
+	<link rel="stylesheet" type="text/css" href="particles.css?v=03"/>
+</head>
+<body>
+	<div class="topbar">
+		<p class="right-text" style="font-size: 2vmin; color:#ccc;">you have been looking at pixels move for <span class="important" id="session-time">00:00:00</span> in this session, <span class="important" id="all-time">00:00:00:00</span> total and <span class="important" id="global-time">00:00:00:00</span> across all plaao.net games</p>
+	</div>
+
+    <div class="everything-container">
+        <div class="panel leftside">
+            <div class="columns">
+                <div id="particles_settings_menu" class="tab-menu">
+                    <div id="particles_settings_select_buttons" class="rows tab-options">
+                        <p id="settings_main_select_button" class="button longer" onclick="set_selected_category('options', 'main');">Main</p>
+                        <p id="settings_collision_select_button" class="button longer" onclick="set_selected_category('options', 'collision');">Collision</p>
+                        <p id="settings_gravity_select_button" class="button longer" onclick="set_selected_category('options', 'gravity');">Gravity</p>
+                        <p id="settings_creation_select_button" class="button longer" onclick="set_selected_category('options', 'creation');">Creation</p>
+                        <p id="settings_other_select_button" class="button longer" onclick="set_selected_category('options', 'other');">Other</p>
+                    </div>
+
+                    <!-- .particle elements are queried at load and set up so that clicking them selects them. other elements are "hardcoded" (ish) -->
+                    <!-- 
+                    TODO write ui for navigating possibly nested particle information
+                    -->
+                    <div class="hideable-tab" id="options_main">
+                        <div class="option short-input">
+                            <p>Code</p>
+                            <input type="text" value="" placeholder="PART" id="option_main_code">
+                        </div>
+                        <div class="option input">
+                            <p>Description</p>
+                            <input type="text" value="" placeholder="A normal particle." id="option_main_desc">
+                        </div>
+                        <div class="option short-input">
+                            <p>Lifetime (s)</p>
+                            <input type="text" value="" placeholder="10" id="option_main_life">
+                        </div>
+                        <div class="option short-input">
+                            <p>Colour</p>
+                            <input type="text" value="" placeholder="#ff2bff" id="option_main_colour">
+                        </div>
+                        <div class="option short-input">
+                            <p>Trail length (s)</p>
+                            <input type="text" value="" placeholder="1" id="option_main_trail_length">
+                        </div>
+                        <div class="option short-input">
+                            <p>Mass</p>
+                            <input type="text" value="" placeholder="1" id="option_main_mass">
+                        </div>
+                    </div>
+
+                    <div class="hideable-tab" id="options_collision">
+                        <div class="option checkbox">
+                            <p>Enable collision</p>
+                            <input type="checkbox" id="option_enable_collision">
+                        </div>
+                        <div class="option opt-list">
+                            <p>Collision</p>
+                            <div class="opts">
+                                <div class="option-group">
+                                    <div class="option hstack-input">
+                                        <p>On collision w/</p>
+                                        <input class="short" type="text" value="" placeholder="PART" id="option_collision_1_type">
+                                        <p>:</p>
+                                        <input class="longer" type="text" value="" placeholder="Dropdown" id="option_collision_1_type">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="" id="generation_options">
+                    <p class="button longer" style="margin-top: 8px" onclick="generate_new_random()">Random</p>
+                    <p class="button longer" style="margin-top: 0px" onclick="alert('sorry, not yet!')">Find "interesting"</p>
+                </div>
+            </div>
+        </div>
+        <div class="middle">
+            <canvas class="display-canvas" id="display-canvas" width="512" height="512"></canvas>
+            <div class="speed-controls">
+                <p class="speed-control label">Speed</p>
+                <div class="buttons">
+                    <p class="speed-control button" onclick="mod_simulation_speed(event, 0.5)">-</p>
+                    <p class="speed-control label" onclick="paused = !paused; update_sim_speed_display()" ondblclick="reset_simulation_speed()" id="speed_display">1x</p>
+                    <p class="speed-control button" onclick="mod_simulation_speed(event, 2)">+</p>
+                </div>
+                <p class="speed-control label grey" id="speed_display_detailed">-</p>
+                <p class="speed-control label grey" id="speed_display_detailed_avg">Average</p>
+            </div>
+        </div>
+        <div class="panel rightside">
+            <div id="particles_tools_menu" class="tab-menu">
+                <div id="particles_tools_select_buttons" class="rows tab-options">
+                    <p id="tools_tools_select_button" class="button longer" onclick="set_selected_category('tools', 'tools');">Tools</p>
+                    <p id="tools_presets_select_button" class="button longer" onclick="set_selected_category('tools', 'presets');">Presets</p>
+                    <p id="tools_imported_select_button" class="button longer" onclick="set_selected_category('tools', 'imported');">Imported</p>
+                    <p id="tools_custom_select_button" class="button longer" onclick="set_selected_category('tools', 'custom');">Custom</p>
+                </div>
+                <div class="hideable-tab" id="tools_tools">
+                    <div class="option particle">
+                        <p>PGRV</p>
+                    </div>
+                    <div class="option particle">
+                        <p>NGRV</p>
+                    </div>
+                    <div class="option particle">
+                        <p>REMV</p>
+                    </div>
+                </div>
+                
+                <div class="hideable-tab" id="tools_presets">
+                    <div class="option particle">
+                        <p>PART</p>
+                    </div>
+                    <div class="option particle">
+                        <p>SPRK</p>
+                    </div>
+                    <div class="option particle">
+                        <p>REMV</p>
+                    </div>
+                </div>
+
+                <div class="hideable-tab" id="tools_imported">
+                    <div class="option particle">
+                        <p>THNG</p>
+                    </div>
+                </div>
+
+                <div class="hideable-tab" id="tools_custom">
+                    <div class="option particle">
+                        <p>THNG</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+	<div class="bottombar" id="normal-bottombar">
+		<p class="left-text" style="font-size: 3vmin">turing v1.0 | turing<br>
+			<span class="white" style="font-size: 2vmin;">original idea: <a style="position: relative; bottom: 0px; top: 0px; left: 0px; color: #08d" href="https://maximecb.github.io/Turing-Drawings">https://maximecb.github.io/Turing-Drawings</a></span>
+        </p>
+		<p class="right-text" style="bottom:3vh; font-size: 2vmin; color:#ccc;">written in pure JS/HTML</p>
+		<p style="font-size: 2vmin"><a class="right-text" style="color:#f20; font-size: 2vmin" href="../index.html" > << go back >> </a></p>
+	</div>
+	
+	<script src="../shared/js/helpers.js?v=01"></script>
+	
+    <script src="particles.js?v=00"></script>
+
+	<script src="../shared/js/playtime.js?v=00"></script>
+</body>
+</html>
