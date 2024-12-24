@@ -7,6 +7,25 @@ const SMALLEST_ALLOWED_TIME_GAP = 1;
 const LARGEST_ALLOWED_TIME_GAP = 25;
 const MAX_CALCS_PER_FRAME = 10;
 
+// TODO make this work with equipped items too, then figure out an equipping / comparison UI (copy the item display panel ig?)
+// then do equipping/unequipping
+// cant change equipment while in a battle btw
+function inventory_mouseover(index) {
+    // also show the infoscreen here, but for now just mark it as not new
+    if (player.inventory[index].is_new) {
+        player.inventory[index].is_new = false;
+        player.mark_change("inventory");
+
+        render_inventory(player);
+    }
+
+    render_selected_item(player, player.inventory[index]);
+}
+
+function equipped_mouseover(categ) {
+    render_selected_item(player, player.equipped_items[categ]);
+}
+
 let test_location = new GameLocation(
     "Test area", "TST", [], [
         [{msg: "This is a test dialogue tree", next: [
@@ -17,7 +36,7 @@ let test_location = new GameLocation(
                 entity_template_list["training_dummy"]
             ])}
         ]}]
-    ], false, new Encounter(["training_dummy", "training_dummy", "training_dummy"], 4), 10
+    ], false, new Encounter(["training_dummy", "training_dummy_2", "training_dummy_3"], 4), 10
 )
 
 let game_state = {
@@ -33,6 +52,9 @@ let game_state = {
 document.addEventListener("DOMContentLoaded", function() {
     enemy_stats_parent_elem = document.querySelector(".panel.enemy-panel .panel-inner");
     player_stats_parent_elem = document.querySelector(".panel.player-panel .panel-inner");
+    map_parent_elem = document.querySelector(".panel.map-panel .panel-inner");
+
+    setup_bars();
 
     let update_fn = function() {
         let looping = true;
@@ -58,15 +80,70 @@ document.addEventListener("DOMContentLoaded", function() {
                     render_entity_stats(cur_battle.ent2, enemy_stats_parent_elem);
 
                     cur_battle.step(final_delta_time);
+
+                    render_entity_stats(cur_battle.ent1, player_stats_parent_elem);
+                    render_entity_stats(cur_battle.ent2, enemy_stats_parent_elem);
                     
                     // need to check for victory here and grant skill XP and stuff.
                     // then, regenerate the entity.
+                    if (cur_battle.ent1.hp == 0) {
+                        // player lost battle - teleport to most recent safe zone and refresh entity
+
+                        // just refresh entity for now
+                        game_state.cur_encounter = null;
+                        cur_battle = null;
+                        player.refresh_entity(null, false, 100);
+                    } else if (cur_battle.ent2.hp == 0) {
+                        // skill XP granted is base XP of enemy, multiplied by number of items equipped that the skill grants proficiency to,
+                        // divided by the maximum number of items that could be
+                        // so, weapon is /1, artifact is /2, armour is /4, Combat is static 1x always
+                        let equipped_item_types = player.get_equipped_item_types();
+                        
+                        // for each skill, check the number of relevant item types and divide by max num applicable items. Combat is ignored and done separately
+                        Object.keys(skills_list).forEach(sk => {
+                            let skill_info = skills_list[sk];
+
+                            if (sk != "unarmed_mastery" && sk != "combat") {
+                                let total_relevant_items = skill_info.items_for_proficiency.reduce((prev, cur) => prev + (equipped_item_types[cur] ? equipped_item_types[cur] : 0), 0);
+                                
+                                let final_xp_mul = total_relevant_items / skill_info.max_num_applicable_items;
+
+                                player.gain_skill_xp(sk, Math.ceil(final_xp_mul * cur_battle.ent2.template.xp_value));
+                            } else {
+                                switch (sk) {
+                                    case "unarmed_mastery":
+                                        // check for unarmed flag
+                                        if (equipped_item_types.unarmed) {
+                                            player.gain_skill_xp(sk, Math.ceil(1 * cur_battle.ent2.template.xp_value));
+                                        }
+                                        break;
+
+                                    case "combat":
+                                        // always
+                                        player.gain_skill_xp(sk, Math.ceil(1 * cur_battle.ent2.template.xp_value));
+                                        break;
+                                }
+                            }
+
+                            // TEST
+                            // player.gain_skill_xp(sk, Math.ceil(Math.random() * 30));
+                        });
+
+                        // TODO item drops, cultivation skills, etc
+
+                        // destroy the battle object and recreate the player entity (skills, effects etc reset but hp not restored)
+                        render_entity_stats(cur_battle.ent2, enemy_stats_parent_elem);
+                        cur_battle = null;
+                        player.refresh_entity(null, true);
+                    }
                 } else if (game_state.cur_encounter) {
                     game_state.encounter_timeout -= final_delta_time;
-                    if (game_state.encounter_index > game_state.cur_encounter.enemies.length || game_state.encounter_timeout <= 0) {
-                        if (game_state.encounter_index > game_state.cur_encounter.enemies.length) {
+                    if (game_state.encounter_index >= game_state.cur_encounter.enemies.length || game_state.encounter_timeout <= 0) {
+                        if (game_state.encounter_index >= game_state.cur_encounter.enemies.length) {
                             // end encounter, including rewards(?). for now just destroy it
                             game_state.cur_encounter = null;
+                            cur_battle = null;
+                            player.refresh_entity(null, false, 100);
                         } else {
                             let template = game_state.cur_encounter.get_entity_at_index(game_state.encounter_index);
                             cur_battle = new Battle(
@@ -82,14 +159,14 @@ document.addEventListener("DOMContentLoaded", function() {
                     // should probably have some kind of Game object that handles this, then would call step() on this
                     game_state.time_until_encounter -= final_delta_time;
                     if (game_state.time_until_encounter <= 0) {
-                        game_state.time_until_encounter += game_state.location.default_encounter_wait_time;
+                        game_state.time_until_encounter = game_state.location.default_encounter_wait_time;
 
                         // start encounter
                         game_state.cur_encounter = game_state.location.default_encounter;
                         game_state.encounter_timeout = 0;
                         game_state.encounter_index = 0;
 
-                        // still need to implement safe zones. will do all of that once multiple in-a-row battles are tested
+                        // still need to implement safe zones. will do navigation and movement and all of that once multiple in-a-row battles are tested
                     }
                 }
             } else {
@@ -97,8 +174,33 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         }
 
-        render_tracked_skill_progress(player);
+        render_inventory(player);
+        render_equipped_items(player);
+
+        if (player.check_change("skills")) {
+            render_skills_list(player);
+            render_tracked_skill_progress(player);
+        }
+
         render_entity_stats(player.stored_entity, player_stats_parent_elem);
+
+        if (game_state.cur_encounter) {
+            make_bar_with_text(
+                map_parent_elem.querySelector("#encounter_time p"),
+                `Time until next fight (${game_state.encounter_index} / ${game_state.cur_encounter.enemies.length})|${Math.round(game_state.encounter_timeout * 1) / 1}s`,
+                map_parent_elem.querySelector("#encounter_time .bar"),
+                map_intercombat_bar_style, game_state.encounter_timeout, game_state.cur_encounter.time_between, 
+                MAP_PANEL_LENGTH, false, true
+            )
+        } else {
+            make_bar_with_text(
+                map_parent_elem.querySelector("#encounter_time p"),
+                `Time until encounter|${Math.round(game_state.time_until_encounter * 1) / 1}s`,
+                map_parent_elem.querySelector("#encounter_time .bar"),
+                map_encounter_bar_style, game_state.time_until_encounter, game_state.location.default_encounter_wait_time, 
+                MAP_PANEL_LENGTH, false, true
+            )
+        }
 
         window.requestAnimationFrame(update_fn);
     };
@@ -119,23 +221,150 @@ document.addEventListener("DOMContentLoaded", function() {
         }
 
         if (e.code == "KeyQ") {
+            player.inventory.push(
+                new Item("Rock", "Rock!!!!!!!!!!", "Rock effect", 1, null, null, [Item.Tag.QUEST])
+            )
+
+            player.inventory.push(
+                new Item("Spiritual thing", "Idk", "makes you [[#f00]]strong", 1, null, null, [Item.Tag.SPIRITUAL])
+            )
+
+            player.inventory.push(
+                new Item("Crumpled Piece of Paper", "Blank.", "[[#f00]]Still [[clear]]blank", 1)
+            )
+
+            Object.keys(ITEM_TYPE).forEach(k => {
+                let flats = {};
+                let muls = {};
+                ["MHP", "ATK", "ATT", "DEF", "MDF", "SPD", "ACC", "EVA"].forEach(stat => {
+                    [flats, muls].forEach((f, index) => {
+                        if (Math.random() < 0.3) {
+                            f[stat] = Math.round(Math.random() * 20);
+                            if (index == 1) {
+                                f[stat] /= 20;
+                            }
+                        }
+                    })
+                });
+
+                if (k.includes("ARMOUR")) {
+                    [EquipComponent.SubType.HEAD, EquipComponent.SubType.BODY, EquipComponent.SubType.ARMS, EquipComponent.SubType.LEGS].forEach(sk => {
+                        player.inventory.push(
+                            new Item(`Equippable ${k} ${sk}`, "dont think too hard about it", "nope", 1, new EquipComponent(
+                                ITEM_TYPE[k], 1, flats, muls, null, [], sk
+                            ))
+                        )
+                    })
+                } else {
+                    player.inventory.push(
+                        new Item(`Equippable ${k}`, "dont think too hard about it", "nope", 1, new EquipComponent(
+                            ITEM_TYPE[k], 1, flats, muls, null, []
+                        ))
+                    )
+                }
+            })
+
+            player.inventory.push(
+                new Item(`Sword of God`, "REAL???", "Gives you power of god", 1, new EquipComponent(
+                    ITEM_TYPE.SWORD, 1, {
+                        MHP: 999,
+                        ATK: 999,
+                        ATT: 999,
+                        DEF: 999,
+                        MDF: 999,
+                        SPD: 999,
+                        ACC: 999,
+                        EVA: 999,
+                    }, {
+                        MHP: 9.99,
+                        ATK: 9.99,
+                        ATT: 9.99,
+                        DEF: 9.99,
+                        MDF: 9.99,
+                        SPD: 9.99,
+                        ACC: 9.99,
+                        EVA: 9.99,
+                    }, "thousandfold_divide", []
+                ), null, [], true, [
+                    ["artifact_mastery", 2,], ["sword_mastery", 6]
+                ])
+            )
+
+            player.inventory.push(
+                new Item("Single Blade of Grass", "just one", "1", 1, null, new UseComponent(
+                    true, 1, 1
+                ))
+            )
+
+            player.inventory.push(
+                new Item("Firecrackers", "blow up!", "---", 1, null, new UseComponent(
+                    true, 1, 0
+                ))
+            )
+
+            player.inventory.push(
+                new Item("Healing Salve", "it takes 12 hours to work", "Restore 50 HP", 1, null, new UseComponent(
+                    true, 0, 1
+                ))
+            )
+
+            player.inventory.push(
+                new Item("Lots of Blades of Grass", "enough to last a lifetime", "Grants +10 ATK, +50% DEF, +10 SPD and -10 EVA", 1, null, new UseComponent(
+                    false, 1, 1
+                ))
+            )
+
+            player.inventory.push(
+                new Item("Get out of Battle Free Card", "Lifetime membership!", "---", 1, null, new UseComponent(
+                    false, 1, 0
+                ))
+            )
+
+            player.inventory.push(
+                new Item("Patience Test", "Restores 1HP", "---", 1, null, new UseComponent(
+                    false, 0, 1
+                ))
+            )
+
             player.equipped_items["WEAPON"] = new Item(
-                "Wooden Knife", "This is a wooden knife for testing purposes", ITEM_TYPE.KNIFE,
-                5, {ATK: 15, SPD: 6}, {MHP: 2}, "wooden_sword_moment", []
+                "Wooden Sword", "This is a wooden sword for testing purposes", "---", 1,
+                new EquipComponent(
+                    ITEM_TYPE.SWORD, 5, {ATK: 2, SPD: 6}, {MHP: 2}, "wooden_sword_moment", []
+                )
             )
             
-            player.tracked_skills[1] = "knife_mastery";
-            player.skill_levels["knife_mastery"] = 100;
+            // TODO actually make sure armour items are restricted to a certain slot (LOL)
+            player.equipped_items["BODY"] = new Item(
+                "Good Ass Everything Armour", "cloth", "---", 1,
+                new EquipComponent(
+                    ITEM_TYPE.LIGHT_ARMOUR, 5, {DEF: 100000}, {}, "", []
+                )
+            )
+
+            player.equipped_items["ARTIFACT1"] = new Item(
+                "Artifact That Gives You \"Parry\"", "Look, it's there now!", "---", 1,
+                new EquipComponent(
+                    ITEM_TYPE.DIVINE_ARTIFACT, 0, {}, {}, "parry", []
+                )
+            )
+
+            player.tracked_skills[1] = "sword_mastery";
+            player.skill_levels["sword_mastery"] = 0;
+            player.skill_xp["sword_mastery"] = 0;
+
+            player.tracked_skills[2] = "knife_mastery";
+            player.skill_levels["knife_mastery"] = 0;
             player.skill_xp["knife_mastery"] = 0;
 
-            player.tracked_skills[2] = "hammer_mastery";
-            player.skill_levels["hammer_mastery"] = 72;
-            player.skill_xp["hammer_mastery"] = 1832;
-
-            player.skill_levels["combat"] = 49;
-            player.skill_xp["combat"] = 2532;
+            player.skill_levels["divine_artifact_mastery"] = 100;
+            player.skill_xp["combat"] = 0;
 
             player.refresh_entity();
+            player.mark_change("inventory");
+            player.mark_change("equipment");
+            player.mark_change("skills");
+
+            // TODO need to also refresh the display of the currently moused over item every time the inventory changes
 
             game_state.time_until_encounter = game_state.location.default_encounter_wait_time;
         }

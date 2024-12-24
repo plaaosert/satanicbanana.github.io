@@ -18,69 +18,78 @@
             <div class="panel-inner">
                 <p class="line" id="name">You</p>
                 <div class="line stacked" id="hp">
-                    <div class="line bar">
+                    <div class="bar">
                         
                     </div>
-                    <p class="line shadow"></p>
+                    <p class="shadow"></p>
                 </div>
                 <br>
-                <div class="line stacked" id="tracked_skill_0">
-                    <div class="line bar">
+                <div class="line stacked clickable" id="tracked_skill_0">
+                    <div class="bar">
                         
                     </div>
-                    <p class="line shadow"></p>
+                    <p class="shadow"></p>
                 </div>
-                <div class="line stacked" id="tracked_skill_1">
-                    <div class="line bar">
+                <div class="line stacked clickable" id="tracked_skill_1">
+                    <div class="bar">
                         
                     </div>
-                    <p class="line shadow"></p>
+                    <p class="shadow"></p>
                 </div>
-                <div class="line stacked" id="tracked_skill_2">
-                    <div class="line bar">
+                <div class="line stacked clickable" id="tracked_skill_2">
+                    <div class="bar">
                         
                     </div>
-                    <p class="line shadow"></p>
+                    <p class="shadow"></p>
                 </div>
                 <br>
                 <!-- Player abilities -->
                 <div class="line stacked" id="ability_0">
-                    <div class="line bar">
+                    <div class="bar">
                         
                     </div>
-                    <p class="line shadow"></p>
+                    <p class="shadow"></p>
                 </div>
                 <div class="line stacked" id="ability_1">
-                    <div class="line bar">
+                    <div class="bar">
                         
                     </div>
-                    <p class="line shadow"></p>
+                    <p class="shadow"></p>
                 </div>
                 <div class="line stacked" id="ability_2">
-                    <div class="line bar">
+                    <div class="bar">
                         
                     </div>
-                    <p class="line shadow"></p>
+                    <p class="shadow"></p>
                 </div>
                 <div class="line stacked" id="ability_3">
-                    <div class="line bar">
+                    <div class="bar">
                         
                     </div>
-                    <p class="line shadow"></p>
+                    <p class="shadow"></p>
                 </div>
                 <div class="line stacked" id="ability_4">
-                    <div class="line bar">
+                    <div class="bar">
                         
                     </div>
-                    <p class="line shadow"></p>
+                    <p class="shadow"></p>
                 </div>
                 <div class="line stacked" id="ability_5">
-                    <div class="line bar">
+                    <div class="bar">
                         
                     </div>
-                    <p class="line shadow"></p>
+                    <p class="shadow"></p>
                 </div>
-                <p class="line shadow" id="test_label"></p>
+                <p class="shadow" id="test_label1"></p>
+                <p class="shadow" id="test_label2"></p>
+                <p class="shadow" id="test_label3"></p>
+                <p class="shadow" id="test_label4"></p>
+                <p class="shadow" id="test_label5"></p>
+                <p class="shadow" id="test_label6"></p>
+                <p class="shadow" id="test_label7"></p>
+                <p class="shadow" id="test_label8"></p>
+                <p class="shadow" id="test_label9"></p>
+                <p class="shadow" id="test_label10"></p>
             </div>
         </div>
 
@@ -88,62 +97,141 @@
             <div class="panel-inner">
                 <p class="line" id="name">You</p>
                 <div class="line stacked" id="hp">
-                    <div class="line bar">
+                    <div class="bar">
                         
                     </div>
-                    <p class="line shadow"></p>
+                    <p class="shadow"></p>
                 </div>
                 <br>
                 <!-- Enemy abilities -->
                 <div class="line stacked" id="ability_0">
-                    <div class="line bar">
+                    <div class="bar">
                         
                     </div>
-                    <p class="line shadow"></p>
+                    <p class="shadow"></p>
                 </div>
                 <div class="line stacked" id="ability_1">
-                    <div class="line bar">
+                    <div class="bar">
                         
                     </div>
-                    <p class="line shadow"></p>
+                    <p class="shadow"></p>
                 </div>
                 <div class="line stacked" id="ability_2">
-                    <div class="line bar">
+                    <div class="bar">
                         
                     </div>
-                    <p class="line shadow"></p>
+                    <p class="shadow"></p>
                 </div>
                 <div class="line stacked" id="ability_3">
-                    <div class="line bar">
+                    <div class="bar">
                         
                     </div>
-                    <p class="line shadow"></p>
+                    <p class="shadow"></p>
                 </div>
                 <div class="line stacked" id="ability_4">
-                    <div class="line bar">
+                    <div class="bar">
                         
                     </div>
-                    <p class="line shadow"></p>
+                    <p class="shadow"></p>
                 </div>
                 <div class="line stacked" id="ability_5">
-                    <div class="line bar">
+                    <div class="bar">
                         
                     </div>
-                    <p class="line shadow"></p>
+                    <p class="shadow"></p>
                 </div>
             </div>
         </div>
 
-        <div class="map-panel">
-            <p class="line" id="area_name">The location</p>
-            <div class="line stacked" id="encounter_time">
-                <div class="line bar">
-                    
+        <div class="panel map-panel">
+            <div class="panel-inner">
+                <p class="line" id="area_name">The location</p>
+                <div class="line stacked" id="encounter_time">
+                    <div class="bar">
+                        
+                    </div>
+                    <p class="shadow">Time to encounter</p>
                 </div>
-                <p class="line shadow">Time to encounter</p>
-            </div>
-            <div class="map">
+                <br>
+                <p class="line shadow">Map goes here</p>
+                <p class="line shadow">-----</p>
+                <div class="map">
 
+                </div>
+            </div>
+        </div>
+
+        <div class="panel map-panel">
+            <div class="panel-inner">
+                <p class="line shadow">Inventory <a id="inventory_max_slots">(2/32)</a></p>
+                <br>
+                <p class="line shadow"> <a class="clickable" id="inventory_sort_method"> = Name                   </a> <a class="clickable"> ▾ </a> </p>
+                <!-- <p class="line shadow"> ------------------------------ </p> !-->
+                <div class="linelist" id="inventory">
+
+                </div>
+            </div>
+        </div>
+
+        <div class="panel equipment-panel">
+            <div class="panel-inner">
+                <p class="line shadow">Equipment</p>
+                <br>
+                <p class="line shadow">Weapon     <a onmouseover="equipped_mouseover('WEAPON')" class="clickable dimgrey" id="equipment_weapon">---                             </a></p>
+                <br>
+                <p class="line shadow">Head       <a onmouseover="equipped_mouseover('HEAD')" class="clickable dimbrown" id="equipment_head">---                             </a></p>
+                <p class="line shadow">Body       <a onmouseover="equipped_mouseover('BODY')" class="clickable dimbrown" id="equipment_body">---                             </a></p>
+                <p class="line shadow">Arms       <a onmouseover="equipped_mouseover('ARMS')" class="clickable dimbrown" id="equipment_arms">---                             </a></p>
+                <p class="line shadow">Legs       <a onmouseover="equipped_mouseover('LEGS')" class="clickable dimbrown" id="equipment_legs">---                             </a></p>
+                <br>
+                <p class="line shadow">Artifacts  <a onmouseover="equipped_mouseover('ARTIFACT1')" class="clickable dimgreen" id="equipment_artifact1">---                             </a></p>
+                <p class="line shadow">           <a onmouseover="equipped_mouseover('ARTIFACT2')" class="clickable dimgreen" id="equipment_artifact2">---                             </a></p>
+            </div>
+        </div>
+
+        <div class="panel skills-panel">
+            <div class="panel-inner">
+                <p class="line shadow">Skills</p>
+                <br>
+                <div class="linelist" id="skills">
+
+                </div>
+            </div>
+        </div>
+
+        <!-- whenever this updates, it needs to look at the current font size as well, and check all that stuff, because the max width will need to be recalculated -->
+        <div class="panel item-info-overlay-panel" id="item_info_overlay_panel">
+            <div class="panel-inner" style="background-color: rgb(36, 18, 0); width: calc(8px * 48)">
+                <p class="line" style="color: white" id="item_info_name">Item name                       </p>
+                <p class="line" id="item_info_subname" style="color: #aaf">- Item descriptor -</p>
+                <p class="line wrap" id="item_info_reqskills">List of required skills</p>
+                <br>
+                <p class="line wrap" style="color: #ddd" id="item_info_effect">Item special effects</p>
+                <div id="item_equip">
+                    <br>
+                    <div id="item_info_skill_grant">
+                        <p>Grants skill <span style="color: #0cf">Skill name</span></p>
+                        <br>
+                    </div>
+
+                    <p id="item_info_stat_MHP" class="line" style="color: rgb(214, 100, 100)">MHP     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
+                    <p id="item_info_stat_ATK" class="line" style="color: rgb(255, 56, 0)">ATK     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
+                    <p id="item_info_stat_ATT" class="line" style="color: rgb(80, 140, 255)">ATT     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
+                    <p id="item_info_stat_DEF" class="line" style="color: rgb(192, 192, 192)">DEF     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
+                    <p id="item_info_stat_MDF" class="line" style="color: rgb(100, 140, 192)">MDF     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
+                    <p id="item_info_stat_SPD" class="line" style="color: rgb(80, 192, 80)">SPD     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
+                    <p id="item_info_stat_ACC" class="line" style="color: rgb(120, 180, 120)">ACC     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
+                    <p id="item_info_stat_EVA" class="line" style="color: rgb(192, 56, 192)">EVA     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
+                </div>
+                <div id="item_use">
+                    <br>
+                    <p id="item_info_use_battle" style="color: rgb(160, 0, 0)">Item battle usability</p>
+                    <p id="item_info_use_field" style="color: rgb(0, 120, 0)">Item field usability</p>
+                    <br>
+                    <p id="item_info_use_consumed" style="color: rgb(160, 160, 160)">Item consumption on use</p>
+                </div>
+                <br>
+                <p class="line wrap" style="color: #999" id="item_info_desc">Item flavour text</p>
             </div>
         </div>
     </div>

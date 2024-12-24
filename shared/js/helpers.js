@@ -646,7 +646,7 @@ class Colour {
 
     css() {
         let data = this.data;
-        return `rgba(${data[0]}, ${data[1]}, ${data[2]}, ${data[3]})`;
+        return `rgba(${data[0]}, ${data[1]}, ${data[2]}, ${data[3] / 255})`;
     }
 }
 

@@ -1,5 +1,17 @@
+body {
+    background-color: #444;
+}
+
+.game-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
 .panel {
     display: inline-flex;
+
+    margin: 8px 8px 8px 8px;
 
     background-color: #114;
 }
@@ -10,6 +22,7 @@
 
 .panel .panel-inner * {
     margin: 0;
+    user-select: none;
 }
 
 .panel .panel-inner {
@@ -18,6 +31,24 @@
     color: white;
 
     background-color: #226;
+}
+
+.panel.item-info-overlay-panel {
+    margin: 0;
+
+    position: absolute;
+    top: calc(16px * 26);
+    left: calc(8px * 120);
+}
+
+.clickable:hover {
+    background-color: rgb(48, 48, 48);
+    filter: brightness(2);
+}
+
+.clickable:active {
+    background-color: rgb(48, 48, 48);
+    filter: brightness(4);
 }
 
 .shadow {
@@ -29,6 +60,10 @@
     white-space: pre;
 }
 
+.line.wrap {
+    text-wrap: auto;
+}
+
 .stacked {
     display: grid;
 }
@@ -38,6 +73,25 @@
     grid-row: 1;
 }
 
-.line.bar * {
+.line .bar {
+    display: flex;
+}
+
+.line .bar * {
     white-space: pre;
+}
+
+.dimgrey {
+    color:rgb(100, 100, 100);
+    background-color: rgb(36, 18, 0);
+}
+
+.dimbrown {
+    color:rgb(140, 96, 32);
+    background-color: rgb(36, 18, 0);
+}
+
+.dimgreen {
+    color:rgb(90, 160, 90);
+    background-color: rgb(36, 18, 0);
 }
