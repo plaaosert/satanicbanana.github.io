@@ -204,6 +204,10 @@ function setup_skills_list(player) {
             console.log(`mouseover for skill ${bar_parent.getAttribute("target_skill")}`)
         })
 
+        bar_parent.addEventListener("mouseout", e => {
+            console.log(`mouseout for skill ${bar_parent.getAttribute("target_skill")}`)
+        })
+
         let text = document.createElement("p");
         text.classList.add("shadow");
 
@@ -321,6 +325,10 @@ function render_inventory(player) {
         let idx = indexes[index];
         elem.addEventListener("mouseover", e => {
             inventory_mouseover(idx);
+        });
+
+        elem.addEventListener("mouseout", e => {
+            interactable_item_mouseout();
         });
 
         inventory_div.appendChild(elem);

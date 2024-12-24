@@ -1105,6 +1105,64 @@ class Player {
         return false;
     }
 
+    can_equip_item(item, slot) {
+        // check skills, dont worry about slot matching
+        return item.requires_skills.reduce((prev, skill_req) => {
+            return prev && this.skill_levels[skill_req[0]] >= skill_req[1]
+        }, true)
+    }
+
+    equip_item(item, slot, place_replaced_in_inventory=true) {
+        let replaced_item = this.equipped_items[slot];
+        this.equipped_items[slot] = item;
+
+        this.mark_change("inventory");
+        this.mark_change("equipment");
+
+        this.refresh_entity(null, true);
+
+        if (place_replaced_in_inventory && replaced_item) {
+            this.add_item_to_inventory(replaced_item);
+            return true;
+        } else {
+            return replaced_item;
+        }
+    }
+
+    add_item_to_inventory(item, insert_at_index, bypass_inventory_cap=false) {
+        if (this.inventory.length < this.inventory_max_slots-1 || bypass_inventory_cap) {
+            if (insert_at_index) {
+                this.inventory.splice(insert_at_index, 0, item);
+            } else {
+                this.inventory.push(item);
+            }
+            this.mark_change("inventory");
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    remove_item_from_inventory(index) {
+        this.mark_change("inventory");
+        return this.inventory.splice(index, 1);
+    }
+
+    unequip_item_from_slot(slot, place_item_in_inventory=true) {
+        this.mark_change("inventory");
+        this.mark_change("equipment");
+
+        let unequipped_item = this.equipped_items[slot];
+        if (unequipped_item) {
+            if (place_item_in_inventory) {
+                this.add_item_to_inventory(unequipped_item);
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     get_equipped_item_types() {
         let total_item_types = {};
         Object.keys(this.equipped_items).forEach(p => {

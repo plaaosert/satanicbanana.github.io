@@ -1,5 +1,11 @@
 let player = Player.new("plaaosert");
 
+let mouseover_item = {
+    item: null,
+    index: -1,
+    slot: null
+}
+
 let cur_battle = null;
 let last_frame = 0;
 let game_speed = 8;
@@ -7,10 +13,37 @@ const SMALLEST_ALLOWED_TIME_GAP = 1;
 const LARGEST_ALLOWED_TIME_GAP = 25;
 const MAX_CALCS_PER_FRAME = 10;
 
-// TODO make this work with equipped items too, then figure out an equipping / comparison UI (copy the item display panel ig?)
-// then do equipping/unequipping
-// cant change equipment while in a battle btw
+function equip_button_pressed(keyindex) {
+    console.log(mouseover_item);
+    if (mouseover_item.item) {
+        if (mouseover_item.index != -1) {
+            // inventory
+            inventory_equip(mouseover_item.index, keyindex);
+        } else if (mouseover_item.slot && keyindex == 1) {
+            // equipped item
+            equipped_unequip(mouseover_item.slot);
+        }
+    }
+}
+
+function interactable_item_mouseover() {
+    // show the panel
+    document.getElementById("item_info_overlay_panel").style.display = "";
+}
+
+function interactable_item_mouseout() {
+    document.getElementById("item_info_overlay_panel").style.display = "none";
+    mouseover_item = {
+        item: null,
+        index: -1,
+        slot: null
+    }
+}
+
+// TODO figure out an equipping / comparison UI (copy the item display panel ig?)
 function inventory_mouseover(index) {
+    interactable_item_mouseover();
+
     // also show the infoscreen here, but for now just mark it as not new
     if (player.inventory[index].is_new) {
         player.inventory[index].is_new = false;
@@ -20,10 +53,80 @@ function inventory_mouseover(index) {
     }
 
     render_selected_item(player, player.inventory[index]);
+
+    mouseover_item.item = player.inventory[index];
+    mouseover_item.index = index;
+    mouseover_item.slot = null;
+}
+
+function inventory_equip(index, artifact_target) {
+    // artifact_target only matters if the item is an artifact.
+    // can only equip while not busy (in a battle, or in an event)
+    if (!(cur_battle || game_state.cur_option_state)) {
+        let item = player.inventory[index];
+        let slot = null;
+        
+        if (item.equip_component) {
+            switch (item.equip_component.equippable_type) {
+                case ITEM_TYPE.KNIFE:
+                case ITEM_TYPE.SWORD:
+                case ITEM_TYPE.POLEARM:
+                case ITEM_TYPE.AXE:
+                case ITEM_TYPE.HAMMER:
+                case ITEM_TYPE.MARTIAL_WEAPON:
+                    slot = "WEAPON";
+                    break;
+
+                case ITEM_TYPE.LIGHT_ARMOUR:
+                case ITEM_TYPE.MEDIUM_ARMOUR:
+                case ITEM_TYPE.HEAVY_ARMOUR:
+                    slot = item.equip_component.subtype.toUpperCase();
+                    break;
+
+                case ITEM_TYPE.INNER_ARTIFACT:
+                case ITEM_TYPE.OUTER_ARTIFACT:
+                case ITEM_TYPE.DIVINE_ARTIFACT:
+                    slot = `ARTIFACT${artifact_target}`;
+                    break;
+            }
+
+            if (slot) {
+                if (player.can_equip_item(item, slot)) {
+                    player.remove_item_from_inventory(index);
+                    let replaced_item = player.equip_item(item, slot, false);
+                    if (replaced_item) {
+                        player.add_item_to_inventory(replaced_item, index);
+                    }
+                } else {
+                    // no skills, cant equip
+                }
+            } else {
+                // no slot, cant equip
+            }
+        } else {
+            // cant equip
+        }
+    }
 }
 
 function equipped_mouseover(categ) {
+    interactable_item_mouseover();
+
     render_selected_item(player, player.equipped_items[categ]);
+
+    mouseover_item.item = player.equipped_items[categ];
+    mouseover_item.index = -1;
+    mouseover_item.slot = categ;
+}
+
+function equipped_unequip(categ) {
+    if (!(cur_battle || game_state.cur_option_state)) {
+        if (player.inventory.length < player.inventory_max_slots-1) {
+            player.unequip_item_from_slot(categ);
+        } else {
+            // can't unequip, inventory is full
+        }
+    }
 }
 
 let test_location = new GameLocation(
@@ -45,7 +148,9 @@ let game_state = {
     encounter_index: -1,
 
     location: test_location,
-    cur_encounter: null
+    cur_encounter: null,
+
+    cur_option_state: null,
 }
 
 
@@ -220,16 +325,24 @@ document.addEventListener("DOMContentLoaded", function() {
             game_speed /= 2;
         }
 
+        if (e.code == "KeyE") {
+            equip_button_pressed(1);
+        }
+
+        if (e.code == "KeyR") {
+            equip_button_pressed(2);
+        }
+
         if (e.code == "KeyQ") {
-            player.inventory.push(
+            player.add_item_to_inventory(
                 new Item("Rock", "Rock!!!!!!!!!!", "Rock effect", 1, null, null, [Item.Tag.QUEST])
             )
 
-            player.inventory.push(
+            player.add_item_to_inventory(
                 new Item("Spiritual thing", "Idk", "makes you [[#f00]]strong", 1, null, null, [Item.Tag.SPIRITUAL])
             )
 
-            player.inventory.push(
+            player.add_item_to_inventory(
                 new Item("Crumpled Piece of Paper", "Blank.", "[[#f00]]Still [[clear]]blank", 1)
             )
 
@@ -249,14 +362,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
                 if (k.includes("ARMOUR")) {
                     [EquipComponent.SubType.HEAD, EquipComponent.SubType.BODY, EquipComponent.SubType.ARMS, EquipComponent.SubType.LEGS].forEach(sk => {
-                        player.inventory.push(
+                        player.add_item_to_inventory(
                             new Item(`Equippable ${k} ${sk}`, "dont think too hard about it", "nope", 1, new EquipComponent(
                                 ITEM_TYPE[k], 1, flats, muls, null, [], sk
                             ))
                         )
                     })
                 } else {
-                    player.inventory.push(
+                    player.add_item_to_inventory(
                         new Item(`Equippable ${k}`, "dont think too hard about it", "nope", 1, new EquipComponent(
                             ITEM_TYPE[k], 1, flats, muls, null, []
                         ))
@@ -264,7 +377,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             })
 
-            player.inventory.push(
+            player.add_item_to_inventory(
                 new Item(`Sword of God`, "REAL???", "Gives you power of god", 1, new EquipComponent(
                     ITEM_TYPE.SWORD, 1, {
                         MHP: 999,
@@ -290,37 +403,37 @@ document.addEventListener("DOMContentLoaded", function() {
                 ])
             )
 
-            player.inventory.push(
+            player.add_item_to_inventory(
                 new Item("Single Blade of Grass", "just one", "1", 1, null, new UseComponent(
                     true, 1, 1
                 ))
             )
 
-            player.inventory.push(
+            player.add_item_to_inventory(
                 new Item("Firecrackers", "blow up!", "---", 1, null, new UseComponent(
                     true, 1, 0
                 ))
             )
 
-            player.inventory.push(
+            player.add_item_to_inventory(
                 new Item("Healing Salve", "it takes 12 hours to work", "Restore 50 HP", 1, null, new UseComponent(
                     true, 0, 1
                 ))
             )
 
-            player.inventory.push(
+            player.add_item_to_inventory(
                 new Item("Lots of Blades of Grass", "enough to last a lifetime", "Grants +10 ATK, +50% DEF, +10 SPD and -10 EVA", 1, null, new UseComponent(
                     false, 1, 1
                 ))
             )
 
-            player.inventory.push(
+            player.add_item_to_inventory(
                 new Item("Get out of Battle Free Card", "Lifetime membership!", "---", 1, null, new UseComponent(
                     false, 1, 0
                 ))
             )
 
-            player.inventory.push(
+            player.add_item_to_inventory(
                 new Item("Patience Test", "Restores 1HP", "---", 1, null, new UseComponent(
                     false, 0, 1
                 ))
@@ -337,7 +450,7 @@ document.addEventListener("DOMContentLoaded", function() {
             player.equipped_items["BODY"] = new Item(
                 "Good Ass Everything Armour", "cloth", "---", 1,
                 new EquipComponent(
-                    ITEM_TYPE.LIGHT_ARMOUR, 5, {DEF: 100000}, {}, "", []
+                    ITEM_TYPE.LIGHT_ARMOUR, 5, {DEF: -10}, {}, "", [], EquipComponent.SubType.BODY
                 )
             )
 
