@@ -3,9 +3,14 @@ game_id = "trade";
 let settlement = null;
 let industry = null;
 
-async function debug_test_all() {
+async function debug_test_all(generate_seed) {
     console.log("doing tile map")
-    let world = await debug_load_maps_then_tile();
+    let world = null;
+    if (generate_seed) {
+        world = World.generate(new Vector2(1024, 1024), generate_seed)
+    } else {
+        world = await debug_load_maps_then_tile();
+    }
 
     let game = new Game(world, [
         new Settlement(

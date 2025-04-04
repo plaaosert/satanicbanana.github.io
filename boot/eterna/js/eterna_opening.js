@@ -1,18 +1,23 @@
-const LOADSPEED = 100;
+const LOADSPEED = 2;
+const LOADASPEED_ICONS = 0.3;
 
 function load_eterna(ignore_login) {
     // Animate the background image
-    setTimeout(function() {
-        document.body.style.backgroundColor = "#00202F";
-    }, 1800 / LOADSPEED);
-
-    setTimeout(function() {
-        document.body.style.backgroundColor = "#00404F";
-    }, 2400 / LOADSPEED);
-
-    setTimeout(function() {
+    if (ignore_login) {
         document.body.style.backgroundColor = "#00807F";
-    }, 3200 / LOADSPEED);
+    } else {
+        setTimeout(function() {
+            document.body.style.backgroundColor = "#00202F";
+        }, 1800 / LOADSPEED);
+    
+        setTimeout(function() {
+            document.body.style.backgroundColor = "#00404F";
+        }, 2400 / LOADSPEED);
+    
+        setTimeout(function() {
+            document.body.style.backgroundColor = "#00807F";
+        }, 3200 / LOADSPEED);   
+    }
 
     setTimeout(function() {
         if (!ignore_login) {
@@ -49,7 +54,7 @@ function load_icons() {
 
                 setTimeout(function() {
                     icon.style.visibility = "visible";
-                }, time_waited / LOADSPEED);
+                }, time_waited / (LOADSPEED * LOADASPEED_ICONS));
             };
 
             f(i);

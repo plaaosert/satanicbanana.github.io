@@ -24,19 +24,19 @@
                     <p class="shadow"></p>
                 </div>
                 <br>
-                <div class="line stacked clickable" id="tracked_skill_0">
+                <div class="line stacked clickable" id="tracked_skill_0" onmouseover="skill_mouseover(player.tracked_skills[0])" onmouseleave="skill_mouseout()">
                     <div class="bar">
                         
                     </div>
                     <p class="shadow"></p>
                 </div>
-                <div class="line stacked clickable" id="tracked_skill_1">
+                <div class="line stacked clickable" id="tracked_skill_1" onmouseover="skill_mouseover(player.tracked_skills[1])" onmouseleave="skill_mouseout()">
                     <div class="bar">
                         
                     </div>
                     <p class="shadow"></p>
                 </div>
-                <div class="line stacked clickable" id="tracked_skill_2">
+                <div class="line stacked clickable" id="tracked_skill_2" onmouseover="skill_mouseover(player.tracked_skills[2])" onmouseleave="skill_mouseout()">
                     <div class="bar">
                         
                     </div>
@@ -44,37 +44,37 @@
                 </div>
                 <br>
                 <!-- Player abilities -->
-                <div class="line stacked" id="ability_0">
+                <div class="line stacked ability_0" onmouseover="ability_mouseover(1, 0)" onmouseleave="ability_mouseout()" id="player_ability_0">
                     <div class="bar">
                         
                     </div>
                     <p class="shadow"></p>
                 </div>
-                <div class="line stacked" id="ability_1">
+                <div class="line stacked ability_1" onmouseover="ability_mouseover(1, 1)" onmouseleave="ability_mouseout()" id="player_ability_1">
                     <div class="bar">
                         
                     </div>
                     <p class="shadow"></p>
                 </div>
-                <div class="line stacked" id="ability_2">
+                <div class="line stacked ability_2" onmouseover="ability_mouseover(1, 2)" onmouseleave="ability_mouseout()" id="player_ability_2">
                     <div class="bar">
                         
                     </div>
                     <p class="shadow"></p>
                 </div>
-                <div class="line stacked" id="ability_3">
+                <div class="line stacked ability_3" onmouseover="ability_mouseover(1, 3)" onmouseleave="ability_mouseout()" id="player_ability_3">
                     <div class="bar">
                         
                     </div>
                     <p class="shadow"></p>
                 </div>
-                <div class="line stacked" id="ability_4">
+                <div class="line stacked ability_4" onmouseover="ability_mouseover(1, 4)" onmouseleave="ability_mouseout()" id="player_ability_4">
                     <div class="bar">
                         
                     </div>
                     <p class="shadow"></p>
                 </div>
-                <div class="line stacked" id="ability_5">
+                <div class="line stacked ability_5" onmouseover="ability_mouseover(1, 5)" onmouseleave="ability_mouseout()" id="player_ability_5">
                     <div class="bar">
                         
                     </div>
@@ -94,7 +94,20 @@
         </div>
 
         <div class="panel enemy-panel">
-            <div class="panel-inner">
+            <div class="panel-inner" id="map-interaction" style="width: calc(var(--FONTSIZE_HALF) * 48); display: none">
+                <p class="line wrap" style="margin-left: var(--FONTSIZE); margin-right: var(--FONTSIZE)">
+<span style="color: rgb(48, 192, 48)">Old Man Yang</span>:<br>
+"You have learned well, my son. Here's an upgrade."<br>
+It's a <span class="clickable" style="color: var(--col-highlight)">[Sword ass sword]</span>
+                </p>
+                <p class="line">------------------------------------------------</p>
+                <div class="linelist">
+                    <p class="line clickable map-selection-1"><br>                    Take it                     <br><br></p>
+                    <p class="line clickable map-selection-2"><br>      Challenge him to a duel to the death      <br><br></p>
+                </div>
+            </div>
+
+            <div class="panel-inner" id="enemy-panel" style="width: calc(var(--FONTSIZE_HALF) * 48)">
                 <p class="line" id="name">You</p>
                 <div class="line stacked" id="hp">
                     <div class="bar">
@@ -104,37 +117,37 @@
                 </div>
                 <br>
                 <!-- Enemy abilities -->
-                <div class="line stacked" id="ability_0">
+                <div class="line stacked ability_0" onmouseover="ability_mouseover(2, 0)" onmouseleave="ability_mouseout()" id="enemy_ability_0">
                     <div class="bar">
                         
                     </div>
                     <p class="shadow"></p>
                 </div>
-                <div class="line stacked" id="ability_1">
+                <div class="line stacked ability_1" onmouseover="ability_mouseover(2, 1)" onmouseleave="ability_mouseout()" id="enemy_ability_1">
                     <div class="bar">
                         
                     </div>
                     <p class="shadow"></p>
                 </div>
-                <div class="line stacked" id="ability_2">
+                <div class="line stacked ability_2" onmouseover="ability_mouseover(2, 2)" onmouseleave="ability_mouseout()" id="enemy_ability_2">
                     <div class="bar">
                         
                     </div>
                     <p class="shadow"></p>
                 </div>
-                <div class="line stacked" id="ability_3">
+                <div class="line stacked ability_3" onmouseover="ability_mouseover(2, 3)" onmouseleave="ability_mouseout()" id="enemy_ability_3">
                     <div class="bar">
                         
                     </div>
                     <p class="shadow"></p>
                 </div>
-                <div class="line stacked" id="ability_4">
+                <div class="line stacked ability_4" onmouseover="ability_mouseover(2, 4)" onmouseleave="ability_mouseout()" id="enemy_ability_4">
                     <div class="bar">
                         
                     </div>
                     <p class="shadow"></p>
                 </div>
-                <div class="line stacked" id="ability_5">
+                <div class="line stacked ability_5" onmouseover="ability_mouseover(2, 5)" onmouseleave="ability_mouseout()" id="enemy_ability_5">
                     <div class="bar">
                         
                     </div>
@@ -199,9 +212,9 @@
             </div>
         </div>
 
-        <!-- whenever this updates, it needs to look at the current font size as well, and check all that stuff, because the max width will need to be recalculated -->
-        <div class="panel item-info-overlay-panel" id="item_info_overlay_panel">
-            <div class="panel-inner" style="background-color: rgb(36, 18, 0); width: calc(8px * 48)">
+        <!-- whenever overlays update, they need to look at the current font size as well, and check all that stuff, because the max width will need to be recalculated -->
+        <div class="panel overlay-panel item-info-overlay-panel" id="item_info_overlay_panel" style="display: none">
+            <div class="panel-inner" style="background-color: rgb(36, 18, 0); width: calc(var(--FONTSIZE_HALF) * 48)">
                 <p class="line" style="color: white" id="item_info_name">Item name                       </p>
                 <p class="line" id="item_info_subname" style="color: #aaf">- Item descriptor -</p>
                 <p class="line wrap" id="item_info_reqskills">List of required skills</p>
@@ -214,14 +227,16 @@
                         <br>
                     </div>
 
-                    <p id="item_info_stat_MHP" class="line" style="color: rgb(214, 100, 100)">MHP     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
-                    <p id="item_info_stat_ATK" class="line" style="color: rgb(255, 56, 0)">ATK     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
-                    <p id="item_info_stat_ATT" class="line" style="color: rgb(80, 140, 255)">ATT     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
-                    <p id="item_info_stat_DEF" class="line" style="color: rgb(192, 192, 192)">DEF     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
-                    <p id="item_info_stat_MDF" class="line" style="color: rgb(100, 140, 192)">MDF     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
-                    <p id="item_info_stat_SPD" class="line" style="color: rgb(80, 192, 80)">SPD     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
-                    <p id="item_info_stat_ACC" class="line" style="color: rgb(120, 180, 120)">ACC     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
-                    <p id="item_info_stat_EVA" class="line" style="color: rgb(192, 56, 192)">EVA     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
+                    <p id="item_info_stat_MHP" class="line" style="color: var(--stat-MHP)">MHP     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
+                    <p id="item_info_stat_ATK" class="line" style="color: var(--stat-ATK)">ATK     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
+                    <p id="item_info_stat_ATT" class="line" style="color: var(--stat-ATT)">ATT     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
+                    <p id="item_info_stat_DEF" class="line" style="color: var(--stat-DEF)">DEF     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
+                    <p id="item_info_stat_MDF" class="line" style="color: var(--stat-MDF)">MDF     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
+                    <p id="item_info_stat_SPD" class="line" style="color: var(--stat-SPD)">SPD     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
+                    <p id="item_info_stat_ACC" class="line" style="color: var(--stat-ACC)">ACC     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
+                    <p id="item_info_stat_EVA" class="line" style="color: var(--stat-EVA)">EVA     <span class="stat-flat-bonus">+10       </span><span class="stat-mult-bonus">+15%</span></p>
+                    <br>
+                    <p id="item_info_stat_weight" class="line" style="color: rgb(255, 192, 192)">Weight: <span class="stat-flat-bonus">1         </span> (<span style="color: var(--stat-spd)">SPD</span> -<span class="stat-spd-minus">1</span>, <span style="color: var(--stat-spd)">ACC</span>/<span style="color: var(--stat-spd)">EVA</span> -<span class="stat-acceva-minus">1</span>)</p>
                 </div>
                 <div id="item_use">
                     <br>
@@ -232,6 +247,28 @@
                 </div>
                 <br>
                 <p class="line wrap" style="color: #999" id="item_info_desc">Item flavour text</p>
+            </div>
+        </div>
+
+        <div class="panel overlay-panel ability-info-overlay-panel" id="ability_info_overlay_panel" style="display: none">
+            <div class="panel-inner" style="background-color: rgb(18, 18, 48); width: calc(var(--FONTSIZE_HALF) * 48)">
+                <p class="line" style="color: white" id="ability_info_name">Ability name                    </p>
+                <br>
+                <p class="line wrap" style="color: #ddd" id="ability_info_effect">Ability effect</p>
+                <br>
+                <p class="line" style="color: #ddd">Base cooldown: <span style="color:var(--col-highlight)" id="ability_info_base_cooldown">2</span>s (after modifiers: <span style="color:var(--col-highlight)" id="ability_info_final_cooldown">2</span>s)</p>
+            </div>
+        </div>
+
+        <div class="panel overlay-panel skill-info-overlay-panel" id="skill_info_overlay_panel" style="display: none">
+            <div class="panel-inner" style="background-color: rgb(18, 18, 48); width: calc(var(--FONTSIZE_HALF) * 56)">
+                <p class="line" style="color: white" id="skill_info_name">Skill name                      </p>
+                <br>
+                <p class="line wrap" style="color: white" id="skill_info_desc">Skill description</p>
+                <br>
+                <div class="linelist" id="skill_info_bonus_list">
+
+                </div>
             </div>
         </div>
     </div>

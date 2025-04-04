@@ -1,5 +1,83 @@
 body {
+    --FONTSIZE: 16px;
+    --FONTSIZE_HALF: calc(var(--FONTSIZE) / 2);
+
     background-color: #444;
+
+    --stat-HP: rgb(214, 100, 100);
+    --stat-SCRIMBLO: rgb(214, 100, 100);
+    --stat-MHP: rgb(214, 100, 100);
+    --stat-ATK: rgb(255, 56, 0);
+    --stat-ATT: rgb(80, 140, 255);
+    --stat-DEF: rgb(192, 192, 192);
+    --stat-MDF: rgb(100, 140, 192);
+    --stat-SPD: rgb(80, 192, 80);
+    --stat-ACC: rgb(120, 180, 120);
+    --stat-EVA: rgb(192, 56, 192);
+
+    --col-highlight: #4df;
+    --col-highlight-negative: #f00;
+    
+    --col-ability-physical: #d22;
+    --col-ability-magical: #66f;
+
+    --col-skill-needed: #f00;
+
+    --col-item-type-spiritual-fg: rgb(160, 224, 255);
+    --col-item-type-spiritual-bg: rgb(24, 60, 128);
+    --col-item-type-spiritual-sbg: rgb(24, 24, 24);
+
+    --col-item-type-quest-fg: rgb(240, 240, 0);
+    --col-item-type-quest-bg: rgb(64, 64, 0);
+    --col-item-type-quest-sbg: rgb(32, 32, 0);
+
+    --col-item-type-equippable-default-fg: rgb(160, 160, 160);
+    --col-item-type-equippable-weapon-sametype-fg: rgb(255, 255, 255);
+    --col-item-type-equippable-weapon-difftype-fg: rgb(160, 160, 160);
+    --col-item-type-equippable-armour-sametype-fg: rgb(255, 238, 173);
+    --col-item-type-equippable-armour-difftype-fg: rgb(192, 132, 64);
+    --col-item-type-equippable-artifact-inner-fg: rgb(144, 238, 144);
+    --col-item-type-equippable-artifact-outer-fg: rgb(216, 185, 255);
+    --col-item-type-equippable-artifact-divine-fg: rgb(255, 207, 64);
+    --col-item-type-equippable-bg: rgb(36, 18, 0);
+    --col-item-type-equippable-sbg: rgb(36, 18, 0);
+
+    --col-item-type-usable-both-fg: rgb(255, 255, 255);
+    --col-item-type-usable-battle-fg: rgb(242, 140, 40);
+    --col-item-type-usable-field-fg: rgb(173, 216, 230);
+    --col-item-type-usable-consumed-bg: rgb(24, 32, 16);
+    --col-item-type-usable-notconsumed-bg: rgb(16, 24, 32);
+    --col-item-type-usable-consumed-sbg: rgb(24, 32, 16);
+    --col-item-type-usable-notconsumed-sbg: rgb(16, 24, 32);
+
+    --col-item-battle: rgb(180, 0, 0);
+    --col-item-field: rgb(0, 160, 0);
+    --col-item-disabled: rgb(96, 96, 96);
+    --col-item-consumed: rgb(160, 160, 160);
+    --col-item-not-consumed: rgb(64, 128, 255);
+
+    --col-item-default: rgb(32, 32, 32);
+
+    --col-skill-milestone-normal: rgb(255, 255, 255);
+    --col-skill-milestone-equip-dependent: rgb(224, 224, 255);
+    --col-skill-milestone-unlock-ability: rgb(192, 255, 192);
+    --col-skill-milestone-special: rgb(255, 192, 128);
+
+    --col-skill-milestone-normal-locked: rgb(128, 128, 128);
+    --col-skill-milestone-equip-dependent-locked: rgb(96, 96, 160);
+    --col-skill-milestone-unlock-ability-locked: rgb(64, 128, 64);
+    --col-skill-milestone-special-locked: rgb(160, 128, 64);
+
+    --col-map-selection-1: rgba(0, 80, 64, 0.2);
+    --col-map-selection-2: rgba(0, 80, 64, 0.4);
+}
+
+.map-selection-1 {
+    background-color: var(--col-map-selection-1);
+}
+
+.map-selection-2 {
+    background-color: var(--col-map-selection-2);
 }
 
 .game-container {
@@ -11,13 +89,13 @@ body {
 .panel {
     display: inline-flex;
 
-    margin: 8px 8px 8px 8px;
+    margin: var(--FONTSIZE_HALF) var(--FONTSIZE_HALF) var(--FONTSIZE_HALF) var(--FONTSIZE_HALF);
 
     background-color: #114;
 }
 
 .panel .panel-inner {
-    margin: 8px 8px 8px 8px;
+    margin: var(--FONTSIZE_HALF) var(--FONTSIZE_HALF) var(--FONTSIZE_HALF) var(--FONTSIZE_HALF);
 }
 
 .panel .panel-inner * {
@@ -27,18 +105,18 @@ body {
 
 .panel .panel-inner {
     font-family: "MS Gothic";
-    font-size: 16px;
+    font-size: var(--FONTSIZE);
     color: white;
 
     background-color: #226;
 }
 
-.panel.item-info-overlay-panel {
+.panel.overlay-panel {
     margin: 0;
 
     position: absolute;
-    top: calc(16px * 26);
-    left: calc(8px * 120);
+    top: calc(var(--FONTSIZE) * 26);
+    left: calc(var(--FONTSIZE_HALF) * 120);
 }
 
 .clickable:hover {

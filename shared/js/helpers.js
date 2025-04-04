@@ -70,8 +70,12 @@ function make_line(a, b, bound_rect) {
     }
 }
 
-function random_int(min_inclusive, max_exclusive) {
-    return min_inclusive + Math.floor(Math.random() * (max_exclusive - min_inclusive));
+function random_int(min_inclusive, max_exclusive, rand=null) {
+    return min_inclusive + Math.floor((rand ? rand : Math.random)() * (max_exclusive - min_inclusive));
+}
+
+function random_float(min_inclusive, max_exclusive, rand=null) {
+    return min_inclusive + ((rand ? rand : Math.random)() * (max_exclusive - min_inclusive));
 }
 
 function lerp(from, to, amt, round=false) {
@@ -89,15 +93,17 @@ function lerp_arr(from, to, amt, round=false) {
 }
 
 // https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
-function shuffle(arr) {
+function shuffle(arr, random=null) {
     return arr
-        .map(value => ({ value, sort: Math.random() }))
+        .map(value => ({ value, sort: random ? random : Math.random() }))
         .sort((a, b) => a.sort - b.sort)
         .map(({ value }) => value)
 }
 
 const NumberFormat = {
-    SCIENTIFIC: 0
+    SCIENTIFIC: 0,
+    SHORT: 1,
+    METRIC: 2,
 }
 
 function format_number(val, typ, max_val=1e6) {
@@ -280,6 +286,11 @@ function weighted_seeded_random_from_arr(arr, rand) {
             return arr[i];
         }
     }
+}
+
+function balance_weighted_array(arr) {
+    let sum = arr.reduce((p, c) => p + c[0], 0);
+    return arr.map(t => [t[0] / sum, ...t.slice(1)]);
 }
 
 class Vector2 {
@@ -623,7 +634,7 @@ class Colour {
         this.r = r;
         this.g = g;
         this.b = b;
-        this.a = a == undefined ? 255 : a;
+        this.a = a ? a : 255;
     
         this.data = Array(4);
         this.get_data();
@@ -644,9 +655,13 @@ class Colour {
         return new Colour(this.r, this.g, this.b, this.a);
     }
 
-    css() {
+    css(ignore_alpha=false) {
         let data = this.data;
-        return `rgba(${data[0]}, ${data[1]}, ${data[2]}, ${data[3] / 255})`;
+        if (ignore_alpha) {
+            return `rgb(${data[0]}, ${data[1]}, ${data[2]})`;
+        } else {
+            return `rgba(${data[0]}, ${data[1]}, ${data[2]}, ${data[3] / 255})`;
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-const DEBUG = false;
+const DEBUG = true;
 const SUPER_DEBUG = false;
 
 function seeded_xy_random(seed, x, y) {
@@ -416,11 +416,11 @@ class World {
             },
 
             tectonics: {
-                min_plates: 2,
-                max_plates: 4,
+                min_plates: 4,
+                max_plates: 8,
                 plate_variation_strength: 0.1,
-                plate_max_effect_per_step: 0.007,
-                plate_effect_range: 256,  // effect scales linearly downwards based on distance
+                plate_max_effect_per_step: 0.004,
+                plate_effect_range: 64,  // effect scales linearly downwards based on distance
                 divergent_plate_chance: 0.5,
                 plate_boundary_accuracy: 0.05, // chance to miss a plate boundary point when finding the distance of a tile from it
             },
@@ -435,8 +435,8 @@ class World {
                 min_source_temp: 273 + 0,
                 max_source_temp: 273 + 35,
 
-                temperature_spread_proportion: 0.8,
-                temperature_spread_steps: 16,
+                temperature_spread_proportion: 0.7,
+                temperature_spread_steps: 4,
             },
 
             water: {
@@ -447,7 +447,7 @@ class World {
                 max_infinite_water_source_flow_amt: 100,
 
                 water_spread_factor: 0.7,
-                water_spread_steps: 32,
+                water_spread_steps: 3,
 
                 evaporation_base: 0.06,
                 evaporation_per_temp_above_273: 0.03,
@@ -461,8 +461,8 @@ class World {
                 min_rain_regions: 16,
                 max_rain_regions: 32,
 
-                min_rain_region_size: 16,
-                max_rain_region_size: 64,
+                min_rain_region_size: 8,
+                max_rain_region_size: 32,
 
                 min_rain_region_intensity: 0.2,
                 max_rain_region_intensity: 0.5,
@@ -481,8 +481,8 @@ class World {
                 min_wind_source_intensity: 3,
                 max_wind_source_intensity: 10,
 
-                min_wind_source_r: 64,
-                max_wind_source_r: 256,
+                min_wind_source_r: 32,
+                max_wind_source_r: 128,
 
                 altitude_wind_push: 0.05,  // positive altitude
                 altitude_wind_pull: 0.02, // negative altitude
@@ -493,19 +493,19 @@ class World {
             },
 
             erosion: {
-                wind_erosion_strength: 0.018,  // tries to shave off the difference between the tile and the next tallest immediate neighbour
+                wind_erosion_strength: 0.0004,  // tries to shave off the difference between the tile and the next tallest immediate neighbour
                                               // proportion is based on this
                 wind_erosion_range: 3,        // range of tiles to check for wind - totals together all wind sources above 0 and averages them
-                water_direct_erosion_strength: 0.055,  // height removed in direct water movement path, per unit of water moved
+                water_direct_erosion_strength: 0.045,  // height removed in direct water movement path, per unit of water moved
 
                 water_neighbour_erosion_range: 2,  // strength of erosion scales linearly
-                water_neighbour_erosion_strength: 0.0275,  // height removed from taller neighbours, per unit of water moved
+                water_neighbour_erosion_strength: 0.0235,  // height removed from taller neighbours, per unit of water moved
             
                 min_height: -20,
             },
 
             simulation: {
-                steps: 15
+                steps: 150
             }
         }
 
@@ -1306,7 +1306,7 @@ class World {
                 let tile = candidate_tiles.items[Math.floor(seeded_xy_random(seed, x, y) * candidate_tiles.items.length)];
 
                 if (DEBUG) {
-                    let c = Colour.from_hex(tile_info[tile].col);
+                    let c = tile_info[tile].col;
                     layers.debug_front.ctx.fillStyle = c.css();
                     layers.debug_front.ctx.fillRect(x, y, 1, 1);
 

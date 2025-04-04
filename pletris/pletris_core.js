@@ -25,6 +25,9 @@ class PletrisCore {
     }
 
     reset_mods() {
+        this.random = get_seeded_randomiser();
+        this.now = Date.now();
+
         this.mods = [];
         this.keybinds = {
             [PletrisKeybind.UP]: "ArrowUp",
@@ -41,41 +44,56 @@ class PletrisCore {
         }
 
         this.board = []
-        this.exposed_variables = ["das", "arr"];
+
+        // {name, min, max}
+        this.exposed_variables = [];
+
         this.variables = {
-            "das": DEFAULT_DAS,
-            "arr": DEFAULT_ARR,
-            "board_x": 0,
-            "board_y": 0
+
         }
 
         this.active_piece = {
-            structure: null,  // list of {offset, blockskin}. the offset is based around an origin of 0
-            pos: new Vector2(0, 0)
+            structure: null,  // list of {offset, blockskin, col}. the offset is based around an origin of 0
+            pos: new Vector2(0, 0),
+            rotation: 0,
+            rotation_origin_offset: new Vector2(0, 0)
         }
 
         this.mod_functions = {
-            "on_game_start": null,              // (this, {}) Called once when the game starts (after the user selects variables)
-            "on_piece_ready_to_spawn": null,    // (this, {}) Called every frame where there is no currently active piece in the matrix.
-            "on_piece_spawned": null,           // (this, {piece) Called after a piece is spawned.
+            // two main types of function: "on" and "do". "on" happens after an action is made, "do" is the actual action.
+             "on_game_start": null,              // (this, {}) Called once when the game starts (after the user selects variables)
+             "on_piece_ready_to_spawn": null,    // (this, {}) Called every frame where there is no currently active piece in the matrix.
+             "on_piece_spawned": null,           // (this, {piece) Called after a piece is spawned.
             "on_piece_lock": null,              // (this, {piece) Called once when a piece locks, before it enters the board.
             "on_piece_move": null,              // (this, {piece, pos_delta}) Called once when a piece moves in any direction.
             "on_piece_rotate": null,            // (this, {piece, rotation_degrees}) Called once when a piece rotates in either direction.
-            "on_frame": null,                   // (this, {}) Called once per frame.
+            "on_board_change": null,            // (this, {}) Called whenever a change is made to a piece on the board.
+            "on_line_clear": null,              // (this, {}) Called whenever a line is cleared.
+             "on_frame": null,                   // (this, {}) Called once per frame.
+
             "do_spawn_piece": null,             // (this, {}) Called to spawn a new piece.
-            "do_move_piece": null,              // (this, {}) Called to move a piece.
-            "do_lock_piece": null,              // (this, {}) Called to lock a piece.
-            "do_rotate_piece": null,            // (this, {rotation_degrees}) Called to rotate a piece.
-            "on_board_change": null,            // (this, {})
-            "": null,
-            "": null,
-            "": null,
-            "": null
+            "do_piece_lock": null,              // (this, {}) Called to lock a piece.
+            "do_piece_move": null,              // (this, {}) Called to move a piece.
+            "do_piece_rotate": null,            // (this, {rotation_degrees}) Called to rotate a piece.
+            "do_board_change": null,            // (this, {delta}) Called to modify the board.
+            "do_line_clear": null,              // (this, {line_index}) Called when a line is cleared.
         }
     }
 
     load_mod(mod) {
+        // https://stackoverflow.com/questions/14521108/dynamically-load-js-inside-js
+    }
 
+    trigger_function(fn, data) {
+        this.mod_functions[fn](this, data);
+    }
+
+    get_variable(var_name) {
+        return this.variables[var_name]
+    }
+
+    set_variable(var_name, to) {
+        this.variables[var_name] = to;
     }
 
     setup_board(size_x, size_y) {
@@ -107,10 +125,41 @@ class PletrisCore {
         this.board[pos.x][pos.y] = to;
     }
 
+    game_start() {
+        this.trigger_function("on_game_start", {});
+    }
+
+    game_update() {
+        // should be triggered once per frame, but remember...
+        // we're not fixed frame rate!!!!
+        // use game.now for real time... it supports replay stuff too...
+        
+        // update now (TODO make it do replay stuff)
+        this.now = Date.now();
+
+        // trigger on_frame
+        this.trigger_function("on_frame", {});
+
+        // if there is no active piece, trigger on_piece_ready_to_spawn
+        this.trigger_function("on_piece_ready_to_spawn", {});
+    }
+
+    spawn_piece(piece) {
+        this.active_piece = piece;
+
+        this.trigger_function("on_piece_spawned", {piece: piece})
+    }
+
+    set_active_piece(data, position) {
+        // tell the renderer here aswell
+        this.active_piece = data;
+        this.active_piece.pos = position;
+    }
+
     lock_active_piece_to_board(do_not_remove_active_piece=false) {
         this.active_piece.structure.forEach(block => {
             let pos = this.active_piece.pos.add(block.offset).round();
-            this.set_pos(pos, {blockskin: block.blockskin});
+            this.set_pos(pos, {blockskin: block.blockskin, col: block.col});
         })
 
         if (!do_not_remove_active_piece) {

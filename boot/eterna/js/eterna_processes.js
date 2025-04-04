@@ -606,7 +606,7 @@ function open_file(userctx, path, origin) {
     X img: open as imgview file:"[filepath]"
     X snd: open as sndview file:"[filepath]"
     X vid: open as vidview file:"[filepath]"
-    X tex: open as texpad file:"[filepath]"
+    X tex/con: open as texpad file:"[filepath]"
     X lin: open file linked, run open_file on that
     
     O other: open as texpad file:"[filepath]"
@@ -616,6 +616,7 @@ function open_file(userctx, path, origin) {
     let ext = file.get_ext();
     switch(ext) {
         case "tex":
+        case "con":
             start_process("texpad", {file: file.get_abs_path()}, usr_ctx.user);
             break;
 

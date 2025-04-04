@@ -7,9 +7,94 @@ let texpad_display_markup = new EternaDisplayMarkupContainer(
             EternaDisplayObject.div(
                 "toolbar",
                 0, 0, "100%", "22px", {
-                    backgroundColor: "#000"
+                    backgroundColor: "#fff",
+                    display: "flex",
                 }, false
-            ), []
+            ), [
+                new EternaDisplayMarkupElement(
+                    EternaDisplayObject.div(
+                        "new_button_box", "", "", 60, 20, {
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            border: "1px solid #000",
+                            backgroundColor: "#cff",
+                            position: "unset",
+                            marginRight: "2px"
+                        }, true
+                    ), [
+                        new EternaDisplayMarkupElement(
+                            EternaDisplayObject.simple_elem(
+                                "new_button_label", "p",
+                                "", "", "", "", {}, false, "New"
+                            ), []
+                        )
+                    ]
+                ),
+
+                new EternaDisplayMarkupElement(
+                    EternaDisplayObject.div(
+                        "open_button_box", "", "", 60, 20, {
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            border: "1px solid #000",
+                            backgroundColor: "#cff",
+                            position: "unset",
+                            marginRight: "2px"
+                        }, true
+                    ), [
+                        new EternaDisplayMarkupElement(
+                            EternaDisplayObject.simple_elem(
+                                "open_button_label", "p",
+                                "", "", "", "", {}, false, "Open"
+                            ), []
+                        )
+                    ]
+                ),
+
+                new EternaDisplayMarkupElement(
+                    EternaDisplayObject.div(
+                        "save_button_box", "", "", 60, 20, {
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            border: "1px solid #000",
+                            backgroundColor: "#cff",
+                            position: "unset",
+                            marginRight: "2px"
+                        }, true
+                    ), [
+                        new EternaDisplayMarkupElement(
+                            EternaDisplayObject.simple_elem(
+                                "save_button_label", "p",
+                                "", "", "", "", {}, false, "Save"
+                            ), []
+                        )
+                    ]
+                ),
+
+                new EternaDisplayMarkupElement(
+                    EternaDisplayObject.div(
+                        "saveas_button_box", "", "", 60, 20, {
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            border: "1px solid #000",
+                            backgroundColor: "#cff",
+                            position: "unset",
+                            marginRight: "2px"
+                        }, true
+                    ), [
+                        new EternaDisplayMarkupElement(
+                            EternaDisplayObject.simple_elem(
+                                "saveas_button_label", "p",
+                                "", "", "", "", {}, false, "Save as"
+                            ), []
+                        )
+                    ]
+                ),
+            ]
         ),
 
         new EternaDisplayMarkupElement(
@@ -57,6 +142,17 @@ let default_texpad_kernel = new EternaProcessKernel(
                 query_obj.get("textarea").value = fcontent;
             }
         }
+
+        data.clicks.forEach(click => {
+            let from = click.from;
+            let evt = click.evt;
+
+            if (evt.button == 0) {
+                if (from == "save_button_box") {
+                    console.log("saveS")
+                }
+            }
+        })
 
         data.clicks = [];
 

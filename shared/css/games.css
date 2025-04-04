@@ -19,6 +19,13 @@
     font-style: normal;
 }
 
+@font-face {
+    font-family: "juliamono";
+    src: url("https://plaao.net/shared/fonts/JuliaMono-Light.woff2") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
 html {
     touch-action: manipulation;
 }

@@ -100,13 +100,15 @@ function render_entity_stats(entity, parent_elem) {
     if (entity.check_change("abilities")) {
         for (let i=0; i<6; i++) {
             if (i < entity.delays.length) {
+                parent_elem.querySelector(`.ability_${i}`).classList.add("clickable");
                 make_bar_with_text(
-                    parent_elem.querySelector(`#ability_${i} p`), entity.template.abilities[i].name, parent_elem.querySelector(`#ability_${i} .bar`),
+                    parent_elem.querySelector(`.ability_${i} p`), entity.template.abilities[i].name, parent_elem.querySelector(`.ability_${i} .bar`),
                     entity.template.abilities[i].bar_style, entity.template.abilities[i].max_delay - entity.delays[i], entity.template.abilities[i].max_delay, ENTITY_PANEL_LENGTH, true
                 )
             } else {
+                parent_elem.querySelector(`.ability_${i}`).classList.remove("clickable");
                 make_bar_with_text(
-                    parent_elem.querySelector(`#ability_${i} p`), " ", parent_elem.querySelector(`#ability_${i} .bar`),
+                    parent_elem.querySelector(`.ability_${i} p`), " ", parent_elem.querySelector(`.ability_${i} .bar`),
                     entity.template.bar_style, 0, 1, ENTITY_PANEL_LENGTH, true
                 )
             }
@@ -201,11 +203,11 @@ function setup_skills_list(player) {
         bar_parent.classList.add("clickable");
 
         bar_parent.addEventListener("mouseover", e => {
-            console.log(`mouseover for skill ${bar_parent.getAttribute("target_skill")}`)
+            skill_mouseover(bar_parent.getAttribute("target_skill"));
         })
 
         bar_parent.addEventListener("mouseout", e => {
-            console.log(`mouseout for skill ${bar_parent.getAttribute("target_skill")}`)
+            skill_mouseout();
         })
 
         let text = document.createElement("p");
@@ -276,8 +278,8 @@ function render_equipped_items(player) {
         if (item) {
             let cols = item.determine_cols(player);
 
-            slot_elem.style.color = cols[0].css();
-            slot_elem.style.backgroundColor = cols[1].css();
+            slot_elem.style.color = cols[0]
+            slot_elem.style.backgroundColor = cols[1]
     
             slot_elem.textContent = item.name.padEnd(MAX_ITEM_NAME_LEN+4);
         } else {
@@ -308,19 +310,19 @@ function render_inventory(player) {
     let indexes = new Array(player.inventory.length).fill(0).map((v, i) => i);
     let inventory_div = document.getElementById("inventory");
 
-    player.inventory.forEach((item, index) => {
+    player.inventory.forEach((item_container, index) => {
         let elem = document.createElement("p");
 
         elem.classList.add("line");
         elem.classList.add("shadow");
         elem.classList.add("clickable");
 
-        let cols = item.determine_cols(player);
+        let cols = item_container.item.determine_cols(player);
 
-        elem.style.color = cols[0].css();
-        elem.style.backgroundColor = cols[1].css();
+        elem.style.color = cols[0]
+        elem.style.backgroundColor = cols[1]
 
-        elem.innerHTML = `${item.is_new ? "<span style='color:red'>[!]</span> " : "    "}${item.name.padEnd(MAX_ITEM_NAME_LEN+4)}`;
+        elem.innerHTML = `${item_container.is_new ? "<span style='color:red'>[!]</span> " : "    "}${item_container.item.name.padEnd(MAX_ITEM_NAME_LEN+4)}`;
 
         let idx = indexes[index];
         elem.addEventListener("mouseover", e => {
@@ -336,18 +338,188 @@ function render_inventory(player) {
 }
 
 
+function render_selected_ability(entity, ability) {
+    let elem = document.querySelector("#ability_info_overlay_panel");
+    if (!ability) {
+        return;
+    }
+
+    // title col is the bar col1 lerped half to white
+    let title_col = ability.bar_style.col1.lerp(Colour.white, 0.75);
+
+    elem.querySelector("#ability_info_name").innerHTML = ability.name;
+    elem.querySelector("#ability_info_name").style.color = title_col.css();
+
+    elem.querySelector("#ability_info_effect").innerHTML = parse_format_text(ability.description, false);
+
+    elem.querySelector("#ability_info_base_cooldown").innerHTML = ability.max_delay;
+
+    let final_cd = ability.max_delay / (ability.not_affected_by_spd ? 1 : entity.get_speed_mult());
+    elem.querySelector("#ability_info_final_cooldown").innerHTML = `${Math.round(final_cd * 100) / 100}`;
+}
+
+
+function describe_skill_milestone(milestone) {
+    let equip_req_string = "";
+    // get count: if 1, "If itemtype equipped", if >1, "If [number]+ itemtype equipped"
+    if (milestone.req && milestone.req.length > 0) {
+        if (milestone.per_item) {
+            if (milestone.req[1] == 1) {
+                equip_req_string += `per item of [[--col-highlight]]${milestone.req[0].toLowerCase()}[[clear]]`;
+            } else {
+                equip_req_string += `per ${milestone.req[1]} items of [[--col-highlight]]${milestone.req[0].toLowerCase()}[[clear]]`;
+            }
+        } else {
+            equip_req_string += "if ";
+            if (milestone.req[0] == "unarmed") {
+                equip_req_string += `[[--col-highlight]]unarmed[[clear]]`;
+            } else {
+                if (milestone.req[1] == 1) {
+                    equip_req_string += `a [[--col-highlight]]${milestone.req[0].toLowerCase()}[[clear]] is`;
+                } else {
+                    equip_req_string += `${milestone.req[1]}+ items of [[--col-highlight]]${milestone.req[0].toLowerCase()}[[clear]]`;
+                }
+            }
+        }
+        if (milestone.req[0] != "unarmed") {
+            equip_req_string += " equipped";
+        }
+    }
+
+    let bonuses = "";
+
+    let allstats = ["MHP", "ATK", "ATT", "DEF", "MDF", "SPD", "ACC", "EVA"];
+    if (allstats.every(s => milestone.item.stats_flat[s] && milestone.item.stats_flat[allstats[0]] == milestone.item.stats_flat[s])) {
+        let sign = milestone.item.stats_flat[allstats[0]] < 0 ? "" : "+";
+        bonuses += `${sign}${milestone.item.stats_flat[allstats[0]]} [[--col-highlight]]all stats[[clear]], `;
+    } else {
+        Object.keys(milestone.item.stats_flat).forEach(k => {
+            let sign = milestone.item.stats_flat[k] < 0 ? "" : "+";
+            bonuses += `${sign}${milestone.item.stats_flat[k]} ${k}, `;
+        })
+    }
+
+    if (allstats.every(s => milestone.item.stats_mult[s] && milestone.item.stats_mult[allstats[0]] == milestone.item.stats_mult[s])) {
+        let sign = milestone.item.stats_mult[allstats[0]] < 0 ? "" : "+";
+        bonuses += `${sign}${milestone.item.stats_mult[allstats[0]]} [[--col-highlight]]all stats[[clear]], `;
+    } else {
+        Object.keys(milestone.item.stats_mult).forEach(k => {
+            let sign = milestone.item.stats_mult[k] < 0 ? "" : "+";
+            bonuses += `${sign}${Math.round(milestone.item.stats_mult[k] * 100)}% ${k}, `;
+        })
+    }
+
+
+    bonuses = bonuses.slice(0, -2);
+
+    if (milestone.item.unlock_ability) {
+        if (bonuses) {
+            bonuses += " and ";
+        }
+
+        bonuses += `Gain [[--col-highlight]]${ability_list[milestone.item.unlock_ability].name}[[clear]]`;
+    }
+
+    if (milestone.item.specials.length > 0) {
+        if (bonuses) {
+            bonuses += " "
+        }
+        bonuses += milestone.item.specials.map(s => item_special_desc[s]).join(", ")
+    }
+
+    let suffix = "";
+    if (!milestone.req) {
+        suffix += ""
+    }
+
+    return parse_format_text(`${bonuses} ${equip_req_string}${suffix}`);
+}
+
+
+function render_selected_skill(player, skill) {
+    let elem = document.querySelector("#skill_info_overlay_panel");
+    if (!skill) {
+        return;
+    }
+
+    // title col is the bar col1 lerped half to white
+    let title_col = skill.bar_style.col1.lerp(Colour.white, 0.75);
+
+    elem.querySelector("#skill_info_name").innerHTML = skill.name;
+    elem.querySelector("#skill_info_name").style.color = title_col.css();
+
+    elem.querySelector("#skill_info_desc").innerHTML = parse_format_text(skill.description, false);
+
+    clear_linelist("skill_info_bonus_list");
+    let skill_info_div = elem.querySelector("#skill_info_bonus_list");
+
+    skill.level_milestones.forEach(milestone => {
+        let elem = document.createElement("p");
+
+        elem.classList.add("line");
+        elem.classList.add("shadow");
+
+        // green if unlocked, grey if not
+        let level_str_col = "--col-skill-milestone-normal";
+        if (milestone.req && milestone.req.length > 0) {
+            // applies on items; lightblue
+            level_str_col = "--col-skill-milestone-equip-dependent";
+        }
+        if (milestone.item && milestone.item.unlock_ability) {
+            // grants ability; lightgreen
+            level_str_col = "--col-skill-milestone-unlock-ability";
+        }
+        if (milestone.item && milestone.item.specials.length > 0) {
+            // special; yellow
+            level_str_col = "--col-skill-milestone-special";
+        }
+        if (milestone.lvl > player.skill_levels[skill.id]) {
+            level_str_col += "-locked";
+        }
+
+        let level_str = `[${milestone.lvl}]`.padEnd(6);
+
+        let elem2 = document.createElement("p");
+        // TODO set level_str into elem2 and get them to sit together in the skill description, then make elem wrap and elem2 stay at the start:
+        /*
+        [10] Big long skill description that nobody's
+             gonna actually read in full
+        */
+
+        elem.innerHTML = `<span style="color:var(${level_str_col})">${level_str}</span> ${milestone.desc ? milestone.desc : describe_skill_milestone(milestone)}`;
+
+        skill_info_div.appendChild(elem);
+    })
+}
+
+
+
 function render_selected_item(player, item) {
     let elem = document.querySelector("#item_info_overlay_panel");
     if (!item) {
+        elem.querySelector("#item_equip").style.display = "none";
+        elem.querySelector("#item_use").style.display = "none";
+
+        elem.querySelector(".panel-inner").style.backgroundColor = "var(--col-item-default)";
+
+        elem.querySelector("#item_info_name").innerHTML = "No item";
+        elem.querySelector("#item_info_name").style.color = "white";
+
+        elem.querySelector("#item_info_reqskills").style.display = "none";
+    
+        elem.querySelector("#item_info_subname").innerHTML = ``;
+
+        elem.querySelector("#item_info_desc").innerHTML = "";
+        elem.querySelector("#item_info_effect").innerHTML = "";
         return;
     }
 
     let cols = item.determine_cols(player);
 
-    elem.querySelector(".panel-inner").style.backgroundColor = cols[3].css();
+    elem.querySelector(".panel-inner").style.backgroundColor = cols[3]
 
     elem.querySelector("#item_info_name").innerHTML = item.name;
-    elem.querySelector("#item_info_name").style.color = cols[0].css(); 
+    elem.querySelector("#item_info_name").style.color = cols[0]
 
     elem.querySelector("#item_info_subname").innerHTML = `- ${item.full_item_descriptor} -`;
 
@@ -356,7 +528,7 @@ function render_selected_item(player, item) {
         item.requires_skills.forEach((sk, i) => {
             let col = "";
             if (player.skill_levels[sk[0]] < sk[1]) {
-                col = "#f00";
+                col = "var(--col-skill-needed)";
             }
 
             console.log(sk[0])
@@ -404,6 +576,11 @@ function render_selected_item(player, item) {
                 stat_container.querySelector(".stat-mult-bonus").textContent = ""
             }
         })
+
+        let stat_container = panel.querySelector(`#item_info_stat_weight`);
+        stat_container.querySelector(".stat-flat-bonus").textContent = item.equip_component?.weight;
+        stat_container.querySelector(".stat-spd-minus").textContent = Math.round(item.equip_component?.weight * WEIGHT_SPD_PENALTY_FACTOR);
+        stat_container.querySelector(".stat-acceva-minus").textContent = Math.round(item.equip_component?.weight * WEIGHT_ACC_EVA_PENALTY_FACTOR);
     } else if (item.use_component) {
         let panel = elem.querySelector("#item_use");
         panel.style.display = "";
@@ -412,34 +589,39 @@ function render_selected_item(player, item) {
         let battle_use = panel.querySelector("#item_info_use_battle");
         if (item.use_component.battle_effect) {
             battle_use.textContent = "Can be used in battle.";
-            battle_use.style.color = "rgb(180, 0, 0)";
+            battle_use.style.color = "var(--col-item-battle)";
         } else {
             battle_use.textContent = "Cannot be used in battle.";
-            battle_use.style.color = "rgb(96, 96, 96)";
+            battle_use.style.color = "var(--col-item-disabled)";
         }
 
         let field_use = panel.querySelector("#item_info_use_field");
         if (item.use_component.field_effect) {
             field_use.textContent = "Can be used outside battle.";
-            field_use.style.color = "rgb(0, 160, 0)";
+            field_use.style.color = "var(--col-item-field)";
         } else {
             field_use.textContent = "Cannot be used outside battle.";
-            field_use.style.color = "rgb(96, 96, 96)";
+            field_use.style.color = "var(--col-item-disabled)";
         }
 
         let consumed = panel.querySelector("#item_info_use_consumed");
         if (item.use_component.consumed_when_used) {
             consumed.textContent = "Consumed on use.";
-            consumed.style.color = "rgb(160, 160, 160)";
+            consumed.style.color = "var(--col-item-consumed)";
         } else {
             consumed.textContent = "Not consumed on use.";
-            consumed.style.color = "rgb(64, 128, 255)";
+            consumed.style.color = "var(--col-item-not-consumed)";
         }
     } else {
         // hide it
         elem.querySelector(`#item_equip`).style.display = "none";
         elem.querySelector(`#item_use`).style.display = "none";
     }
+}
+
+
+function render_map_event(player, map_event) {
+    
 }
 
 

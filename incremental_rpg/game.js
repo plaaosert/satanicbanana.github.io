@@ -44,6 +44,9 @@ combat grants proficiency to every item
 
 Artifact Mastery grants proficiency to all artifacts
 */
+const WEIGHT_SPD_PENALTY_FACTOR = 1;
+const WEIGHT_ACC_EVA_PENALTY_FACTOR = 0.25;
+
 class Battle {
     constructor(ent1, ent2) {
         this.ent1 = ent1;
@@ -93,6 +96,68 @@ class Effect {
         this.forever = forever;
         
         this.time_left = 0;
+    }
+
+    effect_string() {
+        // get the different values for each stat, then add each of them to the string
+        let stat_values = new Set();
+        Entity.stat_names.forEach(v => {
+            let st = "";
+            if (this.item.stats_flat[v]) {
+                if (this.item.stats_flat[v] > 0) {
+                    st += "+";
+                }
+                st += `${this.item.stats_flat[v]}`;
+            }
+
+            if (this.item.stats_flat[v] && this.item.stats_mult[v]) {
+                st += " and ";
+            }
+
+            if (this.item.stats_mult[v]) {
+                if (this.item.stats_mult[v] > 0) {
+                    st += "+";
+                }
+                st += `${Math.round(this.item.stats_mult[v] * 100)}%`;
+            }
+
+            if (st) {
+                stat_values.add(st);
+            }
+        });
+
+        
+        let final = Array.from(stat_values).map(val => {
+            let matches = [];
+            Entity.stat_names.forEach(v => {
+                let st = "";
+                if (this.item.stats_flat[v]) {
+                    if (this.item.stats_flat[v] > 0) {
+                        st += "+";
+                    }
+                    st += `${this.item.stats_flat[v]}`;
+                }
+    
+                if (this.item.stats_flat[v] && this.item.stats_mult[v]) {
+                    st += " and ";
+                }
+    
+                if (this.item.stats_mult[v]) {
+                    if (this.item.stats_mult[v] > 0) {
+                        st += "+";
+                    }
+                    st += `${Math.round(this.item.stats_mult[v] * 100)}%`;
+                }
+
+                if (st == val) {
+                    matches.push(v);
+                }
+            });
+
+            return `${val} ${matches.join("+")}`;
+        })
+
+        return format_effect_string(final.join(", "));
     }
 
     make(for_turns) {
@@ -270,18 +335,10 @@ class Entity {
             item[0].apply_to_stats(this.base_stats, this.bonus_stats, mults, item[1]);
             item[0].specials.forEach(s => this.specials.add(s));
 
-            if (this.specials.has(ITEM_SPECIAL.light_armour_mastery_ender) && item[0].equippable_type == ITEM_TYPE.LIGHT_ARMOUR) {
+            if (!(this.specials.has(ITEM_SPECIAL.light_armour_mastery_ender) && item[0].equippable_type == ITEM_TYPE.LIGHT_ARMOUR)) {
                 total_weight += item[0].weight;
             }
         });
-
-        if (this.specials.has(ITEM_SPECIAL.medium_armour_mastery_ender) && apply_items.reduce((prev, cur) => {
-            if (prev[0].equippable_type == ITEM_TYPE.MEDIUM_ARMOUR) {
-                return prev + 1;
-            }
-        }, 0) >= 3) {
-            this.bonus_stats.DEF += this.bonus_stats.MDF * 0.25;
-        }
 
         if (this.specials.has(ITEM_SPECIAL.heavy_armour_mastery_ender) && apply_items.reduce((prev, cur) => {
             if (prev[0].equippable_type == ITEM_TYPE.HEAVY_ARMOUR) {
@@ -308,9 +365,17 @@ class Entity {
 
         this.weight = total_weight;
 
-        this.stats.SPD = Math.round(Math.max(0, this.stats.SPD - this.weight));
-        this.stats.ACC = Math.round(Math.max(0, this.stats.ACC - (this.weight * 0.25)));
-        this.stats.EVA = Math.round(Math.max(0, this.stats.EVA - (this.weight * 0.25)));
+        this.stats.SPD = Math.round(Math.max(0, this.stats.SPD - (this.weight * WEIGHT_SPD_PENALTY_FACTOR)));
+        this.stats.ACC = Math.round(Math.max(0, this.stats.ACC - (this.weight * WEIGHT_ACC_EVA_PENALTY_FACTOR)));
+        this.stats.EVA = Math.round(Math.max(0, this.stats.EVA - (this.weight * WEIGHT_ACC_EVA_PENALTY_FACTOR)));
+
+        if (this.specials.has(ITEM_SPECIAL.medium_armour_mastery_ender) && apply_items.reduce((prev, cur) => {
+            if (prev[0].equippable_type == ITEM_TYPE.MEDIUM_ARMOUR) {
+                return prev + 1;
+            }
+        }, 0) >= 3) {
+            this.stats.DEF += Math.round(this.stats.MDF * 0.25);
+        }
 
         if (this.name == "You") {
             // MHP
@@ -467,7 +532,7 @@ class Entity {
         this.delays = this.delays.map((d, i) => {
             let final_time = time_after_spd;
             if (this.template.abilities[i].not_affected_by_spd) {
-                final_time = time_after_skills;
+                final_time = time_unscaled;
             }
 
             let time_multiplier = 1;
@@ -548,7 +613,7 @@ class Entity {
             this.move_flags.DEF_PIERCE_MUL = 0.2;
         }
 
-        this.template.abilities[index].effect(battle, this, target);
+        this.template.abilities[index].effect.fn(battle, this, target);
 
         this.move_flags.DEF_PIERCE_MUL = 0;
 
@@ -586,7 +651,7 @@ class Entity {
 }
 
 
-const ABILITY_GLOBAL_DELAY = 1;
+const ABILITY_GLOBAL_DELAY = 0.25;
 let grandom = get_seeded_randomiser("whatever123");
 
 
@@ -608,30 +673,57 @@ class EntityTemplate {
 
 class Ability {
     static and(f1, f2) {
-        return (b, s, t) => {
-            f1(b, s, t);
-            f2(b, s, t);
+        return {
+            fn: (b, s, t) => {
+                f1.fn(b, s, t);
+                f2.fn(b, s, t);
+            },
+            desc: f1.desc + "\n" + f2.desc
         }
     }
 
-    static regular_attack(mult, crit_chance_bonus=0, acc_bonus=0) {
-        return (b, s, t) => s.initiate_move(
-            t, s.stats.ATK * mult, DamageType.PHYSICAL,
-            crit_chance_bonus, acc_bonus, 0, 0
-        )
+    static regular_attack(mult, crit_chance_bonus=0, acc_bonus=0, stat="ATK") {
+        return {
+            fn: (b, s, t) => s.initiate_move(
+                t, s.stats[stat] * mult, DamageType.PHYSICAL,
+                crit_chance_bonus, acc_bonus, 0, 0
+            ),
+            desc: format_effect_string(` - Deal ${Math.round(mult * 100)}% ${stat} as physical damage`)
+        }
+    }
+
+    static magical_attack(mult, crit_chance_bonus=0, stat="ATT") {
+        return {
+            fn: (b, s, t) => s.initiate_move(
+                t, s.stats[stat] * mult, DamageType.MAGICAL,
+                crit_chance_bonus, 0, 0, 0
+            ),
+            desc: format_effect_string(` - Deal ${Math.round(mult * 100)}% ${stat} as magical damage`)
+        }
     }
 
     static apply_effect(effect, time) {
-        return (b, s, t) => s.apply_effect(t, effect, time);
+        return {
+            fn: (b, s, t) => s.apply_effect(t, effect, time),
+            desc: ` - Apply ${effect.effect_string()} to the target for [[--col-highlight]]${time}[[clear]] seconds`
+        }
     }
 
     static gain_effect(effect, time) {
-        return (b, s, t) => s.apply_effect(s, effect, time);
+        return {
+            fn: (b, s, t) => s.apply_effect(s, effect, time),
+            desc: ` - Gain ${effect.effect_string()} for [[--col-highlight]]${time}[[clear]] seconds`
+        }
     }
 
     constructor(name, description, bar_colours, max_delay, effect, global_delay_mult, not_affected_by_spd) {
         this.name = name;
         this.description = parse_format_text(description);
+        if (this.description) {
+            this.description = "\n" + this.description;
+        }
+
+        this.description = effect.desc + this.description;
 
         this.bar_colour1 = bar_colours[0];
         this.bar_colour2 = bar_colours[1];
@@ -649,7 +741,8 @@ class Ability {
 }
 
 class Skill {
-    constructor(name, description, sort_key, hide_if_locked, bar_style, max_level, xp_multiplier, max_num_applicable_items, items_for_proficiency, level_milestones) {
+    constructor(id, name, description, sort_key, hide_if_locked, bar_style, max_level, xp_multiplier, max_num_applicable_items, items_for_proficiency, level_milestones) {
+        this.id = id;
         this.name = name;
         this.description = parse_format_text(description);
 
@@ -688,35 +781,27 @@ quest: slight yellow background
 spiritual: slight cyan background, light cyan name
 */
 function format_effect_string(txt) {
-    // format numbers as #4df
+    // format numbers as --col-highlight
     // format MHP/ATK/ATT/DEF/MDF/SPD/ACC/EVA as their respective colours
-    // format keywords as #4df ("crit chance", "weight")
+    // format keywords as --col-highlight ("crit chance", "weight")
     let desc_str = txt;
 
-    desc_str = desc_str.replace(/( |^)(([^-]|\+)?\d+(?:\.\d+)?[%x]?)/g, `$1[[#4df]]$2[[clear]]`);
+    desc_str = desc_str.replaceAll(/( |^)(([^-]|\+)?\d+(?:\.\d+)?[%x]?)/g, `$1[[--col-highlight]]$2[[clear]]`);
 
-    desc_str = desc_str.replace(/( |^)((-)\d+(?:\.\d+)?[%x]?)/g, `$1[[#f00]]$2[[clear]]`);
+    desc_str = desc_str.replaceAll(/( |^)((-)\d+(?:\.\d+)?[%x]?)/g, `$1[[--col-highlight-negative]]$2[[clear]]`);
 
-    let stats = ["HP", "MHP", "ATK", "ATT", "DEF", "MDF", "SPD", "ACC", "EVA"];
-    let cols = [
-        "rgb(214, 100, 100)",
-        "rgb(214, 100, 100)",
-        "rgb(255, 56, 0)",
-        "rgb(80, 140, 255)",
-        "rgb(192, 192, 192)",
-        "rgb(100, 140, 192)",
-        "rgb(80, 192, 80)",
-        "rgb(120, 180, 120)",
-        "rgb(192, 56, 192)",
-    ]
+    desc_str = desc_str.replaceAll(" HP", " SCRIMBLO");
+    let stats = ["MHP", "ATK", "ATT", "DEF", "MDF", "SPD", "ACC", "EVA", "SCRIMBLO"];
     stats.forEach((s, i) => {
-        desc_str = desc_str.split(s).join(`[[${cols[i]}]]${s}[[clear]]`);
+        desc_str = desc_str.split(s).join(`[[--stat-${stats[i]}]]${s}[[clear]]`);
     })
+    desc_str = desc_str.replaceAll("SCRIMBLO", "HP");
 
-    let keywords = ["crit chance", "weight"];
+    let keywords = ["crit chance", "weight", "physical", "magical"];
+    let cols = ["--col-highlight", "--col-highlight", "--col-ability-physical", "--col-ability-magical"]
 
-    keywords.forEach(k => {
-        desc_str = desc_str.split(k).join(`[[#4df]]${k}[[clear]]`);
+    keywords.forEach((k, i) => {
+        desc_str = desc_str.split(k).join(`[[${cols[i]}]]${k}[[clear]]`);
     })
 
     return desc_str;
@@ -752,6 +837,10 @@ function parse_format_text(txt, autoformat=true) {
                     // build the span with col_read and clear everything because we're back to normal text now
                     if (col_read == "clear") {
                         col_read = "";
+                    }
+                    if (col_read.startsWith("--")) {
+                        // it's a CSS variable, so make it var(X)
+                        col_read = `var(${col_read})`;
                     }
                     if (made_a_span) {
                         html += "</span>";
@@ -795,12 +884,11 @@ class Item {
         SPIRITUAL: "Spiritual",
     }
 
-    constructor(name, description, effect_desc, sell_value, equip_component=null, use_component=null, tags=[], is_new=true, requires_skills=[]) {
+    constructor(name, description, effect_desc, sell_value, equip_component=null, use_component=null, tags=[], requires_skills=[]) {
         this.name = name;
         this.description = parse_format_text(description, false);
         this.effect_desc = parse_format_text(effect_desc);
 
-        this.is_new = is_new;  // shows item with a red "[!]" preceding its name
         this.sell_value = sell_value;  // -1 means "not sellable", 0 means "junk"
 
         this.equip_component = equip_component;      // if present, can be equipped
@@ -863,22 +951,23 @@ class Item {
     }
 
     determine_cols(player) {
-        let col = new Colour(224, 224, 224, 255);
-        let bgcol = new Colour(48, 48, 48, 255);
-        let sub_bgcol = new Colour(24, 24, 24, 255);
+        let col = "--col-item-type-default-fg";
+        let bgcol = "--col-item-type-default-bg";
+        let sub_bgcol = "--col-item-type-default-sbg";
         let icon = " ";
 
         if (this.tags.includes(Item.Tag.SPIRITUAL)) {
-            col = new Colour(160, 224, 255);
-            bgcol = new Colour(24, 60, 128, 255);
-            sub_bgcol = new Colour(12, 30, 64, 255);
+            col = "--col-item-type-spiritual-fg";
+            bgcol = "--col-item-type-spiritual-bg";
+            sub_bgcol = "--col-item-type-spiritual-sbg";
             icon = "◎";
         } else if (this.tags.includes(Item.Tag.QUEST)) {
-            col = new Colour(240, 240, 0);
-            bgcol = new Colour(64, 64, 0, 255);
-            sub_bgcol = new Colour(32, 32, 0, 255);
+            col = "--col-item-type-quest-fg";
+            bgcol = "--col-item-type-quest-bg";
+            sub_bgcol = "--col-item-type-quest-sbg";
             icon = "※";
         } else if (this.tags.includes(Item.Tag.EQUIPPABLE)) {
+            col = "--col-item-type-equippable-default-fg";
             switch (this.equip_component.equippable_type) {
                 case ITEM_TYPE.KNIFE:
                 case ITEM_TYPE.SWORD:
@@ -886,10 +975,10 @@ class Item {
                 case ITEM_TYPE.AXE:
                 case ITEM_TYPE.HAMMER:
                 case ITEM_TYPE.MARTIAL_WEAPON:
-                    if (this.equip_component.equippable_type == player.equipped_items.WEAPON.equip_component.equippable_type) {
-                        col = new Colour(255, 255, 255);
+                    if (this.equip_component.equippable_type == player.equipped_items.WEAPON?.equip_component.equippable_type) {
+                        col = "--col-item-type-equippable-weapon-sametype-fg";
                     } else {
-                        col = new Colour(160, 160, 160);
+                        col ="--col-item-type-equippable-weapon-difftype-fg";
                     }
                     icon = "⌠";
                     break;
@@ -898,9 +987,9 @@ class Item {
                 case ITEM_TYPE.MEDIUM_ARMOUR:
                 case ITEM_TYPE.HEAVY_ARMOUR:
                     if (player.get_equipped_item_types()[this.equip_component.equippable_type]) {
-                        col = new Colour(255, 238, 173);
+                        col = "--col-item-type-equippable-armour-sametype-fg";
                     } else {
-                        col = new Colour(192, 132, 64);
+                        col = "--col-item-type-equippable-armour-difftype-fg";
                     }
                     icon = "∇"
                     break;
@@ -908,56 +997,56 @@ class Item {
                 case ITEM_TYPE.INNER_ARTIFACT:
                 case ITEM_TYPE.OUTER_ARTIFACT:
                 case ITEM_TYPE.DIVINE_ARTIFACT:
-                    if (false) {  // artifact unusable?
-                        col = new Colour(255, 0, 0);
+                    if (false) {  // artifact unusable? (this is handled by the overall skill reqs system now)
+                        // col = new Colour(255, 0, 0);
                     } else {
                         switch (this.equip_component.equippable_type) {
                             case ITEM_TYPE.INNER_ARTIFACT:
-                                col = new Colour(144, 238, 144);
+                                col = "--col-item-type-equippable-artifact-inner-fg"
                                 icon = "▣"
                                 break;
 
                             case ITEM_TYPE.OUTER_ARTIFACT:
-                                col = new Colour(216, 185, 255);
+                                col = "--col-item-type-equippable-artifact-outer-fg"
                                 icon = "▢"
                                 break;
 
                             case ITEM_TYPE.DIVINE_ARTIFACT:
-                                col = new Colour(255, 207, 64);
+                                col = "--col-item-type-equippable-artifact-divine-fg"
                                 icon = "◧"
                                 break; 
                         }
                     }
                     break;
             }
-            bgcol = new Colour(36, 18, 0, 255);
-            sub_bgcol = bgcol;
+            bgcol = "--col-item-type-equippable-bg";
+            sub_bgcol = "--col-item-type-equippable-sbg";
         } else if (this.tags.includes(Item.Tag.USABLE)) {
             if (this.use_component.consumed_when_used) {
-                bgcol = new Colour(24, 32, 16, 255);
-                sub_bgcol = bgcol;
+                bgcol = "--col-item-type-usable-consumed-bg";
+                sub_bgcol = "--col-item-type-usable-consumed-sbg";
                 icon = "▷";
             } else {
-                bgcol = new Colour(16, 24, 32, 255);
-                sub_bgcol = bgcol;
+                bgcol = "--col-item-type-usable-notconsumed-bg";
+                sub_bgcol = "--col-item-type-usable-notconsumed-sbg";
                 icon = "▶";
             }
             if (this.use_component.battle_effect && this.use_component.field_effect) {
-                col = new Colour(255, 255, 255);
+                col = "--col-item-type-usable-both-fg";
             } else if (this.use_component.battle_effect) {
-                col = new Colour(242, 140, 40);
+                col = "--col-item-type-usable-battle-fg";
             } else if (this.use_component.field_effect) {
-                col = new Colour(173, 216, 230);
+                col = "--col-item-type-usable-field-fg";
             }
         }
         
         this.requires_skills.forEach(skill_req => {
             if (player.skill_levels[skill_req[0]] < skill_req[1]) {
-                col = new Colour(255, 0, 0);
+                col = "--col-skill-needed";
             }
         })
 
-        return [col, bgcol, icon, sub_bgcol];
+        return [col, bgcol, icon, sub_bgcol].map(t => `var(${t})`);
     }
 }
 
@@ -1130,11 +1219,16 @@ class Player {
     }
 
     add_item_to_inventory(item, insert_at_index, bypass_inventory_cap=false) {
-        if (this.inventory.length < this.inventory_max_slots-1 || bypass_inventory_cap) {
+        let item_container = {
+            item: item,
+            is_new: true
+        }
+
+        if (this.inventory.length < this.inventory_max_slots || bypass_inventory_cap) {
             if (insert_at_index) {
-                this.inventory.splice(insert_at_index, 0, item);
+                this.inventory.splice(insert_at_index, 0, item_container);
             } else {
-                this.inventory.push(item);
+                this.inventory.push(item_container);
             }
             this.mark_change("inventory");
             return true;
@@ -1157,6 +1251,9 @@ class Player {
             if (place_item_in_inventory) {
                 this.add_item_to_inventory(unequipped_item);
             }
+            this.equipped_items[slot] = null;
+
+            this.refresh_entity(null, true);
             return true;
         } else {
             return false;
@@ -1194,7 +1291,7 @@ class Player {
 
             // console.log(`Gained ${amount} XP for skill ${category}`);
             this.skill_xp[category] += amount;
-            while (this.skill_xp[category] >= req_to_next) {
+            while (this.skill_xp[category] >= req_to_next && this.skill_levels[category] < skills_list[category].max_level) {
                 this.levelup_skill(category);
                 req_to_next = skills_list[category].xp_to_next(this.skill_levels[category]);
             }
@@ -1213,6 +1310,22 @@ class Player {
         if (lose_xp) {
             this.skill_xp[category] -= skills_list[category].xp_to_next(this.skill_levels[category] - 1);
         }
+    }
+
+    set_skill_level(category, to) {
+        // always mark a change here to be safe
+        this.mark_change("skills_unlocked");
+        this.mark_change("skills");
+
+        this.skill_levels[category] = to;
+    }
+
+    set_skill_xp(category, to) {
+        this.mark_change("skills_unlocked");
+        this.mark_change("skills");
+
+        this.skill_xp[category] = to-1;
+        this.gain_skill_xp(category, 1);  // to trigger levelup
     }
 
     refresh_entity(force_hp=0, keep_hp_value=false, keep_hp_percentage=false) {
@@ -1360,8 +1473,8 @@ const item_special_desc = {
     [ITEM_SPECIAL.none]: "No special effects",
 
     [ITEM_SPECIAL.light_armour_mastery_ender]: "Light armour has zero weight",
-    [ITEM_SPECIAL.medium_armour_mastery_ender]: "If 3 or more items of medium armour equipped, gain +25% DEF as MDF",
-    [ITEM_SPECIAL.heavy_armour_mastery_ender]: "If 3 or more items of heavy armour equipped, gain +1 ATT per point of total equipment weight",
+    [ITEM_SPECIAL.medium_armour_mastery_ender]: "gain +25% DEF as MDF",
+    [ITEM_SPECIAL.heavy_armour_mastery_ender]: "gain +1 ATT per point of total equipment weight (before reductions)",
 
     [ITEM_SPECIAL.faster_inner_artifacts]: "Abilities from inner artifacts recharge 25% faster",
     [ITEM_SPECIAL.faster_outer_artifacts]: "Abilities from outer artifacts recharge 25% faster",
@@ -1412,8 +1525,9 @@ let skill_cultivation_bar_style = new BarStyle(
 
 let skills_list = {
     "knife_mastery": new Skill(
+        "knife_mastery",
         "Knife Mastery",
-        "",
+        "Skill at wielding a knife in combat. Equipped knives gain +1% ATK and +0.05 ACC per skill level.",
         0, false, skill_combat_bar_style, 100, 1, 1, [ITEM_TYPE.KNIFE], [
             {lvl: 10,  req: [ITEM_TYPE.KNIFE, 1], item: new EquipComponent(null, 0, {SPD: 10}, {}, null, [])},
             {lvl: 20,  req: null,                 item: new EquipComponent(null, 0, {SPD: 7},  {}, null, [])},
@@ -1428,8 +1542,9 @@ let skills_list = {
     ),
 
     "sword_mastery": new Skill(
+        "sword_mastery",
         "Sword Mastery", 
-        "",
+        "Skill at wielding a sword in combat. Equipped swords gain +1% ATK and +0.05 ACC per skill level.",
         0, false, skill_combat_bar_style, 100, 1, 1, [ITEM_TYPE.SWORD], [
             {lvl: 10,  req: [ITEM_TYPE.SWORD, 1], item: new EquipComponent(null, 0, {ATK: 8}, {}, null, [])},
             {lvl: 20,  req: null,                 item: new EquipComponent(null, 0, {ATK: 8},  {}, null, [])},
@@ -1444,8 +1559,9 @@ let skills_list = {
     ),
 
     "polearm_mastery": new Skill(
-        "Polearm Mastery", 
-        "",
+        "polearm_mastery",
+        "Polearm Mastery",
+        "Skill at wielding a polearm in combat. Equipped polearms gain +1% ATK and +0.05 ACC per skill level.",
         0, false, skill_combat_bar_style, 100, 1, 1, [ITEM_TYPE.POLEARM], [
             {lvl: 10,  req: [ITEM_TYPE.POLEARM, 1], item: new EquipComponent(null, 0, {CRIT_CHANCE: 10}, {}, null, [])},
             {lvl: 20,  req: null,                   item: new EquipComponent(null, 0, {SPD: 6},  {}, null, [])},
@@ -1460,8 +1576,9 @@ let skills_list = {
     ),
 
     "axe_mastery": new Skill(
+        "axe_mastery",
         "Axe Mastery", 
-        "",
+        "Skill at wielding an axe in combat. Equipped axes gain +1% ATK and +0.05 ACC per skill level.",
         0, false, skill_combat_bar_style, 100, 1, 1, [ITEM_TYPE.AXE], [
             {lvl: 10,  req: [ITEM_TYPE.AXE, 1], item: new EquipComponent(null, 0, {ATK: 8}, {}, null, [])},
             {lvl: 20,  req: null,               item: new EquipComponent(null, 0, {MHP: 30},  {}, null, [])},
@@ -1476,8 +1593,9 @@ let skills_list = {
     ),
 
     "hammer_mastery": new Skill(
+        "hammer_mastery",
         "Hammer Mastery", 
-        "",
+        "Skill at wielding a hammer in combat. Equipped hammers gain +1% ATK and +0.05 ACC per skill level.",
         0, false, skill_combat_bar_style, 100, 1, 1, [ITEM_TYPE.HAMMER], [
             {lvl: 10,  req: [ITEM_TYPE.HAMMER, 1], item: new EquipComponent(null, 0, {MHP: 50}, {}, null, [])},
             {lvl: 20,  req: null,                  item: new EquipComponent(null, 0, {ATK: 9},  {}, null, [])},
@@ -1492,8 +1610,9 @@ let skills_list = {
     ),
 
     "martial_weapon_mastery": new Skill(
+        "martial_weapon_mastery",
         "Martial Weapon Mastery", 
-        "",
+        "Skill at wielding a martial weapon in combat. Equipped martial weapons gain +1% ATK and +0.05 ACC per skill level.",
         0, false, skill_combat_bar_style, 100, 1, 1, [ITEM_TYPE.MARTIAL_WEAPON], [
             {lvl: 10,  req: [ITEM_TYPE.MARTIAL_WEAPON, 1], item: new EquipComponent(null, 0, {DEF: 7}, {}, null, [])},
             {lvl: 20,  req: null,                          item: new EquipComponent(null, 0, {DEF: 6},  {}, null, [])},
@@ -1508,24 +1627,26 @@ let skills_list = {
     ),
 
     "unarmed_mastery": new Skill(
+        "unarmed_mastery",
         "Unarmed Mastery", 
-        "",
-        0, false, skill_combat_bar_style, 100, 1, 0, [], [
-            {lvl: 10,  req: ["unarmed", 1], item: new EquipComponent(null, 0, {}, {}, null, [])},
-            {lvl: 20,  req: null,           item: new EquipComponent(null, 0, {}, {}, null, [])},
-            {lvl: 25,  req: ["unarmed", 1], item: new EquipComponent(null, 0, {}, {}, null, [])},
-            {lvl: 40,  req: null,           item: new EquipComponent(null, 0, {}, {}, null, [])},
-            {lvl: 50,  req: ["unarmed", 1], item: new EquipComponent(null, 0, {}, {}, null, [])},
-            {lvl: 60,  req: null,           item: new EquipComponent(null, 0, {}, {}, null, [])},
-            {lvl: 75,  req: ["unarmed", 1], item: new EquipComponent(null, 0, {}, {}, null, [])},
-            {lvl: 80,  req: null,           item: new EquipComponent(null, 0, {}, {}, null, [])},
-            {lvl: 100, req: ["unarmed", 1], item: new EquipComponent(null, 0, {}, {}, null, [])}
+        "Skill at fighting unarmed in combat. Levels in this skill grant no inherent bonus, aside from the level milestones.",
+        0, true, skill_combat_bar_style, 100, 1, 0, [], [
+            {lvl: 10,  req: ["unarmed", 1], item: new EquipComponent(null, 0, {MHP: 10, ATK: 10, ATT: 10, DEF: 10, MDF: 10, SPD: 10, ACC: 10, EVA: 10}, {}, null, [])},
+            {lvl: 20,  req: null,           item: new EquipComponent(null, 0, {WEIGHT_MODIFIER: -5}, {}, null, [])},
+            {lvl: 25,  req: ["unarmed", 1], item: new EquipComponent(null, 0, {}, {}, "flurry", [])},
+            {lvl: 40,  req: null,           item: new EquipComponent(null, 0, {MHP: 4, ATK: 4, ATT: 4, DEF: 4, MDF: 4, SPD: 4, ACC: 4, EVA: 4}, {}, null, [])},
+            {lvl: 50,  req: ["unarmed", 1], item: new EquipComponent(null, 0, {}, {SPD: 0.25}, null, [])},
+            {lvl: 60,  req: null,           item: new EquipComponent(null, 0, {}, {ATK: 0.06}, null, [])},
+            {lvl: 75,  req: ["unarmed", 1], item: new EquipComponent(null, 0, {ATT: 24}, {}, null, [])},
+            {lvl: 80,  req: null,           item: new EquipComponent(null, 0, {}, {MHP: 0.04, ATK: 0.04, ATT: 0.04, DEF: 0.04, MDF: 0.04, SPD: 0.04, ACC: 0.04, EVA: 0.04}, null, [])},
+            {lvl: 100, req: ["unarmed", 1], item: new EquipComponent(null, 0, {}, {}, "eight_palms", [])}
         ]
     ),
 
     "light_armour_mastery": new Skill(
+        "light_armour_mastery",
         "Light Armour Mastery", 
-        "",
+        "Skill at using light armour in combat. Equipped  light armour gains -0.2% reduced weight per skill level.",
         1, false, skill_armour_bar_style, 100, 4, 4, [ITEM_TYPE.LIGHT_ARMOUR], [
             {lvl: 10,  per_item: true, req: [ITEM_TYPE.LIGHT_ARMOUR, 1], item: new EquipComponent(null, 0, {DEF: 1}, {}, null, [])},
             {lvl: 20,  req: null,                                        item: new EquipComponent(null, 0, {SPD: 4},  {}, null, [])},
@@ -1534,13 +1655,14 @@ let skills_list = {
             {lvl: 60,  req: null,                                        item: new EquipComponent(null, 0, {MHP: 50}, {}, null, [])},
             {lvl: 75,  per_item: true, req: [ITEM_TYPE.LIGHT_ARMOUR, 1], item: new EquipComponent(null, 0, {EVA: 2}, {}, null, [])},
             {lvl: 80,  req: null,                                        item: new EquipComponent(null, 0, {ACC: 8}, {}, null, [])},
-            {lvl: 100, req: [ITEM_TYPE.LIGHT_ARMOUR, 1],                 item: new EquipComponent(null, 0, {}, {}, "", [ITEM_SPECIAL.light_armour_mastery_ender])}
+            {lvl: 100, req: null,                                        item: new EquipComponent(null, 0, {}, {}, "", [ITEM_SPECIAL.light_armour_mastery_ender])}
         ]
     ),
 
     "medium_armour_mastery": new Skill(
+        "medium_armour_mastery",
         "Medium Armour Mastery", 
-        "",
+        "Skill at using medium armour in combat. Equipped medium armour gains -0.2% reduced weight per skill level.",
         1, false, skill_armour_bar_style, 100, 4, 4, [ITEM_TYPE.MEDIUM_ARMOUR], [
             {lvl: 10,  per_item: true, req: [ITEM_TYPE.MEDIUM_ARMOUR, 1], item: new EquipComponent(null, 0, {DEF: 1}, {}, null, [])},
             {lvl: 20,  req: null,                                         item: new EquipComponent(null, 0, {SPD: 4},  {}, null, [])},
@@ -1554,8 +1676,9 @@ let skills_list = {
     ),
 
     "heavy_armour_mastery": new Skill(
+        "heavy_armour_mastery",
         "Heavy Armour Mastery", 
-        "",
+        "Skill at using heavy armour in combat. Equipped heavy armour gains -0.2% reduced weight per skill level.",
         1, false, skill_armour_bar_style, 100, 4, 4, [ITEM_TYPE.HEAVY_ARMOUR], [
             {lvl: 10,  per_item: true, req: [ITEM_TYPE.HEAVY_ARMOUR, 1], item: new EquipComponent(null, 0, {DEF: 2}, {}, null, [])},
             {lvl: 20,  req: null,                                        item: new EquipComponent(null, 0, {SPD: 4},  {}, null, [])},
@@ -1569,8 +1692,9 @@ let skills_list = {
     ),
 
     "inner_artifact_mastery": new Skill(
+        "inner_artifact_mastery",
         "Inner Artifact Mastery", 
-        "",
+        "Skill at using inner artifacts in combat. Levels in this skill grant no inherent bonus, aside from the level milestones.",
         2, false, skill_artifact_bar_style1, 100, 2, 2, [ITEM_TYPE.INNER_ARTIFACT], [
             {lvl: 10,  per_item: true, req: [ITEM_TYPE.INNER_ARTIFACT, 1], item: new EquipComponent(null, 0, {ATT: 4}, {}, null, [])},
             {lvl: 20,  req: null,                                          item: new EquipComponent(null, 0, {MDF: 3},  {}, null, [])},
@@ -1585,8 +1709,9 @@ let skills_list = {
     ),
 
     "outer_artifact_mastery": new Skill(
+        "outer_artifact_mastery",
         "Outer Artifact Mastery", 
-        "",
+        "Skill at using outer artifacts in combat. Levels in this skill grant no inherent bonus, aside from the level milestones.",
         2, false, skill_artifact_bar_style2, 100, 2, 2, [ITEM_TYPE.OUTER_ARTIFACT], [
             {lvl: 10,  per_item: true, req: [ITEM_TYPE.OUTER_ARTIFACT, 1], item: new EquipComponent(null, 0, {ATT: 4}, {}, null, [])},
             {lvl: 20,  req: null,                                          item: new EquipComponent(null, 0, {ATT: 3},  {}, null, [])},
@@ -1601,8 +1726,9 @@ let skills_list = {
     ),
 
     "divine_artifact_mastery": new Skill(
+        "divine_artifact_mastery",
         "Divine Artifact Mastery", 
-        "",
+        "Skill at using divine artifacts in combat. Levels in this skill grant no inherent bonus, aside from the level milestones.",
         2, false, skill_artifact_bar_style3, 100, 2, 2, [ITEM_TYPE.DIVINE_ARTIFACT], [
             {lvl: 10,  per_item: true, req: [ITEM_TYPE.DIVINE_ARTIFACT, 1], item: new EquipComponent(null, 0, {ATT: 4}, {}, null, [])},
             {lvl: 20,  req: null,                                           item: new EquipComponent(null, 0, {MDF: 3},  {}, null, [])},
@@ -1617,16 +1743,18 @@ let skills_list = {
     ),
 
     "combat": new Skill(
-        "Combat", 
-        "",
+        "combat",
+        "Combat",
+        "Overall fighting skill. Levels in this skill grant +1% ATK and +0.05 ACC to equipped weapons and -0.2% effective weight to equipped armours.",
         3, false, skill_combat_bar_style2, 100, 8, 7, "ALL", [
             
         ]
     ),
 
     "artifact_mastery": new Skill(
+        "artifact_mastery",
         "Artifact Mastery", 
-        "",
+        "Overall skill at using artifacts in combat. Levels in this skill grant no inherent bonus, aside from the level milestones.",
         3, false, skill_artifact_bar_style4, 100, 8, 2, [ITEM_TYPE.INNER_ARTIFACT, ITEM_TYPE.OUTER_ARTIFACT, ITEM_TYPE.DIVINE_ARTIFACT], [
 
         ]
@@ -1641,104 +1769,106 @@ const default_cols = {
     ult_attack: [new Colour(128, 0, 0), new Colour(160, 110, 0)],
     ult_defense: [new Colour(96, 96, 96), new Colour(200, 200, 160)],
     ult_magic: [new Colour(0, 64, 128), new Colour(64, 128, 192)],
+    ult_chinese: [new Colour(128, 0, 0), new Colour(192, 128, 192)],
 }
 
 
 let ability_list = {
     "attack": new Ability(
-        "Attack", "Deals 100% ATK damage.",
+        "Attack", "",
         default_cols.attack,
-        8, Ability.regular_attack(1),
+        2, Ability.regular_attack(1),
     ),
 
     // add alternate attacks here
 
     "wooden_sword_moment": new Ability(
-        "Wooden sword moment", "[#f00]for real",
+        "Wooden sword moment", " - [[#f00]]for real",
         default_cols.magic,
-        60, Ability.regular_attack(3)
+        5, Ability.regular_attack(2)
     ),
 
     "combo": new Ability(
         "Combo", "",
         default_cols.defense,
-        30, Ability.gain_effect(
+        4, Ability.gain_effect(
             new Effect(
                 EquipComponent.abstract_stats({SPD: 60}, {}), true
-            ), 8
+            ), 1.5
         )
     ),
 
     "fatal_finisher": new Ability(
-        "Fatal Finisher", "Using other abilities reduces this ability's cooldown instead of increasing it.",
+        "Fatal Finisher", " - Using other abilities reduces this ability's cooldown by twice the amount instead of increasing it.",
         default_cols.ult_attack,
-        600, Ability.regular_attack(10), -1
+        60, Ability.regular_attack(10), -2
     ),
 
     "parry": new Ability(
         "Parry", "",
         default_cols.defense,
-        90, Ability.gain_effect(
+        4, Ability.gain_effect(
             new Effect(
                 EquipComponent.abstract_stats({}, {DEF: 9}), true
-            ), 7
+            ), 1.2
         )
     ),
 
     "thousandfold_divide": new Ability(
         "Thousandfold Divide", "",
         default_cols.ult_attack,
-        120, Ability.and(
+        20, Ability.and(
             Ability.regular_attack(7.5),
-            Ability.apply_effect(new Effect(EquipComponent.abstract_stats({}, {SPD: -1}), false), 24)
+            Ability.apply_effect(new Effect(EquipComponent.abstract_stats({}, {SPD: -1}), false), 8)
         )
     ),
 
-    // TODO all below untested
-    // also add descriptions to everything!!!!
     "expose": new Ability(
         "Expose", "",
         default_cols.attack,
-        48, Ability.and(
+        8, Ability.and(
             Ability.regular_attack(0.5),
-            Ability.gain_effect(new Effect(EquipComponent.abstract_stats({CRIT_CHANCE: 0.3}, {}), true), 16)
+            Ability.gain_effect(new Effect(EquipComponent.abstract_stats({CRIT_CHANCE: 30}, {}), true), 3)
         )
     ),
 
     "vorpal_strike": new Ability(
         "Vorpal Strike", "",
         default_cols.ult_attack,
-        48, Ability.regular_attack(400, 999, 99999999)
+        15, Ability.regular_attack(400, 999, 99999999)
     ),
 
     "headhunter": new Ability(
         "Headhunter", "",
         default_cols.attack,
-        70, (b, s, t) => s.initiate_move(
-            t, (s.stats.ATK * 0.4) + (t.hp * 0.25), DamageType.PHYSICAL,
-            0, 0, 0, 0
-        )
+        12, {
+            fn: (b, s, t) => s.initiate_move(
+                t, Math.min(s.stats.ATK * 15, (s.stats.ATK * 0.4) + (t.hp * 0.25)), DamageType.PHYSICAL,
+                0, 0, 0, 0
+            ),
+            desc: " - 40% ATK + 25% enemy current HP (max 1500% ATK) damage"
+        }
     ),
 
     "demonic_soul_tribute": new Ability(
         "Demonic Soul Tribute", "",
         default_cols.ult_defense,
-        120, Ability.gain_effect(
+        20, Ability.gain_effect(
             new Effect(
                 EquipComponent.abstract_stats({ATK: 200}, {ATK: 0.6}), true
-            ), 30
+            ), 8
         )
     ),
 
     "crush": new Ability(
         "Crush", "",
         default_cols.attack,
-        80, Ability.and(
+        15, Ability.and(
             Ability.regular_attack(1.2),
             Ability.apply_effect(
                 new Effect(
                     EquipComponent.abstract_stats({DEF: -15, MDF: -15, SPD: -15, EVA: -15}, {}), false
-                ), 20
+                ), 6
             )
         )
     ),
@@ -1746,35 +1876,56 @@ let ability_list = {
     "nine_heavens_shattering": new Ability(
         "Nine Heavens Shattering", "",
         default_cols.ult_attack,
-        100, (b, s, t) => s.initiate_move(
-            t, (s.stats.ATK * 1) + (s.stats.MHP * 0.2) + (s.stats.DEF * 3),
-            DamageType.PHYSICAL,
-            0, 0, 0, 0
-        )
+        25, {
+            fn: (b, s, t) => s.initiate_move(
+                t, (s.stats.ATK * 1) + (s.stats.MHP * 0.2) + (s.stats.DEF * 3),
+                DamageType.PHYSICAL,
+                0, 0, 0, 0
+            ),
+            desc: " - 100% ATK + 20% MHP + 300% DEF damage"
+        }
     ),
 
     "defensive_rush": new Ability(
         "Defensive Rush", "",
         default_cols.attack,
-        24, Ability.and(
+        8, Ability.and(
             Ability.regular_attack(0.8),
             Ability.gain_effect(
                 new Effect(
                     EquipComponent.abstract_stats({}, {DEF: 0.8}), true
-                ), 8
+                ), 3
             )
         )
     ),
 
     "martial_soul": new Ability(
-        "Martial Soul", "",
+        "Martial Soul", "Cooldown unaffected by SPD",
         default_cols.ult_defense,
-        60, Ability.gain_effect(
+        16, Ability.gain_effect(
             new Effect(
                 EquipComponent.abstract_stats({}, {ATK: 1, DEF: 1, MDF: 1, SPD: 1, ACC: 1, EVA: 1}), true
-            ), 20
+            ), 8
         ), 1, true
     ),
+
+    "flurry": new Ability(
+        "Flurry", "",
+        default_cols.defense,
+        3, {
+            fn: (b, s, t) => s.delays[0] = -ABILITY_GLOBAL_DELAY,
+            desc: " - Resets the cooldown of your basic attack ability"
+        }
+    ),
+
+    "eight_palms": new Ability(
+        "Eight Palms of the Heavenly Fist: Conclusion", " - Cooldown unaffected by SPD\n - Using other abilities does not affect this ability's cooldown",
+        default_cols.ult_chinese,
+        60, Ability.and(
+            Ability.regular_attack(88.88),
+            Ability.magical_attack(88.88)
+        ), 0, true
+    )
 
     // then it's just artifact abilities. include 3 different colours for inner/outer/divine
     // (blue-green, blue-red, blue-yellow)
@@ -1827,7 +1978,7 @@ let entity_template_list = {
 
             CRIT_CHANCE: 0,
             WEIGHT_MODIFIER: 0
-        }, 2, [ability_list["attack"]]
+        }, 30, [ability_list["attack"]]
     ),
 
     "training_dummy_3": new EntityTemplate(
@@ -1843,6 +1994,6 @@ let entity_template_list = {
 
             CRIT_CHANCE: 0,
             WEIGHT_MODIFIER: 0
-        }, 2, [ability_list["attack"]]
+        }, 10000, [ability_list["attack"]]
     )
 }

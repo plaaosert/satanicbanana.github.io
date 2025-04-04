@@ -1,0 +1,224 @@
+.game {
+    font-family: juliamono;
+    font-size: 12px;
+    font-smooth: never;
+	-webkit-font-smoothing: none;
+    color: white;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.game * {
+    
+}
+
+.shop-items {
+    display: flex;
+    flex-direction: row;
+
+    justify-content: center;
+    align-items: center;
+}
+
+.flex-opposite {
+    display: flex;
+    flex-direction: column;
+}
+
+.templates {
+    display: none;
+}
+
+.game span {
+    white-space: pre;
+}
+
+.game .infobox {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.container {
+    display: grid;
+    grid-template-columns: auto;
+    grid-template-rows: max-content;
+
+    width: calc(var(--siz) * 7.2px);
+}
+
+.container>* {
+    grid-row-start: 1;
+    grid-row-end: 1;
+    grid-column-start: 1;
+    grid-column-end: 1;
+    padding-left: 12px;
+    padding-top: 16px;
+    padding-right: 12px;
+    padding-bottom: 16px;
+}
+
+.clickable.button:hover {
+    background-color: black;
+    filter: invert(1);
+}
+
+.button {
+    text-align: center;
+}
+
+.clickable.item:hover {
+    background-color: black;
+    filter: invert(1);
+}
+
+.reactor.interactable .clickable.cell:hover {
+    background-color: black;
+    filter: invert(1);
+}
+
+.container .container-frame {
+    padding: 0;
+}
+
+.items {
+    display: flex;
+}
+
+.items .item {
+    height: min-content;
+}
+
+.items .item * {
+    pointer-events: none;
+}
+
+.item .selected {
+    background-color: darkslategray;
+}
+
+.items-list, .particles-list {
+    justify-content: center;
+}
+
+.hidden {
+    display: none;
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+}
+
+.col {
+    display: flex;
+    flex-direction: column;
+}
+
+.reactor {
+    display: grid;
+    grid-template-columns: auto auto auto auto;
+}
+
+.cell {
+    background-color: #222;
+}
+
+.cell.hot1 {
+    background-color: #400;
+}
+
+.cell.hot2 {
+    background-color: #600;
+}
+
+.cell.hot3 {
+    background-color: #830;
+}
+
+.cell.hot4 {
+    background-color: #d90 !important;
+}
+
+.cell.hot4 * {
+    visibility: hidden;
+}
+
+.cell.nothing * {
+    visibility: hidden;
+}
+
+.cell.activated .cell-icon {
+    background-color: black;
+    filter: invert(1);
+}
+
+.cell.xchange .cell-value-x {
+    background-color: rgb(0, 95, 95);
+}
+
+.cell.ychange .cell-value-y {
+    background-color: rgb(60, 0, 0);
+}
+
+.cell.indexchange {
+    color: lightgreen;
+}
+
+.cell-value-x {
+    color: powderblue;
+}
+
+.cell-value-y {
+    color: lightcoral;
+}
+
+.powerdisplay {
+    color: yellow;
+}
+
+.roundnumber, .phasenumber {
+    font-weight: bold;
+    color: #4df;
+}
+
+.powernumber, .powerreq {
+    font-weight: bold;
+    color: orange;
+}
+
+.triggername {
+    color: orange;
+}
+
+.calculation {
+    color: #fff;
+}
+
+.powerbar {
+    color: white;
+}
+
+.powerbar .p0 {
+    color: black;
+}
+
+.powerbar .p1 {
+    color: red;
+}
+
+.powerbar .p2 {
+    color: orange;
+}
+
+.powerbar .p3 {
+    color: yellow;
+}
+
+.powerbar .p4 {
+    color: greenyellow;
+}
+
+.powerbar .p5 {
+    color: cyan;
+}

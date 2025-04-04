@@ -2,6 +2,14 @@
 // each location has a set of "options", gated by a condition, that start an action tree (nested list of options, same type as root).
 // an action tree node can also be, instead of a nested list, a "cap", such as starting an encounter, gaining an item, gaining skill XP, etc.
 // also associated is an encounter the area can have and, if so, the amount of time to wait until this encounter starts.
+class Dialogue {
+    constructor(speaker, speaker_col, text) {
+        this.speaker = speaker;
+        this.speaker_col = speaker_col;
+        this.text = text;
+    }
+}
+
 class GameLocation {
     constructor(name, short_name, connections, options, is_safe_location, default_encounter, default_encounter_wait_time) {
         this.name = name;

@@ -1,20 +1,28 @@
+// TODO write a way to mouseover items not in inventory or equipment (dialogue). make sure they aren't able to be equipped or interacted with, only viewed
+//      finish the dialogue logic and display. we have a dialogue tree already so just need to render it and make the stuff clickable
+
 let player = Player.new("plaaosert");
 
 let mouseover_item = {
     item: null,
     index: -1,
-    slot: null
+    slot: null,
+
+    ability_index: -1,
+    ability_entity_id: -1,
+
+    skill: null,
 }
 
 let cur_battle = null;
 let last_frame = 0;
-let game_speed = 8;
+let game_speed = 1;
 const SMALLEST_ALLOWED_TIME_GAP = 1;
 const LARGEST_ALLOWED_TIME_GAP = 25;
 const MAX_CALCS_PER_FRAME = 10;
 
 function equip_button_pressed(keyindex) {
-    console.log(mouseover_item);
+    // console.log(mouseover_item);
     if (mouseover_item.item) {
         if (mouseover_item.index != -1) {
             // inventory
@@ -23,7 +31,71 @@ function equip_button_pressed(keyindex) {
             // equipped item
             equipped_unequip(mouseover_item.slot);
         }
+    } else if (mouseover_item.skill) {
+        console.log(`Tracking skill ${mouseover_item.skill} in slot ${keyindex-1}`)
+        player.tracked_skills[keyindex-1] = mouseover_item.skill;
+        player.mark_change("skills");
     }
+}
+
+function update_dialog() {
+    if (mouseover_item.item) {
+        // refresh item view
+        if (mouseover_item.slot) {
+            // equipped
+            equipped_mouseover(mouseover_item.slot);
+        } else {
+            // inventory
+            inventory_mouseover(mouseover_item.index);
+        }
+    } else if (mouseover_item.ability_index != -1) {
+        // refresh ability view
+        ability_mouseover(mouseover_item.ability_entity_id, mouseover_item.ability_index);
+    } else if (mouseover_item.skill) {
+        // refresh skill view
+        skill_mouseover(mouseover_item.skill);
+    }
+}
+
+function skill_mouseover(skill) {
+    document.getElementById("skill_info_overlay_panel").style.display = "";
+
+    if (skill) {
+        render_selected_skill(player, skills_list[skill]);
+        mouseover_item.skill = skill;
+    } else {
+        skill_mouseout();
+    }
+}
+
+function skill_mouseout() {
+    document.getElementById("skill_info_overlay_panel").style.display = "none";
+    mouseover_item.skill = null;
+}
+
+function ability_mouseover(ent_id, ability_index) {
+    document.getElementById("ability_info_overlay_panel").style.display = "";
+
+    if (cur_battle || ent_id == 1) {
+        let entity = cur_battle ? cur_battle[`ent${ent_id}`] : player.stored_entity;
+        let ability = entity.template.abilities[ability_index];
+        if (ability) {
+            render_selected_ability(entity, ability);
+
+            mouseover_item.ability_index = ability_index;
+            mouseover_item.ability_entity_id = ent_id;
+        } else {
+            ability_mouseout()
+        }
+    } else {
+        ability_mouseout()
+    }
+}
+
+function ability_mouseout() {
+    document.getElementById("ability_info_overlay_panel").style.display = "none";
+    mouseover_item.ability_index = -1;
+    mouseover_item.ability_entity_id = -1;
 }
 
 function interactable_item_mouseover() {
@@ -33,11 +105,9 @@ function interactable_item_mouseover() {
 
 function interactable_item_mouseout() {
     document.getElementById("item_info_overlay_panel").style.display = "none";
-    mouseover_item = {
-        item: null,
-        index: -1,
-        slot: null
-    }
+    mouseover_item.item = null;
+    mouseover_item.slot = null;
+    mouseover_item.index = -1;
 }
 
 // TODO figure out an equipping / comparison UI (copy the item display panel ig?)
@@ -45,25 +115,29 @@ function inventory_mouseover(index) {
     interactable_item_mouseover();
 
     // also show the infoscreen here, but for now just mark it as not new
-    if (player.inventory[index].is_new) {
-        player.inventory[index].is_new = false;
-        player.mark_change("inventory");
-
-        render_inventory(player);
+    if (player.inventory[index]) {
+        if (player.inventory[index].is_new) {
+            player.inventory[index].is_new = false;
+            player.mark_change("inventory");
+    
+            render_inventory(player);
+        }
+    
+        render_selected_item(player, player.inventory[index].item);
+    
+        mouseover_item.item = player.inventory[index].item;
+        mouseover_item.index = index;
+        mouseover_item.slot = null;
+    } else {
+        interactable_item_mouseout();
     }
-
-    render_selected_item(player, player.inventory[index]);
-
-    mouseover_item.item = player.inventory[index];
-    mouseover_item.index = index;
-    mouseover_item.slot = null;
 }
 
 function inventory_equip(index, artifact_target) {
     // artifact_target only matters if the item is an artifact.
     // can only equip while not busy (in a battle, or in an event)
     if (!(cur_battle || game_state.cur_option_state)) {
-        let item = player.inventory[index];
+        let item = player.inventory[index].item;
         let slot = null;
         
         if (item.equip_component) {
@@ -121,7 +195,7 @@ function equipped_mouseover(categ) {
 
 function equipped_unequip(categ) {
     if (!(cur_battle || game_state.cur_option_state)) {
-        if (player.inventory.length < player.inventory_max_slots-1) {
+        if (player.inventory.length < player.inventory_max_slots) {
             player.unequip_item_from_slot(categ);
         } else {
             // can't unequip, inventory is full
@@ -129,17 +203,27 @@ function equipped_unequip(categ) {
     }
 }
 
+/*
+each map location has a bunch of events.
+events have a check condition which usually includes flags along with some skill/item/kill check.
+triggering an event causes a dialogue tree.
+{
+    condition: fn() -> bool,
+    msg: dialogue(),          -- the message shown to the player
+    items: [],                -- any items the player receives
+    mouseover_ctx_items: [],  -- items to show on mouseover in the msg body, addressed by index; e.g. "%%0%%"
+    options: [
+        {text: }
+    ],
+    encounter: encounter(),   -- the encounter to trigger instead. *this makes it ignore everything else, including msg and items!*
+                                 if options after the encounter exist, index 0 will be picked for a victory and index 1 will be picked for a defeat.
+                                 if no options exist, the player is transported back to the closest safe zone.
+}
+*/
+
 let test_location = new GameLocation(
-    "Test area", "TST", [], [
-        [{msg: "This is a test dialogue tree", next: [
-            {msg: "Next option", next: [
-                {msg: "End encounter"}
-            ]},
-            {msg: "Next option (dangerous)", encounter: new Encounter([
-                entity_template_list["training_dummy"]
-            ])}
-        ]}]
-    ], false, new Encounter(["training_dummy", "training_dummy_2", "training_dummy_3"], 4), 10
+    // TODO look @ the rework above and implement it
+    "Test area", "TST", [], [], false, new Encounter(["training_dummy", "training_dummy_2", "training_dummy_3"], 4), 1
 )
 
 let game_state = {
@@ -155,7 +239,7 @@ let game_state = {
 
 
 document.addEventListener("DOMContentLoaded", function() {
-    enemy_stats_parent_elem = document.querySelector(".panel.enemy-panel .panel-inner");
+    enemy_stats_parent_elem = document.querySelector(".panel.enemy-panel .panel-inner#enemy-panel");
     player_stats_parent_elem = document.querySelector(".panel.player-panel .panel-inner");
     map_parent_elem = document.querySelector(".panel.map-panel .panel-inner");
 
@@ -279,6 +363,8 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         }
 
+        update_dialog(player);
+
         render_inventory(player);
         render_equipped_items(player);
 
@@ -333,6 +419,10 @@ document.addEventListener("DOMContentLoaded", function() {
             equip_button_pressed(2);
         }
 
+        if (e.code == "KeyT") {
+            equip_button_pressed(3);
+        }
+
         if (e.code == "KeyQ") {
             player.add_item_to_inventory(
                 new Item("Rock", "Rock!!!!!!!!!!", "Rock effect", 1, null, null, [Item.Tag.QUEST])
@@ -364,14 +454,14 @@ document.addEventListener("DOMContentLoaded", function() {
                     [EquipComponent.SubType.HEAD, EquipComponent.SubType.BODY, EquipComponent.SubType.ARMS, EquipComponent.SubType.LEGS].forEach(sk => {
                         player.add_item_to_inventory(
                             new Item(`Equippable ${k} ${sk}`, "dont think too hard about it", "nope", 1, new EquipComponent(
-                                ITEM_TYPE[k], 1, flats, muls, null, [], sk
+                                ITEM_TYPE[k], Math.round(Math.random() * 100), flats, muls, null, [], sk
                             ))
                         )
                     })
                 } else {
                     player.add_item_to_inventory(
                         new Item(`Equippable ${k}`, "dont think too hard about it", "nope", 1, new EquipComponent(
-                            ITEM_TYPE[k], 1, flats, muls, null, []
+                            ITEM_TYPE[k], Math.round(Math.random() * 100), flats, muls, null, []
                         ))
                     )
                 }
@@ -379,7 +469,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
             player.add_item_to_inventory(
                 new Item(`Sword of God`, "REAL???", "Gives you power of god", 1, new EquipComponent(
-                    ITEM_TYPE.SWORD, 1, {
+                    ITEM_TYPE.SWORD, 1000, {
                         MHP: 999,
                         ATK: 999,
                         ATT: 999,
@@ -398,7 +488,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         ACC: 9.99,
                         EVA: 9.99,
                     }, "thousandfold_divide", []
-                ), null, [], true, [
+                ), null, [], [
                     ["artifact_mastery", 2,], ["sword_mastery", 6]
                 ])
             )
@@ -440,17 +530,16 @@ document.addEventListener("DOMContentLoaded", function() {
             )
 
             player.equipped_items["WEAPON"] = new Item(
-                "Wooden Sword", "This is a wooden sword for testing purposes", "---", 1,
+                "Sword ass sword", "FUCKINK. SORD", "---", 1,
                 new EquipComponent(
                     ITEM_TYPE.SWORD, 5, {ATK: 2, SPD: 6}, {MHP: 2}, "wooden_sword_moment", []
                 )
             )
             
-            // TODO actually make sure armour items are restricted to a certain slot (LOL)
             player.equipped_items["BODY"] = new Item(
                 "Good Ass Everything Armour", "cloth", "---", 1,
                 new EquipComponent(
-                    ITEM_TYPE.LIGHT_ARMOUR, 5, {DEF: -10}, {}, "", [], EquipComponent.SubType.BODY
+                    ITEM_TYPE.LIGHT_ARMOUR, 5, {DEF: 10, SPD: 50}, {}, "", [], EquipComponent.SubType.BODY
                 )
             )
 
@@ -462,15 +551,14 @@ document.addEventListener("DOMContentLoaded", function() {
             )
 
             player.tracked_skills[1] = "sword_mastery";
-            player.skill_levels["sword_mastery"] = 0;
-            player.skill_xp["sword_mastery"] = 0;
+            player.set_skill_level("sword_mastery", 0);
+            player.set_skill_xp("sword_mastery", 0);
 
             player.tracked_skills[2] = "knife_mastery";
-            player.skill_levels["knife_mastery"] = 0;
-            player.skill_xp["knife_mastery"] = 0;
+            player.set_skill_level("knife_mastery", 25);
+            player.set_skill_xp("sword_mastery", 0);
 
-            player.skill_levels["divine_artifact_mastery"] = 100;
-            player.skill_xp["combat"] = 0;
+            player.set_skill_level("divine_artifact_mastery", 100);
 
             player.refresh_entity();
             player.mark_change("inventory");

@@ -1,6 +1,6 @@
-const PHYS_GRANULARITY = 64;
-const DEFAULT_BALL_RESTITUTION = 0.9;
-const DEFAULT_BALL_FRICTION = 0.994;
+const PHYS_GRANULARITY = 512;
+const DEFAULT_BALL_RESTITUTION = 0;
+const DEFAULT_BALL_FRICTION = 0.2;
 
 const fps = 60;
 
@@ -231,7 +231,13 @@ class Ball {
     physics_step(time_delta) {
         if (!this.at_rest) {
             this.add_pos(this.velocity.mul(time_delta), true);
-            this.velocity = this.velocity.mul(Math.pow(this.friction_factor, 1/PHYS_GRANULARITY))
+
+            if (true) {
+                let friction_force = Math.min(this.velocity.magnitude(), this.mass * this.friction_factor * time_delta);
+                this.velocity = this.velocity.sub(this.velocity.mul(friction_force));
+            } else {
+                this.velocity = this.velocity.mul(Math.pow(this.friction_factor, 1/PHYS_GRANULARITY))
+            }
         } else {
             this.set_velocity(new Vector2(0, 0));
         }
@@ -592,7 +598,7 @@ let default_pocket_kernel = new EternaProcessKernel(
             let target_pos = (data.game.balls[0].position.sub(game_pos)).add(new Vector2(6, 6));
             console.log(target_pos);
 
-            let impulse = target_pos.normalize().mul(200);
+            let impulse = target_pos.normalize().mul(250);
             data.game.balls[0].add_impulse(impulse);
             data.game.balls[0].at_rest = false;
 

@@ -13,3 +13,9 @@ const PletrisKeybind = {
 
 const DEFAULT_DAS = 100;
 const DEFAULT_ARR = 10;
+
+const ModAction = {
+    REPLACE: "Replace",
+    PREFIX: "Prefix",
+    SUFFIX: "Suffix"
+}

@@ -6215,6 +6215,8 @@ class Game {
         new_game.recorded_damage = save.state.recorded_damage;
         new_game.current_wave_damage = save.state.current_wave_damage;
 
+        new_game.random = random_from_parameters(...save.state.random);
+
         // fill the board with entities
         save.entities.forEach(ent => {
             // pretty much everything from the entity can be changed,
@@ -6351,6 +6353,8 @@ class Game {
         save.state.inventory_open = this.inventory_open;
         save.state.recorded_damage = this.recorded_damage;
         save.state.current_wave_damage = this.current_wave_damage;
+
+        save.state.random = this.random(true);
 
         save.entities = this.entities.map(ent => {
             let o = {};
