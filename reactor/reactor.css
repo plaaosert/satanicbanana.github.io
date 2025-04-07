@@ -93,8 +93,12 @@
     pointer-events: none;
 }
 
-.item .selected {
-    background-color: darkslategray;
+.item.selected {
+    background-color: maroon !important;
+}
+
+.button.selected {
+    background-color: maroon !important;
 }
 
 .items-list, .particles-list {
@@ -221,4 +225,12 @@
 
 .powerbar .p5 {
     color: cyan;
+}
+
+.disabled {
+    opacity: 0.25;
+}
+
+.reactor.interactable.buyingitem .cell {
+    color: pink;
 }

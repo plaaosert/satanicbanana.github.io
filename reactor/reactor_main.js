@@ -441,11 +441,11 @@ const drop_chance_mods = {
 }
 
 class ParticleTemplate {
-    constructor(name, icon, col, cost, rarity, type, triggers) {
+    constructor(name, icon, col, value, rarity, type, triggers) {
         this.name = name;
         this.icon = icon;
         this.col = col;
-        this.cost = cost;
+        this.value = value;
         this.rarity = rarity;
         this.typ = type;
         this.triggers = triggers;
@@ -626,6 +626,103 @@ function set_cell_heat(index, heat) {
     element.classList.add(`hot${heat}`);
 }
 
+function render_shop(run) {
+    // show reroll price, set shop particles, set shop items, set destroy price
+
+    let shop_elem = document.querySelector("#shop_items");
+
+    shop_elem.querySelector(".reroll-price").textContent = pad_center(`◕${run.shop_items.reroll_price}`, 12);
+    if (run.money < run.shop_items.reroll_price) {
+        shop_elem.querySelector("#shop_reroll_button").classList.add("disabled");
+    } else {
+        shop_elem.querySelector("#shop_reroll_button").classList.remove("disabled");
+    }
+
+    shop_elem.querySelector(".remove-price").textContent = pad_center(`◕${run.shop_items.remove_price}`, 10);
+    if (run.money < run.shop_items.remove_price) {
+        shop_elem.querySelector("#shop_remove_button").classList.add("disabled");
+    } else {
+        shop_elem.querySelector("#shop_remove_button").classList.remove("disabled");
+    }
+
+    let item_template = document.querySelector(".templates .item");
+    let item_template_study = document.querySelector(".templates .item.study");
+
+    let particles_list = shop_elem.querySelector(".particles-list");
+    let items_list = shop_elem.querySelector(".items-list");
+
+    particles_list.replaceChildren();
+    items_list.replaceChildren();
+    [[run.shop_items.particles, particles_list, show_cell_info, "particle"], [run.shop_items.items, items_list, show_item_info, "item"]].forEach(c => {
+        c[0].forEach((p, i) => {
+            let clone = (p[0].typ == ItemType.STUDY ? item_template_study : item_template).cloneNode(true);
+            clone.querySelector(".item-icon").textContent = p[0].icon;
+            clone.querySelector(".item-icon").style.color = p[0].col;
+            clone.style.color = p[0].bgcol;
+            clone.setAttribute("itemid", p[0].id);
+
+            let price_elem = document.createElement("span");
+            price_elem.textContent = `\n${pad_center(`◕${p[1]}`, 5)}`;
+            clone.appendChild(price_elem);
+
+            clone.addEventListener("mouseover", e => {
+                c[2](p[0]);
+            });
+
+            clone.addEventListener("mouseout", e => {
+                c[2](null);
+            })
+
+            if (p[1] > run.money) {
+                clone.classList.add("disabled");
+            } else {
+                // only register click events if it's affordable :)
+                clone.addEventListener("click", e => {
+                    if (clone.classList.contains("selected")) {
+                        // depends on if particle or item. if particle, deselect - if item, purchase.
+                        if (c[3] == "particle") {
+                            clone.classList.remove("selected");
+                            document.querySelector("#reactor").classList.remove("buyingitem");
+                            run.selected_shop_item = null;
+                        } else {
+                            run.purchase_item(p, i);
+                        }
+                    } else {
+                        // deselect the previously selected item if any
+                        if (run.selected_shop_item) {
+                            run.selected_shop_item.element.classList.remove("selected");
+                            if (run.selected_shop_item.typ == "particle") {
+                                document.querySelector("#reactor").classList.remove("buyingitem");
+                            }
+                        }
+
+                        clone.classList.add("selected");
+                        if (c[3] == "particle") {
+                            document.querySelector("#reactor").classList.add("buyingitem");
+                        }
+
+                        // set this as the new selected item
+                        run.selected_shop_item = {
+                            element: clone,
+                            typ: c[3],
+                            data: p,
+                            index: i
+                        }
+                    }
+                })
+            }
+
+            c[1].appendChild(clone);
+
+            if (i < c[0].length-1) {
+                let padding_span = document.createElement("span");
+                padding_span.textContent = " ";
+                c[1].appendChild(padding_span);
+            }
+        })
+    });
+}
+
 function render_items(items) {
     let item_template = document.querySelector(".templates .item");
     let item_template_study = document.querySelector(".templates .item.study")
@@ -644,7 +741,7 @@ function render_items(items) {
         })
         
         clone.addEventListener("mouseout", e => {
-            //show_item_info(null);
+            show_item_info(null);
         })
 
         items_list.appendChild(clone);
@@ -668,7 +765,7 @@ function show_cell_info(particle) {
         return;
     }
 
-    let desc = particle.template.desc;
+    let desc = particle.desc ? particle.desc : particle.template.desc;
 
     document.querySelector(".info-area .infobox").innerHTML = desc;
 }
@@ -801,8 +898,8 @@ let items_list = [
 
     // studies
     new ItemTemplate(
-        "On the Spontaneous Genesis of Nanoparticles in High Stress Environments", "∬", ItemType.STUDY,
-        "white", "limegreen", "When a particle is activated, 50% chance to copy it to a random empty location. Every time this effect triggers, the chance decreases by 15%.",
+        "On the Spontaneous Genesis of Activated Nanoparticles in High Stress Environments", "∬", ItemType.STUDY,
+        "white", "limegreen", "When a particle is activated, 50% chance to copy it to a random empty location. Every time this effect triggers, the chance decreases by 15% for the current trial.",
         1, 25, {
             [ParticleTriggers.ACTIVATED]: (item, p, data) => {
                 let chance = (item.temporary_data["copy_on_trigger_chance"] ? item.temporary_data["copy_on_trigger_chance"] : 0.5);
@@ -852,7 +949,7 @@ then we need to make the gameplay loop, plus the shop
 */
 
 function start_run(run) {
-    run.setup_reactor(OperationTypes.HOTSPOT);
+    run.setup_reactor();
 
     run.reactor.start_operation();
     run.reactor.render_particles();
@@ -899,9 +996,11 @@ function test_step(run) {
 }
 
 class Run {
-    constructor(seed, reactor, particle_order, items, money, round, phase) {
+    constructor(seed, reactor, reactor_operation_type, particle_order, items, money, round, phase) {
         this.reactor = reactor;
         this.particle_order = particle_order;
+        this.reactor_operation_type = reactor_operation_type;
+
         this.items = items;
         this.money = money;
         this.round = round;  // big rounds
@@ -914,6 +1013,7 @@ class Run {
 
         this.shop_items = {
             reroll_price: 5,
+            remove_price: 2,
             num_rerolls: 0,
             particles: [],
             items: [],
@@ -922,14 +1022,55 @@ class Run {
         this.base_stats = {
             reroll_base_cost: 5,
             reroll_cost_scaling: 3,
+
+            remove_base_cost: 2,
+
             destroy_value_return: 0.3,
 
             shop_particles_count: 4,
             shop_items_count: 2,
         }
+
+        this.selected_shop_item = null;
     }
 
-    roll_shop_items(forced_particle_spawns, num_mods_override, num_studies_override) {
+    purchase_item(data, index) {
+        // add to the list of items, re-render items, re-render shop, remove money
+        if (this.money >= data[1]) {
+            this.money -= data[1];
+
+            this.items.push(data[0]);
+            this.shop_items.items.splice(index, 1);
+
+            render_shop(this);
+            render_items(this.items);
+        }
+    }
+
+    purchase_particle(index) {
+        let data = this.selected_shop_item.data;
+        if (this.money >= data[1]) {
+            this.money -= data[1];
+
+            this.particle_order[index] = data[0];
+
+            run.selected_shop_item.element.classList.remove("selected");
+            if (run.selected_shop_item.typ == "particle") {
+                document.querySelector("#reactor").classList.remove("buyingitem");
+            }
+
+            if (data.index != null) { 
+                this.shop_items.particles.splice(data.index, 1);
+            }
+
+            this.setup_reactor();
+            this.reactor.start_operation();
+            this.reactor.render_particles();
+            render_shop(this);
+        }
+    }
+
+    roll_shop_particles(forced_particle_spawns=null) {
         let shop_particles = [];
         for (let i=0; i<Math.min(forced_particle_spawns ? forced_particle_spawns.length : 0, this.base_stats.shop_particles_count); i++) {
             let fp = forced_particle_spawns[i];
@@ -939,30 +1080,33 @@ class Run {
                 particle_template = fp.particle;
             } else {
                 let drop_table = balance_weighted_array(particles_drop_table.filter(ps => (!fp.rarity || ps[1].rarity == fp.rarity) && (!fp.typ || ps[1].typ == fp.typ)));
-                particle_template = weighted_seeded_random_from_arr(drop_table, this.random);
+                particle_template = weighted_seeded_random_from_arr(drop_table, this.random)[1];
             }
 
-            shop_particles.push(particle_template);
+            shop_particles.push([particle_template, particle_template.value]);
         }
 
         let particles_n = this.base_stats.shop_particles_count - shop_particles.length;
         for (let i=0; i<particles_n; i++) {
-            let particle_template = weighted_seeded_random_from_arr(particles_drop_table, this.random);
-            shop_particles.push(particle_template);
-        }
-
-        let shop_items = [];
-        for (let i=0; i<(num_mods_override ? num_mods_override : this.base_stats.shop_items_count); i++) {
-            let item_template = weighted_seeded_random_from_arr(items_drop_table_mods, this.random);
-            shop_items.push(item_template);
-        }
-
-        for (let i=0; i<(num_studies_override ? num_studies_override : 0); i++) {
-            let item_template = weighted_seeded_random_from_arr(items_drop_table_studies, this.random);
-            shop_items.push(item_template);
+            let particle_template = weighted_seeded_random_from_arr(particles_drop_table, this.random)[1];
+            shop_particles.push([particle_template, particle_template.value]);
         }
 
         this.shop_items.particles = shop_particles;
+    }
+
+    roll_shop_items(num_mods_override=-1, num_studies_override=-1) {
+        let shop_items = [];
+        for (let i=0; i<(num_mods_override != -1 ? num_mods_override : this.base_stats.shop_items_count); i++) {
+            let item_template = weighted_seeded_random_from_arr(items_drop_table_mods, this.random)[1];
+            shop_items.push([item_template, item_template.value]);
+        }
+
+        for (let i=0; i<(num_studies_override != -1 ? num_studies_override : 0); i++) {
+            let item_template = weighted_seeded_random_from_arr(items_drop_table_studies, this.random)[1];
+            shop_items.push([item_template, item_template.value]);
+        }
+
         this.shop_items.items = shop_items;
     }
 
@@ -970,8 +1114,8 @@ class Run {
         return Math.ceil(Math.pow(4, (round ? round : this.round)-1) * (10 * (2 + (((phase ? phase : this.phase)/0.5))))) - 20;
     }
 
-    setup_reactor(operation_type) {
-        this.reactor = new Reactor(this, this.particle_order, [], operation_type);
+    setup_reactor() {
+        this.reactor = new Reactor(this, this.particle_order, [], this.reactor_operation_type);
     }
 
     set_particle_order(to) {
@@ -986,7 +1130,7 @@ class Run {
         }
     }
     
-    reroll_shop(reset_rerolls=false) {
+    reroll_shop(reset_rerolls=false, roll_items=false, num_mods_override=-1, num_studies_override=-1) {
         this.shop_items.num_rerolls++;
         if (reset_rerolls) {
             this.shop_items.num_rerolls = 0;
@@ -994,11 +1138,14 @@ class Run {
 
         this.shop_items.reroll_price = this.base_stats.reroll_base_cost + (this.base_stats.reroll_cost_scaling * this.shop_items.num_rerolls);
 
-        this.roll_shop_items();
+        this.roll_shop_particles(null);
+        if (roll_items) {
+            this.roll_shop_items(num_mods_override, num_studies_override);
+        }
     }
 }
 
-let run = new Run("1234", null, new Array(16).fill(null), [], 4, 2, 3);
+let run = new Run(Date.now().toString(), null, OperationTypes.HOTSPOT, new Array(16).fill(null), [], 40, 2, 3);
 
 document.addEventListener("DOMContentLoaded", function(e) {
     run.particle_order = [
@@ -1039,14 +1186,55 @@ document.addEventListener("DOMContentLoaded", function(e) {
             show_cell_info(null);
         })
         c.addEventListener("click", e => {
-            console.log(`clicked reactor element ${i}`);
+            if (run.selected_shop_item?.typ == "particle") {
+                if (run.selected_shop_item.data[0] || run.reactor.particles[i]) {
+                    run.purchase_particle(i);
+                }
+            }
         })
     })
 
-    render_items([
+    document.querySelector("#shop_reroll_button").addEventListener("click", e => {
+        if (run.money >= run.shop_items.reroll_price) {
+            run.money -= run.shop_items.reroll_price;
+
+            run.reroll_shop();
+            render_shop(run);
+        }
+    })
+
+    let remove_button = document.querySelector("#shop_remove_button");
+    remove_button.addEventListener("click", e => {
+        if (run.money >= run.shop_items.remove_price) {
+            if (remove_button.classList.contains("selected")) {
+                run.selected_shop_item = null;
+                remove_button.classList.remove("selected");
+                document.querySelector("#reactor").classList.remove("buyingitem");
+            } else {
+                document.querySelector("#reactor").classList.add("buyingitem");
+                run.selected_shop_item?.element.classList.remove("selected");
+                
+                run.selected_shop_item = {
+                    element: remove_button,
+                    typ: "particle",
+                    data: [null, run.shop_items.remove_price],
+                    index: null
+                }
+
+                remove_button.classList.add("selected");
+            }
+        }
+    })
+
+    run.items = [
         items_list[0],
         items_list[2],
         items_list[3],
         items_list[1]
-    ])
+    ];
+
+    render_items(run.items);
+
+    run.reroll_shop(true, true);
+    render_shop(run);
 });

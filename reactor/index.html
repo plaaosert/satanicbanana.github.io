@@ -77,7 +77,7 @@
 				</div>
 				</div>
 			</div>
-        	<div class="reactor interactable">
+        	<div id="reactor" class="reactor interactable">
 <span class="cell clickable">┌───────────┐
 │<span class="cell-value-x">    -43    </span>│
 │           │
@@ -236,8 +236,8 @@
 │                                                                                                                              │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</span>
 			<span class="infobox hidden" style="font-style: italic;">If at first you don't succeed, publish, publish again.</span>
-			<div class="shop-items">
-				<span class="reroll button clickable">┌────────────┐
+			<div class="shop-items" id="shop_items">
+				<span id="shop_reroll_button" class="reroll button clickable">┌────────────┐
 │   Reroll   │
 │            │
 │<span class="reroll-price">    ◕23     </span>│
@@ -248,7 +248,7 @@
  │ 
  │ </span>
 				<div class="particles col">
-					<span style="text-align: center;">Particles</span><br>
+					<span style="text-align: center;">Particles</span>
 					<div class="particles-list row">
 <span class="item clickable">┌───┐
 │ <span class="item-icon">Θ</span> │
@@ -270,7 +270,7 @@
  │ 
  │ </span>
 				<div class="items col">
-					<span style="text-align: center;">Items</span><br>
+					<span style="text-align: center;">Items</span>
 					<div class="items-list row">
 <span class="item clickable">┌───┐
 │ <span class="item-icon">Θ</span> │
@@ -282,9 +282,11 @@
  │ 
  │ 
  │ </span>
-				<span class="reroll button clickable">┌───────────┐
-│  Destroy  │
-└───────────┘</span>
+				<span id="shop_remove_button" class="remove button clickable">┌──────────┐
+│  Remove  │
+│          │
+│<span class="remove-price">    ◕2    </span>│
+└──────────┘</span>
 			</div>
 		</div>
     </div>
