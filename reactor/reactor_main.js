@@ -1329,7 +1329,7 @@ class Run {
     }
 }
 
-let run = new Run(Date.now().toString(), null, OperationTypes.HOTSPOT, new Array(16).fill(null), [], 8, 1, 1, true);
+let run = new Run(Date.now().toString(), null, OperationTypes.HOTSPOT, new Array(16).fill(null), [], 16, 1, 1, true);
 
 function reactor_start_trial(run) {
     run.reactor.running = true;
