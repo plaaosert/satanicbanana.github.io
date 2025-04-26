@@ -226,7 +226,7 @@
 				</div>
 			</div>
 		</div>
-		<div class="container" style="--siz: 128"><span class="container-frame">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+		<div class="container" id="bottombar" style="--siz: 128"><span class="container-frame">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                                                                                                              │
 │                                                                                                                              │
 │                                                                                                                              │
@@ -235,7 +235,33 @@
 │                                                                                                                              │
 │                                                                                                                              │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</span>
-			<span class="infobox hidden" style="font-style: italic;">If at first you don't succeed, publish, publish again.</span>
+			<div class="active-screen hidden">
+				<span id="trial_start_button" class="button clickable" style="color: lightcoral">┌─────────────┐
+│             │
+│    START    │
+│             │
+└─────────────┘</span>
+<span class="divider"> │ 
+ │ 
+ │ 
+ │ 
+ │ </span>
+<span id="phase_end_button" class="button clickable disabled" style="color: lightgreen">┌──────────────────┐
+│                  │
+│   Send Results   │
+│                  │
+└──────────────────┘</span>
+<span class="divider"> │ 
+ │ 
+ │ 
+ │ 
+ │ </span>
+<span id="trial_results_summary" class="trial-results-summary disabled">Base Funding            <span id="base-reward">       ◕2</span>
+Unused Trials           <span id="trials-reward">       ◕3</span>
+Goal Achievement        <span id="goal-reward">       ◕6</span>
+Interest (<span id="interest-rate">20</span>%, max<span id="interest-max">: 10</span>) <span id="interest-reward">      ◕23</span>
+Total                   <span id="total-reward" style="color: orange">      ◕12</span></span>   
+			</div>
 			<div class="shop-items" id="shop_items">
 				<span id="shop_reroll_button" class="reroll button clickable">┌────────────┐
 │   Reroll   │
@@ -287,6 +313,16 @@
 │          │
 │<span class="remove-price">    ◕2    </span>│
 └──────────┘</span>
+<span class="divider"> │ 
+ │ 
+ │ 
+ │ 
+ │ </span>
+<span id="shop_continue_button" class="continue button clickable" onclick="show_active_tab()">┌────────────────┐
+│                │
+│  Continue >>>  │
+│                │
+└────────────────┘</span>
 			</div>
 		</div>
     </div>

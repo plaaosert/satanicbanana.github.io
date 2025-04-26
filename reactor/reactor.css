@@ -13,12 +13,20 @@
     
 }
 
-.shop-items {
+.shop-items, .active-screen {
     display: flex;
     flex-direction: row;
 
     justify-content: center;
     align-items: center;
+}
+
+.trial-results-summary {
+    justify-content: left;
+}
+
+.trial-results-summary span {
+    color: yellow;
 }
 
 .flex-opposite {

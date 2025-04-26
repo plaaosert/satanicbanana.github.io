@@ -176,11 +176,13 @@ const OperationTypeInfo = {
 }
 
 class Reactor {
-    constructor(run, start_particles, particles, operation_type) {
+    constructor(run, start_particles, particles, items, operation_type) {
         this.run = run;
         
         this.start_particles = start_particles;
         this.particles = particles;
+        this.items = items;
+
         this.operation_type = operation_type;
 
         this.ready = false;
@@ -356,6 +358,8 @@ class Reactor {
     }
 
     modify_power(by) {
+        console.log(`Power ${by > 0 ? "+" : ""}${by}`);
+
         this.power += by;
         if (by > 0) {
             this.for_all_particles((p, i) => {
@@ -389,6 +393,11 @@ class Reactor {
             let out = part?.trigger(trigger.typ, trigger.data);
 
             if (part) {
+                // broadcast the event to all items as well. they will manage their own mutable data so we just need to tell them something's happening
+                this.items.forEach(item => {
+                    item.trigger(trigger.typ, part, trigger.data);
+                })
+
                 if (trigger.typ == ParticleTriggers.DESTROYED) {
                     this._final_destroy_particle(trigger.idx);
                 } else if (trigger.typ == ParticleTriggers.ACTIVATED) {
@@ -581,6 +590,16 @@ class Item {
     reset() {
         this.temporary_data = {};
     }
+
+    trigger(typ, data) {
+        let trigger = this.template.subscriptions[typ];
+        if (trigger) {
+            trigger(this, data);
+            return true;
+        }
+
+        return false;
+    }
 }
 
 function set_cell_info(index, particle) {
@@ -612,6 +631,7 @@ function set_cell_info(index, particle) {
         }
     } else {
         element.classList.add("nothing");
+        element.classList.remove("indexchange");
     }
 }
 
@@ -624,6 +644,48 @@ function set_cell_heat(index, heat) {
     element.classList.remove(`hot4`);
 
     element.classList.add(`hot${heat}`);
+}
+
+function show_active_tab() {
+    document.querySelector("#bottombar .active-screen").classList.remove("hidden");
+    document.querySelector("#bottombar .shop-items").classList.add("hidden");
+
+    render_active_tab();
+}
+
+function show_shop_tab() {
+    document.querySelector("#bottombar .active-screen").classList.add("hidden");
+    document.querySelector("#bottombar .shop-items").classList.remove("hidden");
+}
+
+function render_active_tab() {
+    let tab = document.querySelector("#bottombar .active-screen");
+    // only make trial start button interactable if the reactor isn't running
+    if (run.reactor.running || run.trial > run.max_trials) {
+        tab.querySelector("#trial_start_button").classList.add("disabled");
+    } else {
+        tab.querySelector("#trial_start_button").classList.remove("disabled");
+    }
+    
+    // only make the send results button and summary enabled when the power proportion is above 100%
+    if (run.get_current_goal_pct() >= 1 && !run.reactor.running) {
+        tab.querySelector("#phase_end_button").classList.remove("disabled");
+        tab.querySelector("#trial_results_summary").classList.remove("disabled");
+    } else {
+        tab.querySelector("#phase_end_button").classList.add("disabled");
+        tab.querySelector("#trial_results_summary").classList.add("disabled");
+    }
+
+    // get the stuff for the labels
+    tab.querySelector("#base-reward").textContent = `◕${run.get_base_money_gain()}`.padStart(9);
+    tab.querySelector("#trials-reward").textContent = `◕${run.get_unused_trials_money_gain()}`.padStart(9);
+    tab.querySelector("#goal-reward").textContent = `◕${run.get_goal_achievement_money_gain()}`.padStart(9);
+    
+    tab.querySelector("#interest-rate").textContent = `${Math.round(run.base_stats.interest_rate * 100)}`;
+    tab.querySelector("#interest-max").textContent = `${run.base_stats.interest_max >= 100 ? " " : ": "}${run.base_stats.interest_max}`;
+    tab.querySelector("#interest-reward").textContent = `◕${run.get_interest_money_gain()}`.padStart(9);
+   
+    tab.querySelector("#total-reward").textContent = `◕${run.get_phase_end_money_gain()}`.padStart(9);
 }
 
 function render_shop(run) {
@@ -709,6 +771,8 @@ function render_shop(run) {
                             index: i
                         }
                     }
+
+                    e.stopPropagation();
                 })
             }
 
@@ -730,7 +794,9 @@ function render_items(items) {
     let items_list = document.querySelector(".run-status .items");
 
     items_list.replaceChildren();
-    items.forEach(item => {
+    items.forEach(item_obj => {
+        let item = item_obj.template;
+
         let clone = (item.typ == ItemType.STUDY ? item_template_study : item_template).cloneNode(true);
         clone.querySelector(".item-icon").textContent = item.icon;
         clone.querySelector(".item-icon").style.color = item.col;
@@ -774,14 +840,16 @@ function render_ingame_stats(run) {
     document.querySelector(".stats .roundnumber").textContent = run.round;
     document.querySelector(".stats .phasenumber").textContent = run.phase;
 
-    document.querySelector(".stats .trialnumber").textContent = run.trial;
+    document.querySelector(".stats .trialnumber").textContent = Math.min(run.trial, run.max_trials);
     document.querySelector(".stats .trialmaxnumber").textContent = run.max_trials;
 
-    document.querySelector(".stats .powernumber").textContent = number_format(run.reactor.power, ReactorNumberFormat.METRIC, "W");
+    document.querySelector(".stats .powernumber").textContent = number_format(run.get_current_power(), ReactorNumberFormat.METRIC, "W");
     document.querySelector(".stats .powerreq").textContent = number_format(run.get_goal(), ReactorNumberFormat.METRIC, "W")
+
+    document.querySelector(".stats .moneynumber").textContent = number_format(run.money, ReactorNumberFormat.SCIENTIFIC);
     
     let bar_length = 33;
-    let power_proportion = run.reactor.power / run.get_goal();
+    let power_proportion = run.get_current_goal_pct();
     bar_level = Math.max(0, Math.min(4, Math.floor(power_proportion)));
     bar_point = Math.min(bar_length, Math.floor((power_proportion - bar_level) * bar_length));
 
@@ -879,8 +947,13 @@ particles_list.forEach(p => {
 let items_list = [
     // mods
     new ItemTemplate(
-        "Refined Power Reclamation Apparatus", "P", ItemType.MOD, "yellow", "white", "Increases the amount of power gained from destroyed particle reclamation by 10%.", 1, 10, {
-            [ParticleTriggers.ON_STATS]: (item, stats) => { stats.power_reclaim += 0.1 }
+        "Refined Power Reclamation Apparatus", "P", ItemType.MOD, "yellow", "white", "When a particle is destroyed and has positive β, gain power equal to 10% of its β, rounded up.", 1, 10, {
+            [ParticleTriggers.DESTROYED]: (item, p, data) => {
+                console.log("hi");
+                if (p.y > 0) {
+                    p.reactor.modify_power(Math.ceil(p.y / 10));
+                }
+            }
         }
     ),
 
@@ -898,15 +971,13 @@ let items_list = [
 
     // studies
     new ItemTemplate(
-        "On the Spontaneous Genesis of Activated Nanoparticles in High Stress Environments", "∬", ItemType.STUDY,
+        "On the Spontaneous Genesis of Activated Nanoparticles in High Electromagnetism Environments", "∬", ItemType.STUDY,
         "white", "limegreen", "When a particle is activated, 50% chance to copy it to a random empty location. Every time this effect triggers, the chance decreases by 15% for the current trial.",
         1, 25, {
             [ParticleTriggers.ACTIVATED]: (item, p, data) => {
                 let chance = (item.temporary_data["copy_on_trigger_chance"] ? item.temporary_data["copy_on_trigger_chance"] : 0.5);
                 if (p.reactor.run.random() < chance) {
                     // TODO write code to copy the particle
-                    // remember we haven't implemented subscriptions yet
-                    // we also haven't implemented random() into the Run object yet
                     // remember to have a way to export the current state of the random! we want to save games eventually
                     // :3
                     // also bring in the code to highlight stuff in here as well, to highlight keywords, numbers, money, power etc
@@ -958,19 +1029,17 @@ function start_run(run) {
 
 sw = true;
 
-function test_step(run) {
-    console.log(run.reactor.queued_triggers);
-    console.log(run.reactor.operation_data);
+function step_reactor(run) {
+    // console.log(run.reactor.queued_triggers);
+    // console.log(run.reactor.operation_data);
 
     if (run.reactor.is_empty()) {
-        console.log("Done");
-
         run.reactor.for_all_particles((p, i) => {
             run.reactor.heats[i] = Heats.NOTHING;
         })
 
         run.reactor.render_particles();
-        return;
+        return false;
     }
 
     if (sw) {
@@ -981,7 +1050,7 @@ function test_step(run) {
 
         if (result == -1) {
             if (run.reactor.step_operation()) {
-                console.log("Looping");
+                // console.log("Looping");
                 run.reactor.refresh_operation();
             }
         }
@@ -993,10 +1062,12 @@ function test_step(run) {
 
     run.reactor.render_particles();
     render_ingame_stats(run);
+
+    return true;
 }
 
 class Run {
-    constructor(seed, reactor, reactor_operation_type, particle_order, items, money, round, phase) {
+    constructor(seed, reactor, reactor_operation_type, particle_order, items, money, round, phase, in_shop) {
         this.reactor = reactor;
         this.particle_order = particle_order;
         this.reactor_operation_type = reactor_operation_type;
@@ -1005,11 +1076,15 @@ class Run {
         this.money = money;
         this.round = round;  // big rounds
         this.phase = phase;  // small phases
-        this.trial = 0;      // 3 max trials per phase (by default), ends after reaching 1x threshold, bonus money for unused trials
+        this.trial = 1;      // 3 max trials per phase (by default), ends after reaching 1x threshold, bonus money for unused trials
         this.max_trials = 3;
+
+        this.current_phase_power = 0;
 
         this.seed = seed;
         this.random = get_seeded_randomiser(seed);
+
+        this.in_shop = in_shop;
 
         this.shop_items = {
             reroll_price: 5,
@@ -1025,21 +1100,126 @@ class Run {
 
             remove_base_cost: 2,
 
-            destroy_value_return: 0.3,
-
             shop_particles_count: 4,
             shop_items_count: 2,
+
+            interest_rate: 0.2,
+            interest_max: 10,
+        }
+
+        this.money_gain_sources = {
+            game: 0,
+            items: 0
+        }
+
+        this.money_gain_sources_cur = {
+            game: 0,
+            items: 0
         }
 
         this.selected_shop_item = null;
     }
 
+    get_base_money_gain() {
+        return 3;
+    }
+
+    get_unused_trials_money_gain() {
+        return (this.max_trials - Math.max(1, this.trial - 1)) * 2
+    }
+
+    get_goal_achievement_money_gain() {
+        let pct = Math.max(0, Math.min(5, this.get_current_goal_pct()));
+        let pct_rounded = Math.floor(pct);
+
+        return pct_rounded * 2;
+    }
+
+    get_interest_money_gain() {
+        return Math.max(0, Math.min(this.base_stats.interest_max, Math.round(this.money * this.base_stats.interest_rate)));
+    }
+
+    get_phase_end_money_gain() {
+        return Math.round(this.get_base_money_gain() + this.get_unused_trials_money_gain() + this.get_goal_achievement_money_gain() + this.get_interest_money_gain());
+    }
+
+    get_current_power() {
+        return this.current_phase_power + this.reactor.power;
+    }
+
+    get_current_goal_pct() {
+        let pct = this.get_current_power() / this.get_goal();
+        return pct;
+    }
+
+    next_trial() {
+        this.trial++;
+        if (this.trial <= this.max_trials) {
+            // reset reactor
+            this.setup_reactor();
+            this.reactor.start_operation();
+            this.reactor.render_particles();
+
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    end_current_phase() {
+        // only do so if we have enough power
+        if (this.get_current_goal_pct() >= 1) {
+            let gained_money = this.get_phase_end_money_gain();
+            this.money += gained_money;
+
+            this.current_phase_power = 0;
+            this.money_gain_sources_cur = {
+                game: 0,
+                items: 0
+            }
+            this.trial = 1;
+
+            let progressed_round = false;
+            this.phase++;
+            if (this.phase >= 4) {
+                this.phase = 1;
+                this.round++;
+
+                progressed_round = true;
+            }
+
+            // and remake the reactor just to be sure
+            this.setup_reactor();
+
+            // reopen the shop, and reroll it for free
+            // if progressed round, items are studies instead
+            if (progressed_round) {
+                this.reroll_shop(true, true, null, 3);
+            } else {
+                this.reroll_shop(true, true);
+            }
+
+            show_shop_tab();
+            render_shop(this);
+            render_ingame_stats(this);
+        }
+    }
+
+    modify_money(by, source) {
+        this.money += by;
+
+        this.money_gain_sources[source] += by;
+        this.money_gain_sources_cur[source] += by;
+
+        render_ingame_stats(this);
+    }
+
     purchase_item(data, index) {
         // add to the list of items, re-render items, re-render shop, remove money
         if (this.money >= data[1]) {
-            this.money -= data[1];
+            this.modify_money(-data[1]);
 
-            this.items.push(data[0]);
+            this.items.push(new Item(data[0], {}));
             this.shop_items.items.splice(index, 1);
 
             render_shop(this);
@@ -1047,26 +1227,27 @@ class Run {
         }
     }
 
-    purchase_particle(index) {
+    purchase_particle(item_index, reactor_index) {
         let data = this.selected_shop_item.data;
         if (this.money >= data[1]) {
-            this.money -= data[1];
+            this.modify_money(-data[1]);
 
-            this.particle_order[index] = data[0];
+            this.particle_order[reactor_index] = data[0];
 
             run.selected_shop_item.element.classList.remove("selected");
             if (run.selected_shop_item.typ == "particle") {
                 document.querySelector("#reactor").classList.remove("buyingitem");
             }
 
-            if (data.index != null) { 
-                this.shop_items.particles.splice(data.index, 1);
+            if (item_index != null) { 
+                this.shop_items.particles.splice(item_index, 1);
             }
 
             this.setup_reactor();
             this.reactor.start_operation();
             this.reactor.render_particles();
             render_shop(this);
+            render_ingame_stats(this);
         }
     }
 
@@ -1115,7 +1296,10 @@ class Run {
     }
 
     setup_reactor() {
-        this.reactor = new Reactor(this, this.particle_order, [], this.reactor_operation_type);
+        // clear out items' temporary data
+        this.items.forEach(item => item.reset())
+
+        this.reactor = new Reactor(this, this.particle_order, [], this.items, this.reactor_operation_type);
     }
 
     set_particle_order(to) {
@@ -1145,36 +1329,85 @@ class Run {
     }
 }
 
-let run = new Run(Date.now().toString(), null, OperationTypes.HOTSPOT, new Array(16).fill(null), [], 40, 2, 3);
+let run = new Run(Date.now().toString(), null, OperationTypes.HOTSPOT, new Array(16).fill(null), [], 8, 1, 1, true);
+
+function reactor_start_trial(run) {
+    run.reactor.running = true;
+    document.querySelector(".reactor").classList.remove("interactable");
+}
+
+function reactor_end_trial(run) {
+    // save power
+    render_ingame_stats(run);
+
+    run.current_phase_power += run.reactor.power;
+
+    run.reactor.running = false;
+    run.reactor.power = 0;
+    if (run.next_trial()) {
+        document.querySelector(".reactor").classList.add("interactable");
+        return true;
+    } else {
+        console.log("no more trials! (check if player has enough to progress, if they don't the game ends)");
+        return false;
+    }
+}
+
+const ms_per_action = 25;
+let speed_mult = 1;
+
+let last_reactor_tick = Date.now();
 
 document.addEventListener("DOMContentLoaded", function(e) {
-    run.particle_order = [
-        particle_template2,
-        particle_template2,
-        particle_template2,
-        particle_template2,
-        particle_template2,
-        particle_template2,
-        particle_template2,
-        particle_template2,
-        particle_template2,
-        particle_template,
-        particle_template2,
-        particle_template,
-        particle_template2,
-        particle_template,
-        particle_template2,
-        particle_template,
-    ];
-
     start_run(run);
+
+    game_loop = function() {
+        // if reactor is running, step it
+        if (run.reactor.running) {
+            // consider delta time here
+            if (Date.now() > last_reactor_tick + (ms_per_action * speed_mult)) {
+                last_reactor_tick = Date.now();
+                
+                let result = step_reactor(run);
+                if (!result) {
+                    // reactor is done
+                    reactor_end_trial(run);
+                }
+
+                render_active_tab();
+            }
+        }
+
+        // if it isn't, don't do anything
+
+        // then go agane!
+        window.requestAnimationFrame(game_loop);
+    }
+
+    window.requestAnimationFrame(game_loop);
 
     document.addEventListener("keydown", e => {
         if (e.code == "KeyR") {
-            run.reactor.active = true;
-            document.querySelector(".reactor").classList.remove("interactable");
-            setInterval(() => test_step(run), 25);
+            // shortcut to start maybe? idk
         }
+
+        if (e.code == "Escape") {
+            if (run.in_shop) {
+                run.selected_shop_item = null;
+                document.querySelector("#shop_remove_button").classList.remove("selected");
+                document.querySelector("#reactor").classList.remove("buyingitem");
+
+                render_shop(run);
+            }
+        }
+    })
+
+    document.body.addEventListener("click", e => {
+        run.selected_shop_item = null;
+        document.querySelector("#shop_remove_button").classList.remove("selected");
+        document.querySelector("#reactor").classList.remove("buyingitem");
+
+        render_shop(run);
     })
 
     document.querySelectorAll(".reactor .cell").forEach((c, i) => {
@@ -1188,15 +1421,17 @@ document.addEventListener("DOMContentLoaded", function(e) {
         c.addEventListener("click", e => {
             if (run.selected_shop_item?.typ == "particle") {
                 if (run.selected_shop_item.data[0] || run.reactor.particles[i]) {
-                    run.purchase_particle(i);
+                    run.purchase_particle(run.selected_shop_item.index, i);
                 }
             }
+
+            e.stopPropagation();
         })
     })
 
     document.querySelector("#shop_reroll_button").addEventListener("click", e => {
         if (run.money >= run.shop_items.reroll_price) {
-            run.money -= run.shop_items.reroll_price;
+            run.modify_money(-run.shop_items.reroll_price);
 
             run.reroll_shop();
             render_shop(run);
@@ -1223,18 +1458,29 @@ document.addEventListener("DOMContentLoaded", function(e) {
 
                 remove_button.classList.add("selected");
             }
+
+            e.stopPropagation();
         }
     })
 
-    run.items = [
-        items_list[0],
-        items_list[2],
-        items_list[3],
-        items_list[1]
-    ];
+    document.querySelector("#trial_start_button").addEventListener("click", function(e) {
+        if (!e.target.classList.contains("disabled")) {
+            reactor_start_trial(run);
+            render_active_tab();
+        }
+    })
+
+    document.querySelector("#phase_end_button").addEventListener("click", function(e) {
+        if (!e.target.classList.contains("disabled")) {
+            run.end_current_phase();
+            render_active_tab();
+        }
+    })
 
     render_items(run.items);
 
     run.reroll_shop(true, true);
     render_shop(run);
 });
+
+// TODO implement continue button from shop and the active buttons from play
