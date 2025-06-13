@@ -146,10 +146,10 @@ const ParticleTriggers = {
     CREATED: "bWhen created",
     ACTIVATED: "cWhen activated",
     DESTROYED: "dWhen destroyed",
-    X_INCREASED: "eWhen X increased",
-    X_REDUCED: "fWhen X reduced",
-    Y_INCREASED: "gWhen Y increased",
-    Y_REDUCED: "hWhen Y reduced",
+    X_INCREASED: "eWhen α increased",
+    X_REDUCED: "fWhen α reduced",
+    Y_INCREASED: "gWhen β increased",
+    Y_REDUCED: "hWhen β reduced",
     INDEX_CHANGED: "iWhen position changed",
     POWER_GAINED: "jWhen power gained",
     POWER_LOST: "kWhen power lost",
@@ -1190,6 +1190,9 @@ class Run {
 
             // and remake the reactor just to be sure
             this.setup_reactor();
+            this.reactor.start_operation();
+            this.reactor.render_particles();
+            document.querySelector(".reactor").classList.add("interactable");
 
             // reopen the shop, and reroll it for free
             // if progressed round, items are studies instead
@@ -1202,6 +1205,7 @@ class Run {
             show_shop_tab();
             render_shop(this);
             render_ingame_stats(this);
+            
         }
     }
 
