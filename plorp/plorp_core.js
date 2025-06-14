@@ -105,7 +105,7 @@ class Miner extends Entity {
         this.x_air_velocity = 0;
 
         this.walk_speed = 10;
-        this.gravity = 1;
+        this.gravity = 100;
         this.terminal_velocity = 1000000;
 
         this.animation_speed = animation_speed;
