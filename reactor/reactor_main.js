@@ -1194,7 +1194,7 @@ class Run {
             // reopen the shop, and reroll it for free
             // if progressed round, items are studies instead
             if (progressed_round) {
-                this.reroll_shop(true, true, null, 3);
+                this.reroll_shop(true, true, null, 2);
             } else {
                 this.reroll_shop(true, true);
             }
