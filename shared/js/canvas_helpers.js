@@ -108,10 +108,15 @@ function draw_cone(ctx, x, y, r, colour, start_angle, end_angle) {
     ctx.stroke();
 }
 
-function draw_circle(ctx, x, y, r, colour, start_angle=0, end_angle=Math.PI*2) {
+function draw_circle(ctx, x, y, r, colour, start_angle=0, end_angle=Math.PI*2, fill="") {
     ctx.beginPath();
     ctx.strokeStyle = colour;
 
     ctx.ellipse(x, y, r, r, 0, start_angle, end_angle);
     ctx.stroke();
+
+    if (fill) {
+        ctx.fillStyle = fill;
+        ctx.fill();
+    }
 }
