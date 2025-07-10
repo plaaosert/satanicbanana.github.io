@@ -71,7 +71,7 @@ let canvas_height = 0;
 let canvas_x = 0;
 let canvas_y = 0;
 
-let game_resolution = new Vector2(480, 640);
+let game_resolution = new Vector2(270, 360);
 
 let mouse_position = new Vector2(0, 0);
 
@@ -91,8 +91,8 @@ function handle_resize(event) {
     let sf_x = Math.floor(vw(100) / game_resolution.x)
     let sf = Math.min(sf_x, sf_y);
 
-    canvas_height = sf * game_resolution.y;
-    canvas_width = sf * game_resolution.x;
+    canvas_height = game_resolution.y;
+    canvas_width = game_resolution.x;
 
     const DPR = window.devicePixelRatio ?? 1;
 
@@ -108,6 +108,8 @@ function handle_resize(event) {
         ctx.canvas.height = canvas_height * DPR;
         ctx.scale(DPR, DPR);
 
+        ctx.canvas.style.transform = `scale(${sf})`;
+
         ctx.imageSmoothingEnabled = false;
         ctx.moz
     
@@ -116,9 +118,6 @@ function handle_resize(event) {
         } else {
             canvas.style.marginLeft = "0.5px";
         }
-
-        canvas.style.left = "256px";
-        canvas.style.top = "84px";
     
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     
@@ -539,6 +538,7 @@ let calc_durations = [];
 let wait_durations = [];
 let time_deltas = [];
 
+const fsz = 10;
 
 function render_diagnostics(game) {
     layers.debug_front.ctx.clearRect(0, 0, canvas_width, canvas_height);
@@ -548,7 +548,7 @@ function render_diagnostics(game) {
     let fps = 1000/avg_frame_time;
 
     write_text(
-        layers.debug_front.ctx, `fps: ${Math.round(fps)}`, 10, 16, "#fff", "MS Gothic", 12
+        layers.debug_front.ctx, `fps: ${Math.round(fps)}`, 10, 16, "#fff", "ms gothic", fsz
     )
 
     let frame_time_splits = [render_durations, calc_durations, wait_durations].map(arr => {
@@ -556,31 +556,31 @@ function render_diagnostics(game) {
     })
 
     write_text(
-        layers.debug_front.ctx, `frame spread:`, 10, 28, "#fff", "MS Gothic", 12
+        layers.debug_front.ctx, `frame spread:`, 10, 28, "#fff", "ms gothic", fsz
     )
 
     write_text(
-        layers.debug_front.ctx, frame_time_splits[0] + "draw", 10, 28+12, "#0f0", "MS Gothic", 12
+        layers.debug_front.ctx, frame_time_splits[0] + "draw", 10, 28+fsz, "#0f0", "ms gothic", fsz
     )
 
     write_text(
-        layers.debug_front.ctx, frame_time_splits[1] + "calc", 10, 28+12+12, "#f00", "MS Gothic", 12
+        layers.debug_front.ctx, frame_time_splits[1] + "calc", 10, 28+fsz+fsz, "#f00", "ms gothic", fsz
     )
 
     write_text(
-        layers.debug_front.ctx, frame_time_splits[2] + "wait", 10, 28+12+12+12, "#666", "MS Gothic", 12
+        layers.debug_front.ctx, frame_time_splits[2] + "wait", 10, 28+fsz+fsz+fsz, "#666", "ms gothic", fsz
     )
 
     write_text(
-        layers.debug_front.ctx, `gameobject count: ${game.objects.length}`, 10, 28+12+12+12+16, "cyan", "MS Gothic", 12
+        layers.debug_front.ctx, `gameobject count: ${game.objects.length}`, 10, 28+fsz+fsz+fsz+16, "cyan", "ms gothic", fsz
     );
 
     write_text(
-        layers.debug_front.ctx, `entities: ${game.objects.filter(o => o instanceof Entity).length}`, 10, 28+12+12+12+16+12, "lime", "MS Gothic", 12
+        layers.debug_front.ctx, `entities: ${game.objects.filter(o => o instanceof Entity).length}`, 10, 28+fsz+fsz+fsz+16+fsz, "lime", "ms gothic", fsz
     );
     
     write_text(
-        layers.debug_front.ctx, `bullets: ${game.objects.filter(o => o instanceof Bullet).length}`, 10, 28+12+12+12+16+12+12, "coral", "MS Gothic", 12
+        layers.debug_front.ctx, `bullets: ${game.objects.filter(o => o instanceof Bullet).length}`, 10, 28+fsz+fsz+fsz+16+fsz+fsz, "coral", "ms gothic", fsz
     );
 
     game.objects.forEach(obj => {
@@ -589,9 +589,13 @@ function render_diagnostics(game) {
                 layers.debug_back.ctx, obj.position.x, obj.position.y, obj.size, "white", 0, Math.PI*2, "red"
             )
         } else {
-            draw_circle(
-                layers.debug_back.ctx, obj.position.x, obj.position.y, obj.size, "coral"
-            )
+            if (obj instanceof Bullet) {
+
+            } else {
+                draw_circle(
+                    layers.debug_back.ctx, obj.position.x, obj.position.y, obj.size, "coral"
+                )
+            }
         }
     })
 }
@@ -626,7 +630,7 @@ function render_game(game, delta_time) {
     layers.ui2.ctx.clearRect(0, 0, canvas_width, canvas_height);
     layers.ui1.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
-    write_text(layers.ui2.ctx, `hp: ${game.player_ent.hp}/${game.player_ent.max_hp}`, 16, canvas_height - 16 - 12, "red", "MS Gothic", 12);
+    write_text(layers.ui2.ctx, `hp: ${game.player_ent.hp}/${game.player_ent.max_hp}`, 16, canvas_height - 16 - fsz, "red", "ms gothic", fsz);
     if (game.player_ent.last_hit) {
         write_text(
             layers.ui2.ctx, 
@@ -635,60 +639,60 @@ function render_game(game, delta_time) {
         );
     }
 
-    write_text(layers.ui2.ctx, `orbs: `, 16, canvas_height-16-12-96+12, "white", "MS Gothic", 12);
-    write_text(layers.ui2.ctx, `        -   -  `, 16, canvas_height-16-12-96+12, "grey", "MS Gothic", 12);
+    write_text(layers.ui2.ctx, `orbs: `, 16, canvas_height-16-fsz-96+fsz, "white", "ms gothic", fsz);
+    write_text(layers.ui2.ctx, `        -   -  `, 16, canvas_height-16-fsz-96+fsz, "grey", "ms gothic", fsz);
     for (let i=0; i<3; i++) {
         write_text(
-            layers.ui2.ctx, `${game.player_stats.current_invoke_order[i] ? game.player_stats.current_invoke_order[i] : ""}`, 16+(6*6)+(6*4*i), canvas_height-16-12-96+12, 
-            ["", "cyan", "magenta", "coral", "white"][game.player_stats.current_invoke_order[i]], "MS Gothic", 12
+            layers.ui2.ctx, `${game.player_stats.current_invoke_order[i] ? game.player_stats.current_invoke_order[i] : ""}`, 16+((fsz/2)*6)+((fsz/2)*4*i), canvas_height-16-fsz-96+fsz, 
+            ["", "cyan", "magenta", "coral", "white"][game.player_stats.current_invoke_order[i]], "ms gothic", fsz
         );
     }
 
     for (let i=0; i<3; i++) {
         r_info.energy_amounts_display[i] = lerp(r_info.energy_amounts_display[i], game.player_stats.energy_cur[i], r_info.energy_amounts_lerp_speed);
         e_display = Math.round(r_info.energy_amounts_display[i]);
-        write_text(layers.ui2.ctx, `essence${i}: ${e_display}`, 16, canvas_height-16-12-96+12+12+(12*i), ["cyan", "magenta", "coral"][i], "MS Gothic", 12);
+        write_text(layers.ui2.ctx, `essence${i}: ${e_display}`, 16, canvas_height-16-fsz-96+fsz+fsz+(fsz*i), ["cyan", "magenta", "coral"][i], "ms gothic", fsz);
     }
-    write_text(layers.ui2.ctx, `pure:     ${game.player_stats.pure_essences}`, 16, canvas_height-16-12-96+12+12+(12*3), "white", "MS Gothic", 12);
+    write_text(layers.ui2.ctx, `pure:     ${game.player_stats.pure_essences}`, 16, canvas_height-16-fsz-96+fsz+fsz+(fsz*3), "white", "ms gothic", fsz);
 
     // try to render the juice!
     // juice will need to be rendered in 3 steps - first, render the juice on ui2, then render the frame on ui1 (so it goes over it)
-    let orbs_start = new Vector2(canvas_width - 96, canvas_height - 512);
+    let orbs_start = new Vector2(canvas_width - 32, canvas_height - 256);
     for (let i=0; i<3; i++) {
         let sp = r_info.energy_sphere_water_sprites[i][Math.floor(r_info.energy_sphere_frames[i])];
         let sp2 = r_info.energy_sphere_backing_sprites[0][0][0];
         let sp3 = r_info.energy_sphere_backing_sprites[0][1][0];
 
         write_rotated_image(
-            layers.ui1.canvas, layers.ui1.ctx, orbs_start.x, orbs_start.y + (i*128) + 64, 
-            entity_sprites.get("ui_tile")[0], entity_sprites.get("ui_tile")[0].width*2, entity_sprites.get("ui_tile")[0].height*2, 0
+            layers.ui1.canvas, layers.ui1.ctx, orbs_start.x, orbs_start.y + (i*64) + 32, 
+            entity_sprites.get("ui_tile")[0], entity_sprites.get("ui_tile")[0].width, entity_sprites.get("ui_tile")[0].height, 0
         );
 
         write_rotated_image(
-            layers.ui1.canvas, layers.ui1.ctx, orbs_start.x, orbs_start.y + (i*128) + 64, 
-            entity_sprites.get("ui_tile")[0], entity_sprites.get("ui_tile")[0].width*2, entity_sprites.get("ui_tile")[0].height*2, 0
+            layers.ui1.canvas, layers.ui1.ctx, orbs_start.x, orbs_start.y + (i*64) + 32, 
+            entity_sprites.get("ui_tile")[0], entity_sprites.get("ui_tile")[0].width, entity_sprites.get("ui_tile")[0].height, 0
         );
 
         write_rotated_image(
-            layers.ui1.canvas, layers.ui1.ctx, orbs_start.x, orbs_start.y + (i*128) + 64, 
-            entity_sprites.get("ui_tile")[0], entity_sprites.get("ui_tile")[0].width*2, entity_sprites.get("ui_tile")[0].height*2, 0
+            layers.ui1.canvas, layers.ui1.ctx, orbs_start.x, orbs_start.y + (i*64) + 32, 
+            entity_sprites.get("ui_tile")[0], entity_sprites.get("ui_tile")[0].width, entity_sprites.get("ui_tile")[0].height, 0
         );
 
         let pct = r_info.energy_amounts_display[i] / game.player_stats.energy_max[i];
         write_rotated_image(
-            layers.ui2.canvas, layers.ui2.ctx, orbs_start.x, orbs_start.y + (i*128) - 32 + Math.floor(((1 - pct) * 64)), 
-            sp, sp.width*2, sp.height*2, 0
+            layers.ui2.canvas, layers.ui2.ctx, orbs_start.x, orbs_start.y + (i*64) - 16 + Math.floor(((1 - pct) * 32)), 
+            sp, sp.width, sp.height, 0
         );
         r_info.energy_sphere_frames[i] = (r_info.energy_sphere_frames[i]+(r_info.energy_sphere_frame_delay * delta_time)) % r_info.energy_sphere_frames_max;
 
         write_rotated_image(
-            layers.ui1.canvas, layers.ui1.ctx, orbs_start.x, orbs_start.y + (i*128), 
-            sp2, sp2.width*2, sp2.height*2, 0
+            layers.ui1.canvas, layers.ui1.ctx, orbs_start.x, orbs_start.y + (i*64), 
+            sp2, sp2.width, sp2.height, 0
         );
 
         write_rotated_image(
-            layers.ui1.canvas, layers.ui1.ctx, orbs_start.x, orbs_start.y + (i*128), 
-            sp3, sp3.width*2, sp3.height*2, 0
+            layers.ui1.canvas, layers.ui1.ctx, orbs_start.x, orbs_start.y + (i*64), 
+            sp3, sp3.width, sp3.height, 0
         );
     }
 
@@ -697,8 +701,8 @@ function render_game(game, delta_time) {
         write_rotated_image(
             layers.fg2.canvas,
             layers.fg2.ctx,
-            obj.position.x - (entity_sprites.get(obj.sprite)[0].width / 2),
-            obj.position.y - (entity_sprites.get(obj.sprite)[0].height / 2),
+            Math.round(obj.position.x - (entity_sprites.get(obj.sprite)[0].width / 2)),
+            Math.round(obj.position.y - (entity_sprites.get(obj.sprite)[0].height / 2)),
             entity_sprites.get(obj.sprite)[0],
             entity_sprites.get(obj.sprite)[0].width, entity_sprites.get(obj.sprite)[0].height, 0
         )
@@ -732,6 +736,9 @@ function game_loop() {
     
     // TODO think about a better way of handling inputs here possibly also supporting rebinding
     let spd = 128 * delta_time_real;
+    if (keys_down["ShiftLeft"]) {
+        spd /= 3;
+    }
 
     // - movement
     if (keys_down["KeyA"]) {
@@ -820,17 +827,17 @@ function game_loop() {
             */
             // TODO put the actual writeup's names for the spells here 
             let spells_map = new Map([
-                [1*1*1, "1-1-1"],
-                [1*1*2, "1-1-2"],
-                [1*1*3, "1-1-3"],
-                [1*2*2, "1-2-2"],
-                [1*3*3, "1-3-3"],
-                [2*2*2, "2-2-2"],
-                [2*2*3, "2-2-3"],
-                [3*3*2, "3-3-2"],
-                [3*3*3, "3-3-3"],
-                [1*2*3, "1-2-3"],
-                [4*4*4, "4-4-4 (Pure Purity)"]
+                [1*1*1, "Ice Barrier"],
+                [1*1*2, "Ice Nova"],
+                [1*1*3, "Chilling Blast"],
+                [1*2*2, "Freezing Touch"],
+                [1*3*3, "Living Minefield"],
+                [2*2*2, "Inversion"],
+                [2*2*3, "Chaos Bolt"],
+                [3*3*2, "Hellfire Blast"],
+                [3*3*3, "Hellfire Beam"],
+                [1*2*3, "Elemental Wave"],
+                [4*4*4, "Purity"]
             ]);
 
             let spell_to_cast = spells_map.get(spell_id);
@@ -914,7 +921,7 @@ document.addEventListener("DOMContentLoaded", function() {
         new Vector2(
             Math.floor(game_resolution.x / 2) - 8,
             game_resolution.y - 64
-        ), 5, "Player", "ally", 10, 10
+        ), 4, "Player", "ally", 10, 10
     )
 
     for (let i=0; i<8; i++) {

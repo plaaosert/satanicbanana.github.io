@@ -663,6 +663,10 @@ class Colour {
             return `rgba(${data[0]}, ${data[1]}, ${data[2]}, ${data[3] / 255})`;
         }
     }
+
+    luminance() {
+        return 0.2126*this.r + 0.7152*this.g + 0.0722*this.b;
+    }
 }
 
 Colour.black = new Colour(0, 0, 0, 255);

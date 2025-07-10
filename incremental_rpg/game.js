@@ -1913,8 +1913,8 @@ let ability_list = {
         "Flurry", "",
         default_cols.defense,
         3, {
-            fn: (b, s, t) => s.delays[0] = -ABILITY_GLOBAL_DELAY,
-            desc: " - Resets the cooldown of your basic attack ability"
+            fn: (b, s, t) => s.delays[0] = Math.max(-ABILITY_GLOBAL_DELAY, s.delays[0] - 3),
+            desc: " - Progresses the cooldown of your basic attack ability by a max of 3 seconds"
         }
     ),
 

@@ -25,9 +25,11 @@ const CustomFunctionParameters = {
 }
 
 const CustomFunctionMap = {
-    [CustomFunction.FRICTION]: (simulation, part, parameters) => part.velocity = part.velocity.mul(parameters[0]),
-    [CustomFunction.HUE_SHIFT_BY_SPEED]: (simulation, part, parameters) => /* hue shift here TODO */ 0,
-    [CustomFunction.FADE]: (simulation, part) => part.colour = part.template.colour.lerp(parameters[0], part.lifetime / part.template.life)
+    [CustomFunction.FRICTION]: (simulation, delta_time, part, parameters) => part.velocity = part.velocity.mul(Math.pow(parameters[0], delta_time)),
+    [CustomFunction.HUE_SHIFT_BY_SPEED]: (simulation, delta_time, part, parameters) => {
+        part.colour = part.template.colour.lerp(parameters[0], Math.max(0, Math.min(1, part.velocity.magnitude() / parameters[1])));
+    },
+    [CustomFunction.FADE]: (simulation, delta_time, part) => part.colour = part.template.colour.lerp(parameters[0], part.lifetime / part.template.life)
 }
 
 class ParticleTemplate {
@@ -36,7 +38,7 @@ class ParticleTemplate {
         this.desc = desc;
 
         this.size = size;
-        this.life = life;
+        this.life = life == 0 ? Number.POSITIVE_INFINITY : life;
         this.colour = colour;
         this.trail_length = trail_length;
         this.mass = mass;
@@ -48,8 +50,8 @@ class ParticleTemplate {
 
         // REWORK TODO to make able to support multiple on-updates, as well as looking up from CustomFunction instead of using native code so the game can save/load correctly
         // need to load user-supplied strings and cast them to the right values - datatypes in CustomFunctionParameters
-        this.custom_onupdate = custom_onupdate; // fn(simulation, delta_time, part)
-        this.custom_timed_functions = custom_timed_functions;  // [{delay, fn(simulation, part, parameters)}, ...]
+        this.custom_onupdate = custom_onupdate; // {CustomFunction, [params]}
+        this.custom_timed_functions = custom_timed_functions;  // [{delay, CustomFunction, params} ...]
     }
 }
 
@@ -233,14 +235,14 @@ class SimulationController {
                 // delay, fn(simulation, part)
                 particle.function_timers[i] += settings.delay;
 
-                settings.fn(this, particle);
+                CustomFunctionMap[settings.fn](this, 0, particle, settings.params);  // delta_time is not used here
             }
         }
 
-        // custom_onupdate(simulation, delta_time, part)
-        if (particle.custom_onupdate) {
-            particle.custom_onupdate(this, r_time * particle.function_speed_mul, particle);
-        }
+        // custom_onupdate(simulation, delta_time, part, params)
+        particle.template.custom_onupdate.forEach(update => {
+            CustomFunctionMap[update.fn](this, r_time * particle.function_speed_mul, particle, update.params);
+        });
 
         // then do collisions
         // -- TODO --
@@ -451,6 +453,33 @@ function set_selected_category(section, typ) {
     }
 }
 
+function setup_category(category_id, particles) {
+    let category_menu = document.querySelector(`#particles_tools_menu #tools_${category_id} .particle-container`);
+
+    category_menu.innerHTML = "";
+    
+    Object.keys(particles).forEach(k => {
+        let e_div = document.createElement("div");
+        let e_p = document.createElement("p");
+
+        let particle = particles[k];
+
+        e_div.classList.add("option");
+        e_div.classList.add("particle");
+
+        console.log(particle);
+        e_p.textContent = particle.code;
+        e_div.style.backgroundColor = particle.colour.lerp(Colour.black, 0.5).css();
+
+        if (particle.colour.luminance() > 255) {
+            e_div.classList.add("invert-text");
+        }
+
+        e_div.appendChild(e_p);
+        category_menu.appendChild(e_div);
+    })
+}
+
 
 let sim_controller = null;
 let last_frame_time = Date.now();
@@ -471,6 +500,33 @@ let mouse_position = Vector2.zero;
 let drag_start_pos = Vector2.zero;
 
 let keys_down = {};
+
+const particle_presets = {
+    "PART": new ParticleTemplate(
+        "PART", "Particle", 1, 0, Colour.from_hex("#a0f"), 0.15, 1, false, null, null, [], [], []
+    ),
+
+    "GRAV": new ParticleTemplate(
+        "GRAV", "Gravity emitting particle", 1, 0, Colour.from_hex("#4a4"), 0.1, 1, false, null, {
+            enabled: true,
+            intensity: 0.1,
+            radius: 128
+        }, [], [], []
+    ),
+
+    "SPRK": new ParticleTemplate(
+        "SPRK", "Spark", 1, 1, Colour.from_hex("#ff0"), 0.1, 0.1, false, null, null, [], [], []
+    ),
+
+    "TRCE": new ParticleTemplate(
+        "TRCE", "Trace particle - has friction and changes colour based on speed", 1, 0, Colour.from_hex("#666"), 0.1, 0.5, false, null, null, [], [], []
+    )
+}
+
+let selected_particle = null;
+
+// TODO make particle selection buttons active, and set the brush to something specific.
+// this is where we'll also code up the P/NGRAV stuff, and start populating the settings menu
 
 document.addEventListener("DOMContentLoaded", function(e) {
     display_canvas = document.getElementById("display-canvas");
@@ -495,27 +551,27 @@ document.addEventListener("DOMContentLoaded", function(e) {
 
     sim_controller = new SimulationController(display_canvas);
     sim_controller.create_particle(new ParticleTemplate(
+        "WHOL", "White hole", 1, Number.POSITIVE_INFINITY, Colour.from_hex("#0f0"), 2, 0, false, null, {
+            enabled: true,
+            intensity: -1,
+            radius: 2048
+        }, [], [], []
+    ), new Vector2(1, 1), new Vector2(0, 0))
+
+    sim_controller.create_particle(new ParticleTemplate(
         "EMIT", "Particle emitter", 1, Number.POSITIVE_INFINITY, Colour.from_hex("#0f0"), 2, 0, false, null, null, [{
-            template: new ParticleTemplate(
-                "PART", "Particle", 1, 30, Colour.from_hex("#a0f"), 0.15, 1, false, null, null, [], null, []
-            ),
+            template: particle_presets.PART,
             delay: 0.05,
             burst_nr: 1,
             inertia_factor: 0,
             random_starting_vel_factor: 100
         }, {
-            template: new ParticleTemplate(
-                "GRAV", "Gravity emitting particle", 1, 30, Colour.from_hex("#4a4"), 0.1, 1, false, null, {
-                    enabled: true,
-                    intensity: 0.1,
-                    radius: 128
-                }, [], null, []
-            ),
+            template: particle_presets.GRAV,
             delay: 4,
             burst_nr: 100,
             inertia_factor: 0,
             random_starting_vel_factor: 200
-        }], null, []
+        }], [], []
     ), new Vector2(128, 128), new Vector2(0, 0))
 
     sim_controller.create_particle(new ParticleTemplate(
@@ -526,20 +582,18 @@ document.addEventListener("DOMContentLoaded", function(e) {
         }, [{
             template: new ParticleTemplate(
                 "PART", "Particle", 1, 30, Colour.from_hex("#0ff"), 0.2, 1, false, null, null, [{
-                    template: new ParticleTemplate(
-                        "SPRK", "Spark", 1, 1, Colour.from_hex("#ff0"), 0.1, 0.1, false, null, null, [], null, []
-                    ),
+                    template: particle_presets.SPRK,
                     delay: 1,
                     burst_nr: 1,
                     inertia_factor: -3,
                     random_starting_vel_factor: 5
-                }], null, []
+                }], [], []
             ),
             delay: 0.2,
             burst_nr: 1,
             inertia_factor: 0,
             random_starting_vel_factor: 100
-        }], null, []
+        }], [], []
     ), new Vector2(384, 384), new Vector2(-25, 0))
 
     let mouse_grav_intens = 32;
@@ -593,6 +647,8 @@ document.addEventListener("DOMContentLoaded", function(e) {
         event.preventDefault();
     });
 
+    setup_category("tools", particle_presets)
+
     set_selected_category("options", "main")
     set_selected_category("tools", "tools")
 
@@ -634,7 +690,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
                 prev_steps_count.shift();
                 */
             } catch (e) {
-                console.log("oh no!")
+                throw e;
             }
     
             sim_controller.render();

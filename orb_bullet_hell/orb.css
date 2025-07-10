@@ -1,3 +1,26 @@
+.game-flex-container {
+    height: calc(100vh - 192px);
+    width: 100vw;
+
+    margin-top: 64px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+}
+
+.game-container {
+    display: grid;
+}
+
 .game-container canvas {
     border: 1px solid white;
+}
+
+.game-canvas {
+    position: unset;
+
+    grid-row: 1;
+    grid-column: 1;
 }
