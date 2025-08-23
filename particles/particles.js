@@ -20,7 +20,7 @@ const CustomFunction = {
 
 const CustomFunctionParameters = {
     [CustomFunction.FRICTION]: [["Speed multiplier", "float"]],
-    [CustomFunction.HUE_SHIFT_BY_SPEED]: [["Speed hue shift factor", "float"]],
+    [CustomFunction.HUE_SHIFT_BY_SPEED]: [["Colour to fade to", "colour"], ["Speed hue shift factor", "float"]],
     [CustomFunction.FADE]: [["Colour to fade to", "colour"]]
 }
 
@@ -475,9 +475,21 @@ function setup_category(category_id, particles) {
             e_div.classList.add("invert-text");
         }
 
+        e_div.addEventListener("click", (e) => {
+            // select the particle
+            select_particle(e_div, particle);
+        })
+
         e_div.appendChild(e_p);
         category_menu.appendChild(e_div);
     })
+}
+
+function select_particle(elem, particle) {
+    document.querySelectorAll("#particles_tools_menu .option.particle").forEach(e => e.classList.remove("selected"));
+    elem.classList.add("selected");
+
+    selected_particle = particle;
 }
 
 
@@ -519,7 +531,10 @@ const particle_presets = {
     ),
 
     "TRCE": new ParticleTemplate(
-        "TRCE", "Trace particle - has friction and changes colour based on speed", 1, 0, Colour.from_hex("#666"), 0.1, 0.5, false, null, null, [], [], []
+        "TRCE", "Trace particle - has friction and changes colour based on speed", 2, 0, Colour.green, 1, 0.5, false, null, null,
+        [],
+        [{fn: CustomFunction.HUE_SHIFT_BY_SPEED, params: [Colour.red, 1000]}, {fn: CustomFunction.FRICTION, params: [0.2]}],
+        []
     )
 }
 
@@ -554,20 +569,20 @@ document.addEventListener("DOMContentLoaded", function(e) {
         "WHOL", "White hole", 1, Number.POSITIVE_INFINITY, Colour.from_hex("#0f0"), 2, 0, false, null, {
             enabled: true,
             intensity: -1,
-            radius: 2048
+            radius: 0
         }, [], [], []
     ), new Vector2(1, 1), new Vector2(0, 0))
 
     sim_controller.create_particle(new ParticleTemplate(
         "EMIT", "Particle emitter", 1, Number.POSITIVE_INFINITY, Colour.from_hex("#0f0"), 2, 0, false, null, null, [{
-            template: particle_presets.PART,
+            template: particle_presets.TRCE,
             delay: 0.05,
             burst_nr: 1,
             inertia_factor: 0,
             random_starting_vel_factor: 100
         }, {
             template: particle_presets.GRAV,
-            delay: 4,
+            delay: 400000,
             burst_nr: 100,
             inertia_factor: 0,
             random_starting_vel_factor: 200
@@ -594,10 +609,10 @@ document.addEventListener("DOMContentLoaded", function(e) {
             inertia_factor: 0,
             random_starting_vel_factor: 100
         }], [], []
-    ), new Vector2(384, 384), new Vector2(-25, 0))
+    ), new Vector2(384, 384), new Vector2(-250, 0))
 
     let mouse_grav_intens = 32;
-    let mouse_gravity_source = {enabled: true, position: mouse_position, radius: 128, intensity: mouse_grav_intens};
+    let mouse_gravity_source = {enabled: true, position: mouse_position, radius: 256, intensity: mouse_grav_intens};
 
     display_canvas.addEventListener("contextmenu", function(event) {
         event.preventDefault();

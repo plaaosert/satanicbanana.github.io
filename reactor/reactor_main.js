@@ -193,6 +193,11 @@ class Reactor {
         this.heats = [];
 
         this.queued_triggers = [];
+
+        this.stats = {
+            activations: 0,
+            destructions: 0
+        }
     }
 
     in_bounds(vec) {
@@ -202,6 +207,63 @@ class Reactor {
             vec.y >= 0 &&
             vec.y < FRAME_HEIGHT
         )
+    }
+
+    get_adjacent(index, directs=true, diagonals=false) {
+        let adjs = [];
+        if (directs) {
+            adjs.push(...[
+                [1, 0],
+                [0, 1],
+                [-1, 0],
+                [0, -1]
+            ])
+        }
+
+        if (diagonals) {
+            adjs.push(...[
+                [1, 1],
+                [-1, 1],
+                [1, -1],
+                [-1, -1]
+            ])
+        }
+
+        let outputs = this.get_offsets(index, adjs, true);
+
+        return outputs;
+    }
+
+    get_offsets(index, offsets, remove_nulls=false) {
+        let outputs = [];
+
+        offsets.forEach(t => {
+            let px = index % this.FRAME_WIDTH;
+            let py = Math.floor(index / this.FRAME_WIDTH);
+
+            let tx = px + t[0];
+            let ty = py + t[1];
+
+            if (
+                tx >= 0 && tx < this.FRAME_WIDTH &&
+                ty >= 0 && ty < this.FRAME_HEIGHT
+            ) {
+                // we're in bounds
+                let t_index = (ty * this.FRAME_WIDTH) + tx;
+                let part = this.particles[t_index];
+                if (part) {
+                    outputs.push(part);
+                } else if (!remove_nulls) {
+                    outputs.push(null);
+                }
+            } else {
+                if (!remove_nulls) {
+                    outputs.push(null);
+                }
+            }
+        })
+
+        return outputs;
     }
 
     for_all_particles(fn, reverse=false) {
@@ -318,13 +380,15 @@ class Reactor {
     }
 
     _final_destroy_particle(index) {
+        this.stats.destructions++;
+
         this.particles[index] = null;
         this.heats[index] = Heats.DESTROYED;
     }
     
-    destroy_particle(index) {
+    destroy_particle(index, end=false) {
         if (this.particles[index]) {
-            this.enqueue_trigger(index, ParticleTriggers.DESTROYED);
+            this.enqueue_trigger(index, ParticleTriggers.DESTROYED, [], end);
             return true;
         }
     }
@@ -343,6 +407,8 @@ class Reactor {
 
     activate_particle(index) {
         if (this.particles[index]) {
+            this.stats.activations++;
+
             this.enqueue_trigger(index, ParticleTriggers.ACTIVATED);
             return true;
         }
@@ -355,6 +421,17 @@ class Reactor {
 
         this.particles[idx1]?.set_index(idx1);
         this.particles[idx2]?.set_index(idx2);
+    }
+
+    copy_particle(p, idx) {
+        let newpart = p.copy();
+
+        newpart?.set_index(idx);
+        this.particles[idx] = newpart;
+    }
+
+    find_empty_spaces() {
+        return this.particles.map((_, i) => i).filter((_, i) => !this.particles[i]);
     }
 
     modify_power(by) {
@@ -390,6 +467,11 @@ class Reactor {
         let trigger = this.queued_triggers.shift();
         if (trigger) {
             let part = this.particles[trigger.idx];
+            if (trigger.typ == ParticleTriggers.ACTIVATED && part) {
+                part.last_values.just_activated = true;
+                part.has_been_activated = true;
+            }
+
             let out = part?.trigger(trigger.typ, trigger.data);
 
             if (part) {
@@ -400,8 +482,6 @@ class Reactor {
 
                 if (trigger.typ == ParticleTriggers.DESTROYED) {
                     this._final_destroy_particle(trigger.idx);
-                } else if (trigger.typ == ParticleTriggers.ACTIVATED) {
-                    this.particles[trigger.idx].last_values.just_activated = true;
                 }
             }
 
@@ -484,6 +564,8 @@ class Particle {
 
         this.power = 0;  // just a tracker of how much power this thing has made
 
+        this.has_been_activated = false;
+
         this.last_values = {
             just_activated: false,
             x: x,
@@ -539,6 +621,14 @@ class Particle {
 
     set_y(to) {
         this.set_var("y", to);
+    }
+
+    add_x(by) {
+        this.set_x(this.x + by);
+    }
+
+    add_y(by) {
+        this.set_y(this.y + by);
     }
 
     set_index(to) {
@@ -858,17 +948,6 @@ function render_ingame_stats(run) {
     document.querySelector(".stats .powerbar").innerHTML = bar_str;
 }
 
-let particle_template = new ParticleTemplate("Metastatic Matter", "Θ", "white", 3, ParticleRarity.FUNDAMENTAL, ParticleType.PARTICLE, {
-    [ParticleTriggers.ACTIVATED]: {
-        desc: "Double own α.",
-        fn: (p, data) => { p.set_x(p.x * 2); }
-    },
-    [ParticleTriggers.DESTROYED]: {
-        desc: "Generate power equal to [[α*β]].",
-        fn: (p, data) => { p.modify_power(p.x * p.y); }
-    },
-})
-
 let particle_template2 = new ParticleTemplate("Recreator Matter", "ᘏ", "lightgreen", 6, ParticleRarity.COMPOSITE, ParticleType.ANTIPARTICLE, {
     [ParticleTriggers.ACTIVATED]: {
         desc: "Add 1 to own β.",
@@ -931,9 +1010,368 @@ let particle_template3 = new ParticleTemplate("Propagator Matter", "ᗛ", "light
 })
 
 let particles_list = [
-    particle_template,
-    particle_template2,
-    particle_template3
+    new ParticleTemplate(
+        "Superstatic Matter", "Θ", "white", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.PARTICLE, {
+            [ParticleTriggers.ACTIVATED]: {
+                desc: "Gain +1 α and +1 β.",
+                fn: (p, data) => {
+                    p.add_x(1);
+                    p.add_y(1);
+                }
+            },
+            [ParticleTriggers.DESTROYED]: {
+                desc: "Generate α+β MW.",
+                fn: (p, data) => { p.modify_power(p.x * p.y); }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Alion", "φ", "white", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.PARTICLE, {
+            [ParticleTriggers.ACTIVATED]: {
+                desc: "Generate 4 MW.",
+                fn: (p, data) => { p.modify_power(4); }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Elequon", "Δ", "white", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.PARTICLE, {
+            [ParticleTriggers.ACTIVATED]: {
+                desc: "Gain +1 α and +1 β.",
+                fn: (p, data) => {
+                    p.add_x(1);
+                    p.add_y(1);
+                }
+            },
+            [ParticleTriggers.X_INCREASED]: {
+                desc: "Generate 1 MW.",
+                fn: (p, data) => { p.modify_power(1); }
+            },
+            [ParticleTriggers.Y_INCREASED]: {
+                desc: "Generate 2 MW.",
+                fn: (p, data) => { p.modify_power(2); }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Sophon", "Π", "white", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.PARTICLE, {
+            [ParticleTriggers.ACTIVATED]: {
+                desc: "Add +1 α to all particles.",
+                fn: (p, data) => {
+                    p.reactor.particles.forEach(pt => {
+                        if (pt) {
+                            pt.add_x(1);
+                        }
+                    })
+                }
+            },
+            [ParticleTriggers.DESTROYED]: {
+                desc: "Generate β MW.",
+                fn: (p, data) => { p.modify_power(p.y); }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Deshelled Nucleus", "λ", "white", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.PARTICLE, {
+            [ParticleTriggers.CREATED]: {
+                desc: "Gain α equal to 0.5x own α (rounded down).",
+                fn: (p, data) => {
+                    p.add_x(Math.floor(p.x * 0.5));
+                }
+            },
+            [ParticleTriggers.DESTROYED]: {
+                desc: "Add own α to all other particles' α.",
+                fn: (p, data) => { 
+                    p.reactor.particles.forEach(pt => {
+                        if (pt && p.index != pt.index) {
+                            pt.add_x(p.x);
+                        }
+                    })
+                }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Memion", "Ψ", "white", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.PARTICLE, {
+            [ParticleTriggers.ACTIVATED]: {
+                desc: "Generate 1 MW for every particle destroyed this trial.",
+                fn: (p, data) => {
+                    p.modify_power(p.reactor.stats.destructions * 1);
+                }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "B+ Qualion", "ω", "white", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.PARTICLE, {
+            [ParticleTriggers.ACTIVATED]: {
+                desc: "Add +1 β to all particles.",
+                fn: (p, data) => {
+                    p.reactor.particles.forEach(pt => {
+                        if (pt) {
+                            pt.add_y(1);
+                        }
+                    })
+                }
+            },
+            [ParticleTriggers.DESTROYED]: {
+                desc: "Remove -1 β from all particles.",
+                fn: (p, data) => {
+                    p.reactor.particles.forEach(pt => {
+                        if (pt) {
+                            pt.add_y(-1);
+                        }
+                    })
+                }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Hare's Matter", "Ξ", "white", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.PARTICLE, {
+            [ParticleTriggers.ACTIVATED]: {
+                desc: "Activate a random other particle that hasn't activated yet this trial.",
+                fn: (p, data) => {
+                    let targets = p.reactor.particles.filter(pt => {
+                        return pt && !pt.has_been_activated
+                    })
+
+                    if (targets.length > 0) {
+                        let p_s = random_from_array(targets);
+                        p.reactor.activate_particle(p_s.index);
+                    }
+                }
+            },
+            [ParticleTriggers.DESTROYED]: {
+                desc: "Activate a random other particle that has activated at least once this trial.",
+                fn: (p, data) => {
+                    let targets = p.reactor.particles.filter(pt => {
+                        return pt && pt.has_been_activated
+                    })
+
+                    if (targets.length > 0) {
+                        let p_s = random_from_array(targets);
+                        p.reactor.activate_particle(p_s.index);
+                    }
+                }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Troson", "σ", "white", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.PARTICLE, {
+            [ParticleTriggers.ACTIVATED]: {
+                desc: "Activate a random particle with the highest α, then destroy it. If that is this particle, does nothing.",
+                fn: (p, data) => {
+                    // filter particles by highest x, then select a random one that isn't this one's index
+                    let max_x = p.reactor.particles.reduce((prev, cur) => cur ? Math.max(cur.x, prev) : prev, 0);
+
+                    let parts = p.reactor.particles.filter(pt => pt && pt.x >= max_x && pt.index != p.index);
+
+                    if (parts.length > 0) {
+                        let p_s = random_from_array(parts);
+                        
+                        // REMEMBER: put triggers backwards, because everything gets put onto a stack
+                        p.reactor.destroy_particle(p_s.index);
+                        p.reactor.activate_particle(p_s.index);
+                    }
+                }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "General Condensate", "ξ", "white", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.PARTICLE, {
+            [ParticleTriggers.ACTIVATED]: {
+                desc: "Generate 16-α-β MW, then gain +4 β.",
+                fn: (p, data) => {
+                    p.modify_power(16 - p.x - p.y);
+                    p.add_y(4);
+                }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Antiwave", "ᔷ", "moccasin", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.ANTIPARTICLE, {
+            [ParticleTriggers.ACTIVATED]: {
+                desc: "Remove 1 α from every adjacent particle.",
+                fn: (p, data) => {
+                    let parts = p.reactor.get_adjacent(p.index, true, true);
+
+                    parts.forEach(pt => pt.add_x(-1))
+                }
+            },
+            [ParticleTriggers.DESTROYED]: {
+                desc: "Remove 1 β from every diagonally adjancent particle.",
+                fn: (p, data) => {
+                    let parts = p.reactor.get_adjacent(p.index, false, true);
+
+                    parts.forEach(pt => pt.add_y(-1))
+                }
+            },
+        }
+    ),
+
+    // untested
+    new ParticleTemplate(
+        "Quoton", "ᕒ", "moccasin", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.ANTIPARTICLE, {
+            [ParticleTriggers.ACTIVATED]: {
+                desc: "Destroy a random other particle and gain α and β equal to its α and β.",
+                fn: (p, data) => {
+                    let targets = p.reactor.particles.filter(pt => {
+                        return pt
+                    })
+
+                    if (targets.length > 0) {
+                        let p_s = random_from_array(targets);
+                        p.reactor.destroy_particle(p_s.index);
+
+                        p.add_x(p_s.x);
+                        p.add_y(p_s.y);
+                    }
+                }
+            },
+            [ParticleTriggers.DESTROYED]: {
+                desc: "Grant a random other particle 75% of own α and β (rounded up).",
+                fn: (p, data) => {
+                    let targets = p.reactor.particles.filter(pt => {
+                        return pt
+                    })
+
+                    if (targets.length > 0) {
+                        let p_s = random_from_array(targets);
+
+                        p_s.add_x(Math.ceil(p.x * 0.75));
+                        p_s.add_y(Math.ceil(p.y * 0.75));
+                    }
+                }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Subalic Memate", "ᗩ", "moccasin", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.ANTIPARTICLE, {
+            [ParticleTriggers.Y_INCREASED]: {
+                desc: "Generate 0.1*β MW (rounded up)",
+                fn: (p, data) => {
+                    p.modify_power(Math.ceil(0.1 * p.y));
+                }
+            },
+            [ParticleTriggers.Y_REDUCED]: {
+                desc: "Lose 0.2*β MW (rounded up)",
+                fn: (p, data) => {
+                    p.modify_power(-Math.ceil(0.2 * p.y));
+                }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Antisophon", "ᙫ", "moccasin", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.ANTIPARTICLE, {
+            [ParticleTriggers.X_REDUCED]: {
+                desc: "Generate the same amount of MW.",
+                fn: (p, data) => {
+                    p.modify_power(data[0]);
+                }
+            },
+            [ParticleTriggers.Y_REDUCED]: {
+                desc: "Generate MW equal to 2x the β lost.",
+                fn: (p, data) => {
+                    p.modify_power(data[0] * 2);
+                }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Antisuperstatic Matter", "ᗯ", "moccasin", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.ANTIPARTICLE, {
+            [ParticleTriggers.ACTIVATED]: {
+                desc: "Remove -1 β and add +3 α to all adjacent particles.",
+                fn: (p, data) => {
+                    let parts = p.reactor.get_adjacent(p.index, true, true);
+
+                    parts.forEach(pt => {
+                        pt.add_x(3);
+                        pt.add_y(-1);
+                    })
+                }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "L-moton", "ᖳ", "moccasin", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.ANTIPARTICLE, {
+            [ParticleTriggers.ACTIVATED]: {
+                desc: "Destroy the particle directly to the right. Activate the particle directly below.",
+                fn: (p, data) => {
+                    let parts = p.reactor.get_offsets(p.index, [
+                        [1, 0], [0, 1]
+                    ])
+
+                    p.reactor.destroy_particle(parts[0]?.index);
+                    p.reactor.activate_particle(parts[1]?.index);
+                }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Jill's Particle", "ᕫ", "moccasin", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.ANTIPARTICLE, {
+            [ParticleTriggers.ACTIVATED]: {
+                desc: "Destroy 3 random adjacent particles.",
+                fn: (p, data) => {
+                    let parts = p.reactor.get_adjacent(p.index, true, true);
+
+                    for (let i=0; i<3; i++) {
+                        if (parts.length > 0) {
+                            let pt_idx = random_int(0, parts.length);
+                            let pt = parts[pt_idx];
+                            p.reactor.destroy_particle(pt.index);
+
+                            parts.splice(pt_idx, 1);
+                        }
+                    }
+                }
+            },
+
+            [ParticleTriggers.DESTROYED]: {
+                desc: "Activate 2 random adjacent particles (can select the same one twice).",
+                fn: (p, data) => {
+                    let parts = p.reactor.get_adjacent(p.index, true, true);
+
+                    for (let i=0; i<2; i++) {
+                        if (parts.length > 0) {
+                            let pt_idx = random_int(0, parts.length);
+                            let pt = parts[pt_idx];
+                            p.reactor.activate_particle(pt.index);
+                        }
+                    }
+                }
+            },
+        }
+    ),
 ]
 
 let particles_lookup = new Map();
@@ -947,24 +1385,29 @@ particles_list.forEach(p => {
 let items_list = [
     // mods
     new ItemTemplate(
-        "Refined Power Reclamation Apparatus", "P", ItemType.MOD, "yellow", "white", "When a particle is destroyed and has positive β, gain power equal to 10% of its β, rounded up.", 1, 10, {
+        "Refined Power Reclamation Apparatus", "P", ItemType.MOD, "red", "yellow",
+        "When a particle is destroyed and has positive β, generate MW equal to 25% of its β, rounded up.",
+        1, 10, {
             [ParticleTriggers.DESTROYED]: (item, p, data) => {
-                console.log("hi");
                 if (p.y > 0) {
-                    p.reactor.modify_power(Math.ceil(p.y / 10));
+                    p.reactor.modify_power(Math.ceil(p.y * 0.25));
                 }
             }
         }
     ),
 
     new ItemTemplate(
-        "Elastic Batteries", "E", ItemType.MOD, "yellow", "white", "When 4 MW or more is lost at once, generate 1 MW.", 1, 10, {
+        "Elastic Batteries", "E", ItemType.MOD, "orange", "yellow",
+        "When 4 MW or more is lost at once, generate 1 MW.",
+        1, 10, {
             [ParticleTriggers.POWER_LOST]: (item, p, data) => { if (data[0] >= 4) { p.reactor.modify_power(1) } }
         }
     ),
 
     new ItemTemplate(
-        "Gold-Lined Capacitors", "G", ItemType.MOD, "yellow", "gold", "When a particle is destroyed, generate 1 MW for every ◕ currently held.", 1, 10, {
+        "Gold-Lined Capacitors", "G", ItemType.MOD, "gold", "yellow",
+        "When a particle is destroyed, generate 1 MW for every ◕ currently held.",
+        1, 10, {
             [ParticleTriggers.DESTROYED]: (item, p, data) => { if (p.reactor.run.money > 0) { p.reactor.modify_power(p.reactor.run.money) } }
         }
     ),
@@ -972,19 +1415,22 @@ let items_list = [
     // studies
     new ItemTemplate(
         "On the Spontaneous Genesis of Activated Nanoparticles in High Electromagnetism Environments", "∬", ItemType.STUDY,
-        "white", "limegreen", "When a particle is activated, 50% chance to copy it to a random empty location. Every time this effect triggers, the chance decreases by 15% for the current trial.",
+        "white", "limegreen",
+        "When a particle is activated, 100% chance to copy it to a random empty location. Every time this effect triggers, the chance decreases by 12.5% for the current trial.",
         1, 25, {
             [ParticleTriggers.ACTIVATED]: (item, p, data) => {
-                let chance = (item.temporary_data["copy_on_trigger_chance"] ? item.temporary_data["copy_on_trigger_chance"] : 0.5);
+                let chance = (item.temporary_data["copy_on_trigger_chance"]!==undefined ? item.temporary_data["copy_on_trigger_chance"] : 1);
                 if (p.reactor.run.random() < chance) {
                     // TODO write code to copy the particle
-                    // remember to have a way to export the current state of the random! we want to save games eventually
-                    // :3
-                    // also bring in the code to highlight stuff in here as well, to highlight keywords, numbers, money, power etc
-                    // dont bother doing this right now
+                    let empty_spaces = p.reactor.find_empty_spaces();
+                    if (empty_spaces.length > 0) {
+                        let newpos = random_from_array(empty_spaces);
 
-                    chance -= 0.15;
-                    item.temporary_data["copy_on_trigger_chance"] = chance;
+                        p.reactor.copy_particle(p, newpos);
+
+                        chance -= 0.125;
+                        item.temporary_data["copy_on_trigger_chance"] = chance;
+                    }
                 }
             }
         }
@@ -1009,15 +1455,7 @@ particles_drop_table = balance_weighted_array(particles_drop_table);
 items_drop_table_mods = balance_weighted_array(items_drop_table_mods);
 items_drop_table_studies = balance_weighted_array(items_drop_table_studies);
 
-/*
-Anti-neutrino
-[Exotic]
-Flip A/B for all surrounding particles.
 
-TODO make items able to "subscribe" to events so they can do shit as well
-
-then we need to make the gameplay loop, plus the shop
-*/
 
 function start_run(run) {
     run.setup_reactor();
@@ -1247,6 +1685,8 @@ class Run {
                 this.shop_items.particles.splice(item_index, 1);
             }
 
+            this.selected_shop_item = null;
+            
             this.setup_reactor();
             this.reactor.start_operation();
             this.reactor.render_particles();
@@ -1364,12 +1804,24 @@ let last_reactor_tick = Date.now();
 
 document.addEventListener("DOMContentLoaded", function(e) {
     start_run(run);
+    run.items.push(new Item(items_drop_table_studies[0][1]));
+    run.items.push(new Item(items_drop_table_studies[0][1]));
+    run.items.push(new Item(items_drop_table_studies[0][1]));
+    run.items.push(new Item(items_drop_table_studies[0][1]));
+    run.items.push(new Item(items_drop_table_studies[0][1]));
+    run.items.push(new Item(items_drop_table_studies[0][1]));
+    run.items.push(new Item(items_drop_table_studies[0][1]));
+    run.items.push(new Item(items_drop_table_studies[0][1]));
+    run.items.push(new Item(items_drop_table_studies[0][1]));
+    run.items.push(new Item(items_drop_table_studies[0][1]));
+    run.items.push(new Item(items_drop_table_studies[0][1]));
+    run.items.push(new Item(items_drop_table_studies[0][1]));
 
     game_loop = function() {
         // if reactor is running, step it
         if (run.reactor.running) {
             // consider delta time here
-            if (Date.now() > last_reactor_tick + (ms_per_action * speed_mult)) {
+            if (Date.now() > last_reactor_tick + (ms_per_action * (1/speed_mult))) {
                 last_reactor_tick = Date.now();
                 
                 let result = step_reactor(run);
@@ -1486,5 +1938,3 @@ document.addEventListener("DOMContentLoaded", function(e) {
     run.reroll_shop(true, true);
     render_shop(run);
 });
-
-// TODO implement continue button from shop and the active buttons from play

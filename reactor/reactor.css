@@ -91,6 +91,15 @@
 
 .items {
     display: flex;
+    flex-wrap: wrap;
+}
+
+.run-status .items .item {
+    
+}
+
+.run-status .items {
+    
 }
 
 .items .item {
