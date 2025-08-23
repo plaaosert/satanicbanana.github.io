@@ -406,9 +406,9 @@ function update_sim_speed_display() {
 }
 
 function update_avg() {
-    let behind = last_frame_time - last_processing_time;
-    average_element.textContent = `Behind: ${behind}ms`;
-    if (behind > largest_time_batch) {
+    let n = sim_controller.particles.size;
+    average_element.textContent = `${n} particles`;
+    if (n > 250) {
         average_element.classList.add("darkred");
         average_element.classList.remove("darkgreen");
     } else {
