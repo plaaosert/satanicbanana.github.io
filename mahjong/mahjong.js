@@ -77,11 +77,11 @@ class Game {
 
                 DORA_ENABLED: true,
                 DORA_STARTING_TILES: 1,
-                URADORA_ENABLED: true,
+
                 URADORA_ON_RIICHI: true,
                 URADORA_ALWAYS: false,
 
-                SEQUENCES_CAN_LOOP: true,
+                SEQUENCES_CAN_LOOP: false,
 
                 WILDS_ARE_HONOURS: true,
                 FLOWERS_ARE_HONOURS: true,
@@ -90,7 +90,7 @@ class Game {
 
             CALLS: {
                 CHII_ENABLED: true,
-                CAN_CHII_HONOURS: true,
+                CAN_CHII_HONOURS: false,
                 CHII_PREV_PLAYER_ONLY: true,
                 DRAWS_AFTER_CHII: 0,  // so no bonus draws; game will make you discard automatically
 
@@ -100,7 +100,6 @@ class Game {
 
                 KAN_ENABLED: true,
                 CAN_KAN_HONOURS: true,
-                KAN_CAUSES_DEAD_WALL_DRAW: true,
                 CLOSED_KAN_ENABLED: true,
                 ADDED_KAN_ENABLED: true,
                 DRAWS_AFTER_KAN: 1,
