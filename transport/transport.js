@@ -62,22 +62,161 @@ let mouse_position = new Vector2(0, 0);
 // Tiles have some associated stats
 const TileType = {
     // Terrain
-    GRASS,
-    SAND,
-    WATER,
+    GRASS: "GRASS",
+    SAND: "SAND",
+    WATER: "WATER",
 
     // Infrastructure
-    ROAD,
-    TRAIN_STATION,
-    RAILWAY,
-    AIRPORT,
-    PORT,
+    ROAD: "ROAD",
+    TRAIN_STATION: "TRAIN_STATION",
+    RAILWAY: "RAILWAY",
+    AIRPORT: "AIRPORT",
+    SEAPORT: "SEAPORT",
 
     // Cities
-    HOUSING,
-    COMMERCIAL,
-    INDUSTRIAL,
-    OFFICES,
+    HOUSING: "HOUSING",
+    COMMERCIAL: "COMMERCIAL",
+    INDUSTRIAL: "INDUSTRIAL",
+    OFFICES: "OFFICES",
+}
+
+const TileData = {
+    [TileType.GRASS]: {col: "green"},
+    [TileType.SAND]: {col: "goldenrod"},
+    [TileType.WATER]: {col: "mediumblue"},
+    [TileType.ROAD]: {col: "gray"},
+    [TileType.TRAIN_STATION]: {col: "lightsalmon"},
+    [TileType.RAILWAY]: {col: "darkgray"},
+    [TileType.AIRPORT]: {col: "firebrick"},
+    [TileType.SEAPORT]: {col: "dodgerblue"},
+    [TileType.HOUSING]: {col: "darkolivegreen"},
+    [TileType.COMMERCIAL]: {col: "darkcyan"},
+    [TileType.INDUSTRIAL]: {col: "chocolate"},
+    [TileType.OFFICES]: {col: "blueviolet"},
+}
+
+class GameWorld {
+    constructor() {
+        this.tilemap = new Map();
+        this.navmeshes = {};
+    }
+}
+
+// begin github test code
+
+let perlin = {
+    rand_vect: function(){
+        let theta = Math.random() * 2 * Math.PI;
+        return {x: Math.cos(theta), y: Math.sin(theta)};
+    },
+    dot_prod_grid: function(x, y, vx, vy){
+        let g_vect;
+        let d_vect = {x: x - vx, y: y - vy};
+        if (this.gradients[[vx,vy]]){
+            g_vect = this.gradients[[vx,vy]];
+        } else {
+            g_vect = this.rand_vect();
+            this.gradients[[vx, vy]] = g_vect;
+        }
+        return d_vect.x * g_vect.x + d_vect.y * g_vect.y;
+    },
+    smootherstep: function(x){
+        return 6*x**5 - 15*x**4 + 10*x**3;
+    },
+    interp: function(x, a, b){
+        return a + this.smootherstep(x) * (b-a);
+    },
+    seed: function(){
+        this.gradients = {};
+        this.memory = {};
+    },
+    get: function(x, y) {
+        if (this.memory.hasOwnProperty([x,y]))
+            return this.memory[[x,y]];
+        let xf = Math.floor(x);
+        let yf = Math.floor(y);
+        //interpolate
+        let tl = this.dot_prod_grid(x, y, xf,   yf);
+        let tr = this.dot_prod_grid(x, y, xf+1, yf);
+        let bl = this.dot_prod_grid(x, y, xf,   yf+1);
+        let br = this.dot_prod_grid(x, y, xf+1, yf+1);
+        let xt = this.interp(x-xf, tl, tr);
+        let xb = this.interp(x-xf, bl, br);
+        let v = this.interp(y-yf, xt, xb);
+        this.memory[[x,y]] = v;
+        return v;
+    }
+}
+perlin.seed();
+
+// end github test code
+
+class Viewer {
+    static BASE_SIZE = 16;
+    static ROTATION = 45;
+
+    constructor(gameworld) {
+        this.zoom_level = 1;
+        this.position = new Vector2(40/this.zoom_level, -40/this.zoom_level);
+
+        this.gameworld = gameworld;
+    }
+
+    render_tiles(canvas, ctx, lines_only=false) {
+        ctx.clearRect(0, 0, canvas_width, canvas_height);
+
+        // the side length of the squares is BASE_SIZE
+        // the camera is rotated 45 degrees (so the square is pointing corner down), which means that the shape has a cross-length of:
+        //   cos(45)*BASE_SIZE
+        let cross_length = Math.cos(45 * (Math.PI / 180)) * Viewer.BASE_SIZE;
+        
+        // we then also need the cross height, which is based on the rotation angle.
+        // we can find this by rotating the upper point in 2d around the center then discarding y-position, and getting the difference.
+        let point_raw = new Vector2(Viewer.BASE_SIZE, 0);
+        let point_rotated = point_raw.rotate(Viewer.ROTATION * (Math.PI / 180));
+
+        let point_xdiff = cross_length - (point_raw.x - point_rotated.x);
+        let cross_height = Math.abs(point_xdiff) * 1;
+
+        cross_length *= this.zoom_level;
+        cross_height *= this.zoom_level;
+
+        // now we have the (half) cross height and cross length, we can calculate where to place each square:
+        //   p_off = (cross_len * (x-y), cross_height * (y+x))
+        // for now just do perlin noise
+        for (let x=0; x<256; x++) {
+            for (let y=0; y<256; y++) {
+                let xt = x + this.position.x
+                let yt = y + this.position.y;
+
+                let p_off = new Vector2(cross_length * (xt-yt), cross_height * (yt+xt));
+
+                // draw the square. the point offset is where the square starts, so move half cross_length across to start at the first corner
+                ctx.beginPath();
+                ctx.moveTo(p_off.x + cross_length, p_off.y);
+                ctx.lineTo(p_off.x + (cross_length * 2), p_off.y + cross_height);
+                ctx.lineTo(p_off.x + cross_length, p_off.y + (cross_height * 2));
+                ctx.lineTo(p_off.x, p_off.y + cross_height);
+                ctx.closePath();
+
+                // if lines only, just do black lines here, else do the fill
+                if (lines_only) {
+                    ctx.strokeStyle = new Colour(128, 128, 128, 128).css();
+                    ctx.stroke();
+                } else {
+                    let p = perlin.get(x/16, y/16);
+                    if (p >= 0.2) {
+                        ctx.fillStyle = TileData.WATER.col
+                    } else if (p >= 0.1) {
+                        ctx.fillStyle = TileData.SAND.col
+                    } else {
+                        ctx.fillStyle = TileData.GRASS.col
+                    }
+                    ctx.fill();
+                }
+            }
+        }
+    }
 }
 
 function get_canvases() {
@@ -188,8 +327,6 @@ function game_loop() {
 document.addEventListener("DOMContentLoaded", function() {
     get_canvases();
 
-    
-
     layers.front.canvas.addEventListener("contextmenu", function(event) {
         event.preventDefault();
     })
@@ -272,4 +409,8 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 200)
 
     window.addEventListener("resize", handle_resize);
+
+    let v = new Viewer(null);
+    v.render_tiles(layers.fg2.canvas, layers.fg2.ctx);
+    v.render_tiles(layers.fg1.canvas, layers.fg1.ctx, true);
 })

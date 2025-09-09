@@ -83,17 +83,25 @@ const metric_strings = [
 ]
 
 function number_format(v, fmt, suffix="") {
+    let sign_char = "";
+    if (v < 0) {
+        sign_char += "-";
+    }
+
+    let result = "";
+
     switch (fmt) {
         case ReactorNumberFormat.SCIENTIFIC:
             if (v.toString().length > 7) {
-                return v.toExponential(3).replaceAll("+", "") + suffix;
+                result = v.toExponential(3).replaceAll("+", "") + suffix;
             } else {
-                return v;
+                result = v;
             }
 
         case ReactorNumberFormat.SHORT: {
             if (v == 0) {
-                return 0 + suffix;
+                result = 0 + suffix;
+                break;
             }
 
             let factor = Math.floor(Math.log10(v) / 3)
@@ -106,12 +114,13 @@ function number_format(v, fmt, suffix="") {
             }
 
             let divisor = Math.pow(1000, factor);
-            return (Math.round((v / divisor) * 1000) / 1000) + suffix_txt + suffix;
+            result = (Math.round((v / divisor) * 1000) / 1000) + suffix_txt + suffix;
         }
         
         case ReactorNumberFormat.METRIC: {
             if (v == 0) {
-                return 0 + " " + suffix;
+                result = 0 + " " + suffix;
+                break;
             }
 
             let factor = Math.floor(Math.log10(v) / 3);
@@ -124,13 +133,15 @@ function number_format(v, fmt, suffix="") {
             }
 
             if (factor_count > 0) {
-                return "∞" + suffix;
+                result = "∞" + suffix;
             }
 
             let divisor = Math.pow(1000, factor);
-            return (Math.round((v / divisor) * 1000) / 1000) + suffix_txt + suffix;
+            result = (Math.round((v / divisor) * 1000) / 1000) + suffix_txt + suffix;
         }
     }
+
+    return sign_char + result;
 }
 
 function pad_center(string, maxlen) {
@@ -238,18 +249,18 @@ class Reactor {
         let outputs = [];
 
         offsets.forEach(t => {
-            let px = index % this.FRAME_WIDTH;
-            let py = Math.floor(index / this.FRAME_WIDTH);
+            let px = index % FRAME_WIDTH;
+            let py = Math.floor(index / FRAME_WIDTH);
 
             let tx = px + t[0];
             let ty = py + t[1];
 
             if (
-                tx >= 0 && tx < this.FRAME_WIDTH &&
-                ty >= 0 && ty < this.FRAME_HEIGHT
+                tx >= 0 && tx < FRAME_WIDTH &&
+                ty >= 0 && ty < FRAME_HEIGHT
             ) {
                 // we're in bounds
-                let t_index = (ty * this.FRAME_WIDTH) + tx;
+                let t_index = (ty * FRAME_WIDTH) + tx;
                 let part = this.particles[t_index];
                 if (part) {
                     outputs.push(part);
@@ -939,7 +950,7 @@ function render_ingame_stats(run) {
     document.querySelector(".stats .moneynumber").textContent = number_format(run.money, ReactorNumberFormat.SCIENTIFIC);
     
     let bar_length = 33;
-    let power_proportion = run.get_current_goal_pct();
+    let power_proportion = Math.max(0, run.get_current_goal_pct());
     bar_level = Math.max(0, Math.min(4, Math.floor(power_proportion)));
     bar_point = Math.min(bar_length, Math.floor((power_proportion - bar_level) * bar_length));
 
@@ -1372,6 +1383,210 @@ let particles_list = [
             },
         }
     ),
+
+    new ParticleTemplate(
+        "Anti-antisophon", "ᗫ", "moccasin", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.ANTIPARTICLE, {
+            [ParticleTriggers.ACTIVATED]: {
+                desc: "Destroy a random adjacent particle and generate MW equal to 3x its β.",
+                fn: (p, data) => {
+                    let parts = p.reactor.get_adjacent(p.index, true, true);
+
+                    if (parts.length > 0) {
+                        let part = random_from_array(parts);
+
+                        p.reactor.destroy_particle(part.index);
+
+                        p.modify_power(part.y * 3);
+                    }
+                }
+            },
+
+            [ParticleTriggers.DESTROYED]: {
+                desc: "Generate MW equal to the sum of all adjacent particles' α.",
+                fn: (p, data) => {
+                    let parts = p.reactor.get_adjacent(p.index, true, true);
+
+                    let sum = 0;
+                    parts.forEach(part => {
+                        sum += part.x * 1;
+                    });
+
+                    p.modify_power(sum);
+                }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Erion", "ᘹ", "moccasin", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.ANTIPARTICLE, {
+            [ParticleTriggers.ACTIVATED]: {
+                desc: "If α+β is 0 or less, generate 40 MW.",
+                fn: (p, data) => {
+                    if (p.x + p.y <= 0) {
+                        p.modify_power(40);
+                    }
+                }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Antisubspokes", "ᘞ", "moccasin", 3,
+        ParticleRarity.FUNDAMENTAL, ParticleType.ANTIPARTICLE, {
+            [ParticleTriggers.DESTROYED]: {
+                desc: "Reduce the α and β of all diagonally adjacent particles by half (rounded down), then activate them.",
+                fn: (p, data) => {
+                    let parts = p.reactor.get_adjacent(p.index, false, true);
+
+                    parts.forEach(part => {
+                        part.add_x(Math.floor(part.x * -0.5));
+                        part.add_y(Math.floor(part.y * -0.5));
+                        p.reactor.activate_particle(part.index);
+                    });
+                }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Thought Experiment", "⧗", "palegreen", 5,
+        ParticleRarity.FUNDAMENTAL, ParticleType.QUASIPARTICLE, {
+            [ParticleTriggers.START]: {
+                desc: "Add +3 α to all particles and remove -2 β.",
+                fn: (p, data) => {
+                    p.reactor.particles.forEach(part => {
+                        if (part) {
+                            part.add_x(3);
+                            part.add_y(-2);
+                        }
+                    })
+                }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Atomic Battery", "⧳", "palegreen", 5,
+        ParticleRarity.FUNDAMENTAL, ParticleType.QUASIPARTICLE, {
+            [ParticleTriggers.CREATED]: {
+                desc: "Destroy this particle.",
+                fn: (p, data) => {
+                    p.reactor.destroy_particle(p.index);
+                }
+            },
+
+            [ParticleTriggers.DESTROYED]: {
+                desc: "Generate 8 MW.",
+                fn: (p, data) => {
+                    p.modify_power(8);
+                }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Subwave", "⦄", "palegreen", 5,
+        ParticleRarity.FUNDAMENTAL, ParticleType.QUASIPARTICLE, {
+            [ParticleTriggers.ACTIVATED]: {
+                desc: "Set all adjacent particles' α and β to the average of all adjacent particles (rounded up). Each average is calculated separately.",
+                fn: (p, data) => {
+                    let parts = p.reactor.get_adjacent(p.index, true, true);
+
+                    let sum_x = 0;
+                    let sum_y = 0;
+                    let count = 0;
+                    parts.forEach(part => {
+                        sum_x += part.x;
+                        sum_y += part.y;
+                        count++;
+                    });
+
+                    sum_x = Math.ceil(sum_x / count);
+                    sum_y = Math.ceil(sum_y / count);
+
+                    parts.forEach(part => {
+                        part.set_x(sum_x);
+                        part.set_y(sum_y);
+                    });
+                }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Flickermatter", "⥉", "palegreen", 5,
+        ParticleRarity.FUNDAMENTAL, ParticleType.QUASIPARTICLE, {
+            [ParticleTriggers.INDEX_CHANGED]: {
+                desc: "Generate (0.2*α)+(0.4*β) MW (rounded up).",
+                fn: (p, data) => {
+                    p.modify_power(Math.ceil((p.x * 0.2) + (p.y * 0.4)));
+                }
+            },
+        }
+    ),
+
+    new ParticleTemplate(
+        "Platonid", "⧫", "palegreen", 5,
+        ParticleRarity.FUNDAMENTAL, ParticleType.QUASIPARTICLE, {
+            [ParticleTriggers.START]: {
+                desc: "Generate 1 MW.",
+                fn: (p, data) => {
+                    p.modify_power(1);
+                }
+            },
+
+            [ParticleTriggers.CREATED]: {
+                desc: "Generate 1 MW.",
+                fn: (p, data) => {
+                    p.modify_power(1);
+                }
+            },
+
+            [ParticleTriggers.ACTIVATED]: {
+                desc: "Generate 1 MW.",
+                fn: (p, data) => {
+                    p.modify_power(1);
+                }
+            },
+
+            [ParticleTriggers.DESTROYED]: {
+                desc: "Generate 1 MW.",
+                fn: (p, data) => {
+                    p.modify_power(1);
+                }
+            },
+
+            [ParticleTriggers.X_INCREASED]: {
+                desc: "Generate 1 MW.",
+                fn: (p, data) => {
+                    p.modify_power(1);
+                }
+            },
+
+            [ParticleTriggers.Y_INCREASED]: {
+                desc: "Generate 1 MW.",
+                fn: (p, data) => {
+                    p.modify_power(1);
+                }
+            },
+
+            [ParticleTriggers.INDEX_CHANGED]: {
+                desc: "Generate 1 MW.",
+                fn: (p, data) => {
+                    p.modify_power(1);
+                }
+            },
+
+            [ParticleTriggers.POWER_LOST]: {
+                desc: "Generate 1 MW.",
+                fn: (p, data) => {
+                    p.modify_power(1);
+                }
+            },
+        }
+    ),
 ]
 
 let particles_lookup = new Map();
@@ -1414,7 +1629,7 @@ let items_list = [
 
     // studies
     new ItemTemplate(
-        "On the Spontaneous Genesis of Activated Nanoparticles in High Electromagnetism Environments", "∬", ItemType.STUDY,
+        "On the Spontaneous Genesis of Activated Nanoparticles in High Electromagnetism Environments", "⧉", ItemType.STUDY,
         "white", "limegreen",
         "When a particle is activated, 100% chance to copy it to a random empty location. Every time this effect triggers, the chance decreases by 12.5% for the current trial.",
         1, 25, {
