@@ -114,6 +114,10 @@
     background-color: maroon !important;
 }
 
+.cell.selected {
+    background-color: maroon !important;
+}
+
 .button.selected {
     background-color: maroon !important;
 }
@@ -196,6 +200,10 @@
 
 .powerdisplay {
     color: yellow;
+}
+
+.negative-tooltip {
+    color: orangered;
 }
 
 .roundnumber, .phasenumber {
