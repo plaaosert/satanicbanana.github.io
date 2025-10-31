@@ -1902,7 +1902,7 @@ let particles_list = [
                 }
             },
 
-            [ParticleTriggers.ACTIVATED]: {
+            [ParticleTriggers.DESTROYED]: {
                 desc: "Generate (the count of the most common particle)^2 MW.",
                 fn: (p, data) => {
                     let cnts = new Map();
