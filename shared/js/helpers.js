@@ -1,3 +1,9 @@
+/*
+
+  CSS / Webpage 
+
+*/
+
 function vh(percent, absolute) {
     // topbar, bottombar 128px + 64px
     let offset = 128 + 64;
@@ -22,6 +28,27 @@ function vmax(percent, absolute) {
     return Math.max(vh(percent, absolute), vw(percent));
 }
 
+// https://stackoverflow.com/questions/33424138/how-to-remove-a-div-with-fade-out-effect-in-javascript
+function removeFadeOut( el, speed ) {
+    var seconds = speed/1000;
+    el.style.transition = "opacity "+seconds+"s ease";
+
+    el.style.opacity = 0;
+    setTimeout(function() {
+        el.parentNode.removeChild(el);
+    }, speed);
+}
+
+/*
+
+  Maths / Arrays
+  
+*/
+
+function positive_mod(n, m) {
+    return ((n % m) + m) % m;
+}
+
 function in_rect(tl, br, pos) {
     return (
         pos.x >= tl.x && pos.x <= br.x &&
@@ -29,8 +56,8 @@ function in_rect(tl, br, pos) {
     )
 }
 
-function positive_mod(n, m) {
-    return ((n % m) + m) % m;
+function in_bounds(val, lo, hi) {
+    return val >= lo && val < hi;
 }
 
 // http://rosettacode.org/wiki/Bitmap/Bresenham%27s_line_algorithm#C
@@ -70,14 +97,6 @@ function make_line(a, b, bound_rect) {
     }
 }
 
-function random_int(min_inclusive, max_exclusive, rand=null) {
-    return min_inclusive + Math.floor((rand ? rand : Math.random)() * (max_exclusive - min_inclusive));
-}
-
-function random_float(min_inclusive, max_exclusive, rand=null) {
-    return min_inclusive + ((rand ? rand : Math.random)() * (max_exclusive - min_inclusive));
-}
-
 function lerp(from, to, amt, round=false) {
     let diff = to - from;
 
@@ -92,102 +111,18 @@ function lerp_arr(from, to, amt, round=false) {
     return from.map((v, i) => lerp(v, to[i], amt, round));
 }
 
-// https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
-function shuffle(arr, random=null) {
-    return arr
-        .map(value => ({ value, sort: random ? random : Math.random() }))
-        .sort((a, b) => a.sort - b.sort)
-        .map(({ value }) => value)
+// Rebalance a weighted array so it sums to 1.
+// Required before being able to run weighted array random.
+function balance_weighted_array(arr) {
+    let sum = arr.reduce((p, c) => p + c[0], 0);
+    return arr.map(t => [t[0] / sum, ...t.slice(1)]);
 }
 
-const NumberFormat = {
-    SCIENTIFIC: 0,
-    SHORT: 1,
-    METRIC: 2,
-}
-
-function format_number(val, typ, max_val=1e6) {
-    let method = typ ? typ : NumberFormat.SCIENTIFIC;
-
-    switch (method) {
-        case NumberFormat.SCIENTIFIC:
-            if (val >= max_val && val > 0) {
-                let magnitude = Math.log10(val);
-                let digits = Math.floor(magnitude);
-                
-                let frac = Math.floor((val / Math.pow(10, digits)) * 100) / 100;
-                
-                return `${frac}e${digits}`;
-            } else if (Math.abs(val) >= max_val) {
-                let magnitude = Math.log10(Math.abs(val));
-                let digits = Math.floor(magnitude);
-                
-                let frac = Math.floor((Math.abs(val) / Math.pow(10, digits)) * 100) / 100;
-                
-                return `-${frac}e${digits}`;
-            } else {
-                return val.toLocaleString();
-            }
-            break;
-    }
-}
-
-// https://stackoverflow.com/questions/33424138/how-to-remove-a-div-with-fade-out-effect-in-javascript
-function removeFadeOut( el, speed ) {
-    var seconds = speed/1000;
-    el.style.transition = "opacity "+seconds+"s ease";
-
-    el.style.opacity = 0;
-    setTimeout(function() {
-        el.parentNode.removeChild(el);
-    }, speed);
-}
-
-// https://gist.github.com/mjackson/5311256
-function rgbToHsv(r, g, b) {
-    r /= 255, g /= 255, b /= 255;
-
-    var max = Math.max(r, g, b), min = Math.min(r, g, b);
-    var h, s, v = max;
-
-    var d = max - min;
-    s = max == 0 ? 0 : d / max;
-
-    if (max == min) {
-        h = 0; // achromatic
-    } else {
-        switch (max) {
-        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-        case g: h = (b - r) / d + 2; break;
-        case b: h = (r - g) / d + 4; break;
-        }
-
-        h /= 6;
-    }
-
-    return [ h, s, v ];
-}
+/*
   
-function hsvToRgb(h, s, v) {
-    var r, g, b;
+  Random
 
-    var i = Math.floor(h * 6);
-    var f = h * 6 - i;
-    var p = v * (1 - s);
-    var q = v * (1 - f * s);
-    var t = v * (1 - (1 - f) * s);
-
-    switch (i % 6) {
-        case 0: r = v, g = t, b = p; break;
-        case 1: r = q, g = v, b = p; break;
-        case 2: r = p, g = v, b = t; break;
-        case 3: r = p, g = q, b = v; break;
-        case 4: r = t, g = p, b = v; break;
-        case 5: r = v, g = p, b = q; break;
-    }
-
-    return [ r * 255, g * 255, b * 255 ];
-}
+*/
 
 // All seeded randomness from:
 // https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
@@ -249,8 +184,12 @@ function seeded_random(seed) {
     return rand();
 }
 
-function in_bounds(val, lo, hi) {
-    return val >= lo && val < hi;
+function random_int(min_inclusive, max_exclusive, rand=null) {
+    return min_inclusive + Math.floor((rand ? rand : Math.random)() * (max_exclusive - min_inclusive));
+}
+
+function random_float(min_inclusive, max_exclusive, rand=null) {
+    return min_inclusive + ((rand ? rand : Math.random)() * (max_exclusive - min_inclusive));
 }
 
 function random_on_circle(r, rand) {
@@ -264,6 +203,10 @@ function random_on_circle(r, rand) {
 
 function random_from_array(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function seeded_random_from_array(arr, rand) {
+    return arr[Math.floor(rand() * arr.length)];
 }
 
 function weighted_random_from_arr(arr) {
@@ -288,10 +231,140 @@ function weighted_seeded_random_from_arr(arr, rand) {
     }
 }
 
-function balance_weighted_array(arr) {
-    let sum = arr.reduce((p, c) => p + c[0], 0);
-    return arr.map(t => [t[0] / sum, ...t.slice(1)]);
+// https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+function shuffle(arr, random=null) {
+    return arr
+        .map(value => ({ value, sort: random ? random : Math.random() }))
+        .sort((a, b) => a.sort - b.sort)
+        .map(({ value }) => value)
 }
+
+function random_shuffle(arr, random=null) {
+    return shuffle(arr, random);
+}
+
+/*
+
+  Random (from a Run object - like in reactor game)
+
+*/
+
+function obj_random_int(min_inclusive, max_exclusive, rand) {
+    return min_inclusive + Math.floor(rand.random() * (max_exclusive - min_inclusive));
+}
+
+function obj_random_float(min_inclusive, max_exclusive, rand) {
+    return min_inclusive + (rand.random() * (max_exclusive - min_inclusive));
+}
+
+function obj_seeded_random_from_array(arr, rand) {
+    return arr[Math.floor(rand.random() * arr.length)];
+}
+
+function obj_weighted_seeded_random_from_arr(arr, rand) {
+    // assumes weights are in the first index of the array
+    let val = rand.random();
+    for (let i=0; i<arr.length; i++) {
+        val -= arr[i][0];
+        if (val < 0) {
+            return arr[i];
+        }
+    }
+}
+
+function obj_random_shuffle(arr, rand) {
+    return shuffle(arr, rand.random());
+}
+
+/*
+
+  Number formatting
+
+*/
+
+const NumberFormat = {
+    SCIENTIFIC: 0,
+    SHORT: 1,
+    METRIC: 2,
+}
+
+function format_number(val, typ, max_val=1e6) {
+    let method = typ ? typ : NumberFormat.SCIENTIFIC;
+
+    switch (method) {
+        case NumberFormat.SCIENTIFIC:
+            if (val >= max_val && val > 0) {
+                let magnitude = Math.log10(val);
+                let digits = Math.floor(magnitude);
+                
+                let frac = Math.floor((val / Math.pow(10, digits)) * 100) / 100;
+                
+                return `${frac}e${digits}`;
+            } else if (Math.abs(val) >= max_val) {
+                let magnitude = Math.log10(Math.abs(val));
+                let digits = Math.floor(magnitude);
+                
+                let frac = Math.floor((Math.abs(val) / Math.pow(10, digits)) * 100) / 100;
+                
+                return `-${frac}e${digits}`;
+            } else {
+                return val.toLocaleString();
+            }
+            break;
+    }
+}
+
+// https://gist.github.com/mjackson/5311256
+function rgbToHsv(r, g, b) {
+    r /= 255, g /= 255, b /= 255;
+
+    var max = Math.max(r, g, b), min = Math.min(r, g, b);
+    var h, s, v = max;
+
+    var d = max - min;
+    s = max == 0 ? 0 : d / max;
+
+    if (max == min) {
+        h = 0; // achromatic
+    } else {
+        switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        case b: h = (r - g) / d + 4; break;
+        }
+
+        h /= 6;
+    }
+
+    return [ h, s, v ];
+}
+  
+function hsvToRgb(h, s, v) {
+    var r, g, b;
+
+    var i = Math.floor(h * 6);
+    var f = h * 6 - i;
+    var p = v * (1 - s);
+    var q = v * (1 - f * s);
+    var t = v * (1 - (1 - f) * s);
+
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+
+    return [ r * 255, g * 255, b * 255 ];
+}
+
+/*
+
+  Vectors
+
+*/
 
 class Vector2 {
     constructor(x, y) {
@@ -604,6 +677,12 @@ class Vector3 {
     }
 }
 
+/*
+
+  Colours
+
+*/
+
 class Colour {
     static from_array(arr) {
         return new Colour(
@@ -675,64 +754,3 @@ Colour.red = new Colour(255, 0, 0, 255);
 Colour.green = new Colour(0, 255, 0, 255);
 Colour.blue = new Colour(0, 0, 255, 255);
 Colour.empty = new Colour(0, 0, 0, 0);
-
-
-// All seeded randomness from:
-// https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
-function cyrb128(str) {
-    let h1 = 1779033703, h2 = 3144134277,
-        h3 = 1013904242, h4 = 2773480762;
-    for (let i = 0, k; i < str.length; i++) {
-        k = str.charCodeAt(i);
-        h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
-        h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
-        h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
-        h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
-    }
-    h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
-    h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
-    h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
-    h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
-    h1 ^= (h2 ^ h3 ^ h4), h2 ^= h1, h3 ^= h1, h4 ^= h1;
-    return [h1>>>0, h2>>>0, h3>>>0, h4>>>0];
-}
-
-function sfc32(a, b, c, d) {
-    return function(dump_values) {
-        if (dump_values) {
-            return [a, b, c, d]
-        }
-
-        a >>>= 0; b >>>= 0; c >>>= 0; d >>>= 0; 
-        var t = (a + b) | 0;
-        a = b ^ b >>> 9;
-        b = c + (c << 3) | 0;
-        c = (c << 21 | c >>> 11);
-        d = d + 1 | 0;
-        t = t + d | 0;
-        c = c + t | 0;
-        return (t >>> 0) / 4294967296;
-    }
-}
-
-function get_seeded_randomiser(seed) {
-    let seed_hash = cyrb128(seed);
-
-    let rand = sfc32(seed_hash[0], seed_hash[1], seed_hash[2], seed_hash[3]);
-
-    return rand;
-}
-
-function random_from_parameters(a, b, c, d) {
-    return sfc32(a, b, c, d);
-}
-
-function seeded_random(seed) {
-    let rand = get_seeded_randomiser(seed)
-
-    // generate once, discard
-    rand();
-
-    // return second number
-    return rand();
-}

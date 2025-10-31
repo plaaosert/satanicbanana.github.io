@@ -420,13 +420,30 @@ class Reactor {
     _final_destroy_particle(index) {
         this.stats.destructions++;
 
-        this.particles[index] = null;
+        if (this.run.destruction_skips_max > 0 && this.run.destruction_skips > 0) {
+            // destruction skip instead
+            this.run.destruction_skips--;
+        } else {
+            this.particles[index] = null;
+        }
         this.heats[index] = Heats.DESTROYED;
     }
     
     destroy_particle(index, end=false) {
         if (this.particles[index]) {
             this.enqueue_trigger(this.particles[index], ParticleTriggers.DESTROYED, [], end);
+            
+            // count up destroy-mult studies here
+            let destroy_mult_study_count = this.run.items.reduce((cnt, item) => item.template.name == "A new form of localised nanoparticle energy maximisation?" ? cnt + 1 : cnt, 0);
+            
+            if (destroy_mult_study_count > 0) {
+                let p = this.particles[index];
+                let factor = Math.pow(4, destroy_mult_study_count);
+
+                p.set_x(p.x * factor);
+                p.set_y(p.y * factor);
+            }
+
             return true;
         }
     }
@@ -665,6 +682,8 @@ class Particle {
     set_var(v, to) {
         let difference = to - this[v];
         
+        let original = this[v];
+
         this[v] = to;
 
         if (Math.abs(difference) <= 0) {
@@ -681,6 +700,8 @@ class Particle {
                 suffix = "REDUCED";
                 data = [-difference];
             }
+        } else {
+            data = [original, to]
         }
 
         this.reactor.enqueue_trigger(this, ParticleTriggers[`${v.toUpperCase()}_${suffix}`], data);
@@ -916,11 +937,11 @@ function render_shop(run) {
             clone.appendChild(price_elem);
 
             clone.addEventListener("mouseover", e => {
-                c[2](p[0]);
+                c[2](p[0], run);
             });
 
             clone.addEventListener("mouseout", e => {
-                c[2](null);
+                c[2](null, run);
             })
 
             if (p[1] > run.money) {
@@ -991,18 +1012,18 @@ function render_items(items) {
         clone.style.color = item.bgcol;
         clone.setAttribute("itemid", item.id);
         clone.addEventListener("mouseover", e => {
-            show_item_info(item);
+            show_item_info(item, run);
         })
         
         clone.addEventListener("mouseout", e => {
-            show_item_info(null);
+            show_item_info(null, run);
         })
 
         items_list.appendChild(clone);
     })
 }
 
-function show_item_info(item) {
+function show_item_info(item, run) {
     if (!item) {
         document.querySelector(".info-area .infobox").innerHTML = "";
         return;
@@ -1010,10 +1031,19 @@ function show_item_info(item) {
 
     let typecol = item.typ == ItemType.STUDY ? "lime" : "white";
     let italics = item.typ == ItemType.STUDY ? "italic" : "";
-    document.querySelector(".info-area .infobox").innerHTML = `<span style="white-space:inherit; font-style:${italics}; color:${item.col}">${item.name}</span>\n<span style="color:${typecol}">[${item.typ}]</span>\n\n${item.desc}`;
+    
+    let desc_final = item.desc.replaceAll(
+        "{{RANDOM_COUNT_MUL}}",
+        Math.floor(run.num_random_rolls / 100) + 1
+    ).replaceAll(
+        "{{RANDOM_COUNT}}",
+        run.num_random_rolls
+    );
+
+    document.querySelector(".info-area .infobox").innerHTML = `<span style="white-space:inherit; font-style:${italics}; color:${item.col}">${item.name}</span>\n<span style="color:${typecol}">[${item.typ}]</span>\n\n${desc_final}`;
 }
 
-function show_cell_info(particle) {
+function show_cell_info(particle, run) {
     if (!particle) {
         document.querySelector(".info-area .infobox").innerHTML = "";
         return;
@@ -1247,7 +1277,7 @@ let particles_list = [
                     })
 
                     if (targets.length > 0) {
-                        let p_s = random_from_array(targets);
+                        let p_s = obj_seeded_random_from_array(targets, p.reactor.run);
                         p.reactor.activate_particle(p_s.index);
                     }
                 }
@@ -1260,7 +1290,7 @@ let particles_list = [
                     })
 
                     if (targets.length > 0) {
-                        let p_s = random_from_array(targets);
+                        let p_s = obj_seeded_random_from_array(targets, p.reactor.run);
                         p.reactor.activate_particle(p_s.index);
                     }
                 }
@@ -1280,7 +1310,7 @@ let particles_list = [
                     let parts = p.reactor.particles.filter(pt => pt && pt.x >= max_x && pt.id != p.id);
 
                     if (parts.length > 0) {
-                        let p_s = random_from_array(parts);
+                        let p_s = obj_seeded_random_from_array(parts, p.reactor.run);
                         
                         // REMEMBER: put trigger enqueues backwards, because everything gets put onto a stack
                         p.reactor.destroy_particle(p_s.index);
@@ -1338,7 +1368,7 @@ let particles_list = [
                     })
 
                     if (targets.length > 0) {
-                        let p_s = random_from_array(targets);
+                        let p_s = obj_seeded_random_from_array(targets, p.reactor.run);
                         
                         p.add_x(p_s.x);
                         p.add_y(p_s.y);
@@ -1355,7 +1385,7 @@ let particles_list = [
                     })
 
                     if (targets.length > 0) {
-                        let p_s = random_from_array(targets);
+                        let p_s = obj_seeded_random_from_array(targets, p.reactor.run);
 
                         p_s.add_x(Math.ceil(p.x * 0.75));
                         p_s.add_y(Math.ceil(p.y * 0.75));
@@ -1445,7 +1475,7 @@ let particles_list = [
 
                     for (let i=0; i<3; i++) {
                         if (parts.length > 0) {
-                            let pt_idx = random_int(0, parts.length);
+                            let pt_idx = obj_random_int(0, parts.length, p.reactor.run);
                             let pt = parts[pt_idx];
                             p.reactor.destroy_particle(pt.index);
 
@@ -1462,7 +1492,7 @@ let particles_list = [
 
                     for (let i=0; i<2; i++) {
                         if (parts.length > 0) {
-                            let pt_idx = random_int(0, parts.length);
+                            let pt_idx = obj_random_int(0, parts.length, p.reactor.run);
                             let pt = parts[pt_idx];
                             p.reactor.activate_particle(pt.index);
                         }
@@ -1481,7 +1511,7 @@ let particles_list = [
                     let parts = p.reactor.get_adjacent(p.index, true, true);
 
                     if (parts.length > 0) {
-                        let part = random_from_array(parts);
+                        let part = obj_seeded_random_from_array(parts, p.reactor.run);
 
                         p.modify_power(part.y * 3);
                         p.reactor.destroy_particle(part.index);
@@ -1714,7 +1744,7 @@ let particles_list = [
                     })
 
                     if (targets.length > 0) {
-                        let p_s = random_from_array(targets);
+                        let p_s = obj_seeded_random_from_array(targets, p.reactor.run);
 
                         p_s.add_x(4);
                         p_s.add_y(4);
@@ -1766,7 +1796,7 @@ let particles_list = [
 
                     if (parts.length > 0) {
                         for (let i=0; i<2; i++) {
-                            let part = random_from_array(parts);
+                            let part = obj_seeded_random_from_array(parts, p.reactor.run);
                             part.add_x(part.x);
                         }
                     }
@@ -1778,9 +1808,11 @@ let particles_list = [
                 fn: (p, data) => {
                     let parts = p.reactor.get_adjacent(p.index, true, true);
 
-                    for (let i=0; i<1; i++) {
-                        let part = random_from_array(parts);
-                        part.add_y(part.y);
+                    if (parts.length > 0) {
+                        for (let i=0; i<1; i++) {
+                            let part = obj_seeded_random_from_array(parts, p.reactor.run);
+                            part.add_y(part.y);
+                        }
                     }
                 }
             },
@@ -1824,7 +1856,7 @@ let particles_list = [
                         for (let i=0; i<2; i++) {
                             let empty_spaces = p.reactor.find_empty_spaces();
                             if (empty_spaces.length > 0) {
-                                let newpos = random_from_array(empty_spaces);
+                                let newpos = obj_seeded_random_from_array(empty_spaces, p.reactor.run);
 
                                 p.reactor.copy_particle(p, newpos);
                             }
@@ -1859,7 +1891,7 @@ let particles_list = [
                     let parts = p.reactor.get_adjacent(p.index, true, true);
 
                     if (parts.length > 0) {
-                        let part = random_from_array(parts);
+                        let part = obj_seeded_random_from_array(parts, p.reactor.run);
 
                         let newpart = p.copy();
                         newpart.index = part.index;
@@ -1875,7 +1907,9 @@ let particles_list = [
                 fn: (p, data) => {
                     let cnts = new Map();
                     p.reactor.particles.forEach(part => {
-                        cnts.set(p.template.icon, (cnts.get(p.template.icon) ?? 0) + 1);
+                        if (part) {
+                            cnts.set(part.template.icon, (cnts.get(part.template.icon) ?? 0) + 1);
+                        }
                     });
 
                     let highest_cnt = cnts.keys().reduce(
@@ -1897,7 +1931,7 @@ let particles_list = [
                     let parts = p.reactor.get_adjacent(p.index, true, true);
 
                     if (parts.length > 0) {
-                        let part = random_from_array(parts);
+                        let part = obj_seeded_random_from_array(parts, p.reactor.run);
 
                         let gen = 3 * (part.x + part.y);
 
@@ -1980,7 +2014,7 @@ let particles_list = [
                         let parts = p.reactor.get_adjacent(p.index, true, true);
 
                         if (parts.length > 0) {
-                            let part = random_from_array(parts);
+                            let part = obj_seeded_random_from_array(parts, p.reactor.run);
 
                             part.set_x(Math.ceil(part.x * 1.2));
                         }
@@ -2020,8 +2054,8 @@ let particles_list = [
                 desc: "Reduce every particle's α and β by -1.",
                 fn: (p, data) => {
                     p.reactor.particles.forEach(part => {
-                        part.add_x(-1);
-                        part.add_y(-1);
+                        part?.add_x(-1);
+                        part?.add_y(-1);
                     })
                 }
             },
@@ -2030,7 +2064,7 @@ let particles_list = [
                 desc: "Activate every other particle in a random order, then destroy every other particle in a different random order.",
                 fn: (p, data) => {
                     let trigger_order = new Array(p.reactor.particles.length).fill(0).map((_, i) => i);
-                    trigger_order = shuffle(trigger_order);
+                    trigger_order = obj_random_shuffle(trigger_order, p.reactor.run);
 
                     // this is gonna be real fun because we have to do the whole thing backwards.
                     // so we'll apply all the destroy triggers
@@ -2040,7 +2074,7 @@ let particles_list = [
                         p.reactor.destroy_particle(t);
                     })
 
-                    trigger_order = shuffle(trigger_order);
+                    trigger_order = obj_random_shuffle(trigger_order, p.reactor.run);
                     trigger_order.forEach(t => {
                         p.reactor.activate_particle(t);
                     })
@@ -2179,11 +2213,11 @@ let particles_list = [
                         let parts = p.reactor.particles.filter(pt => pt && pt.id != p.id);
 
                         if (parts.length > 0) {
-                            let p_s = random_from_array(parts);
+                            let p_s = obj_seeded_random_from_array(parts, p.reactor.run);
 
                             let empty_spaces = p.reactor.find_empty_spaces();
                             if (empty_spaces.length > 0) {
-                                let newpos = random_from_array(empty_spaces);
+                                let newpos = obj_seeded_random_from_array(empty_spaces, p.reactor.run);
 
                                 p.reactor.copy_particle(p_s, newpos);
                                 copy_positions.push(newpos);
@@ -2193,7 +2227,7 @@ let particles_list = [
 
                     // select a random copied position and activate the particle
                     if (copy_positions.length > 0) {
-                        let activate_index = random_from_array(copy_positions);
+                        let activate_index = obj_seeded_random_from_array(copy_positions, p.reactor.run);
 
                         p.reactor.activate_particle(activate_index);
                     }
@@ -2347,7 +2381,7 @@ let particles_list = [
                     // we need to get the particles, get a new reorder, then move them as necessary
                     // make sure to trigger index change effects
                     let new_order = new Array(p.reactor.particles.length).fill(0).map((_, i) => i);
-                    new_order = shuffle(new_order);
+                    new_order = obj_random_shuffle(new_order, p.reactor.run);
 
                     let new_particles_list = [];
                     new_order.forEach((o, i) => {
@@ -2370,7 +2404,7 @@ let particles_list = [
 
                     for (let i=0; i<2; i++) {
                         if (parts.length > 0) {
-                            let pt_idx = random_int(0, parts.length);
+                            let pt_idx = obj_random_int(0, parts.length, p.reactor.run);
                             let pt = parts[pt_idx];
                             p.reactor.activate_particle(pt.index);
                         }
@@ -2384,11 +2418,11 @@ let particles_list = [
                     let parts = p.reactor.particles.filter(pt => pt && pt.template.name != "Particle Man");
 
                     if (parts.length > 0) {
-                        let p_s = random_from_array(parts);
+                        let p_s = obj_seeded_random_from_array(parts, p.reactor.run);
 
                         let empty_spaces = p.reactor.find_empty_spaces();
                         if (empty_spaces.length > 0) {
-                            let newpos = random_from_array(empty_spaces);
+                            let newpos = obj_seeded_random_from_array(empty_spaces, p.reactor.run);
 
                             p.reactor.copy_particle(p_s, newpos);
                         }
@@ -2402,7 +2436,7 @@ let particles_list = [
                     // we need to get the particles, get a new reorder, then move them as necessary
                     // make sure to trigger index change effects
                     let new_order = new Array(p.reactor.particles.length).fill(0).map((_, i) => i);
-                    new_order = shuffle(new_order);
+                    new_order = obj_random_shuffle(new_order, p.reactor.run);
 
                     let new_particles_list = [];
                     new_order.forEach((o, i) => {
@@ -2425,7 +2459,7 @@ let particles_list = [
                 desc: "If you have any ◕, lose 1 ◕ then activate every adjacent particle 1 time plus 1 more time for every 10 ◕ currently held.",
                 fn: (p, data) => {
                     if (p.reactor.run.money > 0) {
-                        p.reactor.run.modify_money(-1);
+                        p.reactor.run.modify_money(-1, p.template.name);
 
                         let activations = Math.floor(p.reactor.run.money / 10) + 1;
                         let parts = p.reactor.get_adjacent(p.index, true, true);
@@ -2647,14 +2681,14 @@ let items_list = [
         "When a particle is activated, 20% chance to move it to another random empty position and generate 1 MW for every 8 α it has.",
         1, 10, {
             [ParticleTriggers.ACTIVATED]: (item, p, data) => {
-                let chance = Math.random();
+                let chance = p.reactor.run.random();
                 if (chance < 0.2) {
                     let available_positions = new Array(p.reactor.particles.length).fill(0).map((_, i) => i).filter(pt_i => {
                         return p.reactor.particles[pt_i] ? true : false;
                     });
 
                     if (available_positions.length > 0) {
-                        let new_index = random_from_array(available_positions);
+                        let new_index = obj_seeded_random_from_array(available_positions, p.reactor.run);
 
                         p.reactor.particles[p.index] = null;
                         p.reactor.particles[new_index] = p;
@@ -2694,6 +2728,208 @@ let items_list = [
         }
     ),
 
+    new ItemTemplate(
+        "Automated Ring Aligners", "A", ItemType.MOD, "lightcoral", "lightcoral",
+        "When a particle's β increases by 2 or more at once, it gains +1 β.",
+        0.5, 12, {
+            [ParticleTriggers.Y_INCREASED]: (item, p, data) => {
+                if (data[0] >= 2) {
+                    p.add_y(1);
+                }
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "Movable Containment Fields", "F", ItemType.MOD, "lightcoral", "yellow",
+        "When a particle's β increases, move it to the right if possible. When a particle's β decreases, move it to the left if possible. When any particle moves, generate 1 MW.",
+        0.5, 12, {
+            [ParticleTriggers.Y_INCREASED]: (item, p, data) => {
+                let xy = index_to_xy(p.index);
+                let displaced_vec = new Vector2(xy[0]+1, xy[1]);
+                let new_index = vector_to_index(displaced_vec);
+                if (p.reactor.in_bounds(displaced_vec) && !p.reactor.particles[new_index]) {
+                    p.reactor.particles[p.index] = null;
+                    p.reactor.particles[new_index] = p;
+                    p.set_index(new_index);
+                }
+            },
+
+            [ParticleTriggers.Y_REDUCED]: (item, p, data) => {
+                let xy = index_to_xy(p.index);
+                let displaced_vec = new Vector2(xy[0]-1, xy[1]);
+                let new_index = vector_to_index(displaced_vec);
+                if (p.reactor.in_bounds(displaced_vec) && !p.reactor.particles[new_index]) {
+                    p.reactor.particles[p.index] = null;
+                    p.reactor.particles[new_index] = p;
+                    p.set_index(new_index);
+                }
+            },
+
+            [ParticleTriggers.INDEX_CHANGED]: (item, p, data) => {
+                p.reactor.modify_power(1);
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "Automatic Feeding Pipelines", "P", ItemType.MOD, "lime", "lime",
+        "When a particle moves, move a random adjacent particle into its original position if possible and activate it.",
+        0.5, 12, {
+            [ParticleTriggers.INDEX_CHANGED]: (item, p, data) => {
+                let original_index = data[0];
+                
+                let adjs = p.reactor.get_adjacent(p.index);
+                if (adjs.length > 0) {
+                    let pt = obj_seeded_random_from_array(adjs, p.reactor.run);
+                    if (!p.reactor.particles[original_index]) {
+                        p.reactor.particles[pt.index] = null;
+                        p.reactor.particles[original_index] = pt;
+                        pt.set_index(original_index);
+                    }
+
+                    p.reactor.activate_particle(pt.index);
+                }
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "Improved Power Runoffs", "R", ItemType.MOD, "powderblue", "yellow",
+        "When a particle's α increases, generate 0.1x as much MW (rounded up).",
+        0.5, 12, {
+            [ParticleTriggers.X_INCREASED]: (item, p, data) => {
+                p.reactor.modify_power(Math.ceil(data[0] * 0.1));
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "Ring Containment Field Containment Field", "F", ItemType.MOD, "lightcoral", "yellow",
+        "When a particle's β increases, generate 0.15x as much MW (rounded up).",
+        0.5, 12, {
+            [ParticleTriggers.Y_INCREASED]: (item, p, data) => {
+                p.reactor.modify_power(Math.ceil(data[0] * 0.15));
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "Overvoltage Correction Matrices", "M", ItemType.MOD, "orange", "lightgray",
+        "When power is generated to above 25% of the current phase's power goal, activate the two particles with the highest α and β. If these are the same particle, activate it twice. Then increase the power requirement by 25% of the current phase's power goal. Stops activating past 500%.",
+        0.5, 12, {
+            [ParticleTriggers.POWER_GAINED]: (item, p, data) => {
+                let threshold_factor = (item.temporary_data["powergen_threshold"]!==undefined ? item.temporary_data["powergen_threshold"] : 0.25);
+                let threshold = p.reactor.run.get_goal() * threshold_factor;
+                
+                // if power is now greater than threshold, do the effect and raise threshold_factor by 0.25
+                if (p.reactor.power > threshold && threshold_factor ) {
+                    threshold_factor += 0.25;
+
+                    let highest_x = p.reactor.particles.reduce((p, c) => (p && c) ? (c.x >= p.x ? c : p) : (c ? c : p), null);
+                    let highest_y = p.reactor.particles.reduce((p, c) => (p && c) ? (c.y >= p.y ? c : p) : (c ? c : p), null);
+
+                    p.reactor.activate_particle(highest_x.index);
+                    p.reactor.activate_particle(highest_y.index);
+                }
+
+                item.temporary_data["powergen_threshold"] = threshold_factor;
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "Tenure", "T", ItemType.MOD, "pink", "pink",
+        "Gain one additional trial per phase.",
+        0.5, 12, {
+            // yes, this is meant to be empty
+        }
+    ),
+
+    new ItemTemplate(
+        "Self-Intensifying Memory Cells", "M", ItemType.MOD, "lightcoral", "yellow",
+        "When a particle is activated, generate (0.07*α)+(0.1*β) MW multiplied by the number of trials already completed this phase, rounded up.",
+        0.5, 12, {
+            [ParticleTriggers.ACTIVATED]: (item, p, data) => {
+                p.reactor.modify_power(Math.ceil((0.07 * p.x) + (0.1 * p.y)) * (p.reactor.run.trial - 1));
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "Exclusive Publishing Deal", "D", ItemType.MOD, "red", "gold",
+        "When a particle is destroyed, gain 1 ◕ if this is the first particle with that name destroyed this trial.",
+        0.25, 15, {
+            [ParticleTriggers.DESTROYED]: (item, p, data) => {
+                let activateds = (item.temporary_data["activateds"]!==undefined ? item.temporary_data["activateds"] : new Set());
+                
+                if (!activateds.has(p.template.name)) {
+                    activateds.add(p.template.name);
+                    p.reactor.run.modify_money(1, item.template.name);
+                }
+
+                item.temporary_data["activateds"] = activateds;
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "Resonance Preamplifier", "P", ItemType.MOD, "lightgray", "powderblue",
+        "When a particle is activated, increase the α of all adjacent particles by 1.",
+        0.25, 15, {
+            [ParticleTriggers.ACTIVATED]: (item, p, data) => {
+                let adjs = p.reactor.get_adjacent(p.index, true, true);
+                adjs.forEach(pt => {
+                    pt.add_x(1);
+                })
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "Continuous Remodulation Fields", "F", ItemType.MOD, "red", "lightcoral",
+        "When a particle is destroyed, increase the β of all adjacent particles by 1.",
+        0.25, 15, {
+            [ParticleTriggers.DESTROYED]: (item, p, data) => {
+                let adjs = p.reactor.get_adjacent(p.index, true, true);
+                adjs.forEach(pt => {
+                    pt.add_y(1);
+                })
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "Integrated Centrifuge Arms", "C", ItemType.MOD, "lightgray", "lime",
+        "When a particle is activated, if it has lower α than an adjacent particle, swap those two particles' positions. Chooses randomly if there are multiple.",
+        0.1, 20, {
+            [ParticleTriggers.ACTIVATED]: (item, p, data) => {
+                let adjs = p.reactor.get_adjacent(p.index, true, true);
+                adjs = adjs.filter(pt => pt.x > p.x);
+                if (adjs.length > 0) {
+                    let pt = obj_seeded_random_from_array(adjs, p.reactor.run);
+
+                    let idx_original = p.index;
+                    let idx_swap = pt.index;
+
+                    p.reactor.particles[idx_original] = p.reactor.particles[idx_swap];
+                    p.reactor.particles[idx_swap] = p;
+
+                    pt.set_index(idx_original);
+                    p.set_index(idx_swap);
+                }
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "Integrated Sophon Traps", "T", ItemType.MOD, "orange", "orange",
+        "Reduce the required MW for each phase by 20%.",
+        0.1, 20, {
+            // this is deliberately empty
+        }
+    ),
+
     // studies
     new ItemTemplate(
         "On the Spontaneous Genesis of Activated Nanoparticles in High Electromagnetism Environments", "⧉", ItemType.STUDY,
@@ -2705,7 +2941,7 @@ let items_list = [
                 if (p.reactor.run.random() < chance) {
                     let empty_spaces = p.reactor.find_empty_spaces();
                     if (empty_spaces.length > 0) {
-                        let newpos = random_from_array(empty_spaces);
+                        let newpos = obj_seeded_random_from_array(empty_spaces, p.reactor.run);
 
                         p.reactor.copy_particle(p, newpos);
 
@@ -2715,8 +2951,206 @@ let items_list = [
                 }
             }
         }
-    )
+    ),
+
+    new ItemTemplate(
+        "Experimental observations of stochastic phenomena at the sub-nano scale", "⧮", ItemType.STUDY,
+        "powderblue", "limegreen",
+        "When a particle is activated, grant it +2 α and +1 β and generate 2 MW, multiplied by <span class='specialnumber'>{{RANDOM_COUNT_MUL}}</span>. For every 100 times a random chance has been rolled for any reason in the entire run (current: <span class='specialnumber'>{{RANDOM_COUNT}}</span>), this multiplier increases by 1.",
+        1, 25, {
+            [ParticleTriggers.ACTIVATED]: (item, p, data) => {
+                let mul = Math.floor(p.reactor.run.num_random_rolls / 100) + 1;
+
+                p.add_x(2 * mul);
+                p.add_y(1 * mul);
+                p.reactor.modify_power(2 * mul);
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "Progress toward a unified model of particle conductance", "⦒", ItemType.STUDY,
+        "lightcoral", "limegreen",
+        "When a particle gains β, it gains α equal to 50% of the amount (rounded down).",
+        1, 25, {
+            [ParticleTriggers.Y_INCREASED]: (item, p, data) => {
+                let amt = Math.floor(data[0] * 0.5);
+
+                p.add_x(amt);
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "Effective production of beta-positive exotic particles using tight-mesh particle conglomerates", "⩯", ItemType.STUDY,
+        "lime", "limegreen",
+        `When a <span style='color:${rarity_cols[ParticleRarity.COMPOSITE]}'>[Composite]</span> particle is activated, 15% chance to create a random <span style='color:${rarity_cols[ParticleRarity.EXOTIC]}'>[Exotic]</span> particle in a random empty position, with the same particle type as the activated particle. Every time this effect triggers, the chance decreases by 1% for the current trial.`,
+        1, 25, {
+            [ParticleTriggers.ACTIVATED]: (item, p, data) => {
+                if (p.template.rarity == ParticleRarity.COMPOSITE) {
+                    let chance = (item.temporary_data["copy_on_trigger_chance"]!==undefined ? item.temporary_data["copy_on_trigger_chance"] : 0.15);
+                    if (p.reactor.run.random() < chance) {
+                        let empty_spaces = p.reactor.find_empty_spaces();
+                        if (empty_spaces.length > 0) {
+                            // get the type of the particle and filter the particle list for only exotic particles with that type
+                            let parts = particles_list.filter(pt => pt.typ == p.template.typ && pt.rarity == ParticleRarity.EXOTIC);
+                            if (parts.length > 0) {
+                                chance -= 0.01;
+
+                                let p_template = obj_seeded_random_from_array(parts, p.reactor.run);
+                                let newpos = obj_seeded_random_from_array(empty_spaces, p.reactor.run);
+
+                                p.reactor.create_particle(newpos, new Particle(
+                                    p.reactor, p_template, newpos
+                                ));
+                            }
+                        }
+                    }
+
+                    item.temporary_data["copy_on_trigger_chance"] = chance;
+                }
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "A new form of localised nanoparticle energy maximisation?", "⭙", ItemType.STUDY,
+        "red", "limegreen",
+        "When a particle is about to be destroyed, multiply its α and β by 4.",
+        1, 25, {
+            // because of sequencing, this needs to be done as a special case
+            // so nothing here!
+        }
+    ),
+
+    new ItemTemplate(
+        "A proposal for controlled magnetogenesis", "∬", ItemType.STUDY,
+        "white", "limegreen",
+        "When a particle is created, it gains +15 α and +12 β.",
+        1, 25, {
+            [ParticleTriggers.CREATED]: (item, p, data) => {
+                p.add_x(15);
+                p.add_y(12);
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "Report on the efficacy of fixed-line supermagnetic arrays for high-energy particle containment", "⧦", ItemType.STUDY,
+        "orange", "limegreen",
+        "When a particle with positive β changes position, it moves back to its previous position if possible and loses -1 β.",
+        0.5, 25, {
+            [ParticleTriggers.INDEX_CHANGED]: (item, p, data) => {
+                let original_index = data[0];
+
+                if (p.y > 0 && original_index != p.index) {
+                    if (!p.reactor.particles[original_index]) {
+                        p.reactor.particles[p.index] = null;
+                        p.reactor.particles[original_index] = p;
+                        p.set_index(original_index);
+
+                        p.add_y(-1);
+                    }
+                }
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "Creation of low-uniformity metastructures as a unique signature for high-alpha nanoparticle collisions", "⦒", ItemType.STUDY,
+        "magenta", "limegreen",
+        "When a particle is destroyed, if it has >16 α, create a new random particle with the same rarity and type at a random empty position with 50% less α (rounded down) and the same β. Every time this effect triggers, the α requirement increases by 2 for the current trial.",
+        0.5, 25, {
+            [ParticleTriggers.DESTROYED]: (item, p, data) => {
+                let req = (item.temporary_data["destroy_recreate_trigger_req"]!==undefined ? item.temporary_data["destroy_recreate_trigger_req"] : 16);
+                if (p.x > req) {
+                    let parts = particles_list.filter(
+                        pt => pt.typ == p.template.typ && pt.rarity == p.template.rarity
+                    );
+
+                    let empty_spaces = p.reactor.find_empty_spaces();
+
+                    if (parts.length > 0 && empty_spaces.length > 0) {
+                        let p_template = obj_seeded_random_from_array(parts, p.reactor.run);
+                        let newpos = obj_seeded_random_from_array(empty_spaces, p.reactor.run);
+
+                        p.reactor.create_particle(newpos, new Particle(
+                            p.reactor, p_template, newpos, Math.floor(p.x * 0.5), p.y
+                        ));
+                        
+                        req += 2;
+                    }
+                }
+
+                item.temporary_data["destroy_recreate_trigger_req"] = req;
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "Nanoparticle Physics for Humans: A macro-sized encyclopedia of the world's smallest things", "⍌", ItemType.STUDY,
+        "pink", "limegreen",
+        "When a particle's α or β increases, multiply it by 1.1x (rounded down), without triggering other change effects.",
+        0.5, 25, {
+            [ParticleTriggers.X_INCREASED]: (item, p, data) => {
+                p.x = Math.floor(p.x * 1.1);
+            },
+
+            [ParticleTriggers.Y_INCREASED]: (item, p, data) => {
+                p.y = Math.floor(p.y * 1.1);
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "The nanoparticle smasher's guide", "⤓", ItemType.STUDY,
+        "yellow", "limegreen",
+        "When a particle is destroyed, generate MW equal to (0.6*α)+(0.9*β), rounded up.",
+        0.5, 25, {
+            [ParticleTriggers.DESTROYED]: (item, p, data) => {
+                p.reactor.modify_power(Math.ceil((p.x * 0.6) + (p.y * 0.9)));
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "Economics and electricity: a comparison of methods for effective waste reuse and repurposing", "⟠", ItemType.STUDY,
+        "gold", "limegreen",
+        "When a particle is destroyed, 40% chance to gain 1 ◕. This is capped at a maximum of 10 ◕ per trial.",
+        0.5, 25, {
+            [ParticleTriggers.DESTROYED]: (item, p, data) => {
+                let trial_destroy_money_cnt = (item.temporary_data["trial_destroy_money_cnt"]!==undefined ? item.temporary_data["trial_destroy_money_cnt"] : 0);
+                if (trial_destroy_money_cnt < 10) {
+                    trial_destroy_money_cnt++;
+
+                    p.reactor.run.modify_money(1, item.template.name);
+                }
+
+                item.temporary_data["trial_destroy_money_cnt"] = trial_destroy_money_cnt;
+            }
+        }
+    ),
+
+    new ItemTemplate(
+        "\"We have ignition!\": A new way forward for clean, infinite energy", "⟔", ItemType.STUDY,
+        "red", "limegreen",
+        "The first 16 particles to be destroyed are no longer destroyed when they would be (on-destroy effects still trigger).",
+        0.5, 25, {
+            // No effects - special case again
+        }
+    ),
 ]
+
+let overflow_study = new ItemTemplate(
+    "The beauty of excess and the means to channel it", "∅", ItemType.STUDY,
+    "lightgreen", "forestgreen",
+    "When the reaction starts, gain 1 ◕.",
+    0, 25, {
+        [ParticleTriggers.START]: (item, p, data) => {
+            p.reactor.run.modify_money(1, item.template.name)
+        }
+    }
+)
 
 let items_lookup = new Map();
 let items_drop_table_mods = [];
@@ -2800,8 +3234,13 @@ class Run {
 
         this.current_phase_power = 0;
 
+        this.destruction_skips_max = 0;
+        this.destruction_skips = 0;
+
         this.seed = seed;
-        this.random = get_seeded_randomiser(seed);
+
+        this.num_random_rolls = 0;
+        this._random = get_seeded_randomiser(seed);
 
         this.in_shop = in_shop;
 
@@ -2814,13 +3253,13 @@ class Run {
         }
 
         this.base_stats = {
-            reroll_base_cost: 5,
+            reroll_base_cost: 2,
             reroll_cost_scaling: 3,
 
             remove_base_cost: 2,
 
             shop_particles_count: 4,
-            shop_items_count: 2,
+            shop_items_count: 3,
 
             interest_rate: 0.2,
             interest_max: 10,
@@ -2839,12 +3278,17 @@ class Run {
         this.selected_shop_item = null;
     }
 
+    random() {
+        this.num_random_rolls++;
+        return this._random();
+    }
+
     get_base_money_gain() {
         return 3;
     }
 
     get_unused_trials_money_gain() {
-        return (this.max_trials - Math.max(1, this.trial - 1)) * 2
+        return (this.max_trials - Math.max(1, this.trial + (this.reactor.running ? 1 : 0) - 1)) * 2
     }
 
     get_goal_achievement_money_gain() {
@@ -2915,7 +3359,7 @@ class Run {
 
             // reopen the shop, and reroll it for free
             // if progressed round, items are studies instead
-            if (progressed_round || true) {
+            if (progressed_round) {
                 this.reroll_shop(true, true, null, 2);
             } else {
                 this.reroll_shop(true, true);
@@ -2940,13 +3384,19 @@ class Run {
     purchase_item(data, index) {
         // add to the list of items, re-render items, re-render shop, remove money
         if (this.money >= data[1]) {
-            this.modify_money(-data[1]);
+            this.modify_money(-data[1], "shop_items");
 
             this.items.push(new Item(data[0], {}));
             this.shop_items.items.splice(index, 1);
 
+            // if this is Tenure, add an additional trial
+            if (data[0].name == "Tenure") {
+                this.max_trials++;
+            }
+
             render_shop(this);
-            render_items(this.items);
+            render_items(this.items, this);
+            render_ingame_stats(this);
         }
     }
 
@@ -2972,7 +3422,7 @@ class Run {
     purchase_particle(item_index, reactor_index) {
         let data = this.selected_shop_item.data;
         if (this.money >= data[1]) {
-            this.modify_money(-data[1]);
+            this.modify_money(-data[1], "shop_particles");
 
             this.particle_order[reactor_index] = data[0];
 
@@ -3005,7 +3455,7 @@ class Run {
                 particle_template = fp.particle;
             } else {
                 let drop_table = balance_weighted_array(particles_drop_table.filter(ps => (!fp.rarity || ps[1].rarity == fp.rarity) && (!fp.typ || ps[1].typ == fp.typ)));
-                particle_template = weighted_seeded_random_from_arr(drop_table, this.random)[1];
+                particle_template = obj_weighted_seeded_random_from_arr(drop_table, this)[1];
             }
 
             shop_particles.push([particle_template, particle_template.value]);
@@ -3013,7 +3463,7 @@ class Run {
 
         let particles_n = this.base_stats.shop_particles_count - shop_particles.length;
         for (let i=0; i<particles_n; i++) {
-            let particle_template = weighted_seeded_random_from_arr(particles_drop_table, this.random)[1];
+            let particle_template = obj_weighted_seeded_random_from_arr(particles_drop_table, this)[1];
             shop_particles.push([particle_template, particle_template.value]);
         }
 
@@ -3023,19 +3473,19 @@ class Run {
     roll_shop_items(num_mods_override=-1, num_studies_override=-1) {
         let shop_items = [];
         for (let i=0; i<(num_mods_override != -1 ? num_mods_override : this.base_stats.shop_items_count); i++) {
-            let item_template = weighted_seeded_random_from_arr(items_drop_table_mods, this.random)[1];
+            let item_template = obj_weighted_seeded_random_from_arr(items_drop_table_mods, this)[1];
             shop_items.push([item_template, item_template.value]);
         }
 
         // duplicate studies can never roll, except for the last one (filler) which has a drop rate of 0 otherwise
         for (let i=0; i<(num_studies_override != -1 ? num_studies_override : 0); i++) {
-            let studies_drop_table = items_drop_table_studies.filter(
+            let studies_drop_table = balance_weighted_array(items_drop_table_studies.filter(
                 it1 => ![...run.items.map(m => m.template), ...shop_items.map(m => m[0])].some(it2 => it1[1].id == it2.id)
-            );
+            ));
             
-            let item_template = items_drop_table_studies[items_drop_table_studies.length-1][1]; // the last one by default
+            let item_template = overflow_study; // default to the overflow study
             if (studies_drop_table.length > 0) {
-                item_template = weighted_seeded_random_from_arr(studies_drop_table, this.random)[1];
+                item_template = obj_weighted_seeded_random_from_arr(studies_drop_table, this)[1];
             }
             shop_items.push([item_template, item_template.value]);
         }
@@ -3044,12 +3494,18 @@ class Run {
     }
 
     get_goal(round, phase) {
-        return Math.ceil(Math.pow(4, (round ? round : this.round)-1) * (10 * (2 + (((phase ? phase : this.phase)/0.5))))) - 20;
+        let base_goal = Math.ceil(Math.pow(4, (round ? round : this.round)-1) * (10 * (2 + (((phase ? phase : this.phase)/0.5))))) - 20;
+        let final_goal = base_goal - Math.ceil(base_goal * 0.2 * this.items.reduce((cnt, item) => item.template.name == "Integrated Sophon Traps" ? cnt + 1 : cnt, 0))
+        return final_goal;
     }
 
     setup_reactor() {
         // clear out items' temporary data
         this.items.forEach(item => item.reset())
+
+        let destruction_skip_study_count = this.items.reduce((cnt, item) => item.template.name == "\"We have ignition!\": A new way forward for clean, infinite energy" ? cnt + 1 : cnt, 0);
+        this.destruction_skips_max = destruction_skip_study_count * 16;
+        this.destruction_skips = this.destruction_skips_max;
 
         this.reactor = new Reactor(this, this.particle_order, [], this.items, this.reactor_operation_type);
     }
@@ -3090,12 +3546,14 @@ function reactor_start_trial(run) {
 
 function reactor_end_trial(run) {
     // save power
-    render_ingame_stats(run);
-
     run.current_phase_power += run.reactor.power;
 
     run.reactor.running = false;
     run.reactor.power = 0;
+
+    render_ingame_stats(run);
+    render_active_tab();
+
     if (run.next_trial()) {
         document.querySelector(".reactor").classList.add("interactable");
         return true;
@@ -3207,7 +3665,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
 
     document.querySelector("#shop_reroll_button").addEventListener("click", e => {
         if (run.money >= run.shop_items.reroll_price) {
-            run.modify_money(-run.shop_items.reroll_price);
+            run.modify_money(-run.shop_items.reroll_price, "shop_rerolls");
 
             run.reroll_shop();
             render_shop(run);
