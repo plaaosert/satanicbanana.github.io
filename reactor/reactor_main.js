@@ -1302,12 +1302,12 @@ let particles_list = [
         "Troson", "σ", "white", 3,
         ParticleRarity.FUNDAMENTAL, ParticleType.PARTICLE, {
             [ParticleTriggers.ACTIVATED]: {
-                desc: "Activate a random particle with the highest α, then destroy it. If that is this particle, does nothing instead.",
+                desc: "Activate a random particle with the highest α, then destroy it. Ignores particles with the name \"Troson\".",
                 fn: (p, data) => {
                     // filter particles by highest x, then select a random one that isn't this one's index
-                    let max_x = p.reactor.particles.reduce((prev, cur) => cur ? Math.max(cur.x, prev) : prev, 0);
+                    let max_x = p.reactor.particles.reduce((prev, cur) => cur && cur.template.name != "Troson" ? Math.max(cur.x, prev) : prev, 0);
 
-                    let parts = p.reactor.particles.filter(pt => pt && pt.x >= max_x && pt.id != p.id);
+                    let parts = p.reactor.particles.filter(pt => pt && pt.x >= max_x && pt.template.name != "Troson");
 
                     if (parts.length > 0) {
                         let p_s = obj_seeded_random_from_array(parts, p.reactor.run);
