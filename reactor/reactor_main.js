@@ -187,7 +187,8 @@ const ParticleTriggers = {
     INDEX_CHANGED: "iWhen position changed",
     POWER_GAINED: "jWhen power gained",
     POWER_LOST: "kWhen power lost",
-    ON_STATS: "-When stats are calculated"
+    ON_STATS: "-When stats are calculated",
+    START_ITEMS: "-On reaction start (ITEMS ONLY)"
 }
 
 const Heats = {
@@ -325,8 +326,10 @@ class Reactor {
 
         // enqueue a start trigger for every particle
         this.for_all_particles((p, i) => {
-            this.create_particle(i, this.start_particles[i] ? new Particle(this, this.start_particles[i]) : null, -1, false);
+            this.create_particle(i, this.start_particles[i] ? new Particle(this, this.start_particles[i]) : null, false, false);
         })
+
+        this.enqueue_trigger(null, ParticleTriggers.START_ITEMS, [], false, true);
 
         this.for_all_particles((p, i) => {
             if (!p) return;
@@ -360,6 +363,12 @@ class Reactor {
         if (!this.ready) {
             return;
         }
+
+        this.for_all_particles((p, i) => {
+            if (this.heats[i] == Heats.DESTROYING) {
+                this.heats[i] = Heats.NOTHING;
+            }
+        });
 
         // return true when operation is finished
         let result = false;
@@ -508,13 +517,13 @@ class Reactor {
         }
     }
 
-    enqueue_trigger(particle, trigger_type, data=[], end=false) {
-        if (particle.index < 0 || particle.index > MAX_INDEX) {
+    enqueue_trigger(particle, trigger_type, data=[], end=false, force=false) {
+        if (!force && (particle.index < 0 || particle.index > MAX_INDEX)) {
             // invalid index so discard
             return;
         }
 
-        let v = {idx: particle.index, part: particle, typ: trigger_type, data: data}
+        let v = {idx: particle?.index, part: particle, typ: trigger_type, data: data}
         if (end) {
             this.queued_triggers.push(v);
         } else {
@@ -544,6 +553,11 @@ class Reactor {
 
                     this.heats[trigger.idx] = Heats.DESTROYED;
                 }
+            } else if (trigger.typ == ParticleTriggers.START_ITEMS) {
+                // START_ITEMS is the start trigger for items only and is triggered only once
+                this.items.forEach(item => {
+                    item.trigger(trigger.typ, {reactor: this}, trigger.data);
+                })
             }
 
             if (out) {
@@ -1061,8 +1075,8 @@ function render_ingame_stats(run) {
     document.querySelector(".stats .trialnumber").textContent = Math.min(run.trial, run.max_trials);
     document.querySelector(".stats .trialmaxnumber").textContent = run.max_trials;
 
-    document.querySelector(".stats .powernumber").textContent = number_format(run.get_current_power(), ReactorNumberFormat.METRIC, "W");
-    document.querySelector(".stats .powerreq").textContent = number_format(run.get_goal(), ReactorNumberFormat.METRIC, "W")
+    document.querySelector(".stats .powernumber").textContent = number_format(run.get_current_power() * 1000 * 1000, ReactorNumberFormat.METRIC, "W");
+    document.querySelector(".stats .powerreq").textContent = number_format(run.get_goal() * 1000 * 1000, ReactorNumberFormat.METRIC, "W")
 
     document.querySelector(".stats .moneynumber").textContent = number_format(run.money, ReactorNumberFormat.SCIENTIFIC);
     
@@ -1755,7 +1769,7 @@ let particles_list = [
     ),
 
     new ParticleTemplate(
-        "High-density Substrate", "ἐ", "skyblue", 6,
+        "High-density Substrate", "ṫ", "skyblue", 6,
         ParticleRarity.COMPOSITE, ParticleType.PARTICLE, {
             [ParticleTriggers.ACTIVATED]: {
                 desc: "Move as far downwards as possible without intersecting another particle. Gain +2 β for each tile moved then generate 2*β MW.",
@@ -1766,7 +1780,7 @@ let particles_list = [
                     while (true) {
                         new_index += FRAME_WIDTH;
                         let p2 = p.reactor.particles[new_index];
-                        if (p2 || new_index > p.reactor.particles.length) {
+                        if (p2 || new_index >= p.reactor.particles.length) {
                             // hit something, move back and finish
                             new_index -= FRAME_WIDTH;
                             break;
@@ -2616,7 +2630,7 @@ let items_list = [
         "Twisted Edge Loops", "L", ItemType.MOD, "violet", "lime",
         "When the reaction starts, copy the particle in the top-left to the bottom-right. Will not overwrite if not empty.",
         1, 10, {
-            [ParticleTriggers.START]: (item, p, data) => {
+            [ParticleTriggers.START_ITEMS]: (item, p, data) => {
                 let last_particle_index = p.reactor.particles.length-1;
 
                 let p1 = p.reactor.particles[0];
@@ -2666,7 +2680,7 @@ let items_list = [
         "Surge Capture Bulbs", "B", ItemType.MOD, "violet", "yellow",
         "When the reaction starts, generate 10 MW per empty particle slot.",
         1, 10, {
-            [ParticleTriggers.START]: (item, p, data) => {
+            [ParticleTriggers.START_ITEMS]: (item, p, data) => {
                 let empty_slot_count = p.reactor.particles.reduce((p, c) => {
                     return p + (!c ? 1 : 0)
                 }, 0);
@@ -3146,7 +3160,7 @@ let overflow_study = new ItemTemplate(
     "lightgreen", "forestgreen",
     "When the reaction starts, gain 1 ◕.",
     0, 25, {
-        [ParticleTriggers.START]: (item, p, data) => {
+        [ParticleTriggers.START_ITEMS]: (item, p, data) => {
             p.reactor.run.modify_money(1, item.template.name)
         }
     }
@@ -3185,20 +3199,19 @@ sw = true;
 function step_reactor(run) {
     // console.log(run.reactor.queued_triggers);
     // console.log(run.reactor.operation_data);
-
-    if (run.reactor.is_empty()) {
-        run.reactor.for_all_particles((p, i) => {
-            run.reactor.heats[i] = Heats.NOTHING;
-        })
-
-        run.reactor.render_particles();
-        return false;
-    }
-
     if (sw) {
         let result = 0;
         while (result == 0) {
             result = run.reactor.pop_trigger();
+        }
+
+        if (run.reactor.is_empty()) {
+            run.reactor.for_all_particles((p, i) => {
+                run.reactor.heats[i] = Heats.NOTHING;
+            })
+
+            run.reactor.render_particles();
+            return false;
         }
 
         if (result == -1) {
