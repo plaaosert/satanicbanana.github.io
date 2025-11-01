@@ -32,6 +32,17 @@ Double this particle's x value.
 Generate power equal to x*y.
 */
 
+/*
+    TODO
+
+    i would appreciate a desc that is always visible on screen when youre in game [for the reactor operation method]
+
+    i've got one other idea right now which is "gravity kiln" - move all particles downwards 1 tile, then activate all particles at the bottom, then destroy them 
+    as well as something like "superaccelerator" - activate a random location, then destroy a random location, repeat
+
+    my idea is that you'll pick one at the start of the game, and it'll also factor into stuff like power goals
+*/
+
 const FRAME_WIDTH = 4;
 const FRAME_HEIGHT = 4;
 const MAX_INDEX = (FRAME_WIDTH*FRAME_HEIGHT) - 1;
@@ -490,8 +501,7 @@ class Reactor {
     copy_particle(p, idx) {
         let newpart = p.copy();
 
-        newpart?.set_index(idx);
-        this.particles[idx] = newpart;
+        this.create_particle(idx, newpart);
     }
 
     find_empty_spaces() {
@@ -1129,7 +1139,7 @@ let particle_template3 = new ParticleTemplate("Propagator Matter", "ᗛ", "light
 
             let r_index = vector_to_index(v);
             if (p.reactor.in_bounds(v)) {
-                p.reactor.create_particle(r_index, p.copy())
+                p.reactor.copy_particle(p, r_index);
             }
         }
     },
@@ -1144,7 +1154,7 @@ let particle_template3 = new ParticleTemplate("Propagator Matter", "ᗛ", "light
 
                 let r_index = vector_to_index(v);
                 if (p.reactor.in_bounds(v)) {
-                    p.reactor.create_particle(r_index, p.copy())
+                    p.reactor.copy_particle(p, r_index);
                 }
             }
         }
@@ -2219,12 +2229,12 @@ let particles_list = [
             },
 
             [ParticleTriggers.DESTROYED]: {
-                desc: "Copy three random other particles into three random empty positions, then activate a random one of those copies.",
+                desc: "Copy a random other particle not named 'XV-1552 \"Replicator\"' into a random empty position. Repeat this twice more, then activate a random one of those copies.",
                 fn: (p, data) => {
                     let copy_positions = [];
 
                     for (let i=0; i<3; i++) {
-                        let parts = p.reactor.particles.filter(pt => pt && pt.id != p.id);
+                        let parts = p.reactor.particles.filter(pt => pt && pt.id != p.id && pt.template.name != "XV-1552 \"Replicator\"");
 
                         if (parts.length > 0) {
                             let p_s = obj_seeded_random_from_array(parts, p.reactor.run);
@@ -2316,7 +2326,7 @@ let particles_list = [
             [ParticleTriggers.DESTROYED]: {
                 desc: "Generate α+β MW.",
                 fn: (p, data) => {
-                    p.modify_power(p.x * p.y);
+                    p.modify_power(p.x + p.y);
                 }
             },
         }
@@ -2697,12 +2707,10 @@ let items_list = [
             [ParticleTriggers.ACTIVATED]: (item, p, data) => {
                 let chance = p.reactor.run.random();
                 if (chance < 0.2) {
-                    let available_positions = new Array(p.reactor.particles.length).fill(0).map((_, i) => i).filter(pt_i => {
-                        return p.reactor.particles[pt_i] ? true : false;
-                    });
+                    let empty_positions = p.reactor.find_empty_spaces();
 
-                    if (available_positions.length > 0) {
-                        let new_index = obj_seeded_random_from_array(available_positions, p.reactor.run);
+                    if (empty_positions.length > 0) {
+                        let new_index = obj_seeded_random_from_array(empty_positions, p.reactor.run);
 
                         p.reactor.particles[p.index] = null;
                         p.reactor.particles[new_index] = p;
@@ -2727,7 +2735,7 @@ let items_list = [
                 for (let x=0; x<CELL_WIDTH; x++) {
                     let pt_i = xy_to_index(x, p_y);
                     let pt = p.reactor.particles[pt_i];
-                    if (p.id != pt.id) {
+                    if (pt && p.id != pt.id) {
                         // find the index above, check it's in bounds and empty, then move up
                         let up_vec = new Vector2(x, p_y - 1);
                         let new_index = vector_to_index(up_vec);
@@ -2983,7 +2991,7 @@ let items_list = [
     ),
 
     new ItemTemplate(
-        "Progress toward a unified model of particle conductance", "⦒", ItemType.STUDY,
+        "Progress toward a unified model of particle conductance", "⥾", ItemType.STUDY,
         "lightcoral", "limegreen",
         "When a particle gains β, it gains α equal to 50% of the amount (rounded down).",
         1, 25, {
@@ -3104,14 +3112,14 @@ let items_list = [
     new ItemTemplate(
         "Nanoparticle Physics for Humans: A macro-sized encyclopedia of the world's smallest things", "⍌", ItemType.STUDY,
         "pink", "limegreen",
-        "When a particle's α or β increases, multiply it by 1.1x (rounded down), without triggering other change effects.",
+        "When a particle's α or β increases, multiply it by 1.2x (rounded up), without triggering other change effects.",
         0.5, 25, {
             [ParticleTriggers.X_INCREASED]: (item, p, data) => {
-                p.x = Math.floor(p.x * 1.1);
+                p.x = Math.ceil(p.x * 1.2);
             },
 
             [ParticleTriggers.Y_INCREASED]: (item, p, data) => {
-                p.y = Math.floor(p.y * 1.1);
+                p.y = Math.ceil(p.y * 1.2);
             }
         }
     ),
