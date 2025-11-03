@@ -239,6 +239,7 @@ class Board {
 
         collisions.forEach(coll => {
             coll.first.resolve_collision(sthis, coll.second);
+            play_audio("thud");
         })
 
         // check wall and ground bounces
@@ -251,6 +252,7 @@ class Board {
             sthis.lines.forEach(line => {
                 if (ball.collides_line(line)) {
                     ball.resolve_line_collision(sthis, line);
+                    play_audio("thud");
                 }
             })
         })
