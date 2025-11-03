@@ -89,8 +89,12 @@ async function load_audio_item(path) {
 }
 
 async function load_audio() {
+    // ultrakill
     audio.set("parry", await load_audio_item('snd/parry.mp3'));
+    // https://pixabay.com/sound-effects/punch-04-383965/
     audio.set("impact", await load_audio_item('snd/impact.mp3'));
+    // https://pixabay.com/sound-effects/stick-hitting-a-dreadlock-small-thud-83297/
+    audio.set("thud", await load_audio_item("snd/thud.mp3"));
 }
 
 function play_audio(name) {
@@ -820,10 +824,13 @@ class HammerBall extends WeaponBall {
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, "Damage: 8", x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+            ctx, `Damage: 8.00`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
         )
         write_text(
-            ctx, "Knocks enemies back when striking them", x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+            ctx, `Rotation speed: 90 deg/s`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+        )
+        write_text(
+            ctx, "Knocks enemies back when striking them.", x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 12
         )
     }
 }
@@ -867,13 +874,13 @@ class SordBall extends WeaponBall {
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, `Damage: ${this.damage_base}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+            ctx, `Damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
         )
         write_text(
-            ctx, `Rotation speed: ${this.speed_base} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
         )
         write_text(
-            ctx, `Hits harder and rotates faster every strike`, x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 10
+            ctx, `Hits harder and rotates faster every strike.`, x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 10
         )
     }
 }
@@ -896,31 +903,51 @@ class DaggerBall extends WeaponBall {
 
         this.damage_base = 1;
         this.speed_base = 360;
+
+        this.hit_decay = 0;
     }
 
     weapon_step(time_delta) {
         // rotate the weapon
         this.weapon_data[0].angle += this.speed_base * (this.reversed ? -1 : 1) * (Math.PI / 180) * time_delta;
+
+        this.hit_decay -= time_delta;
+        if (this.hit_decay < 0) {
+            this.speed_base = lerp(this.speed_base, 360, 1 - Math.pow(0.25, time_delta));
+            this.damage_base = lerp(this.damage_base, 1, 1 - Math.pow(0.25, time_delta));
+        }
     }
 
     hit_other(other, with_weapon_index) {
         // additionally knock the other ball away
         let result = super.hit_other(other, with_weapon_index, this.damage_base);
 
-        this.speed_base = Math.floor(this.speed_base * 1.1)
+        this.speed_base *= 1.75;
+        this.damage_base *= 1.75;
+
+        this.hit_decay = 3;
 
         return result;
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, `Damage: ${this.damage_base}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+            ctx, `Damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
         )
         write_text(
-            ctx, `Rotation speed: ${this.speed_base} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
         )
         write_text(
-            ctx, `Rotates exponentially faster every strike`, x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 10
+            ctx, `Rotates exponentially faster every strike.`, x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 10
+        )
+        write_text(
+            ctx, `Gains more damage every strike.`, x_anchor, y_anchor + 36, this.colour.css(), "MS Gothic", 10
+        )
+        write_text(
+            ctx, `Loses rotation speed and damage`, x_anchor, y_anchor + 48, this.colour.css(), "MS Gothic", 10
+        )
+        write_text(
+            ctx, `when not striking.`, x_anchor, y_anchor + 60, this.colour.css(), "MS Gothic", 10
         )
     }
 }
@@ -1042,11 +1069,11 @@ function render_diagnostics(board) {
     board.balls.forEach((ball, index) => {
         let t = board_d_y + (36 * index);
         write_text(
-            layers.debug_front.ctx, `ball ${index} invuln | ` + "#".repeat(Math.max(0, Math.floor(ball.invuln_duration * 400))), 10, t, ball.invuln_duration > 0 ? ball.colour.css() : "gray", "MS Gothic", 9
+            layers.debug_front.ctx, `ball ${index} invuln | ` + "#".repeat(Math.max(0, Math.floor(ball.invuln_duration * 200))), 10, t, ball.invuln_duration > 0 ? ball.colour.css() : "gray", "MS Gothic", 9
         )
 
         write_text(
-            layers.debug_front.ctx, `      hitstop | ` + "#".repeat(Math.max(0, Math.floor(ball.hitstop * 400))), 10, t + 12, ball.hitstop > 0 ? ball.colour.css() : "gray", "MS Gothic", 9
+            layers.debug_front.ctx, `      hitstop | ` + "#".repeat(Math.max(0, Math.floor(ball.hitstop * 200))), 10, t + 12, ball.hitstop > 0 ? ball.colour.css() : "gray", "MS Gothic", 9
         )
     });
 }
@@ -1192,11 +1219,20 @@ function game_loop() {
         delta_time /= 1000;
     }
 
-    // COLL_GRANULARITY => do collision checks every N physics steps
-    for (let i=0; i<PHYS_GRANULARITY; i++) {
-        board.physics_step(delta_time / (1000 * PHYS_GRANULARITY));
+    let phys_gran = PHYS_GRANULARITY;
+    let coll_gran = COLL_GRANULARITY;
 
-        if (i % COLL_GRANULARITY == 0) {
+    if (keys_down["KeyR"]) {
+        phys_gran *= 10;
+        coll_gran *= 10;
+        delta_time *= 10;
+    }
+
+    // COLL_GRANULARITY => do collision checks every N physics steps
+    for (let i=0; i<phys_gran; i++) {
+        board.physics_step(delta_time / (1000 * phys_gran));
+
+        if (i % coll_gran == 0) {
             // if multiple weapons collide, the first one takes priority
             let hitstop = 0;
 
