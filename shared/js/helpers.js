@@ -753,4 +753,8 @@ Colour.white = new Colour(255, 255, 255, 255);
 Colour.red = new Colour(255, 0, 0, 255);
 Colour.green = new Colour(0, 255, 0, 255);
 Colour.blue = new Colour(0, 0, 255, 255);
+
+Colour.yellow = new Colour(255, 255, 0, 255);
+Colour.cyan = new Colour(0, 255, 255, 255);
+
 Colour.empty = new Colour(0, 0, 0, 0);
