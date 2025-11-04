@@ -1264,9 +1264,8 @@ class MagnumBall extends WeaponBall {
         this.name = "Magnum";
 
         this.weapon_data = [
-            new BallWeapon(1, "gun", [
-                {pos: new Vector2(16, 72-16), radius: 12},
-                {pos: new Vector2(16, 72), radius: 12},
+            new BallWeapon(0.5, "gun", [
+                {pos: new Vector2(32, 64-10), radius: 16},
             ]),
 
             new BallWeapon(1.5, "coin_weapon", [
@@ -1275,25 +1274,25 @@ class MagnumBall extends WeaponBall {
         ];
 
         this.firing_offsets = [
-            new Vector2(114, -16),
+            new Vector2(156, -16),
             new Vector2(16, 0)
         ]
 
         this.proj_damage_base = 8;
-        this.coin_damage_base = 2;
+        this.coin_damage_base = 1;
         this.speed_base = 90;
 
-        this.shot_cooldown_max = 0.9;
+        this.shot_cooldown_max = 0.6;
         this.shot_cooldown = this.shot_cooldown_max;
 
-        this.coin_shot_cooldown_max = 0.6;
+        this.coin_shot_cooldown_max = 0.5;
         this.coin_shot_cooldown = this.coin_shot_cooldown_max;
     }
 
     weapon_step(board, time_delta) {
         // rotate the weapon
         this.weapon_data[0].angle += this.speed_base * (this.reversed ? -1 : 1) * (Math.PI / 180) * time_delta;
-        this.weapon_data[1].angle += this.speed_base * 2 * (this.reversed ? -1 : 1) * (Math.PI / 180) * time_delta;
+        this.weapon_data[1].angle += this.speed_base * -2.5 * (this.reversed ? -1 : 1) * (Math.PI / 180) * time_delta;
 
         this.shot_cooldown -= time_delta;
         this.coin_shot_cooldown -= time_delta;
@@ -1350,10 +1349,13 @@ class MagnumBall extends WeaponBall {
             ctx, `Coin damage: ${this.coin_damage_base.toFixed(2)}`, x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 12
         )
         write_text(
-            ctx, `Coin rotation speed: ${(this.speed_base * 3).toFixed(0)} deg/s`, x_anchor, y_anchor + 36, this.colour.css(), "MS Gothic", 12
+            ctx, `Coin rotation speed: ${(this.speed_base * 2.5).toFixed(0)} deg/s`, x_anchor, y_anchor + 36, this.colour.css(), "MS Gothic", 12
         )
         write_text(
-            ctx, `Shots ricochet off coins for double damage`, x_anchor, y_anchor + 48, this.colour.css(), "MS Gothic", 10
+            ctx, `Shots ricochet off coins for double damage.`, x_anchor, y_anchor + 48, this.colour.css(), "MS Gothic", 10
+        )
+        write_text(
+            ctx, `Ricochet shots can't be parried.`, x_anchor, y_anchor + 60, this.colour.css(), "MS Gothic", 10
         )
     }
 }
@@ -1382,6 +1384,8 @@ class Projectile {
 
         // {pos, radius} same as balls
         this.hitboxes = [];
+
+        this.parriable = true;
 
         this.board = null;
     }
@@ -1582,6 +1586,10 @@ class MagnumProjectile extends HitscanProjectile {
             this.damage *= 2;
         }
         this.max_width *= this.level;
+        if (this.level > 1) {
+            this.sprite_colour = Colour.yellow.lerp(Colour.red, Math.min(1, (this.level-1) / 3)).css();
+            this.parriable = false;
+        }
     }
 
     // Override so that it will return collisions with MagnumCoins
@@ -2162,6 +2170,10 @@ function game_loop() {
                     
                     let parried = false;
                     intersecting_projectiles.forEach(projectile => {
+                        if (!projectile[1].parriable) {
+                            return;
+                        }
+
                         parried = true;
 
                         // board will clean it up
@@ -2319,8 +2331,8 @@ function spawn_testing_balls() {
     board = new Board(new Vector2(512 * 16, 512 * 16));
     // board.spawn_ball(new SordBall(1, 512, Colour.red, null, null, {}), new Vector2(512*4, 512*4));
     // board.spawn_ball(new HammerBall(1, 512, Colour.yellow, null, null, {}, true), new Vector2(512*12, 512*12));
-    board.spawn_ball(new HammerBall(1, 512, Colour.green, null, null, {}), new Vector2(512*5, 512*11));
-    board.spawn_ball(new MagnumBall(1, 512, Colour.cyan, null, null, {}, true), new Vector2(512*11, 512*5));
+    board.spawn_ball(new MagnumBall(1, 512, Colour.green, null, null, {}), new Vector2(512*5, 512*11));
+    board.spawn_ball(new SordBall(1, 512, Colour.cyan, null, null, {}, true), new Vector2(512*11, 512*5));
 
     board.balls[0].add_velocity(random_on_circle(random_float(0, 512 * 10)));
     board.balls[1]?.add_velocity(random_on_circle(random_float(0, 512 * 10)));
