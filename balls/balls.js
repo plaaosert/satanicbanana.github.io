@@ -28,7 +28,12 @@ const entity_sprites = new Map([
     ["dagger", 1, "weapon/"],
     ["bow", 1, "weapon/"],
     ["arrow", 1, "weapon/"],
-    ["explosion", 15, "explosion/"],
+    ["gun", 1, "weapon/"],
+    
+    ["coin_weapon", 1, "weapon/"],
+    ["coin", 5, "weapon/"],
+
+    ["explosion", 16, "explosion/"],
 ].map((v, i) => {
     let ts = [];
 
@@ -124,6 +129,7 @@ async function load_audio() {
     audio.set("parry2", await load_audio_item('snd/parry2.mp3'));
     // https://pixabay.com/sound-effects/punch-04-383965/
     audio.set("impact", await load_audio_item('snd/impact.mp3'));
+    audio.set("impact_heavy", await load_audio_item('snd/impact_heavy.mp3'));
     // https://pixabay.com/sound-effects/stick-hitting-a-dreadlock-small-thud-83297/
     audio.set("thud", await load_audio_item("snd/thud.mp3"));
     // game maker classic
@@ -172,10 +178,10 @@ class Board {
     constructor(size) {
         this.size = size;
         this.projectile_delete_bounds = [
-            -this.size.x,
-            this.size.x * 2,
-            -this.size.y,
-            this.size.y * 2
+            -this.size.x * 0.1,
+            this.size.x * 1.1,
+            -this.size.y * 0.1,
+            this.size.y * 1.1
         ]
 
         this.balls = [];
@@ -242,6 +248,8 @@ class Board {
 
         // this.gravity = new Vector2(0, 0);
         this.gravity = new Vector2(0, 9810);
+
+        this.hitstop_time = 0;
     }
     
     spawn_particle(particle, position) {
@@ -254,6 +262,8 @@ class Board {
     spawn_projectile(projectile, position) {
         projectile.position = position;
         this.projectiles.push(projectile);
+
+        projectile.board = this;
 
         return projectile;
     }
@@ -272,6 +282,10 @@ class Board {
     }
 
     particles_step(time_delta) {
+        if (this.hitstop_time > 0) {
+            time_delta *= HITSTOP_DELTATIME_PENALTY;
+        }
+
         this.particles.forEach(particle => particle.pass_time(time_delta / 1000));
         this.particles = this.particles.filter(particle => {
             // looping particles never hit the framecount bound so out-of-range frame is valid to check deletion
@@ -280,6 +294,11 @@ class Board {
     }
 
     physics_step(time_delta) {
+        this.hitstop_time -= time_delta;
+        if (this.hitstop_time > 0) {
+            time_delta *= HITSTOP_DELTATIME_PENALTY;
+        }
+
         // make the balls move
         this.balls.forEach(ball => {
             // if the ball is in a wall, wake it up by force
@@ -298,6 +317,7 @@ class Board {
         // clean up any inactive / OOB ones
         this.projectiles = this.projectiles.filter(projectile => {
             if (!projectile.active ||
+                (projectile instanceof HitscanProjectile && projectile.lifetime >= projectile.duration) ||
                 projectile.position.x < this.projectile_delete_bounds[0] ||
                 projectile.position.x > this.projectile_delete_bounds[1] ||
                 projectile.position.y < this.projectile_delete_bounds[2] ||
@@ -1237,6 +1257,107 @@ class BowBall extends WeaponBall {
     }
 }
 
+class MagnumBall extends WeaponBall {
+    constructor(mass, radius, colour, bounce_factor, friction_factor, player, reversed) {
+        super(mass, radius, colour, bounce_factor, friction_factor, player, reversed);
+    
+        this.name = "Magnum";
+
+        this.weapon_data = [
+            new BallWeapon(1, "gun", [
+                {pos: new Vector2(16, 72-16), radius: 12},
+                {pos: new Vector2(16, 72), radius: 12},
+            ]),
+
+            new BallWeapon(1.5, "coin_weapon", [
+
+            ])
+        ];
+
+        this.firing_offsets = [
+            new Vector2(114, -16),
+            new Vector2(16, 0)
+        ]
+
+        this.proj_damage_base = 8;
+        this.coin_damage_base = 2;
+        this.speed_base = 90;
+
+        this.shot_cooldown_max = 0.9;
+        this.shot_cooldown = this.shot_cooldown_max;
+
+        this.coin_shot_cooldown_max = 0.6;
+        this.coin_shot_cooldown = this.coin_shot_cooldown_max;
+    }
+
+    weapon_step(board, time_delta) {
+        // rotate the weapon
+        this.weapon_data[0].angle += this.speed_base * (this.reversed ? -1 : 1) * (Math.PI / 180) * time_delta;
+        this.weapon_data[1].angle += this.speed_base * 2 * (this.reversed ? -1 : 1) * (Math.PI / 180) * time_delta;
+
+        this.shot_cooldown -= time_delta;
+        this.coin_shot_cooldown -= time_delta;
+
+        if (this.shot_cooldown < 0) {
+            this.shot_cooldown = this.shot_cooldown_max;
+
+            // schut
+            let firing_offset = this.firing_offsets[0].mul(this.weapon_data[0].size_multiplier).rotate(this.weapon_data[0].angle);
+            let fire_pos = this.position.add(firing_offset);
+
+            board.spawn_projectile(
+                new MagnumProjectile(
+                    this, 0, fire_pos, this.proj_damage_base,
+                    new Vector2(1, 0).rotate(this.weapon_data[0].angle).mul(10000).add(fire_pos),
+                ), fire_pos
+            )
+        }
+
+        if (this.coin_shot_cooldown < 0) {
+            this.coin_shot_cooldown = this.coin_shot_cooldown_max;
+
+            let coin_firing_offset = this.firing_offsets[1].mul(this.weapon_data[1].size_multiplier).rotate(this.weapon_data[1].angle);
+            let coin_fire_pos = this.position.add(coin_firing_offset);
+            
+            board.spawn_projectile(
+                new MagnumCoinProjectile(
+                    this, 1, coin_fire_pos, this.coin_damage_base, 1.5,
+                    new Vector2(1, 0).rotate(this.weapon_data[1].angle), random_int(6000, 10000), board.gravity
+                ), coin_fire_pos
+            )
+        }
+    }
+
+    hit_other(other, with_weapon_index) {
+        return super.hit_other(other, with_weapon_index, 1);
+    }
+
+    hit_other_with_projectile(other, with_weapon_index) {
+        // additionally knock the other ball away
+        let result = super.hit_other_with_projectile(other, with_weapon_index, this.damage_base);
+
+        return result;
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor) {
+        write_text(
+            ctx, `Bullet damage: ${this.proj_damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+        )
+        write_text(
+            ctx, `Gun rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+        )
+        write_text(
+            ctx, `Coin damage: ${this.coin_damage_base.toFixed(2)}`, x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 12
+        )
+        write_text(
+            ctx, `Coin rotation speed: ${(this.speed_base * 3).toFixed(0)} deg/s`, x_anchor, y_anchor + 36, this.colour.css(), "MS Gothic", 12
+        )
+        write_text(
+            ctx, `Shots ricochet off coins for double damage`, x_anchor, y_anchor + 48, this.colour.css(), "MS Gothic", 10
+        )
+    }
+}
+
 class Projectile {
     // projectiles have a position, a damage stat, a direction, speed and some hitboxes
     static id_inc = 0;
@@ -1261,9 +1382,15 @@ class Projectile {
 
         // {pos, radius} same as balls
         this.hitboxes = [];
+
+        this.board = null;
     }
 
     physics_step(time_delta) {
+        // do nothing
+    }
+
+    weapon_step(time_delta) {
         // do nothing
     }
 
@@ -1313,7 +1440,14 @@ class Projectile {
         // each projectile is responsible for destroying itself
         // so piercing projectiles just... don't
         this.active = false;
-        console.log("proj on proj collision!");
+    }
+
+    get_parried(by) {
+        this.active = false;
+    }
+
+    hit_ball(ball) {
+        this.active = false;
     }
 }
 
@@ -1327,7 +1461,7 @@ class StraightLineProjectile extends Projectile {
     }
 }
 
-class InertiaRespectingStraightLineProjectile extends Projectile {
+class InertiaRespectingStraightLineProjectile extends StraightLineProjectile {
     constructor(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
         super(source, source_weapon_index, position, damage, size, direction, speed);
 
@@ -1336,6 +1470,233 @@ class InertiaRespectingStraightLineProjectile extends Projectile {
 
     physics_step(time_delta) {
         this.position = this.position.add(this.direction.mul(this.speed).add(this.inertia_vel).mul(time_delta));
+    }
+}
+
+class HitscanProjectile extends Projectile {
+    // hitscan projectiles are the same as normal ones for the most part except their sprite is
+    //  "HITSCAN"
+    // and they have an additional sprite_colour parameter
+    // and 
+    constructor(source, source_weapon_index, position, damage, target_position) {
+        super(source, source_weapon_index, position, damage, 1, new Vector2(0, 0), 0);
+
+        this.target_position = target_position;
+
+        this.sprite = "HITSCAN";
+        this.sprite_colour = "yellow";
+
+        this.duration = 0.5;
+        this.lifetime = 0;
+
+        this.inactive_delay = 0;
+        this.render_delay = 0;
+        this.active_duration = 0.02;
+
+        this.max_width = 8;
+        this.min_width = 0;
+
+        this.bearing = this.target_position.sub(this.position).normalize();
+    
+        this.hitboxes = [];
+    
+        this.nullified = false;
+    }
+
+    physics_step(time_delta) {
+        // do nothing
+        this.lifetime += time_delta;
+    }
+
+    weapon_step(time_delta) {   
+        this.hitboxes = this.create_hitboxes();
+    }
+
+    get_width() {
+        return lerp(this.max_width, this.min_width, this.lifetime / this.duration);
+    }
+
+    create_hitboxes() {
+        // start at position, move to target_position
+        // to get full circle coverage over width, use a circle of radius (width/2)
+        // and move by (width/2) each time
+        let hitboxes = [];
+        if (this.nullified || this.lifetime < this.inactive_delay || this.lifetime > this.active_duration) {
+            return hitboxes;
+        }
+
+        let dist = this.target_position.distance(this.position);
+        let half_r = this.max_width / 2;
+
+        let scaled_bearing = this.bearing.mul(half_r);
+
+        let num_hitboxes = Math.floor(dist / half_r);
+        let cur_pos = this.position;
+        let offset = new Vector2(0, 0);
+
+        for (let i=0; i<num_hitboxes; i++) {
+            hitboxes.push({pos: offset, radius: half_r});
+            cur_pos = cur_pos.add(scaled_bearing);
+            offset = offset.add(scaled_bearing);
+        }
+
+        hitboxes.push({pos: offset, radius: half_r});
+
+        return hitboxes;
+    }
+
+    hit_other_projectile(other_projectile) {
+        // each projectile is responsible for destroying itself
+        // so piercing projectiles just... don't
+        this.active = true;
+    }
+
+    get_parried(by) {
+        this.nullified = true;
+    }
+
+    hit_ball(ball) {
+        this.active = true;
+    }
+}
+
+class MagnumProjectile extends HitscanProjectile {
+    constructor(source, source_weapon_index, position, damage, target_position, level) {
+        super(source, source_weapon_index, position, damage, target_position);
+
+        this.sprite_colour = "yellow";
+
+        this.level = level ? level : 1
+
+        this.duration = 0.5;
+        this.lifetime = 0;
+
+        this.inactive_delay = this.level == 1 ? 0 : 0.02;
+        this.render_delay = this.inactive_delay;
+        this.active_duration = this.inactive_delay + 0.01;
+
+        this.max_width = 12;
+        this.min_width = 0;
+
+        if (this.level > 1) {
+            this.damage *= 2;
+        }
+        this.max_width *= this.level;
+    }
+
+    // Override so that it will return collisions with MagnumCoins
+    check_projectiles_colliding(projectiles) {
+        let this_hitboxes_offsets = this.get_hitboxes_offsets();
+
+        return projectiles.filter(projectile => {
+            if (!projectile.active) {
+                return false;
+            }
+
+            if (projectile.id == this.id) {
+                return false;
+            }
+
+            if (projectile.source.id == this.source.id && !(projectile instanceof MagnumCoinProjectile && projectile.lifetime > 0.1)) {
+                return false;
+            }
+
+            let other_hitboxes_offsets = projectile.get_hitboxes_offsets();
+
+            return this_hitboxes_offsets.some((this_hitbox_offset, this_index) => {
+                let this_hitbox = this.hitboxes[this_index];
+                
+                // check all of other's hitboxes
+                return other_hitboxes_offsets.some((other_hitbox_offset, other_index) => {
+                    let other_hitbox = projectile.hitboxes[other_index];
+                    
+                    let radius_sum = (this_hitbox.radius * this.size) + (other_hitbox.radius * projectile.size);
+                    let radius_sum_sqr = Math.pow(radius_sum, 2);
+
+                    let this_hitbox_pos = this.position.add(this_hitbox_offset);
+                    let other_hitbox_pos = projectile.position.add(other_hitbox_offset);
+
+                    return this_hitbox_pos.sqr_distance(other_hitbox_pos) <= radius_sum_sqr
+                })
+            })
+        })
+    }
+
+    hit_other_projectile(other) {
+        if (other instanceof MagnumCoinProjectile && other.source.id == this.source.id) {
+            // ricoshot
+            // search for an enemy
+            let enemies = this.board.balls.filter(ball => ball.id != this.source.id);
+            let coins = this.board.projectiles.filter(proj => proj.id != other.id && proj.active && proj instanceof MagnumCoinProjectile && proj.lifetime > 0.1);
+
+            let target = null;
+            if (coins.length > 0) {
+                target = random_from_array(coins);
+            } else if (enemies.length > 0) {
+                target = random_from_array(enemies);
+            }
+
+            if (!target) {
+                target = {position: other.position.add(random_on_circle(30000))}
+            }
+
+            if (target) {
+                this.board.spawn_projectile(
+                    new MagnumProjectile(
+                        this.source, this.source_weapon_index, 
+                        other.position, this.damage,
+                        target.position, this.level + 1
+                    ), other.position
+                );
+
+                play_audio("parry2");
+
+                let particle = new Particle(
+                    other.position.add(new Vector2(16, -32)), 0, 0.2, entity_sprites.get("explosion"), 12, 3, false
+                )
+                particle.lifetime += 0.1;
+                board.spawn_particle(particle, other.position.add(new Vector2(16, -32)));
+
+                this.target_position = other.position;
+
+                // this.board.hitstop_time = Math.max(this.board.hitstop_time, 0.1);
+
+                other.active = false;
+            }
+        } else {
+            // do nothing
+        }
+    }
+}
+
+class MagnumCoinProjectile extends Projectile {
+    constructor(source, source_weapon_index, position, damage, size, direction, speed, gravity) {
+        super(source, source_weapon_index, position, damage, size, direction, speed);
+
+        this.gravity = gravity;
+        this.velocity = this.direction.mul(this.speed);
+
+        this.frame = 0;
+        this.framecount = 5;
+        this.sprites = entity_sprites.get("coin");
+        this.sprite = this.sprite[0];
+        this.lifetime = 0;
+        this.frame_speed = 12;
+
+        this.hitboxes = [
+            {pos: new Vector2(0, 0), radius: 8},
+        ];
+    }
+
+    physics_step(time_delta) {
+        this.position = this.position.add(this.velocity.mul(time_delta));
+
+        this.velocity = this.velocity.add(this.gravity.mul(time_delta));
+
+        this.lifetime += time_delta;
+        this.frame = Math.floor(this.lifetime * this.frame_speed)
+        this.frame = this.frame % this.framecount;
+        this.sprite = this.sprites[this.frame];
     }
 }
 
@@ -1527,7 +1888,76 @@ function render_game(board, collision_boxes=false, velocity_lines=false) {
         );
     })
 
-    // balls
+    // then the projectiles. put them on fg3, same as weapons
+    board.projectiles.forEach(projectile => {
+        if (!projectile.active || (projectile.render_delay && projectile.lifetime < projectile.inactive_delay)) {
+            return;
+        }
+
+        if (projectile.sprite != "HITSCAN") {
+            let projectile_screen_pos = new Vector2(
+                (projectile.position.x) * screen_scaling_factor,
+                (projectile.position.y) * screen_scaling_factor,
+            );
+
+            let siz = projectile.size * screen_scaling_factor * 128;
+
+            write_rotated_image(
+                layers.fg3.canvas, layers.fg3.ctx,
+                projectile_screen_pos.x, projectile_screen_pos.y,
+                projectile.sprite instanceof Image ? projectile.sprite : entity_sprites.get(projectile.sprite)[0],
+                siz, siz, projectile.direction_angle
+            );
+        } else {
+            // draw a line from position to target with given width
+            // and colour
+            let projectile_screen_start_pos = new Vector2(
+                (projectile.position.x) * screen_scaling_factor,
+                (projectile.position.y) * screen_scaling_factor,
+            );
+
+            let projectile_screen_end_pos = new Vector2(
+                (projectile.target_position.x) * screen_scaling_factor,
+                (projectile.target_position.y) * screen_scaling_factor,
+            );
+
+            layers.fg3.ctx.beginPath();
+            layers.fg3.ctx.moveTo(projectile_screen_start_pos.x, projectile_screen_start_pos.y);
+            layers.fg3.ctx.lineTo(projectile_screen_end_pos.x, projectile_screen_end_pos.y);
+
+            layers.fg3.ctx.lineWidth = projectile.get_width();
+            layers.fg3.ctx.strokeStyle = projectile.sprite_colour;
+            layers.fg3.ctx.stroke();
+        }
+
+        if (collision_boxes) {
+            // render the collision boxes on debug_back as green circles
+            // collision boxes are based on the original 128x128 sizing
+            // so get the offset, then add the collision pos offset, then draw that
+            let hitboxes = projectile.get_hitboxes_offsets();
+            hitboxes.forEach((hitbox_offset, index) => {
+                let hitbox = projectile.hitboxes[index];
+
+                let hitbox_screen_pos = projectile.position.add(hitbox_offset).mul(screen_scaling_factor);
+                let w2 = w / 8;
+
+                layers.debug_back.ctx.beginPath();
+                layers.debug_back.ctx.arc(
+                    hitbox_screen_pos.x, hitbox_screen_pos.y, 
+                    (hitbox.radius * projectile.size * screen_scaling_factor) - (w2/2),
+                    0, 2 * Math.PI, false
+                );
+                layers.debug_back.ctx.fillStyle = new Colour(255, 255, 0, 128).css();
+                layers.debug_back.ctx.fill();
+                layers.debug_back.ctx.lineWidth = w2;
+                layers.debug_back.ctx.strokeStyle = new Colour(255, 255, 0, 255).css();
+                layers.debug_back.ctx.stroke();
+                layers.debug_back.ctx.closePath();
+            })
+        }
+    });
+
+    // then the balls and weapons
     board.balls.forEach(ball => {
         let ball_screen_pos = new Vector2(
             (ball.position.x) * screen_scaling_factor,
@@ -1596,53 +2026,6 @@ function render_game(board, collision_boxes=false, velocity_lines=false) {
             }
         })
     })
-
-    // then the projectiles. put them on fg3, same as weapons
-    board.projectiles.forEach(projectile => {
-        if (!projectile.active) {
-            return;
-        }
-
-        let projectile_screen_pos = new Vector2(
-            (projectile.position.x) * screen_scaling_factor,
-            (projectile.position.y) * screen_scaling_factor,
-        );
-
-        let siz = projectile.size * screen_scaling_factor * 128;
-
-        write_rotated_image(
-            layers.fg3.canvas, layers.fg3.ctx,
-            projectile_screen_pos.x, projectile_screen_pos.y,
-            entity_sprites.get(projectile.sprite)[0],
-            siz, siz, projectile.direction_angle
-        );
-
-        if (collision_boxes) {
-            // render the collision boxes on debug_back as green circles
-            // collision boxes are based on the original 128x128 sizing
-            // so get the offset, then add the collision pos offset, then draw that
-            let hitboxes = projectile.get_hitboxes_offsets();
-            hitboxes.forEach((hitbox_offset, index) => {
-                let hitbox = projectile.hitboxes[index];
-
-                let hitbox_screen_pos = projectile.position.add(hitbox_offset).mul(screen_scaling_factor);
-                let w2 = w / 8;
-
-                layers.debug_back.ctx.beginPath();
-                layers.debug_back.ctx.arc(
-                    hitbox_screen_pos.x, hitbox_screen_pos.y, 
-                    (hitbox.radius * projectile.size * screen_scaling_factor) - (w2/2),
-                    0, 2 * Math.PI, false
-                );
-                layers.debug_back.ctx.fillStyle = new Colour(255, 255, 0, 128).css();
-                layers.debug_back.ctx.fill();
-                layers.debug_back.ctx.lineWidth = w2;
-                layers.debug_back.ctx.strokeStyle = new Colour(255, 255, 0, 255).css();
-                layers.debug_back.ctx.stroke();
-                layers.debug_back.ctx.closePath();
-            })
-        }
-    });
 }
 
 function render_descriptions(board) {
@@ -1718,9 +2101,15 @@ function game_loop() {
         for (let i=0; i<phys_gran; i++) {
             board.physics_step(delta_time / (1000 * phys_gran));
 
-            if (i % coll_gran == 0) {
+            // additional collision step on the last frame
+            if (i % coll_gran == 0 || i == phys_gran-1) {
                 // if multiple weapons collide, the first one takes priority
                 let hitstop = 0;
+
+                // projectile weaponsteps
+                board.projectiles.forEach(projectile => {
+                    projectile.weapon_step(board, delta_time / 1000)
+                })
 
                 // parrying (weapon on weapon)
                 board.balls.forEach(ball => {
@@ -1776,7 +2165,7 @@ function game_loop() {
                         parried = true;
 
                         // board will clean it up
-                        projectile[1].active = false;
+                        projectile[1].get_parried(ball);
                         ball.reversed = !ball.reversed;
 
                         // we actually move the ball in the direction the projectile was travelling
@@ -1814,8 +2203,12 @@ function game_loop() {
 
                                     ball.last_hit = 0;
                                     let result = other.hit_other(ball, weapon_index);
-
-                                    play_audio("impact");
+                                    
+                                    if (result.dmg >= 8) {
+                                        play_audio("impact_heavy");
+                                    } else {
+                                        play_audio("impact");
+                                    }
 
                                     // TODO - need to at this point do accounting on damage taken/dealt,
                                     // and end the game / remove balls if they die
@@ -1841,7 +2234,7 @@ function game_loop() {
 
                             ball.last_hit = 0;
                             let result = projectile.source.hit_other_with_projectile(ball, projectile);
-                            projectile.active = false;
+                            projectile.hit_ball(ball);
 
                             play_audio("impact");
 
@@ -1853,21 +2246,21 @@ function game_loop() {
                 // projectile collisions (projectile on projectile)
                 let collisions = new Set();
                 board.projectiles.forEach(projectile => {
-                    if (!projectile.active)
+                    if (!projectile.active) 
                         return;
 
                     let projectiles_colliding = projectile.check_projectiles_colliding(board.projectiles);
                     projectiles_colliding = projectiles_colliding.filter(proj => !collisions.has(proj.id + (1000000 * projectile.id)))
 
                     projectiles_colliding.forEach(proj => {
-                        proj.hit_other_projectile(this)
+                        projectile.hit_other_projectile(proj)
                         collisions.add(proj.id + (1000000 * projectile.id));
 
                         play_audio("thud");
                     });
                 })
 
-                board.hitstop_time = Math.max(hitstop, board.hitstop_time);
+                // board.hitstop_time = Math.max(hitstop, board.hitstop_time);
             }
 
             board.balls = board.balls.filter(ball => {
@@ -1875,7 +2268,7 @@ function game_loop() {
                     return true;
                 } else {
                     board.spawn_particle(new Particle(
-                        ball.position.add(new Vector2(256+64, -512)), 0, 2, entity_sprites.get("explosion"), 24, 3, false
+                        ball.position.add(new Vector2(256+64, -512)), 0, 2, entity_sprites.get("explosion"), 12, 3, false
                     ), ball.position.add(new Vector2(256+64, -512)));
 
                     play_audio("explosion");
@@ -1926,8 +2319,8 @@ function spawn_testing_balls() {
     board = new Board(new Vector2(512 * 16, 512 * 16));
     // board.spawn_ball(new SordBall(1, 512, Colour.red, null, null, {}), new Vector2(512*4, 512*4));
     // board.spawn_ball(new HammerBall(1, 512, Colour.yellow, null, null, {}, true), new Vector2(512*12, 512*12));
-    board.spawn_ball(new BowBall(1, 512, Colour.green, null, null, {}), new Vector2(512*5, 512*11));
-    board.spawn_ball(new SordBall(1, 512, Colour.cyan, null, null, {}, true), new Vector2(512*11, 512*5));
+    board.spawn_ball(new HammerBall(1, 512, Colour.green, null, null, {}), new Vector2(512*5, 512*11));
+    board.spawn_ball(new MagnumBall(1, 512, Colour.cyan, null, null, {}, true), new Vector2(512*11, 512*5));
 
     board.balls[0].add_velocity(random_on_circle(random_float(0, 512 * 10)));
     board.balls[1]?.add_velocity(random_on_circle(random_float(0, 512 * 10)));
