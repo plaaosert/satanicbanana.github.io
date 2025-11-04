@@ -99,7 +99,7 @@ async function load_audio_item(path) {
 async function load_audio() {
     // ultrakill
     audio.set("parry", await load_audio_item('snd/parry.mp3'));
-    audio.set("parry2", await load_audio_item('snd/parry2.wav'));
+    audio.set("parry2", await load_audio_item('snd/parry2.mp3'));
     // https://pixabay.com/sound-effects/punch-04-383965/
     audio.set("impact", await load_audio_item('snd/impact.mp3'));
     // https://pixabay.com/sound-effects/stick-hitting-a-dreadlock-small-thud-83297/
