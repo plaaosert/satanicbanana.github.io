@@ -22,21 +22,43 @@ const prerender_ctx = prerender_canvas.getContext("2d");
 let num_textures_loaded = 0;
 let num_textures_needed = 0;
 
-const entity_sprites = new Map(["SORD", "hamer", "dagger", "bow", "arrow"].map((v, i) => {
+const entity_sprites = new Map([
+    ["SORD", 1, "weapon/"],
+    ["hamer", 1, "weapon/"],
+    ["dagger", 1, "weapon/"],
+    ["bow", 1, "weapon/"],
+    ["arrow", 1, "weapon/"],
+    ["explosion", 15, "explosion/"],
+].map((v, i) => {
     let ts = [];
 
-    let t = new Image(128, 128);
-    t.src = `img/weapon/${v}.png`;
-    t.style.imageRendering = "pixelated";
+    if (v[1] > 1) {
+        for (let i=0; i<v[1]; i++) {
+            let t = new Image(128, 128);
+            t.src = `img/${v[2]}/${v[0]}_${i.toString().padStart(3, "0")}.png`;
+            t.style.imageRendering = "pixelated";
 
-    num_textures_needed++;
-    t.addEventListener("load", function() {
-        num_textures_loaded++;
-    })
+            num_textures_needed++;
+            t.addEventListener("load", function() {
+                num_textures_loaded++;
+            })
 
-    ts.push(t);
+            ts.push(t);
+        }
+    } else {
+        let t = new Image(128, 128);
+        t.src = `img/${v[2]}/${v[0]}.png`;
+        t.style.imageRendering = "pixelated";
 
-    return [v, ts]
+        num_textures_needed++;
+        t.addEventListener("load", function() {
+            num_textures_loaded++;
+        })
+
+        ts.push(t);
+    }
+
+    return [v[0], ts]
 }));
 
 const fps = 144;
@@ -104,6 +126,8 @@ async function load_audio() {
     audio.set("impact", await load_audio_item('snd/impact.mp3'));
     // https://pixabay.com/sound-effects/stick-hitting-a-dreadlock-small-thud-83297/
     audio.set("thud", await load_audio_item("snd/thud.mp3"));
+    // game maker classic
+    audio.set("explosion", await load_audio_item("snd/explosion.mp3"));
 }
 
 function play_audio(name) {
@@ -118,6 +142,32 @@ function play_audio(name) {
     // console.log(`played sound ${name}`);
 }
 
+class Particle {
+    static id_inc = 0;
+
+    constructor(position, rotation_angle, size, sprites, frame_speed, duration, looping) {
+        this.position = position;
+        this.rotation_angle = rotation_angle;
+        this.size = size * 16;
+        this.sprites = sprites;
+        this.frame_speed = frame_speed;
+        this.duration = duration;
+        this.looping = looping;
+
+        this.lifetime = 0;
+        this.framecount = sprites.length;
+        this.cur_frame = 0;
+    }
+
+    pass_time(time_delta) {
+        this.lifetime += time_delta;
+        this.cur_frame = Math.floor(this.lifetime * this.frame_speed)
+        if (this.looping) {
+            this.cur_frame = this.cur_frame % this.framecount;
+        }
+    }
+}
+
 class Board {
     constructor(size) {
         this.size = size;
@@ -130,6 +180,7 @@ class Board {
 
         this.balls = [];
         this.projectiles = [];
+        this.particles = [];
         this.lines = [
             // corner walls
             {
@@ -192,6 +243,13 @@ class Board {
         // this.gravity = new Vector2(0, 0);
         this.gravity = new Vector2(0, 9810);
     }
+    
+    spawn_particle(particle, position) {
+        particle.position = position;
+        this.particles.push(particle);
+
+        return particle;
+    }
 
     spawn_projectile(projectile, position) {
         projectile.position = position;
@@ -211,6 +269,14 @@ class Board {
         this.balls.splice(
             this.balls.findIndex(b => b.id == ball.id), 1
         )
+    }
+
+    particles_step(time_delta) {
+        this.particles.forEach(particle => particle.pass_time(time_delta / 1000));
+        this.particles = this.particles.filter(particle => {
+            // looping particles never hit the framecount bound so out-of-range frame is valid to check deletion
+            return particle.lifetime < particle.duration && particle.cur_frame < particle.framecount;
+        })
     }
 
     physics_step(time_delta) {
@@ -1424,6 +1490,7 @@ function render_diagnostics(board) {
 }
 
 function render_game(board, collision_boxes=false, velocity_lines=false) {
+    layers.fg1.ctx.clearRect(0, 0, canvas_width, canvas_height);
     layers.fg2.ctx.clearRect(0, 0, canvas_width, canvas_height);
     layers.fg3.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
@@ -1441,6 +1508,26 @@ function render_game(board, collision_boxes=false, velocity_lines=false) {
 
     let w = 25 * screen_scaling_factor;
 
+    // particles
+    board.particles.forEach(particle => {
+        let particle_screen_pos = new Vector2(
+            (particle.position.x) * screen_scaling_factor,
+            (particle.position.y) * screen_scaling_factor,
+        );
+
+        let siz = particle.size * screen_scaling_factor * 128;
+
+        particle_screen_pos = particle_screen_pos.add(new Vector2(-siz, -siz).mul(0.5));
+
+        write_rotated_image(
+            layers.fg1.canvas, layers.fg1.ctx,
+            particle_screen_pos.x, particle_screen_pos.y,
+            particle.sprites[particle.cur_frame],
+            siz, siz, particle.direction_angle
+        );
+    })
+
+    // balls
     board.balls.forEach(ball => {
         let ball_screen_pos = new Vector2(
             (ball.position.x) * screen_scaling_factor,
@@ -1783,8 +1870,22 @@ function game_loop() {
                 board.hitstop_time = Math.max(hitstop, board.hitstop_time);
             }
 
-            board.balls = board.balls.filter(b => b.hp > 0)
+            board.balls = board.balls.filter(ball => {
+                if (ball.hp > 0) {
+                    return true;
+                } else {
+                    board.spawn_particle(new Particle(
+                        ball.position.add(new Vector2(256+64, -512)), 0, 2, entity_sprites.get("explosion"), 24, 3, false
+                    ), ball.position.add(new Vector2(256+64, -512)));
+
+                    play_audio("explosion");
+
+                    return false;
+                }
+            });
         }
+
+        board.particles_step(delta_time);
     }
 
     let calc_end_time = Date.now();
