@@ -58,7 +58,7 @@ let canvas_y = 0;
 let mouse_position = new Vector2(0, 0);
 
 const PHYS_GRANULARITY = 1280;
-const COLL_GRANULARITY = 128;  // COLL_GRANULARITY => do collision checks every N physics steps
+const COLL_GRANULARITY = PHYS_GRANULARITY / 4;  // COLL_GRANULARITY => do collision checks every N physics steps
 const DEFAULT_BALL_RESTITUTION = 1;
 const DEFAULT_BALL_FRICTION = 1;
 
@@ -79,6 +79,14 @@ let framecount = 0;
 let audio = new Map();
 let audio_context = new AudioContext();
 
+let thud_cooldown = 0;
+
+// reduce the volume
+let gain_node = audio_context.createGain();
+gain_node.connect(audio_context.destination);
+let gain = 0.1;
+gain_node.gain.setValueAtTime(gain, audio_context.currentTime);
+
 async function load_audio_item(path) {
     let resp = await fetch(`https://plaao.net/balls/${path}`);
     let array_buffer = await resp.arrayBuffer();
@@ -91,6 +99,7 @@ async function load_audio_item(path) {
 async function load_audio() {
     // ultrakill
     audio.set("parry", await load_audio_item('snd/parry.mp3'));
+    audio.set("parry2", await load_audio_item('snd/parry2.wav'));
     // https://pixabay.com/sound-effects/punch-04-383965/
     audio.set("impact", await load_audio_item('snd/impact.mp3'));
     // https://pixabay.com/sound-effects/stick-hitting-a-dreadlock-small-thud-83297/
@@ -102,15 +111,25 @@ function play_audio(name) {
     
     source.buffer = audio.get(name);
 
-    source.connect(audio_context.destination);
+    source.connect(gain_node);
 
     source.start();
+
+    // console.log(`played sound ${name}`);
 }
 
 class Board {
     constructor(size) {
         this.size = size;
+        this.projectile_delete_bounds = [
+            -this.size.x,
+            this.size.x * 2,
+            -this.size.y,
+            this.size.y * 2
+        ]
+
         this.balls = [];
+        this.projectiles = [];
         this.lines = [
             // corner walls
             {
@@ -133,7 +152,7 @@ class Board {
 
                 a: 1,
                 b: 0,
-                c: -10000,
+                c: -this.size.x,
 
                 lbx: null,
                 ubx: null,
@@ -161,7 +180,7 @@ class Board {
 
                 a: 0,
                 b: 1,
-                c: -10000,
+                c: -this.size.y,
 
                 lbx: null,
                 ubx: null,
@@ -172,6 +191,13 @@ class Board {
 
         // this.gravity = new Vector2(0, 0);
         this.gravity = new Vector2(0, 9810);
+    }
+
+    spawn_projectile(projectile, position) {
+        projectile.position = position;
+        this.projectiles.push(projectile);
+
+        return projectile;
     }
 
     spawn_ball(ball, position) {
@@ -195,10 +221,29 @@ class Board {
 
             }
 
-            ball.physics_step(time_delta);
+            ball.physics_step(this, time_delta);
         })
 
-        // then, apply gravity
+        // make the projectiles move
+        this.projectiles.forEach(projectile => {
+            projectile.physics_step(time_delta);
+        })
+
+        // clean up any inactive / OOB ones
+        this.projectiles = this.projectiles.filter(projectile => {
+            if (!projectile.active ||
+                projectile.position.x < this.projectile_delete_bounds[0] ||
+                projectile.position.x > this.projectile_delete_bounds[1] ||
+                projectile.position.y < this.projectile_delete_bounds[2] ||
+                projectile.position.y > this.projectile_delete_bounds[3]
+            ) {
+                return false;
+            }
+
+            return true;
+        })
+
+        // then, apply gravity to balls
         this.balls.forEach(ball => {
             if (!ball.at_rest) {
                 let time_delta_factor = 1;
@@ -239,7 +284,11 @@ class Board {
 
         collisions.forEach(coll => {
             coll.first.resolve_collision(sthis, coll.second);
-            play_audio("thud");
+
+            if (thud_cooldown < 0) {
+                play_audio("thud");
+                thud_cooldown += 0.3;
+            }
         })
 
         // check wall and ground bounces
@@ -252,10 +301,16 @@ class Board {
             sthis.lines.forEach(line => {
                 if (ball.collides_line(line)) {
                     ball.resolve_line_collision(sthis, line);
-                    play_audio("thud");
+                    
+                    if (thud_cooldown < 0) {
+                        play_audio("thud");
+                        thud_cooldown += 0.3;
+                    }
                 }
             })
         })
+
+        thud_cooldown -= time_delta;
 
         // force everything back in bounds
         this.balls.forEach(ball => {
@@ -603,7 +658,7 @@ class Ball {
 
 class BallWeapon {
     constructor(size_multiplier, sprite, hitboxes) {
-        this.size_multiplier = size_multiplier * 10;
+        this.size_multiplier = size_multiplier * 16;
         this.sprite = sprite;
 
         // all hitboxes are {pos, radius} - so they're circles, not boxes. sorry liberals
@@ -619,7 +674,7 @@ class WeaponBall extends Ball {
     constructor(mass, radius, colour, bounce_factor, friction_factor, player, reversed) {
         super(mass, radius, colour, bounce_factor, friction_factor);
 
-        this.name = "Weapon";
+        this.name = "No Weapon";
 
         // player.stats:
         /*
@@ -632,14 +687,8 @@ class WeaponBall extends Ball {
 
         // weaponballs have a set of weapons that spin around them
         this.weapon_data = [
-            new BallWeapon(1, "SORD", [
-                {pos: new Vector2(96, 64), radius: 18},
-                {pos: new Vector2(80, 64), radius: 16},
-                {pos: new Vector2(64, 64), radius: 16},
-                {pos: new Vector2(48, 64), radius: 16},
-                {pos: new Vector2(32, 64), radius: 16},
-                {pos: new Vector2(16, 64), radius: 16},
-                {pos: new Vector2(0, 64), radius: 16},
+            new BallWeapon(0, "SORD", [
+                
             ])
         ];
 
@@ -654,7 +703,7 @@ class WeaponBall extends Ball {
         this.last_hit = 0;  // 0 means damage, 1 means parry
     }
 
-    physics_step(time_delta) {
+    physics_step(board, time_delta) {
         // TODO think about how best to make this less annoying to override
 
         this.hitstop -= time_delta;
@@ -663,13 +712,13 @@ class WeaponBall extends Ball {
         }
 
         super.physics_step(time_delta);
-        this.weapon_step(time_delta);
+        this.weapon_step(board, time_delta);
 
         this.invuln_duration -= time_delta;
-        this.weapon_data.forEach(w => w.angle = w.angle % 360)
+        this.weapon_data.forEach(w => w.angle = w.angle % (Math.PI * 2))
     }
 
-    weapon_step(time_delta) {
+    weapon_step(board, time_delta) {
         // rotate the weapon
         this.weapon_data[0].angle += 180 * (this.reversed ? -1 : 1) * (Math.PI / 180) * time_delta;
     }
@@ -746,10 +795,59 @@ class WeaponBall extends Ball {
         return collisions;
     }
 
+    check_projectiles_hit_from(projectiles) {
+        // get the projectiles' hitboxes and compare to self - super simple
+        return projectiles.filter(projectile => {
+            let hitboxes_offsets = projectile.get_hitboxes_offsets();
+
+            return hitboxes_offsets.some((hitbox_offset, index) => {
+                let hitbox = projectile.hitboxes[index];
+
+                let radius_sum = (hitbox.radius * projectile.size) + this.radius;
+                let radius_sum_sqr = Math.pow(radius_sum, 2);
+
+                let other_hitbox_pos = projectile.position.add(hitbox_offset);
+                return this.position.sqr_distance(other_hitbox_pos) <= radius_sum_sqr
+            })
+        })
+    }
+    
+    check_weapon_to_projectiles_hits(projectiles) {
+        // only calculate weapon hitboxes once
+        // then get the projectiles and their hitboxes, and compare to weapon hitboxes
+        let collisions = [];
+        this.weapon_data.forEach((weapon, index) => {
+            let this_hitboxes_offsets = this.get_hitboxes_offsets(weapon);
+            let this_weapon_offset = this.get_weapon_offset(weapon);
+
+            projectiles.forEach(projectile => {
+                let projectile_hitboxes_offsets = projectile.get_hitboxes_offsets();
+
+                let collided = this_hitboxes_offsets.some((this_hitbox_offset, this_index) => {
+                    let this_hitbox_pos = this.position.add(this_weapon_offset).add(this_hitbox_offset)
+
+                    return projectile_hitboxes_offsets.some((projectile_hitbox_offset, projectile_index) => {
+                        let radius_sum = (weapon.hitboxes[this_index].radius * weapon.size_multiplier) + (projectile.hitboxes[projectile_index].radius * projectile.size);
+                        let radius_sum_sqr = Math.pow(radius_sum, 2);
+
+                        let projectile_hitbox_pos = projectile.position.add(projectile_hitbox_offset);
+                        return this_hitbox_pos.sqr_distance(projectile_hitbox_pos) <= radius_sum_sqr
+                    })
+                })
+
+                if (collided) {
+                    collisions.push([index, projectile]);
+                }
+            })
+        })
+
+        return collisions;
+    }
+
     hit_other(other, with_weapon_index, damage=1) {
         // for this one, the SORD (the only weapon) just hits the other one for 1 damage and nothing else.
         // other balls might want to apply knockback, or do other stuff
-        console.log(`Hit ${other.id} with weapon index ${with_weapon_index}`);
+        // console.log(`Hit ${other.id} with weapon index ${with_weapon_index}`);
         
         let hitstop = BASE_HITSTOP_TIME;
 
@@ -772,6 +870,24 @@ class WeaponBall extends Ball {
         return {dmg: final_damage, dead: this.hp <= 0};
     }
 
+    hit_other_with_projectile(other, with_projectile) {
+        // projectiles have their own damage
+        console.log(`hit ${other.name} with projectile`);
+
+        let hitstop = BASE_HITSTOP_TIME;
+
+        let result = other.get_hit_by_projectile(with_projectile.damage * (this.player?.stats?.damage_bonus ?? 1), hitstop);
+        
+        this.hitstop = Math.max(this.hitstop, hitstop);
+
+        result.hitstop = hitstop;
+        return result;
+    }
+
+    get_hit_by_projectile(damage, hitstop) {
+        return this.get_hit(damage, hitstop);
+    }
+
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
             ctx, "This thing has no stats bro", x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
@@ -789,7 +905,7 @@ class HammerBall extends WeaponBall {
         this.name = "Hammer";
 
         this.weapon_data = [
-            new BallWeapon(1.25, "hamer", [
+            new BallWeapon(1, "hamer", [
                 {pos: new Vector2(104, 32), radius: 24},
                 {pos: new Vector2(104, 48), radius: 24},
                 {pos: new Vector2(104, 64), radius: 24},
@@ -797,9 +913,12 @@ class HammerBall extends WeaponBall {
                 {pos: new Vector2(104, 96), radius: 24},
             ])
         ];
+
+        this.damage_base = 10;
+        this.speed_base = 90;
     }
 
-    weapon_step(time_delta) {
+    weapon_step(board, time_delta) {
         // rotate the weapon
         this.weapon_data[0].angle += 90 * (this.reversed ? -1 : 1) * (Math.PI / 180) * time_delta;
     }
@@ -826,10 +945,10 @@ class HammerBall extends WeaponBall {
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, `Damage: 8.00`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+            ctx, `Damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
         )
         write_text(
-            ctx, `Rotation speed: 90 deg/s`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
         )
         write_text(
             ctx, "Knocks enemies back when striking them.", x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 12
@@ -844,14 +963,13 @@ class SordBall extends WeaponBall {
         this.name = "SORD";
 
         this.weapon_data = [
-            new BallWeapon(1.25, "SORD", [
+            new BallWeapon(1, "SORD", [
                 {pos: new Vector2(96, 64), radius: 18},
                 {pos: new Vector2(80, 64), radius: 16},
                 {pos: new Vector2(64, 64), radius: 16},
                 {pos: new Vector2(48, 64), radius: 16},
                 {pos: new Vector2(32, 64), radius: 16},
                 {pos: new Vector2(16, 64), radius: 16},
-                {pos: new Vector2(0, 64), radius: 16},
             ])
         ];
 
@@ -859,7 +977,7 @@ class SordBall extends WeaponBall {
         this.speed_base = 180;
     }
 
-    weapon_step(time_delta) {
+    weapon_step(board, time_delta) {
         // rotate the weapon
         this.weapon_data[0].angle += this.speed_base * (this.reversed ? -1 : 1) * (Math.PI / 180) * time_delta;
     }
@@ -894,7 +1012,7 @@ class DaggerBall extends WeaponBall {
         this.name = "dagger";
 
         this.weapon_data = [
-            new BallWeapon(1.25, "dagger", [
+            new BallWeapon(1, "dagger", [
                 {pos: new Vector2(64, 64), radius: 12},
                 {pos: new Vector2(48, 68), radius: 12},
                 {pos: new Vector2(32, 64), radius: 12},
@@ -909,7 +1027,7 @@ class DaggerBall extends WeaponBall {
         this.hit_decay = 0;
     }
 
-    weapon_step(time_delta) {
+    weapon_step(board, time_delta) {
         // rotate the weapon
         this.weapon_data[0].angle += this.speed_base * (this.reversed ? -1 : 1) * (Math.PI / 180) * time_delta;
 
@@ -924,10 +1042,10 @@ class DaggerBall extends WeaponBall {
         // additionally knock the other ball away
         let result = super.hit_other(other, with_weapon_index, this.damage_base);
 
-        this.speed_base *= 1.75;
-        this.damage_base *= 1.75;
+        this.speed_base *= 2;
+        this.damage_base *= 1.5;
 
-        this.hit_decay = 3;
+        this.hit_decay = 1.5;
 
         return result;
     }
@@ -951,6 +1069,219 @@ class DaggerBall extends WeaponBall {
         write_text(
             ctx, `when not striking.`, x_anchor, y_anchor + 60, this.colour.css(), "MS Gothic", 10
         )
+    }
+}
+
+class BowBall extends WeaponBall {
+    constructor(mass, radius, colour, bounce_factor, friction_factor, player, reversed) {
+        super(mass, radius, colour, bounce_factor, friction_factor, player, reversed);
+    
+        this.name = "Bow";
+
+        this.weapon_data = [
+            new BallWeapon(1, "bow", [
+                {pos: new Vector2(16, 72-16), radius: 12},
+                {pos: new Vector2(16, 72), radius: 12},
+            ])
+        ];
+
+        this.firing_offsets = [
+            new Vector2(24, 0)
+        ]
+
+        this.proj_damage_base = 4;
+        this.speed_base = 135;
+
+        this.shot_cooldown_max = 0.6;
+        this.shot_cooldown = this.shot_cooldown_max;
+
+        this.multishot_cooldown = 0;
+        this.multishot_cooldown_max = 0.05;
+        this.multishots = 0;
+        this.multishots_max = 1;
+        this.multishots_levelup_req = 1;
+    }
+
+    weapon_step(board, time_delta) {
+        // rotate the weapon
+        this.weapon_data[0].angle += this.speed_base * (this.reversed ? -1 : 1) * (Math.PI / 180) * time_delta;
+
+        this.shot_cooldown -= time_delta;
+        this.multishot_cooldown -= time_delta;
+        let shooting = false;
+        if (this.multishots > 0 && this.multishot_cooldown < 0) {
+            this.multishots--;
+            this.multishot_cooldown = this.multishot_cooldown_max;
+            shooting = true;
+        } else if (this.shot_cooldown < 0) {
+            this.multishots = this.multishots_max;
+            this.shot_cooldown = this.shot_cooldown_max;
+        }
+
+        if (shooting) {
+            // schut
+            let firing_offset = this.firing_offsets[0].mul(this.weapon_data[0].size_multiplier).rotate(this.weapon_data[0].angle);
+            let fire_pos = this.position.add(firing_offset);
+
+            board.spawn_projectile(
+                new ArrowProjectile(
+                    this, 0, fire_pos, this.proj_damage_base, 1,
+                    new Vector2(1, 0).rotate(this.weapon_data[0].angle),
+                    10000, this.velocity.mul(0.25)
+                ), fire_pos
+            )
+        }
+    }
+
+    hit_other_with_projectile(other, with_weapon_index) {
+        // additionally knock the other ball away
+        let result = super.hit_other_with_projectile(other, with_weapon_index, this.damage_base);
+
+        this.multishots_levelup_req--;
+        if (this.multishots_levelup_req <= 0) {
+            this.multishots_max++;
+            this.multishots_levelup_req = Math.max(1, this.multishots_max * this.multishots_max * 0.5);
+        }
+
+        return result;
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor) {
+        write_text(
+            ctx, `Arrow damage: ${this.proj_damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+        )
+        write_text(
+            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+        )
+        write_text(
+            ctx, `Multishot: ${this.multishots_max}`, x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 10
+        )
+        write_text(
+            ctx, `Shoots. Multishot increases with successful hits.`, x_anchor, y_anchor + 36, this.colour.css(), "MS Gothic", 10
+        )
+    }
+}
+
+class Projectile {
+    // projectiles have a position, a damage stat, a direction, speed and some hitboxes
+    static id_inc = 0;
+    
+    constructor(source, source_weapon_index, position, damage, size, direction, speed) {
+        this.id = Projectile.id_inc;
+        Projectile.id_inc++;
+        
+        this.active = true;
+
+        this.source = source;
+        this.source_weapon_index = source_weapon_index;
+        this.position = position;
+        this.damage = damage;
+        this.size = size * 16;
+        this.direction = direction;
+        this.direction_angle = this.direction.angle();
+
+        this.speed = speed;
+
+        this.sprite = "arrow";
+
+        // {pos, radius} same as balls
+        this.hitboxes = [];
+    }
+
+    physics_step(time_delta) {
+        // do nothing
+    }
+
+    get_hitboxes_offsets() {
+        return this.hitboxes.map(hitbox => {
+            // rotate the hitbox pos by the direction and multiply by size
+            // no offset funnies here, luckily
+            let offset = hitbox.pos.mul(this.size).rotate(this.direction_angle);
+            return offset;
+        })
+    }
+
+    check_projectiles_colliding(projectiles) {
+        let this_hitboxes_offsets = this.get_hitboxes_offsets();
+
+        return projectiles.filter(projectile => {
+            if (!projectile.active || projectile.id == this.id || projectile.source.id == this.source.id) {
+                // projectiles never collide with themselves
+                // disabled projectiles don't collide
+                // projectiles also don't collide with
+                // other projectiles of the same source
+                return false;
+            }
+
+            let other_hitboxes_offsets = projectile.get_hitboxes_offsets();
+
+            return this_hitboxes_offsets.some((this_hitbox_offset, this_index) => {
+                let this_hitbox = this.hitboxes[this_index];
+                
+                // check all of other's hitboxes
+                return other_hitboxes_offsets.some((other_hitbox_offset, other_index) => {
+                    let other_hitbox = projectile.hitboxes[other_index];
+                    
+                    let radius_sum = (this_hitbox.radius * this.size) + (other_hitbox.radius * projectile.size);
+                    let radius_sum_sqr = Math.pow(radius_sum, 2);
+
+                    let this_hitbox_pos = this.position.add(this_hitbox_offset);
+                    let other_hitbox_pos = projectile.position.add(other_hitbox_offset);
+
+                    return this_hitbox_pos.sqr_distance(other_hitbox_pos) <= radius_sum_sqr
+                })
+            })
+        })
+    }
+
+    hit_other_projectile(other_projectile) {
+        // each projectile is responsible for destroying itself
+        // so piercing projectiles just... don't
+        this.active = false;
+        console.log("proj on proj collision!");
+    }
+}
+
+class StraightLineProjectile extends Projectile {
+    constructor(source, source_weapon_index, position, damage, size, direction, speed) {
+        super(source, source_weapon_index, position, damage, size, direction, speed);
+    }
+
+    physics_step(time_delta) {
+        this.position = this.position.add(this.direction.mul(this.speed * time_delta));
+    }
+}
+
+class InertiaRespectingStraightLineProjectile extends Projectile {
+    constructor(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
+        super(source, source_weapon_index, position, damage, size, direction, speed);
+
+        this.inertia_vel = inertia_vel;
+    }
+
+    physics_step(time_delta) {
+        this.position = this.position.add(this.direction.mul(this.speed).add(this.inertia_vel).mul(time_delta));
+    }
+}
+
+class ArrowProjectile extends InertiaRespectingStraightLineProjectile {
+    constructor(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
+        super(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
+    
+        this.sprite = "arrow";
+        this.hitboxes = [
+            {pos: new Vector2(-20, 0), radius: 4},
+            {pos: new Vector2(-16, 0), radius: 4},
+            {pos: new Vector2(-12, 0), radius: 4},
+            {pos: new Vector2(-8, 0), radius: 4},
+            {pos: new Vector2(-4, 0), radius: 4},
+            {pos: new Vector2(0, 0), radius: 4},
+            {pos: new Vector2(4, 0), radius: 4},
+            {pos: new Vector2(8, 0), radius: 4},
+            {pos: new Vector2(12, 0), radius: 4},
+            {pos: new Vector2(16, 0), radius: 4},
+            {pos: new Vector2(20, 0), radius: 4},
+        ];    
     }
 }
 
@@ -1054,6 +1385,9 @@ function render_diagnostics(board) {
     write_text(
         layers.debug_front.ctx, frame_time_splits[2] + "wait" + " " + "#".repeat(bars[2]), 10, 28+12+12+12, "#666", "MS Gothic", 9
     )
+
+    if (!board)
+        return;
 
     write_text(
         layers.debug_front.ctx, `system energy | ${Math.round(board.balls.reduce((t, ball) => {
@@ -1166,6 +1500,53 @@ function render_game(board, collision_boxes=false, velocity_lines=false) {
             }
         })
     })
+
+    // then the projectiles. put them on fg3, same as weapons
+    board.projectiles.forEach(projectile => {
+        if (!projectile.active) {
+            return;
+        }
+
+        let projectile_screen_pos = new Vector2(
+            (projectile.position.x) * screen_scaling_factor,
+            (projectile.position.y) * screen_scaling_factor,
+        );
+
+        let siz = projectile.size * screen_scaling_factor * 128;
+
+        write_rotated_image(
+            layers.fg3.canvas, layers.fg3.ctx,
+            projectile_screen_pos.x, projectile_screen_pos.y,
+            entity_sprites.get(projectile.sprite)[0],
+            siz, siz, projectile.direction_angle
+        );
+
+        if (collision_boxes) {
+            // render the collision boxes on debug_back as green circles
+            // collision boxes are based on the original 128x128 sizing
+            // so get the offset, then add the collision pos offset, then draw that
+            let hitboxes = projectile.get_hitboxes_offsets();
+            hitboxes.forEach((hitbox_offset, index) => {
+                let hitbox = projectile.hitboxes[index];
+
+                let hitbox_screen_pos = projectile.position.add(hitbox_offset).mul(screen_scaling_factor);
+                let w2 = w / 8;
+
+                layers.debug_back.ctx.beginPath();
+                layers.debug_back.ctx.arc(
+                    hitbox_screen_pos.x, hitbox_screen_pos.y, 
+                    (hitbox.radius * projectile.size * screen_scaling_factor) - (w2/2),
+                    0, 2 * Math.PI, false
+                );
+                layers.debug_back.ctx.fillStyle = new Colour(255, 255, 0, 128).css();
+                layers.debug_back.ctx.fill();
+                layers.debug_back.ctx.lineWidth = w2;
+                layers.debug_back.ctx.strokeStyle = new Colour(255, 255, 0, 255).css();
+                layers.debug_back.ctx.stroke();
+                layers.debug_back.ctx.closePath();
+            })
+        }
+    });
 }
 
 function render_descriptions(board) {
@@ -1174,9 +1555,9 @@ function render_descriptions(board) {
 
     let layouts = [
         [[canvas_width - 256, 28]],
-        [[canvas_width - 256, 28], [canvas_width - 256, 28 + 72]],
-        [[canvas_width - 256, 28], [canvas_width - 256, 28 + 72], [canvas_width - 256, 28 + 72 + 72]],
-        [[canvas_width - 256, 28], [canvas_width - 256, 28 + 72], [canvas_width - 256, 28 + 72 + 72], [canvas_width - 256, 28 + 72 + 72 + 72]],
+        [[canvas_width - 256, 28], [canvas_width - 256, 28 + 108]],
+        [[canvas_width - 256, 28], [canvas_width - 256, 28 + 108], [canvas_width - 256, 28 + 108 + 108]],
+        [[canvas_width - 256, 28], [canvas_width - 256, 28 + 108], [canvas_width - 256, 28 + 108 + 108], [canvas_width - 256, 28 + 108 + 108 + 108]],
     ]
 
     let layout = layouts[board.balls.length-1];
@@ -1204,10 +1585,14 @@ function game_loop() {
 
     let frame_start_time = Date.now();
 
-    render_game(board, keys_down["KeyQ"], false);
-    render_descriptions(board);
+    if (board) {
+        render_game(board, keys_down["KeyQ"], false);
+        render_descriptions(board);
+    }
+
     render_diagnostics(board);
 
+    
     let render_end_time = Date.now();
 
     let calc_start_time = Date.now();
@@ -1225,92 +1610,170 @@ function game_loop() {
     let coll_gran = COLL_GRANULARITY;
 
     if (keys_down["KeyR"]) {
-        phys_gran *= 10;
-        coll_gran *= 10;
-        delta_time *= 10;
+        let factor = 16;
+
+        phys_gran *= factor;
+        coll_gran *= factor;
+        delta_time *= factor;
     }
 
-    // COLL_GRANULARITY => do collision checks every N physics steps
-    for (let i=0; i<phys_gran; i++) {
-        board.physics_step(delta_time / (1000 * phys_gran));
+    if (board) {
+        // COLL_GRANULARITY => do collision checks every N physics steps
+        for (let i=0; i<phys_gran; i++) {
+            board.physics_step(delta_time / (1000 * phys_gran));
 
-        if (i % coll_gran == 0) {
-            // if multiple weapons collide, the first one takes priority
-            let hitstop = 0;
+            if (i % coll_gran == 0) {
+                // if multiple weapons collide, the first one takes priority
+                let hitstop = 0;
 
-            // parrying (weapon on weapon)
-            board.balls.forEach(ball => {
-                if (ball.invuln_duration <= 0) {
-                    board.balls.forEach(other => {
-                        if (ball.id != other.id) {
-                            let colliding_pairs = ball.check_weapon_to_weapon_hit_from(other);
-                            if (colliding_pairs.length > 0) {
-                                // parry causes an explosive force of the balls away from each other
-                                // plus the directions of the weapons reverse
-                                ball.reversed = !ball.reversed;
-                                other.reversed = !other.reversed;
+                // parrying (weapon on weapon)
+                board.balls.forEach(ball => {
+                    if (ball.invuln_duration <= 0) {
+                        board.balls.forEach(other => {
+                            if (ball.id != other.id) {
+                                let colliding_pairs = ball.check_weapon_to_weapon_hit_from(other);
+                                if (colliding_pairs.length > 0) {
+                                    // parry causes an explosive force of the balls away from each other
+                                    // plus the directions of the weapons reverse
+                                    ball.reversed = !ball.reversed;
+                                    other.reversed = !other.reversed;
 
-                                let diff_vec = other.position.sub(ball.position).normalize();
+                                    let diff_vec = other.position.sub(ball.position).normalize();
 
-                                // we're going to get the magnitude of the directions, *0.25,
-                                // add *0.75 of the difference vector, and remultiply
-                                let share = 0.75;
+                                    // we're going to get the magnitude of the directions, *0.25,
+                                    // add *0.75 of the difference vector, and remultiply
+                                    let share = 0.75;
 
-                                let ball_diff_add = diff_vec.mul(-share);
-                                let other_diff_add = ball_diff_add.mul(-1);
+                                    let ball_diff_add = diff_vec.mul(-share);
+                                    let other_diff_add = ball_diff_add.mul(-1);
 
-                                let ball_mag = ball.velocity.magnitude();
-                                let other_mag = other.velocity.magnitude();
+                                    let ball_mag = ball.velocity.magnitude();
+                                    let other_mag = other.velocity.magnitude();
 
-                                new_ball_velocity = ball.velocity.div(ball_mag).mul(1 - share).add(ball_diff_add).normalize().mul(ball_mag)
-                                new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
+                                    new_ball_velocity = ball.velocity.div(ball_mag).mul(1 - share).add(ball_diff_add).normalize().mul(ball_mag)
+                                    new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
 
-                                ball.velocity = new_ball_velocity;
-                                other.velocity = new_other_velocity;
+                                    ball.velocity = new_ball_velocity;
+                                    other.velocity = new_other_velocity;
 
-                                ball.last_hit = 1;
-                                other.last_hit = 1;
+                                    ball.last_hit = 1;
+                                    other.last_hit = 1;
 
-                                ball.invuln_duration = Math.max(ball.invuln_duration, BALL_INVULN_DURATION);
-                                other.invuln_duration = Math.max(other.invuln_duration, BALL_INVULN_DURATION);
+                                    ball.invuln_duration = Math.max(ball.invuln_duration, BALL_INVULN_DURATION);
+                                    other.invuln_duration = Math.max(other.invuln_duration, BALL_INVULN_DURATION);
 
-                                play_audio("parry");
+                                    play_audio("parry");
+                                }
                             }
-                        }
-                    });
-                }
-            })
+                        });
+                    }
+                })
 
-            // hitting (weapon on ball)
-            board.balls.forEach(ball => {
-                if (ball.invuln_duration <= 0) {
-                    // OK to check for hits (not in invuln window)
-                    board.balls.forEach(other => {
-                        // make sure we don't check collisions with ourselves
-                        if (ball.id != other.id) {
-                            let colliding_weapons = ball.check_weapons_hit_from(other);
-                            if (colliding_weapons.length > 0) {
-                                let weapon_index = colliding_weapons[0];  // ignore all others
+                // projectile parrying (weapon on projectile)
+                board.balls.forEach(ball => {
+                    // don't check our own projectiles
+                    let projectiles = board.projectiles.filter(projectile => projectile.active && projectile.source.id != ball.id);
+                    let intersecting_projectiles = ball.check_weapon_to_projectiles_hits(projectiles);
+                    
+                    let parried = false;
+                    intersecting_projectiles.forEach(projectile => {
+                        parried = true;
 
-                                ball.last_hit = 0;
-                                let result = other.hit_other(ball, weapon_index);
+                        // board will clean it up
+                        projectile[1].active = false;
+                        ball.reversed = !ball.reversed;
 
-                                play_audio("impact");
+                        // we actually move the ball in the direction the projectile was travelling
+                        let diff_vec = projectile[1].direction;
 
-                                // TODO - need to at this point do accounting on damage taken/dealt,
-                                // and end the game / remove balls if they die
+                        // we're going to get the magnitude of the directions, *0.25,
+                        // add *0.25 of the difference vector, and remultiply
+                        let share = 0.25;
 
-                                hitstop = Math.max(hitstop, result.hitstop ?? 0);
-                            }
-                        }
+                        let ball_diff_add = diff_vec.mul(share);
+                        let ball_mag = ball.velocity.magnitude();
+                        new_ball_velocity = ball.velocity.div(ball_mag).mul(1 - share).add(ball_diff_add).normalize().mul(ball_mag);
+                        ball.velocity = new_ball_velocity;
+                        ball.last_hit = 1;
+                        ball.invuln_duration = Math.max(ball.invuln_duration, BALL_INVULN_DURATION * 0.5);
                     })
-                }
-            })
 
-            board.hitstop_time = Math.max(hitstop, board.hitstop_time);
+                    if (parried) {
+                        play_audio("parry2");
+                    }
+                });
+
+                // hitting (weapon on ball)
+                board.balls.forEach(ball => {
+                    if (ball.invuln_duration <= 0) {
+                        // OK to check for hits (not in invuln window)
+                        board.balls.forEach(other => {
+                            // make sure we don't check collisions with ourselves
+                            if (ball.id != other.id) {
+                                let colliding_weapons = ball.check_weapons_hit_from(other);
+                                if (colliding_weapons.length > 0) {
+                                    let weapon_index = colliding_weapons[0];  // ignore all others
+
+                                    ball.last_hit = 0;
+                                    let result = other.hit_other(ball, weapon_index);
+
+                                    play_audio("impact");
+
+                                    // TODO - need to at this point do accounting on damage taken/dealt,
+                                    // and end the game / remove balls if they die
+
+                                    hitstop = Math.max(hitstop, result.hitstop ?? 0);
+                                }
+                            }
+                        })
+                    }
+                })
+
+                // projectile hitting (projectile on ball)
+                board.balls.forEach(ball => {
+                    if (ball.invuln_duration <= 0) {
+                        // don't check our own projectiles
+                        let projectiles = board.projectiles.filter(projectile => projectile.active && projectile.source.id != ball.id);
+                        let intersecting_projectiles = ball.check_projectiles_hit_from(projectiles);
+                        
+                        // same rules as normal thing except we go through the get_hit_by for projectiles instead
+                        // and delete the projectile
+                        if (intersecting_projectiles.length > 0) {
+                            let projectile = intersecting_projectiles[0];  // ignore all others
+
+                            ball.last_hit = 0;
+                            let result = projectile.source.hit_other_with_projectile(ball, projectile);
+                            projectile.active = false;
+
+                            play_audio("impact");
+
+                            hitstop = Math.max(hitstop, result.hitstop ?? 0);
+                        }
+                    }
+                })
+
+                // projectile collisions (projectile on projectile)
+                let collisions = new Set();
+                board.projectiles.forEach(projectile => {
+                    if (!projectile.active)
+                        return;
+
+                    let projectiles_colliding = projectile.check_projectiles_colliding(board.projectiles);
+                    projectiles_colliding = projectiles_colliding.filter(proj => !collisions.has(proj.id + (1000000 * projectile.id)))
+
+                    projectiles_colliding.forEach(proj => {
+                        proj.hit_other_projectile(this)
+                        collisions.add(proj.id + (1000000 * projectile.id));
+
+                        play_audio("thud");
+                    });
+                })
+
+                board.hitstop_time = Math.max(hitstop, board.hitstop_time);
+            }
+
+            board.balls = board.balls.filter(b => b.hp > 0)
         }
-
-        board.balls = board.balls.filter(b => b.hp > 0)
     }
 
     let calc_end_time = Date.now();
@@ -1346,6 +1809,19 @@ let board = null;
 document.addEventListener("DOMContentLoaded", async function() {
     await load_audio();
 });
+
+function spawn_testing_balls() {
+    board = new Board(new Vector2(512 * 16, 512 * 16));
+    // board.spawn_ball(new SordBall(1, 512, Colour.red, null, null, {}), new Vector2(512*4, 512*4));
+    // board.spawn_ball(new HammerBall(1, 512, Colour.yellow, null, null, {}, true), new Vector2(512*12, 512*12));
+    board.spawn_ball(new BowBall(1, 512, Colour.green, null, null, {}), new Vector2(512*5, 512*11));
+    board.spawn_ball(new SordBall(1, 512, Colour.cyan, null, null, {}, true), new Vector2(512*11, 512*5));
+
+    board.balls[0].add_velocity(random_on_circle(random_float(0, 512 * 10)));
+    board.balls[1]?.add_velocity(random_on_circle(random_float(0, 512 * 10)));
+    board.balls[2]?.add_velocity(random_on_circle(random_float(0, 512 * 10)));
+    board.balls[3]?.add_velocity(random_on_circle(random_float(0, 512 * 10)));
+}
 
 document.addEventListener("DOMContentLoaded", function() {
     get_canvases();
@@ -1404,7 +1880,10 @@ document.addEventListener("DOMContentLoaded", function() {
         let code = event.code;
 
         switch (code) {
-
+            case "Digit1": {
+                spawn_testing_balls();
+                break;
+            }
         }
 
         keys_down[code] = true;
@@ -1434,14 +1913,29 @@ document.addEventListener("DOMContentLoaded", function() {
     window.addEventListener("resize", handle_resize);
 
     // begin balls code
-    board = new Board(new Vector2(10000, 10000));
-    board.spawn_ball(new SordBall(1, 128 * 4, Colour.red, null, null, {}), new Vector2(2000, 2000));
-    board.spawn_ball(new HammerBall(1, 128 * 4, Colour.yellow, null, null, {}, true), new Vector2(8000, 8000));
-    board.spawn_ball(new DaggerBall(1, 128 * 4, Colour.green, null, null, {}), new Vector2(4000, 8000));
-    // board.spawn_ball(new WeaponBall(1, 128 * 4, Colour.cyan, null, null, {}), new Vector2(2000, 8000));
+    /*
+    setInterval(function() {
+        if (!board || board.balls.length != 2) {
+            if (board) {
+                WINS.set(board.balls[0].name, WINS.get(board.balls[0].name)+1);
+                let total = WINS.get("dagger") + WINS.get("Hammer");
+                let sord_prop = WINS.get("dagger") / total;
 
-    board.balls[0].add_velocity(random_on_circle(random_float(0, 10000)));
-    board.balls[1]?.add_velocity(random_on_circle(random_float(0, 10000)));
-    board.balls[2]?.add_velocity(random_on_circle(random_float(0, 10000)))
-    board.balls[3]?.add_velocity(random_on_circle(random_float(0, 10000)))
+                let sord_hashes = Math.floor(sord_prop * 32);
+
+                console.log(`(${total}) dagger ${WINS.get("dagger")} - ${WINS.get("Hammer")} | WR ${(sord_prop * 100).toFixed(2)}% [${"#".repeat(sord_hashes)}${" ".repeat(32 - sord_hashes)}]`);
+            }
+
+            spawn_testing_balls();
+        }
+    }, 50)
+    */
+
+    spawn_testing_balls();
 })
+
+let WINS = new Map();
+WINS.set("SORD", 0);
+WINS.set("dagger", 0);
+WINS.set("Hammer", 0);
+WINS.set("Bow", 0);
