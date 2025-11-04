@@ -844,7 +844,7 @@ class WeaponBall extends Ball {
         return collisions;
     }
 
-    hit_other(other, with_weapon_index, damage=1) {
+    hit_other(other, with_weapon_index, damage=0) {
         // for this one, the SORD (the only weapon) just hits the other one for 1 damage and nothing else.
         // other balls might want to apply knockback, or do other stuff
         // console.log(`Hit ${other.id} with weapon index ${with_weapon_index}`);
@@ -861,7 +861,7 @@ class WeaponBall extends Ball {
     get_hit(damage, hitstop) {
         // defense_bonus is a simple "divide damage by this" value
         let def = this.player?.stats?.defense_bonus ?? 1;
-        let final_damage = Math.max(1, Math.round(damage * def));
+        let final_damage = damage == 0 ? damage : Math.max(1, Math.round(damage * def));
         
         this.hp -= final_damage;
         this.invuln_duration = Math.max(this.invuln_duration, BALL_INVULN_DURATION);
@@ -1127,10 +1127,14 @@ class BowBall extends WeaponBall {
                 new ArrowProjectile(
                     this, 0, fire_pos, this.proj_damage_base, 1,
                     new Vector2(1, 0).rotate(this.weapon_data[0].angle),
-                    10000, this.velocity.mul(0.25)
+                    10000, this.velocity.mul(0)
                 ), fire_pos
             )
         }
+    }
+
+    hit_other(other, with_weapon_index) {
+        return super.hit_other(other, with_weapon_index, 2);
     }
 
     hit_other_with_projectile(other, with_weapon_index) {
@@ -1140,7 +1144,9 @@ class BowBall extends WeaponBall {
         this.multishots_levelup_req--;
         if (this.multishots_levelup_req <= 0) {
             this.multishots_max++;
-            this.multishots_levelup_req = Math.max(1, this.multishots_max * this.multishots_max * 0.5);
+            this.proj_damage_base += 1;
+
+            this.multishots_levelup_req = Math.max(1, this.multishots_max * this.multishots_max * 0.333);
         }
 
         return result;
@@ -1157,7 +1163,10 @@ class BowBall extends WeaponBall {
             ctx, `Multishot: ${this.multishots_max}`, x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 10
         )
         write_text(
-            ctx, `Shoots. Multishot increases with successful hits.`, x_anchor, y_anchor + 36, this.colour.css(), "MS Gothic", 10
+            ctx, `Multishot + damage increases with successful hits.`, x_anchor, y_anchor + 36, this.colour.css(), "MS Gothic", 10
+        )
+        write_text(
+            ctx, `Has a weak melee attack: 2 damage.`, x_anchor, y_anchor + 48, this.colour.css(), "MS Gothic", 10
         )
     }
 }
@@ -1694,7 +1703,9 @@ function game_loop() {
                         let ball_mag = ball.velocity.magnitude();
                         new_ball_velocity = ball.velocity.div(ball_mag).mul(1 - share).add(ball_diff_add).normalize().mul(ball_mag);
                         ball.velocity = new_ball_velocity;
+                        
                         ball.last_hit = 1;
+                        
                         ball.invuln_duration = Math.max(ball.invuln_duration, BALL_INVULN_DURATION * 0.5);
                     })
 
