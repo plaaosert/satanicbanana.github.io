@@ -176,6 +176,8 @@ class Particle {
 
 class Board {
     constructor(size) {
+        this.stepped_physics = false;
+
         this.size = size;
         this.projectile_delete_bounds = [
             -this.size.x * 0.1,
@@ -283,7 +285,7 @@ class Board {
 
     particles_step(time_delta) {
         if (this.hitstop_time > 0) {
-            time_delta *= HITSTOP_DELTATIME_PENALTY;
+            time_delta *= Number.EPSILON;
         }
 
         this.particles.forEach(particle => particle.pass_time(time_delta / 1000));
@@ -294,9 +296,11 @@ class Board {
     }
 
     physics_step(time_delta) {
+        this.stepped_physics = true;
+
         this.hitstop_time -= time_delta;
         if (this.hitstop_time > 0) {
-            time_delta *= HITSTOP_DELTATIME_PENALTY;
+            time_delta *= Number.EPSILON;
         }
 
         // make the balls move
@@ -1768,8 +1772,8 @@ function handle_resize(event) {
             canvas.style.marginLeft = "0.5px";
         }
 
-        canvas.style.left = Math.round((vw(100) - canvas_width) / 2) + "px";
-        canvas.style.top = (64 + Math.round((vh(100) - canvas_height) / 2)) + "px";
+        // canvas.style.left = Math.round((vw(100) - canvas_width) / 2) + "px";
+        // canvas.style.top = (64 + Math.round((vh(100) - canvas_height) / 2)) + "px";
     
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     
@@ -2072,7 +2076,7 @@ function game_loop() {
 
     let frame_start_time = Date.now();
 
-    if (board) {
+    if (board && board.stepped_physics) {
         render_game(board, keys_down["KeyQ"], false);
         render_descriptions(board);
     }
@@ -2167,21 +2171,53 @@ function game_loop() {
                     // don't check our own projectiles
                     let projectiles = board.projectiles.filter(projectile => projectile.active && projectile.source.id != ball.id);
                     let intersecting_projectiles = ball.check_weapon_to_projectiles_hits(projectiles);
-                    
+
                     let parried = false;
-                    intersecting_projectiles.forEach(projectile => {
-                        if (!projectile[1].parriable) {
+                    intersecting_projectiles.forEach(projectile_data => {
+                        let projectile = projectile_data[1];
+                        let parry_weapon_index = projectile_data[0];
+
+                        if (!projectile.parriable) {
                             return;
+                        }
+
+                        // if the projectile is hitscan AND colliding with both the ball and the weapon,
+                        // only parry it if the closest weapon hitbox is closer to the origin than the ball
+                        if (projectile instanceof HitscanProjectile) {
+                            let ball_hit_by_projectile = ball.check_projectiles_hit_from([projectile]);
+                            if (ball_hit_by_projectile.length > 0) {
+                                // get a list of the weapon's hitboxes
+                                let source_weapon = ball.weapon_data[parry_weapon_index];
+
+                                let weapon_offset = ball.get_weapon_offset(source_weapon);
+                                let hitboxes_offsets = ball.get_hitboxes_offsets(source_weapon);
+
+                                let closest_weapon_hitbox_dist = Number.POSITIVE_INFINITY;
+                                hitboxes_offsets.forEach((offset, index) => {
+                                    let hitbox_pos = ball.position.add(weapon_offset).add(offset);
+                                    let hitbox_dist = hitbox_pos.sqr_distance(projectile.position);
+
+                                    // we also need to take into account hitbox radius (take away hitbox square radius from dist)
+                                    closest_weapon_hitbox_dist = Math.min(closest_weapon_hitbox_dist, hitbox_dist - Math.pow(source_weapon.hitboxes[index].radius, 2));
+                                })
+
+                                // now compare. we only parry if closest_weapon_hitbox_dist is smaller
+                                let ball_dist = ball.position.sqr_distance(projectile.position);
+
+                                if (ball_dist < closest_weapon_hitbox_dist) {
+                                    return;
+                                }
+                            }
                         }
 
                         parried = true;
 
                         // board will clean it up
-                        projectile[1].get_parried(ball);
+                        projectile.get_parried(ball);
                         ball.reversed = !ball.reversed;
 
                         // we actually move the ball in the direction the projectile was travelling
-                        let diff_vec = projectile[1].direction;
+                        let diff_vec = projectile.direction;
 
                         // we're going to get the magnitude of the directions, *0.25,
                         // add *0.25 of the difference vector, and remultiply
@@ -2291,6 +2327,14 @@ function game_loop() {
         }
 
         board.particles_step(delta_time);
+
+        
+        if (board?.balls.length <= 1) {
+            match_end_timeout -= delta_time;
+            if (match_end_timeout <= 0) {
+                exit_battle();
+            }
+        }
     }
 
     let calc_end_time = Date.now();
@@ -2339,6 +2383,67 @@ function spawn_testing_balls() {
     board.balls[2]?.add_velocity(random_on_circle(random_float(0, 512 * 10)));
     board.balls[3]?.add_velocity(random_on_circle(random_float(0, 512 * 10)));
 }
+
+function exit_battle() {
+    board = null;
+    document.querySelector(".game-container").classList.add("popout");
+    document.querySelector(".game-container").classList.remove("popin");
+}
+
+function enter_battle() {
+    Object.keys(layers).forEach(k => layers[k].ctx.clearRect(0, 0, layers[k].canvas.width, layers[k].canvas.height));
+
+    layers.bg3.ctx.fillStyle = "#000"
+    layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height)
+
+    document.querySelector(".game-container").classList.add("popin");
+    document.querySelector(".game-container").classList.remove("popout");
+}
+
+function spawn_selected_balls() {
+    setTimeout(() => {
+        board = new Board(new Vector2(512 * 16, 512 * 16));
+        let cols = [Colour.red, Colour.yellow, Colour.green, Colour.cyan];
+        let positions = [
+            new Vector2(512*4, 512*4),
+            new Vector2(512*12, 512*12),
+            new Vector2(512*5, 512*11),
+            new Vector2(512*11, 512*5),
+        ]
+
+        cols.forEach((col, index) => {
+            let elem = document.querySelector(`select[name='ball${index+1}']`);
+            if (elem.value != "None") {
+                let ball_proto = selectable_balls.find(t => t.name == elem.value);
+                if (ball_proto) {
+                    board.spawn_ball(new ball_proto(
+                        1, 512, col, null, null, {}, index % 2 == 1
+                    ), positions[index])
+                }
+            }
+        })
+
+        board.balls.forEach(ball => ball.add_velocity(random_on_circle(random_float(0, 512 * 10))));
+    
+        if (board.balls.length == 1) {
+            match_end_timeout = 3 * 1000;
+        } else if (board.balls.length == 0) {
+            match_end_timeout = 1 * 1000;
+        } else {
+            match_end_timeout = 6 * 1000;
+        }
+
+        board.hitstop_time = 0.5;
+    }, 0);
+
+    enter_battle();
+}
+
+const selectable_balls = [
+    HammerBall, SordBall, DaggerBall, BowBall, MagnumBall
+]
+
+let match_end_timeout = 0;
 
 document.addEventListener("DOMContentLoaded", function() {
     get_canvases();
@@ -2398,7 +2503,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         switch (code) {
             case "Digit1": {
-                spawn_testing_balls();
+                exit_battle();
                 break;
             }
         }
@@ -2429,26 +2534,15 @@ document.addEventListener("DOMContentLoaded", function() {
 
     window.addEventListener("resize", handle_resize);
 
-    // begin balls code
-    /*
-    setInterval(function() {
-        if (!board || board.balls.length != 2) {
-            if (board) {
-                WINS.set(board.balls[0].name, WINS.get(board.balls[0].name)+1);
-                let total = WINS.get("dagger") + WINS.get("Hammer");
-                let sord_prop = WINS.get("dagger") / total;
+    // set up options
+    let options_elems = document.querySelectorAll("select");
+    options_elems.forEach(elem => {
+        elem.options.add(new Option("None"))
+        selectable_balls.forEach(ball => elem.options.add(new Option(ball.name)));
+    });
 
-                let sord_hashes = Math.floor(sord_prop * 32);
-
-                console.log(`(${total}) dagger ${WINS.get("dagger")} - ${WINS.get("Hammer")} | WR ${(sord_prop * 100).toFixed(2)}% [${"#".repeat(sord_hashes)}${" ".repeat(32 - sord_hashes)}]`);
-            }
-
-            spawn_testing_balls();
-        }
-    }, 50)
-    */
-
-    spawn_testing_balls();
+    document.querySelector("select[name='ball1']").value = "SordBall";
+    document.querySelector("select[name='ball2']").value = "MagnumBall";
 })
 
 let WINS = new Map();

@@ -1,0 +1,99 @@
+@property --canvases-scale {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 1.0;
+}
+
+.everything-container {
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  height: calc(100vh - 8vh - 16vh);
+  margin-top: 8vh;
+}
+
+.game-container {
+  display: grid;
+
+  --canvases-scale: 0
+}
+
+.game-canvas {
+  transform: scale(var(--canvases-scale));
+}
+
+.behind-canvases {
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  flex-direction: column;
+}
+
+.behind-canvases .row {
+  display: flex;
+  flex-direction: row;
+
+  justify-content: center;
+  align-items: center;
+
+  color: white;
+}
+
+.behind-canvases p {
+  display: inline;
+
+  margin-right: 16px;
+}
+
+.behind-canvases select {
+  background-color: black;
+  color: white;
+
+  font-family: "MS Gothic", "terminus", "nec_apc";
+
+  height: 24px;
+}
+
+.behind-canvases button {
+  background-color: black;
+  color: white;
+
+  font-family: "MS Gothic", "terminus", "nec_apc";
+}
+
+.game-container * {
+  position: unset;
+
+  grid-row: 1;
+  grid-column: 1;
+}
+
+@keyframes popin {
+  0% {
+    --canvases-scale: 0;
+  }
+  100% {
+    --canvases-scale: 1;
+  }
+}
+
+@keyframes popout {
+  0% {
+    --canvases-scale: 1
+  }
+  100% {
+    --canvases-scale: 0;
+  }
+}
+
+.game-container.popin {
+  animation: popin 0.2s ease-out forwards;
+}
+
+.game-container.popout {
+  animation: popout 0.2s ease-in forwards;
+}

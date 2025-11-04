@@ -20,41 +20,64 @@
 
     <canvas width="8" height="8" id="hidden-prerender-canvas" style="display:none"></canvas>
 
-	<div class="game-container" id="game-container" style="display: none;">
-        <canvas class="game-canvas" id="game-canvas-bg3">
-            This canvas needs to be viewed to be displayed.
-        </canvas>
-        <canvas class="game-canvas" id="game-canvas-bg2">
-            This canvas needs to be viewed to be displayed.
-        </canvas>
-        <canvas class="game-canvas" id="game-canvas-bg1">
-            This canvas needs to be viewed to be displayed.
-        </canvas>
-        <canvas class="game-canvas" id="game-canvas-fg3">
-            This canvas needs to be viewed to be displayed.
-        </canvas>
-        <canvas class="game-canvas" id="game-canvas-fg2">
-            This canvas needs to be viewed to be displayed.
-        </canvas>
-        <canvas class="game-canvas" id="game-canvas-fg1">
-            This canvas needs to be viewed to be displayed.
-        </canvas>
-        <canvas class="game-canvas" id="game-canvas-ui2">
-            This canvas needs to be viewed to be displayed.
-        </canvas>
-		<canvas class="game-canvas" id="game-canvas-ui1">
-            This canvas needs to be viewed to be displayed.
-        </canvas>
-        <canvas class="game-canvas" id="game-canvas-debug_back">
-            This canvas needs to be viewed to be displayed.
-        </canvas>
-        <canvas class="game-canvas" id="game-canvas-debug_front">
-            This canvas needs to be viewed to be displayed.
-        </canvas>
-        <canvas class="game-canvas" id="game-canvas-front">
-            This canvas needs to be viewed to be displayed.
-        </canvas>
-	</div>
+    <div class="everything-container">
+        <div class="game-container" id="game-container" style="display: none;">
+            <div class="behind-canvases">
+                <div class="row">
+                    <p style="color: rgb(255, 0, 0)">Ball 1</p>
+                    <select style="color: rgb(255, 0, 0)" name="ball1"></select>
+                </div>
+                <div class="row">
+                    <p style="color: rgb(255, 255, 0)">Ball 2</p>
+                    <select style="color: rgb(255, 255, 0)" name="ball2"></select>
+                </div>
+                <div class="row">
+                    <p style="color: rgb(0, 255, 0)">Ball 3</p>
+                    <select style="color: rgb(0, 255, 0)" name="ball3"></select>
+                </div>
+                <div class="row">
+                    <p style="color: rgb(0, 255, 255)">Ball 4</p>
+                    <select style="color: rgb(0, 255, 255)" name="ball4"></select>
+                </div>
+                <br>
+                <button style="font-size: 20px;" onclick="spawn_selected_balls()">Start</button>
+            </div>
+
+            <canvas class="game-canvas" id="game-canvas-bg3">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-bg2">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-bg1">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-fg3">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-fg2">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-fg1">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-ui2">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-ui1">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-debug_back">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-debug_front">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-front">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+        </div>
+    </div>
 
 	<div class="bottombar" id="normal-bottombar">
 		<p class="left-text" style="font-size: 3vmin; bottom: -8px">balls v1.0 | balls<br>
