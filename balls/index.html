@@ -25,19 +25,58 @@
             <div class="behind-canvases">
                 <div class="row">
                     <p style="color: rgb(255, 0, 0)">Ball 1</p>
-                    <select style="color: rgb(255, 0, 0)" name="ball1"></select>
+                    <select style="color: rgb(255, 0, 0)" onchange="update_ballinfo('ball1')" name="ball1"></select>
+                    <p style="color: rgb(255, 0, 0); margin-left: 64px">Awakened? (+lv7)</p>
+                    <input type="checkbox" id="ball1_check" onchange="update_awaken_showhide('ball1')">
                 </div>
+                <div class="row ballinfo" id="ball1_info">
+                    <span style="color: rgb(255, 0, 0)">Scrimblo gumblo</p>
+                </div>
+                <br>
+                <div class="row ballinfo hidden" id="ball1_a_info">
+                    <span style="color: rgb(255, 128, 128)">Scrimblo gumblo</p>
+                </div>
+
                 <div class="row">
                     <p style="color: rgb(255, 255, 0)">Ball 2</p>
-                    <select style="color: rgb(255, 255, 0)" name="ball2"></select>
+                    <select style="color: rgb(255, 255, 0)" onchange="update_ballinfo('ball2')" name="ball2"></select>
+                    <p style="color: rgb(255, 255, 0); margin-left: 64px">Awakened? (+lv7)</p>
+                    <input type="checkbox" id="ball2_check" onchange="update_awaken_showhide('ball2')">
                 </div>
+                <div class="row ballinfo" id="ball2_info">
+                    <span style="color: rgb(255, 255, 0)">Scrimblo gumblo</p>
+                </div>
+                <br>
+                <div class="row ballinfo hidden" id="ball2_a_info">
+                    <span style="color: rgb(255, 255, 128)">Scrimblo gumblo</p>
+                </div>
+
                 <div class="row">
                     <p style="color: rgb(0, 255, 0)">Ball 3</p>
-                    <select style="color: rgb(0, 255, 0)" name="ball3"></select>
+                    <select style="color: rgb(0, 255, 0)" onchange="update_ballinfo('ball3')" name="ball3"></select>
+                    <p style="color: rgb(0, 255, 0); margin-left: 64px">Awakened? (+lv7)</p>
+                    <input type="checkbox" id="ball3_check" onchange="update_awaken_showhide('ball3')">
                 </div>
+                <div class="row ballinfo" id="ball3_info">
+                    <span style="color: rgb(0, 255, 0)">Scrimblo gumblo</p>
+                </div>
+                <br>
+                <div class="row ballinfo hidden" id="ball3_a_info">
+                    <span style="color: rgb(128, 255, 128)">Scrimblo gumblo</p>
+                </div>
+
                 <div class="row">
                     <p style="color: rgb(0, 255, 255)">Ball 4</p>
-                    <select style="color: rgb(0, 255, 255)" name="ball4"></select>
+                    <select style="color: rgb(0, 255, 255)" onchange="update_ballinfo('ball4')" name="ball4"></select>
+                    <p style="color: rgb(0, 255, 255); margin-left: 64px">Awakened? (+lv7)</p>
+                    <input type="checkbox" id="ball4_check" onchange="update_awaken_showhide('ball4')">
+                </div>
+                <div class="row ballinfo" id="ball4_info">
+                    <span style="color: rgb(0, 255, 255)">Scrimblo gumblo</p>
+                </div>
+                <br>
+                <div class="row ballinfo hidden" id="ball4_a_info">
+                    <span style="color: rgb(128, 255, 255)">Scrimblo gumblo</p>
                 </div>
                 <br>
                 <button style="font-size: 20px;" onclick="spawn_selected_balls()">Start</button>
@@ -92,7 +131,9 @@
     <script src="../shared/js/helpers.js?v=00"></script>
 	<script src="../shared/js/canvas_helpers.js?v=00"></script>
 	
-    <script src="balls.js?v=00"></script>
+    <script src="balls_core.js?v=00"></script>
+    <script src="balls_balls.js?v=00"></script>
+    <script src="balls_launcher.js?v=00"></script>
 
 	<script src="../shared/js/playtime.js?v=00"></script>
 </body>

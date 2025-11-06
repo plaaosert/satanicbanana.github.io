@@ -41,12 +41,21 @@
   align-items: center;
 
   color: white;
+
+  margin-left: 16px;
+  margin-right: 16px;
 }
 
 .behind-canvases p {
   display: inline;
 
   margin-right: 16px;
+}
+
+.row.ballinfo span {
+  height: 36px;
+
+  text-align: center;
 }
 
 .behind-canvases select {
