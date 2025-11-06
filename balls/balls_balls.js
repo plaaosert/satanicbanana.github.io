@@ -61,6 +61,12 @@ class WeaponBall extends Ball {
 
         this.last_hit = 0;  // 0 means damage, 1 means parry
         this.level = level;
+
+        this.show_stats = true;
+    }
+
+    allied_with(other) {
+        return this.player?.id === other.player?.id;
     }
 
     randomise_weapon_rotations() {
@@ -282,7 +288,7 @@ class WeaponBall extends Ball {
         // nothing
     }
 
-    get_projectile_parried(projectile) {
+    get_projectile_parried(parrier, projectile) {
         // nothing
     }
 
@@ -302,11 +308,11 @@ class HammerBall extends WeaponBall {
     
         this.name = "Hammer";
         this.description_brief = "Has a huge hammer that does lots of damage each hit and knocks enemies back.";
-        this.level_description = "Makes the hammer even bigger and deal even more damage.";
+        this.level_description = "Makes the hammer deal even more damage.";
         this.max_level_description = "Adds another smaller hammer that swings independently and faster, dealing half damage.";
 
         this.weapon_data = [
-            new BallWeapon(1 + (level * 0.02), "hamer", [
+            new BallWeapon(1 + (level * 0), "hamer", [
                 {pos: new Vector2(104, 32), radius: 24},
                 {pos: new Vector2(104, 48), radius: 24},
                 {pos: new Vector2(104, 64), radius: 24},
@@ -411,8 +417,8 @@ class SordBall extends WeaponBall {
         // additionally knock the other ball away
         let result = super.hit_other(other, with_weapon_index, this.damage_base);
 
-        this.damage_base += 0.5 * (1 + (this.level * 0.25));
-        this.speed_base += (45 / 4) * (1 + (this.level * 0.25));
+        this.damage_base += 0.5 * (1 + (this.level * 0.15));
+        this.speed_base += (45 / 4) * (1 + (this.level * 0.15));
 
         if (this.level >= AWAKEN_LEVEL) {
             this.weapon_data[0].size_multiplier += 0.04 * 16;
@@ -446,7 +452,7 @@ class DaggerBall extends WeaponBall {
         this.name = "dagger";
         this.description_brief = "Rotates exponentially faster and deals exponentially more damage every strike. These bonuses decay back to zero when not continually striking.";
         this.level_description = "Increases the delay after not striking until bonuses will decay.";
-        this.max_level_description = "When rotation speed is below 1000 deg/s, cannot parry or be parried.";
+        this.max_level_description = "When rotation speed is at 1000 deg/s or higher, starts shooting small projectiles (1 dmg) at a frequency and velocity based on rotation speed. Projectile hits don't count as strikes.";
 
         this.weapon_data = [
             new BallWeapon(1, "dagger", [
@@ -458,10 +464,20 @@ class DaggerBall extends WeaponBall {
             ])
         ];
 
+        this.firing_offsets = [
+            new Vector2(24, 0)
+        ]
+
         this.damage_base = 1;
         this.speed_base = 360;
 
         this.hit_decay = 0;
+
+        this.projectiles_cooldown = 0;
+        this.projectiles_cooldown_max = 0.2;
+
+        this.proj_damage_base = 1;
+        this.proj_speed = 0;
     }
 
     weapon_step(board, time_delta) {
@@ -475,7 +491,26 @@ class DaggerBall extends WeaponBall {
         }
 
         if (this.level >= AWAKEN_LEVEL) {
-            this.weapon_data[0].unparriable = this.speed_base < 1000;
+            this.projectiles_cooldown_max = 0.5 / (this.speed_base / 1000);
+            this.proj_speed = 9000 + (100 / this.projectiles_cooldown_max);
+
+            if (this.speed_base >= 1000) {
+                this.projectiles_cooldown -= time_delta;
+                if (this.projectiles_cooldown <= 0) {
+                    this.projectiles_cooldown = this.projectiles_cooldown_max;
+
+                    let firing_offset = this.firing_offsets[0].mul(this.weapon_data[0].size_multiplier).rotate(this.weapon_data[0].angle);
+                    let fire_pos = this.position.add(firing_offset);
+
+                    board.spawn_projectile(
+                        new DaggerAwakenProjectile(
+                            this, 0, fire_pos, this.proj_damage_base, 1,
+                            new Vector2(1, 0).rotate(this.weapon_data[0].angle),
+                            this.proj_speed, this.velocity.mul(0)
+                        ), fire_pos
+                    )
+                }
+            }
         }
     }
 
@@ -489,6 +524,21 @@ class DaggerBall extends WeaponBall {
         this.hit_decay = 1.5 + (0.2 * this.level);
 
         return result;
+    }
+
+    hit_other_with_projectile(other, with_weapon_index) {
+        // additionally knock the other ball away
+        let result = super.hit_other_with_projectile(other, with_weapon_index, this.damage_base);
+
+        this.hitstop = 0;
+        other.hitstop = 0;
+        other.invuln_duration = 0;
+
+        return result;
+    }
+
+    get_projectile_parried(parrier, projectile) {
+        parrier.invuln_duration = 0;
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
@@ -509,7 +559,7 @@ class DaggerBall extends WeaponBall {
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Parrying: ${this.weapon_data[0].unparriable ? "No" : "Yes"}`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 12
+                ctx, `Projectiles/s: ${(this.speed_base >= 1000 ? 1 / this.projectiles_cooldown_max : 0).toFixed(1)}`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 12
             )
         }
     }
@@ -522,7 +572,7 @@ class BowBall extends WeaponBall {
         this.name = "Bow";
         this.description_brief = "Quickly fires sets of multiple arrows at a periodic interval. Successful arrow hits increase the number of arrows in each set and their damage.";
         this.level_description = "Increases arrow speed, slightly increases arrow size and slightly reduces shot delay.";
-        this.max_level_description = "Start with +1 multishot. Parried shots count for 1/2 of an arrow hit.";
+        this.max_level_description = "Start with +1 multishot. Every shot fires an additional arrow.";
 
         this.weapon_data = [
             new BallWeapon(1, "bow", [
@@ -576,13 +626,20 @@ class BowBall extends WeaponBall {
             let firing_offset = this.firing_offsets[0].mul(this.weapon_data[0].size_multiplier).rotate(this.weapon_data[0].angle);
             let fire_pos = this.position.add(firing_offset);
 
-            board.spawn_projectile(
-                new ArrowProjectile(
-                    this, 0, fire_pos, this.proj_damage_base, 1 * this.arrow_size_mult,
-                    new Vector2(1, 0).rotate(this.weapon_data[0].angle + (random_float(-7, 7) * (Math.PI / 180))),
-                    this.arrow_speed, this.velocity.mul(0)
-                ), fire_pos
-            )
+            let times = 1;
+            if (this.level >= AWAKEN_LEVEL) {
+                times += 1;
+            }
+
+            for (let i=0; i<times; i++) {
+                board.spawn_projectile(
+                    new ArrowProjectile(
+                        this, 0, fire_pos, this.proj_damage_base, 1 * this.arrow_size_mult,
+                        new Vector2(1, 0).rotate(this.weapon_data[0].angle + (random_float(-10, 10) * (Math.PI / 180))),
+                        this.arrow_speed * random_float(0.85, 1.15), this.velocity.mul(0)
+                    ), fire_pos
+                )
+            }
         }
     }
 
@@ -605,16 +662,8 @@ class BowBall extends WeaponBall {
         return result;
     }
 
-    get_projectile_parried(projectile) {
-        if (this.level >= 7) {
-            this.multishots_levelup_req -= 0.5;
-            if (this.multishots_levelup_req <= 0) {
-                this.multishots_max++;
-                this.proj_damage_base += 1;
-
-                this.multishots_levelup_req = Math.max(1, this.multishots_max * this.multishots_max * 0.333);
-            }
-        }
+    get_projectile_parried(parrier, projectile) {
+        
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
@@ -641,7 +690,7 @@ class BowBall extends WeaponBall {
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Parried shots count as 1/2 an arrow hit.`, x_anchor, y_anchor + 84, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 10
+                ctx, `Shoots an additional arrow every shot.`, x_anchor, y_anchor + 84, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 10
             )
         }
     }
@@ -654,7 +703,7 @@ class MagnumBall extends WeaponBall {
         this.name = "Magnum";
         this.description_brief = "Throws coins and shoots a gun. If a gunshot hits a coin, it doubles in damage and ricochets to the nearest other coin, or enemy if there is no other coin.";
         this.level_description = "Increases coin throw and shot frequency.";
-        this.max_level_description = "Coins can't be parried.";
+        this.max_level_description = "Get an additional coin thrower.";
 
         this.weapon_data = [
             new BallWeapon(0.5, "gun", [
@@ -665,6 +714,14 @@ class MagnumBall extends WeaponBall {
 
             ])
         ];
+
+        if (this.level >= AWAKEN_LEVEL) {
+            let w = new BallWeapon(1.5, "coin_weapon", [
+
+            ]);
+
+            this.weapon_data.push(w);
+        }
 
         this.weapon_data[1].reverse();
 
@@ -688,6 +745,7 @@ class MagnumBall extends WeaponBall {
         // rotate the weapon
         this.rotate_weapon(0, this.speed_base * time_delta);
         this.rotate_weapon(1, this.speed_base * time_delta);
+        this.rotate_weapon(2, this.speed_base * 1.3 * time_delta);
 
         this.shot_cooldown -= time_delta;
         this.coin_shot_cooldown -= time_delta;
@@ -702,7 +760,7 @@ class MagnumBall extends WeaponBall {
             board.spawn_projectile(
                 new MagnumProjectile(
                     this, 0, fire_pos, this.proj_damage_base,
-                    new Vector2(1, 0).rotate(this.weapon_data[0].angle).mul(10000).add(fire_pos),
+                    new Vector2(1, 0).rotate(this.weapon_data[0].angle).mul(10000).add(fire_pos), 0
                 ), fire_pos
             )
         }
@@ -718,13 +776,23 @@ class MagnumBall extends WeaponBall {
                 new Vector2(1, 0).rotate(this.weapon_data[1].angle), random_int(6000, 10000), board.gravity
             );
 
-            if (this.level >= AWAKEN_LEVEL) {
-                coin_obj.parriable = false;
-            }
-
             board.spawn_projectile(
                 coin_obj, coin_fire_pos
             )
+
+            if (this.level >= AWAKEN_LEVEL) {
+                let coin2_firing_offset = this.firing_offsets[1].mul(this.weapon_data[2].size_multiplier).rotate(this.weapon_data[2].angle);
+                let coin2_fire_pos = this.position.add(coin2_firing_offset);
+                
+                let coin2_obj = new MagnumCoinProjectile(
+                    this, 1, coin2_fire_pos, this.coin_damage_base, 1.5,
+                    new Vector2(1, 0).rotate(this.weapon_data[2].angle), random_int(6000, 10000), board.gravity
+                );
+
+                board.spawn_projectile(
+                    coin2_obj, coin2_fire_pos
+                )
+            }
         }
     }
 
@@ -760,7 +828,140 @@ class MagnumBall extends WeaponBall {
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Coins can't be parried.`, x_anchor, y_anchor + 72, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 12
+                ctx, `Has an additional coin thrower.`, x_anchor, y_anchor + 72, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 12
+            )
+        }
+    }
+}
+
+class NeedleBall extends WeaponBall {
+    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed, can_clone=true) {
+        super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Needle";
+        this.description_brief = "Has three small needles. When taking damage, 50% chance to use 10% current HP and create a smaller child copy with 4x the HP used that deals half damage. If the parent dies, all children die.";
+        this.level_description = "Increases split chance.";
+        this.max_level_description = "No longer lose HP when splitting.";
+
+        this.weapon_data = [
+            new BallWeapon(can_clone ? 1 : 0.7, "needle", [
+                {pos: new Vector2(60, 64), radius: 4},
+                {pos: new Vector2(52, 64), radius: 4},
+                {pos: new Vector2(40, 64), radius: 8},
+                {pos: new Vector2(24, 64), radius: 8},
+            ]),
+            new BallWeapon(can_clone ? 1 : 0.7, "needle", [
+                {pos: new Vector2(60, 64), radius: 4},
+                {pos: new Vector2(52, 64), radius: 4},
+                {pos: new Vector2(40, 64), radius: 8},
+                {pos: new Vector2(24, 64), radius: 8},
+            ]),
+            new BallWeapon(can_clone ? 1 : 0.7, "needle", [
+                {pos: new Vector2(60, 64), radius: 4},
+                {pos: new Vector2(52, 64), radius: 4},
+                {pos: new Vector2(40, 64), radius: 8},
+                {pos: new Vector2(24, 64), radius: 8},
+            ]),
+        ];
+
+        this.damage_base = 2 * (can_clone ? 1 : 0.5);
+        this.speed_base = 315;
+        this.split_chance = 0.5 + (this.level * 0.025);
+        this.split_ratio = 0.1;
+
+        this.children = [];
+        this.parent = null;
+
+        this.can_clone = can_clone;
+        
+        this.radius *= can_clone ? 1 : 0.75
+    
+        this.board = null;
+    }
+
+    weapon_step(board, time_delta) {
+        // rotate the weapon
+        this.rotate_weapon(0, this.speed_base * time_delta);
+        this.rotate_weapon(1, this.speed_base * 1.9 * time_delta);
+        this.rotate_weapon(2, this.speed_base * 0.9 * time_delta);
+
+        if (this.parent?.hp <= 0) {
+            this.hp -= 10 * time_delta;
+        }
+
+        this.board = board;
+    }
+
+    hit_other(other, with_weapon_index) {
+        // additionally knock the other ball away
+        let result = super.hit_other(other, with_weapon_index, this.damage_base);
+
+        return result;
+    }
+
+    clone_chance() {
+        let c = Math.random();
+        if (this.can_clone && c < this.split_chance) {
+            let hp_proportion = Math.floor(this.hp * this.split_ratio);
+
+            if (hp_proportion > 0) {
+                let new_ball = new NeedleBall(
+                    this.mass, this.radius, this.colour, this.bounce_factor,
+                    this.friction_factor, this.player, this.level, this.reversed,
+                    false
+                );
+
+                new_ball.hp = hp_proportion * 4;
+                new_ball.invuln_duration = BALL_INVULN_DURATION;
+
+                if (this.level < AWAKEN_LEVEL) {
+                    this.hp -= hp_proportion;
+                }
+
+                new_ball.show_stats = false;
+
+                this.board?.spawn_ball(new_ball, this.position);
+
+                new_ball.add_impulse(random_on_circle(random_float(6000, 10000)));
+
+                this.children.push(new_ball);
+                new_ball.parent = this;
+            }
+        }
+    }
+
+    get_hit(damage, hitstop) {
+        let result = super.get_hit(damage, hitstop);
+
+        this.clone_chance();
+
+        return result;
+    }
+
+    get_hit_by_projectile(damage, hitstop) {
+        let result = super.get_hit_by_projectile(damage, hitstop);
+
+        this.clone_chance();
+
+        return result;
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor) {
+        write_text(
+            ctx, `Damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+        )
+        write_text(
+            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+        )
+        write_text(
+            ctx, `Copy chance: ${(this.split_chance * 100).toFixed(0)}%`, x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 12
+        )
+        write_text(
+            ctx, `Copy HP ratio: ${(this.split_ratio * 100).toFixed(0)}%`, x_anchor, y_anchor + 36, this.colour.css(), "MS Gothic", 12
+        )
+        if (this.level >= AWAKEN_LEVEL) {
+            write_text(
+                ctx, `Lose no HP when splitting.`, x_anchor, y_anchor + 48, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 12
             )
         }
     }
@@ -992,10 +1193,12 @@ class MagnumProjectile extends HitscanProjectile {
             this.damage *= 2;
         }
         this.max_width *= this.ricochets;
-        if (this.ricochets > 1) {
+        if (this.ricochets >= 1) {
             this.sprite_colour = Colour.yellow.lerp(Colour.red, Math.min(1, (this.ricochets-1) / 3)).css();
             this.parriable = false;
         }
+
+        this.can_hit_allied = true;
     }
 
     // Override so that it will return collisions with MagnumCoins
@@ -1100,6 +1303,8 @@ class MagnumCoinProjectile extends Projectile {
         this.hitboxes = [
             {pos: new Vector2(0, 0), radius: 8},
         ];
+
+        this.can_hit_allied = true;
     }
 
     physics_step(time_delta) {
@@ -1111,6 +1316,17 @@ class MagnumCoinProjectile extends Projectile {
         this.frame = Math.floor(this.lifetime * this.frame_speed)
         this.frame = this.frame % this.framecount;
         this.sprite = this.sprites[this.frame];
+    }
+}
+
+class DaggerAwakenProjectile extends InertiaRespectingStraightLineProjectile {
+    constructor(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
+        super(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
+
+        this.sprite = "pellet";
+        this.hitboxes = [
+            {pos: new Vector2(0, 0), radius: 4},
+        ];    
     }
 }
 

@@ -26,9 +26,13 @@ const entity_sprites = new Map([
     ["SORD", 1, "weapon/"],
     ["hamer", 1, "weapon/"],
     ["dagger", 1, "weapon/"],
+    ["pellet", 1, "weapon/"],
     ["bow", 1, "weapon/"],
     ["arrow", 1, "weapon/"],
+    
     ["gun", 1, "weapon/"],
+
+    ["needle", 1, "weapon/"],
     
     ["coin_weapon", 1, "weapon/"],
     ["coin", 5, "weapon/"],
@@ -254,6 +258,20 @@ class Board {
         this.hitstop_time = 0;
     }
     
+    remaining_players() {
+        let balls_ids = this.balls.map(ball => ball.player.id);
+        let players = this.balls.filter((t, i) => balls_ids.indexOf(t.player.id) === i).map(b => b.player);
+        return players;
+    }
+
+    get_player_ball(player) {
+        return this.balls.find(ball => ball.player.id === player.id);
+    }
+
+    get_all_player_balls(player) {
+        return this.balls.filter(ball => ball.player.id === player.id);
+    }
+
     spawn_particle(particle, position) {
         particle.position = position;
         this.particles.push(particle);
@@ -1010,10 +1028,10 @@ function render_game(board, collision_boxes=false, velocity_lines=false) {
         ctx.font = "22px \"ms gothic\"";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(ball.hp, ball_screen_pos.x-0.5, ball_screen_pos.y-0.5);
-        ctx.fillText(ball.hp, ball_screen_pos.x+0.5, ball_screen_pos.y-0.5);
-        ctx.fillText(ball.hp, ball_screen_pos.x-0.5, ball_screen_pos.y+0.5);
-        ctx.fillText(ball.hp, ball_screen_pos.x+0.5, ball_screen_pos.y+0.5);
+        ctx.fillText(Math.ceil(ball.hp), ball_screen_pos.x-0.5, ball_screen_pos.y-0.5);
+        ctx.fillText(Math.ceil(ball.hp), ball_screen_pos.x+0.5, ball_screen_pos.y-0.5);
+        ctx.fillText(Math.ceil(ball.hp), ball_screen_pos.x-0.5, ball_screen_pos.y+0.5);
+        ctx.fillText(Math.ceil(ball.hp), ball_screen_pos.x+0.5, ball_screen_pos.y+0.5);
 
         ctx.closePath();
 
@@ -1067,9 +1085,11 @@ function render_descriptions(board) {
         [[canvas_width - 256, 28], [canvas_width - 256, 28 + 144], [canvas_width - 256, 28 + 144 + 144], [canvas_width - 256, 28 + 144 + 144 + 144]],
     ]
 
-    let layout = layouts[board.balls.length-1];
+    let filtered_balls = board.balls.filter(ball => ball.show_stats);
+    let layout = layouts[filtered_balls.length-1];
+    
     if (layout) {
-        board.balls.forEach((ball, index) => {
+        filtered_balls.forEach((ball, index) => {
             let l = layout[index];
 
             write_text(
@@ -1147,7 +1167,7 @@ function game_loop() {
                 board.balls.forEach(ball => {
                     if (ball.invuln_duration <= 0) {
                         board.balls.forEach(other => {
-                            if (colliding_parries.has((ball.id * 10000000) + other.id)) {
+                            if (colliding_parries.has((ball.id * 10000000) + other.id) || ball.allied_with(other)) {
                                 return;
                             }
 
@@ -1201,8 +1221,8 @@ function game_loop() {
 
                 // projectile parrying (weapon on projectile)
                 board.balls.forEach(ball => {
-                    // don't check our own projectiles
-                    let projectiles = board.projectiles.filter(projectile => projectile.active && projectile.source.id != ball.id);
+                    // don't check our own team's projectiles
+                    let projectiles = board.projectiles.filter(projectile => projectile.active && projectile.source.player.id != ball.player.id);
                     let intersecting_projectiles = ball.check_weapon_to_projectiles_hits(projectiles);
 
                     let parried = false;
@@ -1248,7 +1268,7 @@ function game_loop() {
                         // board will clean it up
                         projectile.get_parried(ball);
                         ball.reverse_weapon(parry_weapon_index);
-                        projectile.source.get_projectile_parried(projectile);
+                        projectile.source.get_projectile_parried(ball, projectile);
 
                         // we actually move the ball in the direction the projectile was travelling
                         let diff_vec = projectile.direction;
@@ -1277,8 +1297,8 @@ function game_loop() {
                     if (ball.invuln_duration <= 0) {
                         // OK to check for hits (not in invuln window)
                         board.balls.forEach(other => {
-                            // make sure we don't check collisions with ourselves
-                            if (ball.id != other.id) {
+                            // make sure we don't check collisions with our own team
+                            if (!ball.allied_with(other)) {
                                 let colliding_weapons = ball.check_weapons_hit_from(other);
                                 if (colliding_weapons.length > 0) {
                                     let weapon_index = colliding_weapons[0];  // ignore all others
@@ -1306,7 +1326,7 @@ function game_loop() {
                 board.balls.forEach(ball => {
                     if (ball.invuln_duration <= 0) {
                         // don't check our own projectiles
-                        let projectiles = board.projectiles.filter(projectile => projectile.active && projectile.source.id != ball.id);
+                        let projectiles = board.projectiles.filter(projectile => projectile.active && projectile.source.player.id != ball.player.id);
                         let intersecting_projectiles = ball.check_projectiles_hit_from(projectiles);
                         
                         // same rules as normal thing except we go through the get_hit_by for projectiles instead
@@ -1331,7 +1351,8 @@ function game_loop() {
                     if (!projectile.active) 
                         return;
 
-                    let projectiles_colliding = projectile.check_projectiles_colliding(board.projectiles);
+                    let projectiles_in_scope = board.projectiles.filter(other => projectile.id !== other.id && (other.source.allied_with(projectile.source) || (projectile.can_hit_allied && other.can_hit_allied)));
+                    let projectiles_colliding = projectile.check_projectiles_colliding(projectiles_in_scope);
                     projectiles_colliding = projectiles_colliding.filter(proj => !colliding_proj2projs.has(proj.id + (1000000 * projectile.id)))
 
                     projectiles_colliding.forEach(proj => {
@@ -1349,11 +1370,20 @@ function game_loop() {
                 if (ball.hp > 0) {
                     return true;
                 } else {
-                    board.spawn_particle(new Particle(
-                        ball.position.add(new Vector2(256+64, -512)), 0, 2, entity_sprites.get("explosion"), 12, 3, false
-                    ), ball.position.add(new Vector2(256+64, -512)));
+                    if (ball.show_stats) {
+                        board.spawn_particle(new Particle(
+                            ball.position.add(new Vector2(256+64, -512)), 0, 2, entity_sprites.get("explosion"), 12, 3, false
+                        ), ball.position.add(new Vector2(256+64, -512)));
 
-                    play_audio("explosion");
+                        play_audio("explosion");
+                    } else {
+                        board.spawn_particle(new Particle(
+                            ball.position.add(new Vector2(144, -512)), 0, 1, entity_sprites.get("explosion"), 12, 3, false
+                        ), ball.position.add(new Vector2(144, -512)));
+
+                        // TODO make this something else thats less impactful
+                        play_audio("explosion");
+                    }
 
                     return false;
                 }
@@ -1363,7 +1393,7 @@ function game_loop() {
         board.particles_step(delta_time);
 
         
-        if (board?.balls.length <= 1) {
+        if (board?.remaining_players().length <= 1) {
             match_end_timeout -= delta_time;
             if (match_end_timeout <= 0) {
                 exit_battle();

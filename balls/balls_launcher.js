@@ -6,10 +6,10 @@ document.addEventListener("DOMContentLoaded", async function() {
 
 function spawn_testing_balls() {
     board = new Board(new Vector2(512 * 16, 512 * 16));
-    // board.spawn_ball(new SordBall(1, 512, Colour.red, null, null, {}), new Vector2(512*4, 512*4));
-    // board.spawn_ball(new HammerBall(1, 512, Colour.yellow, null, null, {}, true), new Vector2(512*12, 512*12));
-    board.spawn_ball(new MagnumBall(1, 512, Colour.green, null, null, {}), new Vector2(512*5, 512*11));
-    board.spawn_ball(new SordBall(1, 512, Colour.cyan, null, null, {}, true), new Vector2(512*11, 512*5));
+    // board.spawn_ball(new SordBall(1, 512, Colour.red, null, null, {id: 0}), new Vector2(512*4, 512*4));
+    // board.spawn_ball(new HammerBall(1, 512, Colour.yellow, null, null, {id: 1}, true), new Vector2(512*12, 512*12));
+    board.spawn_ball(new MagnumBall(1, 512, Colour.green, null, null, {id: 2}), new Vector2(512*5, 512*11));
+    board.spawn_ball(new SordBall(1, 512, Colour.cyan, null, null, {id: 3}, true), new Vector2(512*11, 512*5));
 
     board.balls[0].add_velocity(random_on_circle(random_float(0, 512 * 10)));
     board.balls[1]?.add_velocity(random_on_circle(random_float(0, 512 * 10)));
@@ -49,10 +49,10 @@ function spawn_selected_balls() {
             if (elem.value != "None") {
                 let ball_proto = selectable_balls.find(t => t.name == elem.value);
                 if (ball_proto) {
-                    let lvl = document.querySelector(`#ball${index+1}_check`).checked ? 7 : 1;
+                    let lvl = document.querySelector(`#ball${index+1}_check`).checked ? 7 : 0;
 
                     let ball = new ball_proto(
-                        1, 512, col, null, null, {}, lvl, index % 2 == 1
+                        1, 512, col, null, null, {id: index}, lvl, index % 2 == 1
                     );
 
                     ball.randomise_weapon_rotations();
@@ -64,9 +64,9 @@ function spawn_selected_balls() {
 
         board.balls.forEach(ball => ball.add_velocity(random_on_circle(random_float(512 * 6, 512 * 12))));
     
-        if (board.balls.length == 1) {
+        if (board.remaining_players().length == 1) {
             match_end_timeout = 3 * 1000;
-        } else if (board.balls.length == 0) {
+        } else if (board.remaining_players().length == 0) {
             match_end_timeout = 1 * 1000;
         } else {
             match_end_timeout = 6 * 1000;
@@ -106,8 +106,44 @@ function update_awaken_showhide(ballid) {
     }
 }
 
-const selectable_balls = [
-    HammerBall, SordBall, DaggerBall, BowBall, MagnumBall
+function refresh_mod_text() {
+    let mod_text = document.querySelector("#mod-text").value;
+
+    // get the classes
+    let matches = [...mod_text.matchAll(/^class (\w+)(?: extends \w+)? {/gm)].map(t => t[1]);
+
+    document.querySelector("#mod-balls-to-add").innerHTML = matches.map(t => `<span style=color:${t.endsWith("Ball") ? "lime" : "forestgreen"}>${t}</span>`).join(", ");
+}
+
+function load_mod() {
+    let mod_text = document.querySelector("#mod-text").value;
+
+    let matches = [...mod_text.matchAll(/^class (\w+)(?: extends \w+)? {/gm)].map(t => t[1]);
+    
+    try {
+        window.eval(mod_text.value);
+
+        /*
+        let newballs = 0;
+        matches.forEach(m => {
+            if (m.endsWith("Ball")) {
+                window.eval(`selectable_balls.push(${m});`)
+                newballs++;
+            }
+        })
+        */
+
+        alert(`It worked (added ${1} new balls from ${matches.length} new classes)`);
+    } catch {
+        alert("It didn't work")
+    }
+
+    document.querySelector("#mod-text").value = "";
+    refresh_mod_text()
+}
+
+let selectable_balls = [
+    HammerBall, SordBall, DaggerBall, BowBall, MagnumBall, NeedleBall
 ]
 
 let match_end_timeout = 0;
@@ -208,7 +244,7 @@ document.addEventListener("DOMContentLoaded", function() {
         selectable_balls.forEach(ball => elem.options.add(new Option(ball.name)));
     });
 
-    document.querySelector("select[name='ball1']").value = "DaggerBall";
+    document.querySelector("select[name='ball1']").value = "NeedleBall";
     document.querySelector("select[name='ball2']").value = "HammerBall";
 
     update_ballinfo('ball1');

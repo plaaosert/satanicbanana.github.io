@@ -11,7 +11,16 @@
   align-items: center;
 
   height: calc(100vh - 8vh - 16vh);
+
   margin-top: 8vh;
+  margin-left: 64px;
+  margin-right: 64px;
+
+  color: white;
+}
+
+.everything-container>* {
+    flex-basis: 33.33%;
 }
 
 .game-container {
@@ -31,6 +40,8 @@
   align-items: center;
 
   flex-direction: column;
+
+  border: 1px solid white;
 }
 
 .behind-canvases .row {
@@ -46,6 +57,19 @@
   margin-right: 16px;
 }
 
+.modding-frame {
+  margin-left: 32px;
+}
+
+.modding-frame textarea {
+  background-color: black;
+  color: white;
+  font-family: "MS Gothic", "terminus", "nec_apc";
+
+  width: 100%;
+  resize: vertical;
+}
+
 .behind-canvases p {
   display: inline;
 
@@ -54,6 +78,8 @@
 
 .row.ballinfo span {
   height: 36px;
+
+  font-size: 12px;
 
   text-align: center;
 }
@@ -67,7 +93,7 @@
   height: 24px;
 }
 
-.behind-canvases button {
+.everything-container button {
   background-color: black;
   color: white;
 

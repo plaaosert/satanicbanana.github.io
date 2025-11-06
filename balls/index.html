@@ -21,6 +21,10 @@
     <canvas width="8" height="8" id="hidden-prerender-canvas" style="display:none"></canvas>
 
     <div class="everything-container">
+        <div class="spacer hidden">
+            <p>Hi</p>
+        </div>
+
         <div class="game-container" id="game-container" style="display: none;">
             <div class="behind-canvases">
                 <div class="row">
@@ -79,7 +83,11 @@
                     <span style="color: rgb(128, 255, 255)">Scrimblo gumblo</p>
                 </div>
                 <br>
-                <button style="font-size: 20px;" onclick="spawn_selected_balls()">Start</button>
+                <div class="row">
+                    <!-- <button style="font-size: 20px;" onclick="">???</button> -->
+                    <button style="font-size: 20px;" onclick="spawn_selected_balls()">Start</button>
+                    <!-- <button style="font-size: 20px;" onclick="document.querySelector('#modding_frame').classList.toggle('hidden')">"Modding" -></button> -->
+                </div>
             </div>
 
             <canvas class="game-canvas" id="game-canvas-bg3">
@@ -115,6 +123,18 @@
             <canvas class="game-canvas" id="game-canvas-front">
                 This canvas needs to be viewed to be displayed.
             </canvas>
+        </div>
+
+        <div class="modding-frame hidden" id="modding_frame">
+            <span>If you have a mod paste it here. This is literally pure JS code that the game will run through eval(). I do not take responsibility.</span>
+            <br><br>
+            <textarea id="mod-text" onchange="refresh_mod_text()"></textarea>
+            <br><br>
+            <span>Classes to add:</span>
+            <br>
+            <span id="mod-balls-to-add">-</span>
+            <br><br>
+            <button style="font-size: 20px;" onclick="load_mod()">Send it</button>
         </div>
     </div>
 
