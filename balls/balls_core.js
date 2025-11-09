@@ -933,21 +933,29 @@ function render_victory(board, time_until_end) {
     let ctx = layers.ui1.ctx;
 
     let t = (8000 - time_until_end) / 1000;
-    let b = board.get_all_player_balls(board.remaining_players()[0]).filter(ball => ball.show_stats)[0];
 
-    if (t > 2) {
-        write_text(ctx, "VICTORY", canvas_width/2, 256, "white", "MS Gothic", 144, true);
-    }
+    if (board.remaining_players().length <= 0) {
+        // draw
+        if (t > 3) {
+            write_text(ctx, "DRAW", canvas_width/2, 256, "white", "MS Gothic", 144, true);
+        }
+    } else {
+        let b = board.get_all_player_balls(board.remaining_players()[0]).filter(ball => ball.show_stats)[0];
 
-    if (t > 3) {
-        write_text(ctx, b.name, canvas_width/2, 256 + 72, b.colour.css(), "MS Gothic", 72, true);
-    }
+        if (t > 2) {
+            write_text(ctx, "VICTORY", canvas_width/2, 256, "white", "MS Gothic", 144, true);
+        }
 
-    if (t > 4.25) {
-        let quote = b.quote.split("\n");
-        quote.forEach((q, i) => {
-            write_text(ctx, (i == 0 ? "\"" : "") + q + (i >= quote.length-1 ? "\"" : ""), canvas_width/2, 256 + 72 + 36 + (16 * i), b.colour.css(), "MS Gothic", 16, true);
-        })
+        if (t > 3) {
+            write_text(ctx, b.name, canvas_width/2, 256 + 72, b.colour.css(), "MS Gothic", 72, true);
+        }
+
+        if (t > 4.25) {
+            let quote = b.quote.split("\n");
+            quote.forEach((q, i) => {
+                write_text(ctx, (i == 0 ? "\"" : "") + q + (i >= quote.length-1 ? "\"" : ""), canvas_width/2, 256 + 72 + 36 + (16 * i), b.colour.css(), "MS Gothic", 16, true);
+            })
+        }
     }
 }
 

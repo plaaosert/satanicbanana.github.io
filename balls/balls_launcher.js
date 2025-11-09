@@ -291,8 +291,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // TODO make levelling information exist somewhere - probably need to think about that when we come to RPG theming really
 
-let winrate_tracking = false;
-let force_ball1 = NeedleBall;
+let winrate_tracking = true;
+let force_ball1 = null;
 let win_matrix = [];
 selectable_balls_for_random.forEach(_ => win_matrix.push(new Array(selectable_balls_for_random.length).fill(0)));
 let start_balls = [];
