@@ -55,7 +55,10 @@ const entity_sprites = new Map([
 
     ["grenade", 1, "weapon/"],
     ["grenade_weapon", 1, "weapon/"],
-    
+
+    ["glass", 1, "weapon/"],
+    ["glass_angry", 1, "weapon/"],
+
     ["explosion", 16, "explosion/"],
     ["explosion_grenade", 16, "explosion_grenade/"],
 ].map((v, i) => {
@@ -160,6 +163,8 @@ async function load_audio() {
     audio.set("explosion", await load_audio_item("snd/explosion.mp3"));
     // https://pixabay.com/sound-effects/explosion-312361/
     audio.set("explosion2", await load_audio_item("snd/explosion2.mp3"));
+    // dragon ball z
+    audio.set("strongpunch", await load_audio_item("snd/strongpunch.wav"));
 }
 
 function play_audio(name) {
@@ -918,6 +923,34 @@ function render_diagnostics(board) {
     });
 }
 
+function render_victory(board, time_until_end) {
+    if (!render_victory_enabled) {
+        return;
+    }
+
+    layers.ui1.ctx.clearRect(0, 0, canvas_width, canvas_height);
+
+    let ctx = layers.ui1.ctx;
+
+    let t = (8000 - time_until_end) / 1000;
+    let b = board.get_all_player_balls(board.remaining_players()[0]).filter(ball => ball.show_stats)[0];
+
+    if (t > 2) {
+        write_text(ctx, "VICTORY", canvas_width/2, 256, "white", "MS Gothic", 144, true);
+    }
+
+    if (t > 3) {
+        write_text(ctx, b.name, canvas_width/2, 256 + 72, b.colour.css(), "MS Gothic", 72, true);
+    }
+
+    if (t > 4.25) {
+        let quote = b.quote.split("\n");
+        quote.forEach((q, i) => {
+            write_text(ctx, (i == 0 ? "\"" : "") + q + (i >= quote.length-1 ? "\"" : ""), canvas_width/2, 256 + 72 + 36 + (16 * i), b.colour.css(), "MS Gothic", 16, true);
+        })
+    }
+}
+
 function render_game(board, collision_boxes=false, velocity_lines=false) {
     layers.fg1.ctx.clearRect(0, 0, canvas_width, canvas_height);
     layers.fg2.ctx.clearRect(0, 0, canvas_width, canvas_height);
@@ -1135,7 +1168,7 @@ function render_game(board, collision_boxes=false, velocity_lines=false) {
 }
 
 function render_descriptions(board) {
-    layers.ui1.ctx.clearRect(0, 0, canvas_width, canvas_height);
+    // layers.ui1.ctx.clearRect(0, 0, canvas_width, canvas_height);
     layers.ui2.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
     let layouts = [
@@ -1395,10 +1428,14 @@ function game_loop() {
                                     let result = other.hit_other(ball, weapon_index);
                                     ball.last_damage_source = other;
                                     
-                                    if (result.dmg >= 8) {
-                                        play_audio("impact_heavy");
+                                    if (!result.snd) {
+                                        if (result.dmg >= 8) {
+                                            play_audio("impact_heavy");
+                                        } else {
+                                            play_audio("impact");
+                                        }
                                     } else {
-                                        play_audio("impact");
+                                        play_audio(result.snd);
                                     }
 
                                     // TODO - need to at this point do accounting on damage taken/dealt,
@@ -1461,10 +1498,10 @@ function game_loop() {
                     projectiles_colliding = projectiles_colliding.filter(proj => !colliding_proj2projs.has(proj.id + (1000000 * projectile.id)))
 
                     projectiles_colliding.forEach(proj => {
-                        if (projectile.parriable) {
+                        if (proj.parriable) {
                             projectile.hit_other_projectile(proj);
                         }
-                        if (proj.parriable) {
+                        if (projectile.parriable) {
                             proj.hit_other_projectile(projectile);
                         }
                         colliding_proj2projs.add(proj.id + (1000000 * projectile.id));
@@ -1513,23 +1550,27 @@ function game_loop() {
             board.get_all_player_balls(board.remaining_players()[0]).forEach(ball => ball.takes_damage = false);
 
             match_end_timeout -= delta_time;
+
+            // "animation"
+            render_victory(board, match_end_timeout);
+
             if (match_end_timeout <= 0) {
                 if (board.remaining_players().length == 1 && winrate_tracking) {
                     let winning_balls = board.get_all_player_balls(board.remaining_players()[0]).filter(ball => ball.show_stats);
                     if (winning_balls.length >= 1) {
                         let winning_ball = winning_balls[0];
-                        let winning_ball_class = selectable_balls.find(t => winning_ball instanceof t);
+                        let winning_ball_class = selectable_balls_for_random.find(t => winning_ball instanceof t);
 
                         let losing_balls = start_balls.filter(b => b.name != winning_ball_class.name);
                         
                         if (losing_balls.length >= 1) {
-                            let winning_ball_index = selectable_balls.findIndex(t => winning_ball instanceof t);
-                            let losing_ball_index = selectable_balls.findIndex(t => losing_balls[0].name == t.name);
+                            let winning_ball_index = selectable_balls_for_random.findIndex(t => winning_ball instanceof t);
+                            let losing_ball_index = selectable_balls_for_random.findIndex(t => losing_balls[0].name == t.name);
                             
                             win_matrix[winning_ball_index][losing_ball_index] += 1;
                         }
 
-                        console.log(" ".repeat(12) + selectable_balls.map(t => t.name.padEnd(12)).join("") + "\n" + win_matrix.map((a, i) => `${selectable_balls[i].name.padEnd(12)}` + a.map((b, j) => `${b === 0 ? "-" : b}`.padEnd(12)).join("")).join("\n"))
+                        console.log(" ".repeat(12) + selectable_balls_for_random.map(t => t.name.padEnd(12)).join("") + "\n" + win_matrix.map((a, i) => `${selectable_balls_for_random[i].name.padEnd(12)}` + a.map((b, j) => `${b === 0 ? "-" : b}`.padEnd(12)).join("")).join("\n"))
                     }
                 }
                 

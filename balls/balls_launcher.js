@@ -71,10 +71,13 @@ function spawn_selected_balls() {
     
         if (board.remaining_players().length == 1) {
             match_end_timeout = 3 * 1000;
+            render_victory_enabled = false;
         } else if (board.remaining_players().length == 0) {
             match_end_timeout = 1 * 1000;
+            render_victory_enabled = false;
         } else {
-            match_end_timeout = 6 * 1000;
+            match_end_timeout = 8 * 1000;
+            render_victory_enabled = true;
         }
 
         board.hitstop_time = 0.5;
@@ -148,12 +151,17 @@ function load_mod() {
 }
 
 let selectable_balls = [
+    DummyBall,
     HammerBall, SordBall, DaggerBall,
     BowBall, MagnumBall, NeedleBall,
-    RailgunBall, PotionBall, GrenadeBall
+    RailgunBall, PotionBall, GrenadeBall,
+    GlassBall
 ]
 
+let selectable_balls_for_random = selectable_balls.filter(ball => ball.name != "DummyBall");
+
 let match_end_timeout = 0;
+let render_victory_enabled = true;
 
 document.addEventListener("DOMContentLoaded", function() {
     get_canvases();
@@ -251,8 +259,11 @@ document.addEventListener("DOMContentLoaded", function() {
         selectable_balls.forEach(ball => elem.options.add(new Option(ball.name)));
     });
 
-    document.querySelector("select[name='ball1']").value = "GrenadeBall";
-    document.querySelector("select[name='ball2']").value = "SordBall";
+    document.querySelector("select[name='ball1']").value = random_from_array(selectable_balls_for_random).name;
+    document.querySelector("select[name='ball2']").value = random_from_array(selectable_balls_for_random.filter(t => t.name != document.querySelector("select[name='ball1']").value)).name;
+
+    document.querySelector("select[name='ball1']").value = "SordBall";
+    document.querySelector("select[name='ball2']").value = "DummyBall";
 
     update_ballinfo('ball1');
     update_ballinfo('ball2');
@@ -262,12 +273,12 @@ document.addEventListener("DOMContentLoaded", function() {
     if (winrate_tracking) {
         setInterval(() => {
             if (!board) {
-                document.querySelector("select[name='ball1']").value = random_from_array(selectable_balls).name;
+                document.querySelector("select[name='ball1']").value = random_from_array(selectable_balls_for_random).name;
                 if (force_ball1) {
                     document.querySelector("select[name='ball1']").value = force_ball1.name;
                 }
 
-                document.querySelector("select[name='ball2']").value = random_from_array(selectable_balls.filter(t => t.name != document.querySelector("select[name='ball1']").value)).name;
+                document.querySelector("select[name='ball2']").value = random_from_array(selectable_balls_for_random.filter(t => t.name != document.querySelector("select[name='ball1']").value)).name;
 
                 update_ballinfo('ball1');
                 update_ballinfo('ball2');
@@ -283,5 +294,5 @@ document.addEventListener("DOMContentLoaded", function() {
 let winrate_tracking = false;
 let force_ball1 = NeedleBall;
 let win_matrix = [];
-selectable_balls.forEach(_ => win_matrix.push(new Array(selectable_balls.length).fill(0)));
+selectable_balls_for_random.forEach(_ => win_matrix.push(new Array(selectable_balls_for_random.length).fill(0)));
 let start_balls = [];

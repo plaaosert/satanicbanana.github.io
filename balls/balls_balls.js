@@ -36,6 +36,8 @@ class WeaponBall extends Ball {
         this.name = "No Weapon";
         this.description_brief = "Does nothing. Unarmed, but not the awesome kind.";
         this.level_description = "It really doesn't do anything, even when levelled up.";
+        this.max_level_description = "Seriously, it doesn't do anything.";
+        this.quote = "I won? I won! How'd I win?!";
 
         // player.stats:
         /*
@@ -331,11 +333,17 @@ class WeaponBall extends Ball {
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, "This thing has no stats bro", x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+            ctx, "This thing has no stats", x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
         )
         write_text(
-            ctx, "you shouldnt even be using it", x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+            ctx, "im serious", x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
         )
+    }
+}
+
+class DummyBall extends WeaponBall {
+    weapon_step(board, delta_time) {
+        this.hp -= 200 * delta_time;
     }
 }
 
@@ -347,6 +355,7 @@ class HammerBall extends WeaponBall {
         this.description_brief = "Has a huge hammer that does lots of damage each hit and knocks enemies back.";
         this.level_description = "Makes the hammer deal even more damage.";
         this.max_level_description = "Adds another smaller hammer that swings independently and faster, dealing half damage.";
+        this.quote = "I'm sure you understand.\nThe subject of my victory is quite the heavy topic.";
 
         this.weapon_data = [
             new BallWeapon(1 + (level * 0), "hamer", [
@@ -429,6 +438,7 @@ class SordBall extends WeaponBall {
         this.description_brief = "Deals more damage and rotates faster after every strike.";
         this.level_description = "Increases the base damage and rotation speed of the sord, and makes it scale faster.";
         this.max_level_description = "Also makes the sord larger(!) after every strike.";
+        this.quote = "I told you about those strikes, bro. I TOLD you.";
 
         this.weapon_data = [
             new BallWeapon(1, "SORD", [
@@ -490,6 +500,7 @@ class DaggerBall extends WeaponBall {
         this.description_brief = "Rotates exponentially faster and deals exponentially more damage every strike. These bonuses decay back to zero when not continually striking.";
         this.level_description = "Increases the delay after not striking until bonuses will decay.";
         this.max_level_description = "When rotation speed is at 1000 deg/s or higher, starts shooting small projectiles (1 dmg) at a frequency and velocity based on rotation speed. Projectile hits don't count as strikes.";
+        this.quote = "Surely that's not all you've got.\nCome here and let me destroy you again.";
 
         this.weapon_data = [
             new BallWeapon(1, "dagger", [
@@ -610,6 +621,7 @@ class BowBall extends WeaponBall {
         this.description_brief = "Quickly fires sets of multiple arrows at a periodic interval. Successful arrow hits increase the number of arrows in each set and their damage.";
         this.level_description = "Increases arrow speed, slightly increases arrow size and slightly reduces shot delay.";
         this.max_level_description = "Start with +1 multishot. Every shot fires an additional arrow.";
+        this.quote = "Phew! Almost ran out of arrows there.";
 
         this.weapon_data = [
             new BallWeapon(1, "bow", [
@@ -741,6 +753,7 @@ class MagnumBall extends WeaponBall {
         this.description_brief = "Throws coins and shoots a gun. If a gunshot hits a coin, it doubles in damage and ricochets to the nearest other coin, or enemy if there is no other coin.";
         this.level_description = "Increases coin throw and shot frequency.";
         this.max_level_description = "Get an additional coin thrower.";
+        this.quote = "Do you have any idea how much this battle cost me?\nIt's a good thing I can write off these coins as business expenses.";
 
         this.weapon_data = [
             new BallWeapon(0.5, "gun", [
@@ -879,6 +892,7 @@ class NeedleBall extends WeaponBall {
         this.description_brief = "Has three small needles. Needles apply 0.5 rupture per hit (stacking DOT that decays by 50%/s). When taking damage, 50% chance to use 10% current HP and create a smaller child copy with 4x the HP used that deals half damage and rupture. If the parent dies, all children die.";
         this.level_description = "Increases split chance.";
         this.max_level_description = "Applies poison instead for 1s each. Poison deals the full DOT for its duration and refreshes when stacked.";
+        this.quote = "Many thanks for your kind donation! It's always hard getting food\non the table as a mother of six trillion.";
 
         this.weapon_data = [
             new BallWeapon(can_clone ? 1 : 0.7, "needle", [
@@ -1024,6 +1038,7 @@ class RailgunBall extends WeaponBall {
         this.description_brief = "Shoots a beam projectile. If the shot hits or is parried, temporarily speeds up fire rate & rotation then quickly fires another shot. -[Original design by Boggy]";
         this.level_description = "Increases shot frequency.";
         this.max_level_description = "Use two railguns that always mirror positions and always shoot together.";
+        this.quote = "Wow, it's hard to hold this thing!\nSeriously, take a look- No, really, try it!";
 
         this.weapon_data = [
             new BallWeapon(1, "railgun", [
@@ -1153,6 +1168,7 @@ class PotionBall extends WeaponBall {
         this.description_brief = "Throws three different potions that create debilitating puddles of chemicals on impact (red is rupture, green is poison, blue is pure damage). Parrying anything with the held potion temporarily destroys the potion, creating a puddle.";
         this.level_description = "Increases puddle duration.";
         this.max_level_description = "Adds a fourth potion that temporally affects balls, freezing them in time.";
+        this.quote = "You couldn't handle my strongest potions.";
 
         this.weapon_data = [
             new BallWeapon(1, "potion1_weapon", [
@@ -1301,6 +1317,7 @@ class GrenadeBall extends WeaponBall {
         this.description_brief = "Throws grenades. Grenades bounce around for up to 3 seconds before exploding. If a grenade takes damage, it will explode immediately. Explosions can trigger other grenades, and deal 75% damage to the thrower as well.";
         this.level_description = "Increases throw frequency.";
         this.max_level_description = "Increases grenades' fuse timer to 30 seconds and increases throwing frequency by an additional 1.5x.";
+        this.quote = "I can't hear anything. Am I dying? Is this the end?";
 
         this.weapon_data = [
             new BallWeapon(1, "grenade_weapon", [
@@ -1483,6 +1500,101 @@ class GrenadeProjectileBall extends WeaponBall {
         this.parent.board.spawn_projectile(proj, expl_position);
 
         return {skip_default_explosion: true};
+    }
+}
+
+class GlassBall extends WeaponBall {
+    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Glass";
+        this.description_brief = "Normal strikes apply rupture but deal no damage. When hitting a target with rupture, charges up the weapon based on the rupture on the target before the strike. At 25 charge or more, the next hit deals a vorpal strike with damage equal to 16x the rupture that would be applied, then loses all charge.";
+        this.level_description = "Increases base rupture and makes the weapon rotate faster.";
+        this.max_level_description = "Multiplies the target's rupture by 2x after each hit.";
+        this.quote = "[unintelligible animalistic grunting]";
+
+        this.weapon_data = [
+            new BallWeapon(1, "glass", [
+                {pos: new Vector2(76, 64), radius: 6},
+                {pos: new Vector2(64, 64), radius: 12},
+                {pos: new Vector2(48, 64), radius: 16},
+                {pos: new Vector2(32, 64), radius: 16},
+                {pos: new Vector2(16, 64), radius: 16},
+            ])
+        ];
+
+        this.damage_base = 2.5 + (0.25 * level);
+        this.speed_base = 315 + (22.5 * level);
+
+        this.charge = 0;
+        this.charge_decay_per_sec = 0;
+        this.charge_threshold = 100;
+
+        this.vorpal_mult = 16;
+    }
+
+    weapon_step(board, time_delta) {
+        // rotate the weapon
+        this.rotate_weapon(0, this.speed_base * time_delta);
+
+        this.charge = Math.max(0, this.charge - (this.charge_decay_per_sec * time_delta));
+        if (this.charge >= this.charge_threshold) {
+            this.weapon_data[0].sprite = "glass_angry";
+        } else {
+            this.weapon_data[0].sprite = "glass";
+        }
+    }
+
+    hit_other(other, with_weapon_index) {
+        // additionally knock the other ball away
+        let result = {};
+        if (this.charge >= this.charge_threshold) {
+            result = super.hit_other(other, with_weapon_index, this.damage_base * this.vorpal_mult);
+            this.charge = 0;
+            result.snd = "strongpunch";
+        } else {
+            result = super.hit_other(other, with_weapon_index, 0);
+            this.charge += other.rupture_intensity * 10;
+            other.rupture_intensity += this.damage_base;
+        }
+
+        if (this.level >= AWAKEN_LEVEL) {
+            other.rupture_intensity *= 2;
+        }
+
+        return result;
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor) {
+        write_text(
+            ctx, `Rupture per hit: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+        )
+        write_text(
+            ctx, `Vorpal strike damage: ${(this.damage_base * this.vorpal_mult).toFixed(0)}`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+        )
+        write_text(
+            ctx, `Charge: ${this.charge.toFixed(0)}`, x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 12
+        )
+        if (this.charge >= this.charge_threshold) {
+            write_text(
+                ctx, `[${"!".repeat(20)}]`, x_anchor + 96, y_anchor + 24, this.colour.css(), "MS Gothic", 12
+            )
+        } else {
+            write_text(
+                ctx, `[${">".repeat(Math.floor(20 * (this.charge / this.charge_threshold)))}${" ".repeat(20 - Math.floor(20 * (this.charge / this.charge_threshold)))}]`, x_anchor + 96, y_anchor + 24, this.colour.css(), "MS Gothic", 12
+            )
+        }
+        write_text(
+            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 36, this.colour.css(), "MS Gothic", 12
+        )
+        write_text(
+            ctx, `Normal strikes apply rupture instead of damage.`, x_anchor, y_anchor + 48, this.colour.css(), "MS Gothic", 10
+        )
+        if (this.level >= AWAKEN_LEVEL) {
+            write_text(
+                ctx, `Multiplies rupture by 1.5x after each hit.`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 10
+            )
+        }
     }
 }
 
@@ -1851,6 +1963,14 @@ class MagnumCoinProjectile extends Projectile {
         this.frame = Math.floor(this.lifetime * this.frame_speed)
         this.frame = this.frame % this.framecount;
         this.sprite = this.sprites[this.frame];
+    }
+
+    hit_other_projectile(other_projectile) {
+        if (other_projectile instanceof MagnumProjectile) {
+            return;
+        }
+
+        super.hit_other_projectile(other_projectile);
     }
 }
 
