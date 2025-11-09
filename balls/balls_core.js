@@ -19,6 +19,8 @@ let imgs = {};
 const prerender_canvas = document.getElementById("hidden-prerender-canvas");
 const prerender_ctx = prerender_canvas.getContext("2d");
 
+const PARTICLE_SIZE_MULTIPLIER = 16;
+
 let num_textures_loaded = 0;
 let num_textures_needed = 0;
 
@@ -31,13 +33,31 @@ const entity_sprites = new Map([
     ["arrow", 1, "weapon/"],
     
     ["gun", 1, "weapon/"],
+    ["railgun", 1, "weapon/"],
 
     ["needle", 1, "weapon/"],
     
     ["coin_weapon", 1, "weapon/"],
     ["coin", 5, "weapon/"],
 
+    ["potion1", 1, "weapon/"],
+    ["potion1_weapon", 1, "weapon/"],
+    ["puddle1", 1, "weapon/"],
+    ["potion2", 1, "weapon/"],
+    ["potion2_weapon", 1, "weapon/"],
+    ["puddle2", 1, "weapon/"],
+    ["potion3", 1, "weapon/"],
+    ["potion3_weapon", 1, "weapon/"],
+    ["puddle3", 1, "weapon/"],
+    ["potion4", 1, "weapon/"],
+    ["potion4_weapon", 1, "weapon/"],
+    ["puddle4", 1, "weapon/"],
+
+    ["grenade", 1, "weapon/"],
+    ["grenade_weapon", 1, "weapon/"],
+    
     ["explosion", 16, "explosion/"],
+    ["explosion_grenade", 16, "explosion_grenade/"],
 ].map((v, i) => {
     let ts = [];
 
@@ -94,7 +114,7 @@ const DEFAULT_BALL_RESTITUTION = 1;
 const DEFAULT_BALL_FRICTION = 1;
 
 const BASE_HITSTOP_TIME = 0.15;
-const HITSTOP_DELTATIME_PENALTY = 0.01;
+const HITSTOP_DELTATIME_PENALTY = 0.001;
 const BALL_INVULN_DURATION = 0.1;
 
 let last_frame_times = [];
@@ -138,6 +158,8 @@ async function load_audio() {
     audio.set("thud", await load_audio_item("snd/thud.mp3"));
     // game maker classic
     audio.set("explosion", await load_audio_item("snd/explosion.mp3"));
+    // https://pixabay.com/sound-effects/explosion-312361/
+    audio.set("explosion2", await load_audio_item("snd/explosion2.mp3"));
 }
 
 function play_audio(name) {
@@ -158,7 +180,7 @@ class Particle {
     constructor(position, rotation_angle, size, sprites, frame_speed, duration, looping) {
         this.position = position;
         this.rotation_angle = rotation_angle;
-        this.size = size * 16;
+        this.size = size * PARTICLE_SIZE_MULTIPLIER;
         this.sprites = sprites;
         this.frame_speed = frame_speed;
         this.duration = duration;
@@ -901,6 +923,8 @@ function render_game(board, collision_boxes=false, velocity_lines=false) {
     layers.fg2.ctx.clearRect(0, 0, canvas_width, canvas_height);
     layers.fg3.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
+    layers.bg1.ctx.clearRect(0, 0, canvas_width, canvas_height);
+
     if (true) {
         layers.debug_back.ctx.clearRect(0, 0, canvas_width, canvas_height);
     }
@@ -924,21 +948,23 @@ function render_game(board, collision_boxes=false, velocity_lines=false) {
 
         let siz = particle.size * screen_scaling_factor * 128;
 
-        particle_screen_pos = particle_screen_pos.add(new Vector2(-siz, -siz).mul(0.5));
+        particle_screen_pos = particle_screen_pos.add(new Vector2(-siz, -siz).mul(0));
 
         write_rotated_image(
             layers.fg1.canvas, layers.fg1.ctx,
             particle_screen_pos.x, particle_screen_pos.y,
             particle.sprites[particle.cur_frame],
-            siz, siz, particle.direction_angle
+            siz, siz, particle.rotation_angle
         );
     })
 
     // then the projectiles. put them on fg3, same as weapons
     board.projectiles.forEach(projectile => {
-        if (!projectile.active || (projectile.render_delay && projectile.lifetime < projectile.inactive_delay)) {
+        if (!projectile.active || (projectile.render_delay && projectile.lifetime < projectile.render_delay)) {
             return;
         }
+
+        let layer = projectile.alternative_layer ? layers[projectile.alternative_layer] : layers.fg3;
 
         if (projectile.sprite != "HITSCAN") {
             let projectile_screen_pos = new Vector2(
@@ -949,7 +975,7 @@ function render_game(board, collision_boxes=false, velocity_lines=false) {
             let siz = projectile.size * screen_scaling_factor * 128;
 
             write_rotated_image(
-                layers.fg3.canvas, layers.fg3.ctx,
+                layer.canvas, layer.ctx,
                 projectile_screen_pos.x, projectile_screen_pos.y,
                 projectile.sprite instanceof Image ? projectile.sprite : entity_sprites.get(projectile.sprite)[0],
                 siz, siz, projectile.direction_angle
@@ -967,13 +993,41 @@ function render_game(board, collision_boxes=false, velocity_lines=false) {
                 (projectile.target_position.y) * screen_scaling_factor,
             );
 
-            layers.fg3.ctx.beginPath();
-            layers.fg3.ctx.moveTo(projectile_screen_start_pos.x, projectile_screen_start_pos.y);
-            layers.fg3.ctx.lineTo(projectile_screen_end_pos.x, projectile_screen_end_pos.y);
+            let projectile_lifetime_proportion = (projectile.lifetime - projectile.render_delay) / (projectile.duration - projectile.render_delay);
+            // every line can be 1000 segments. start the line at 1000 * proportion segments down
+            // then scale the rest from 0% up to 100% at the end
 
-            layers.fg3.ctx.lineWidth = projectile.get_width();
-            layers.fg3.ctx.strokeStyle = projectile.sprite_colour;
-            layers.fg3.ctx.stroke();
+            layer.ctx.strokeStyle = projectile.sprite_colour;
+
+            let segments = 1000;
+            let line_start_point = 0;
+            let max_width = projectile.get_width();
+            let remaining_line_segs = segments - line_start_point;
+            let initial_pos = projectile_screen_start_pos.lerp(projectile_screen_end_pos, line_start_point / segments);
+            let last_pos = initial_pos;
+
+            for (let i=line_start_point+1; i<segments; i++) {
+                let pos = projectile_screen_start_pos.lerp(projectile_screen_end_pos, i / segments);
+
+                let w_factor = (i - line_start_point) / remaining_line_segs; // 0.8
+                let w_reduction_factor = 1 - w_factor; // 0.2
+                let scaled_w_reduction_factor = w_reduction_factor * projectile_lifetime_proportion; // 0.1
+                w_factor = 1 - scaled_w_reduction_factor // 0.9
+
+                if (w_factor <= 0) {
+                    continue;
+                }
+
+                layer.ctx.lineWidth = w_factor * max_width;
+
+                layer.ctx.beginPath();
+                layer.ctx.moveTo(last_pos.x, last_pos.y);
+                layer.ctx.lineTo(pos.x, pos.y);
+                layer.ctx.stroke();
+                layer.ctx.closePath();
+
+                last_pos = pos;
+            }
         }
 
         if (collision_boxes) {
@@ -1010,67 +1064,73 @@ function render_game(board, collision_boxes=false, velocity_lines=false) {
             (ball.position.y) * screen_scaling_factor,
         );
 
-        ctx.beginPath();
-        ctx.arc(ball_screen_pos.x, ball_screen_pos.y, (ball.radius * screen_scaling_factor) - (w/2), 0, 2 * Math.PI, false);
-        
-        let ball_col = ball.colour
-        if (ball.invuln_duration > 0 && ball.last_hit == 0) {
-            ball_col = ball_col.lerp(Colour.black, 0.75);
-        }
-        
-        ctx.fillStyle = ball_col.css();
-        ctx.fill();
-        ctx.lineWidth = w;
-        ctx.strokeStyle = ball.colour.lerp(Colour.white, 0.75).css();
-        ctx.stroke();
-
-        ctx.fillStyle = "black";
-        ctx.font = "22px \"ms gothic\"";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(Math.ceil(ball.hp), ball_screen_pos.x-0.5, ball_screen_pos.y-0.5);
-        ctx.fillText(Math.ceil(ball.hp), ball_screen_pos.x+0.5, ball_screen_pos.y-0.5);
-        ctx.fillText(Math.ceil(ball.hp), ball_screen_pos.x-0.5, ball_screen_pos.y+0.5);
-        ctx.fillText(Math.ceil(ball.hp), ball_screen_pos.x+0.5, ball_screen_pos.y+0.5);
-
-        ctx.closePath();
-
-        // now draw the weapons
-        // weapon needs to be drawn at an offset from the ball (radius to the right)
-        // with that offset rotated by the angle as well
-        ball.weapon_data.forEach(weapon => {
-            let offset = ball.get_weapon_offset(weapon);
-
-            let siz = weapon.size_multiplier * screen_scaling_factor * 128;
-            let pos = ball.position.add(offset).mul(screen_scaling_factor);
-
-            write_rotated_image(layers.fg3.canvas, layers.fg3.ctx, pos.x, pos.y, entity_sprites.get(weapon.sprite)[0], siz, siz, weapon.angle);
-        
-            if (collision_boxes) {
-                // render the collision boxes on debug_back as green circles
-                // collision boxes are based on the original 128x128 sizing
-                // so get the offset, then add the collision pos offset, then draw that
-                weapon.hitboxes.forEach(hitbox => {
-                    let hitbox_offset = offset.add(ball.get_hitbox_offset(weapon, hitbox));
-
-                    let hitbox_screen_pos = ball.position.add(hitbox_offset).mul(screen_scaling_factor);
-                    let w2 = w / 8;
-
-                    layers.debug_back.ctx.beginPath();
-                    layers.debug_back.ctx.arc(
-                        hitbox_screen_pos.x, hitbox_screen_pos.y, 
-                        (hitbox.radius * weapon.size_multiplier * screen_scaling_factor) - (w2/2),
-                        0, 2 * Math.PI, false
-                    );
-                    layers.debug_back.ctx.fillStyle = new Colour(0, 255, 0, 128).css();
-                    layers.debug_back.ctx.fill();
-                    layers.debug_back.ctx.lineWidth = w2;
-                    layers.debug_back.ctx.strokeStyle = new Colour(0, 255, 0, 255).css();
-                    layers.debug_back.ctx.stroke();
-                    layers.debug_back.ctx.closePath();
-                })
+        if (ball.display) {
+            ctx.beginPath();
+            ctx.arc(ball_screen_pos.x, ball_screen_pos.y, Math.max(0, (ball.radius * screen_scaling_factor) - (w/2)), 0, 2 * Math.PI, false);
+            
+            let ball_col = ball.colour
+            if (ball.invuln_duration > 0 && ball.last_hit == 0) {
+                ball_col = ball_col.lerp(Colour.black, 0.75);
             }
-        })
+            
+            ctx.fillStyle = ball_col.css();
+            ctx.fill();
+            ctx.lineWidth = w;
+            ctx.strokeStyle = ball.colour.lerp(Colour.white, 0.75).css();
+            ctx.stroke();
+
+            ctx.fillStyle = "black";
+            ctx.font = "22px \"ms gothic\"";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(Math.ceil(ball.hp), ball_screen_pos.x-0.5, ball_screen_pos.y-0.5);
+            ctx.fillText(Math.ceil(ball.hp), ball_screen_pos.x+0.5, ball_screen_pos.y-0.5);
+            ctx.fillText(Math.ceil(ball.hp), ball_screen_pos.x-0.5, ball_screen_pos.y+0.5);
+            ctx.fillText(Math.ceil(ball.hp), ball_screen_pos.x+0.5, ball_screen_pos.y+0.5);
+
+            ctx.closePath();
+
+            // now draw the weapons
+            // weapon needs to be drawn at an offset from the ball (radius to the right)
+            // with that offset rotated by the angle as well
+            ball.weapon_data.forEach(weapon => {
+                if (weapon.size_multiplier <= 0) {
+                    return;
+                }
+
+                let offset = ball.get_weapon_offset(weapon);
+
+                let siz = weapon.size_multiplier * screen_scaling_factor * 128;
+                let pos = ball.position.add(offset).mul(screen_scaling_factor);
+
+                write_rotated_image(layers.fg3.canvas, layers.fg3.ctx, pos.x, pos.y, entity_sprites.get(weapon.sprite)[0], siz, siz, weapon.angle);
+            
+                if (collision_boxes) {
+                    // render the collision boxes on debug_back as green circles
+                    // collision boxes are based on the original 128x128 sizing
+                    // so get the offset, then add the collision pos offset, then draw that
+                    weapon.hitboxes.forEach(hitbox => {
+                        let hitbox_offset = offset.add(ball.get_hitbox_offset(weapon, hitbox));
+
+                        let hitbox_screen_pos = ball.position.add(hitbox_offset).mul(screen_scaling_factor);
+                        let w2 = w / 8;
+
+                        layers.debug_back.ctx.beginPath();
+                        layers.debug_back.ctx.arc(
+                            hitbox_screen_pos.x, hitbox_screen_pos.y, 
+                            (hitbox.radius * weapon.size_multiplier * screen_scaling_factor) - (w2/2),
+                            0, 2 * Math.PI, false
+                        );
+                        layers.debug_back.ctx.fillStyle = new Colour(0, 255, 0, 128).css();
+                        layers.debug_back.ctx.fill();
+                        layers.debug_back.ctx.lineWidth = w2;
+                        layers.debug_back.ctx.strokeStyle = new Colour(0, 255, 0, 255).css();
+                        layers.debug_back.ctx.stroke();
+                        layers.debug_back.ctx.closePath();
+                    })
+                }
+            })
+        }
     })
 }
 
@@ -1099,8 +1159,20 @@ function render_descriptions(board) {
             write_text(
                 layers.ui2.ctx, `[${"#".repeat(Math.ceil(ball.hp * 0.4))}${" ".repeat(Math.floor((100 - ball.hp) * 0.4))}]`, l[0], l[1] + 12, ball.colour.css(), "MS Gothic", 9
             )
+            
+            if (ball.poison_duration > 0) {
+                write_text(
+                    layers.ui2.ctx, `☣ ${ball.poison_intensity.toFixed(2).padEnd(5)} | ${ball.poison_duration.toFixed(1)}s`, l[0], l[1] + 12 + 12, ball.colour.css(), "MS Gothic", 12
+                )
+            }
 
-            ball.render_stats(layers.ui2.canvas, layers.ui2.ctx, l[0], l[1] + 12 + 12);
+            if (ball.rupture_intensity >= 0.01) {
+                write_text(
+                    layers.ui2.ctx, `➴ ${ball.rupture_intensity.toFixed(2).padEnd(5)}`, l[0] + 128, l[1] + 12 + 12, ball.colour.css(), "MS Gothic", 12
+                )
+            }
+
+            ball.render_stats(layers.ui2.canvas, layers.ui2.ctx, l[0], l[1] + 12 + 12 + 16);
         })
     }
 }
@@ -1133,14 +1205,14 @@ function game_loop() {
     delta_time = Math.min(delta_time, 50);
 
     if (keys_down["KeyE"]) {
-        delta_time /= 1000;
+        delta_time /= 10;
     }
 
     let phys_gran = PHYS_GRANULARITY;
     let coll_gran = COLL_GRANULARITY;
 
-    if (keys_down["KeyR"]) {
-        let factor = 16;
+    if (keys_down["KeyR"] ^ winrate_tracking) {
+        let factor = 4;
 
         phys_gran *= factor;
         coll_gran *= factor;
@@ -1154,12 +1226,14 @@ function game_loop() {
 
             // additional collision step on the last frame
             if (i % coll_gran == 0 || i == phys_gran-1) {
+                let coll_delta_time = delta_time / (1000 * phys_gran);
+
                 // if multiple weapons collide, the first one takes priority
                 let hitstop = 0;
 
                 // projectile weaponsteps
                 board.projectiles.forEach(projectile => {
-                    projectile.weapon_step(board, delta_time / 1000)
+                    projectile.weapon_step(board, coll_delta_time)
                 })
 
                 // parrying (weapon on weapon)
@@ -1187,6 +1261,9 @@ function game_loop() {
                                     // plus the directions of the weapons reverse
                                     ball.reverse_weapon(source_index);
                                     other.reverse_weapon(other_index);
+
+                                    ball.parry_weapon(source_index, other, other_index);
+                                    other.parry_weapon(other_index, ball, source_index);
 
                                     let diff_vec = other.position.sub(ball.position).normalize();
 
@@ -1222,10 +1299,16 @@ function game_loop() {
                 // projectile parrying (weapon on projectile)
                 board.balls.forEach(ball => {
                     // don't check our own team's projectiles
-                    let projectiles = board.projectiles.filter(projectile => projectile.active && projectile.source.player.id != ball.player.id);
+                    let projectiles = board.projectiles.filter(projectile => 
+                        projectile.active && 
+                        !projectile.ignore_balls.has(ball.id) && 
+                        (!ball.allied_with(projectile.source) || projectile.can_hit_allied) &&
+                        (ball.id != projectile.source.id || projectile.can_hit_source)
+                    );
+                    
                     let intersecting_projectiles = ball.check_weapon_to_projectiles_hits(projectiles);
 
-                    let parried = false;
+                    let play_parried_audio = false;
                     intersecting_projectiles.forEach(projectile_data => {
                         let projectile = projectile_data[1];
                         let parry_weapon_index = projectile_data[0];
@@ -1263,11 +1346,16 @@ function game_loop() {
                             }
                         }
 
-                        parried = true;
+                        if (projectile.play_parried_audio) {
+                            play_parried_audio = true;
+                        }
 
                         // board will clean it up
                         projectile.get_parried(ball);
+
                         ball.reverse_weapon(parry_weapon_index);
+                        ball.parry_projectile(parry_weapon_index, projectile);
+                        
                         projectile.source.get_projectile_parried(ball, projectile);
 
                         // we actually move the ball in the direction the projectile was travelling
@@ -1287,7 +1375,7 @@ function game_loop() {
                         ball.invuln_duration = Math.max(ball.invuln_duration, BALL_INVULN_DURATION * 0.5);
                     })
 
-                    if (parried) {
+                    if (play_parried_audio) {
                         play_audio("parry2");
                     }
                 });
@@ -1305,6 +1393,7 @@ function game_loop() {
 
                                     ball.last_hit = 0;
                                     let result = other.hit_other(ball, weapon_index);
+                                    ball.last_damage_source = other;
                                     
                                     if (result.dmg >= 8) {
                                         play_audio("impact_heavy");
@@ -1326,37 +1415,58 @@ function game_loop() {
                 board.balls.forEach(ball => {
                     if (ball.invuln_duration <= 0) {
                         // don't check our own projectiles
-                        let projectiles = board.projectiles.filter(projectile => projectile.active && projectile.source.player.id != ball.player.id);
+                        let projectiles = board.projectiles.filter(projectile => 
+                            projectile.active && 
+                            !projectile.ignore_balls.has(ball.id) && 
+                            (!ball.allied_with(projectile.source) || projectile.can_hit_allied) &&
+                            (ball.id != projectile.source.id || projectile.can_hit_source)
+                        );
+
                         let intersecting_projectiles = ball.check_projectiles_hit_from(projectiles);
                         
                         // same rules as normal thing except we go through the get_hit_by for projectiles instead
                         // and delete the projectile
-                        if (intersecting_projectiles.length > 0) {
-                            let projectile = intersecting_projectiles[0];  // ignore all others
+                        intersecting_projectiles.forEach(projectile => {
+                            if (this.invuln_duration > 0) {
+                                return;  // don't care if now invuln
+                            }
 
                             ball.last_hit = 0;
                             let result = projectile.source.hit_other_with_projectile(ball, projectile);
-                            projectile.hit_ball(ball);
+                            projectile.hit_ball(ball, coll_delta_time);
+                            ball.last_damage_source = projectile.source;
 
-                            play_audio("impact");
+                            if (!result.mute) {
+                                play_audio("impact");
+                            }
 
                             hitstop = Math.max(hitstop, result.hitstop ?? 0);
-                        }
+                        });
                     }
                 })
 
                 // projectile collisions (projectile on projectile)
                 colliding_proj2projs.clear()
                 board.projectiles.forEach(projectile => {
-                    if (!projectile.active) 
+                    if (!projectile.active || !projectile.collides_other_projectiles) 
                         return;
 
-                    let projectiles_in_scope = board.projectiles.filter(other => projectile.id !== other.id && (other.source.allied_with(projectile.source) || (projectile.can_hit_allied && other.can_hit_allied)));
+                    let projectiles_in_scope = board.projectiles.filter(other => 
+                        projectile.id !== other.id &&
+                        other.parriable && other.collides_other_projectiles &&
+                        (!other.source.allied_with(projectile.source) || (projectile.can_hit_allied && other.can_hit_allied))
+                    );
+
                     let projectiles_colliding = projectile.check_projectiles_colliding(projectiles_in_scope);
                     projectiles_colliding = projectiles_colliding.filter(proj => !colliding_proj2projs.has(proj.id + (1000000 * projectile.id)))
 
                     projectiles_colliding.forEach(proj => {
-                        projectile.hit_other_projectile(proj)
+                        if (projectile.parriable) {
+                            projectile.hit_other_projectile(proj);
+                        }
+                        if (proj.parriable) {
+                            proj.hit_other_projectile(projectile);
+                        }
                         colliding_proj2projs.add(proj.id + (1000000 * projectile.id));
 
                         play_audio("thud");
@@ -1370,19 +1480,23 @@ function game_loop() {
                 if (ball.hp > 0) {
                     return true;
                 } else {
-                    if (ball.show_stats) {
-                        board.spawn_particle(new Particle(
-                            ball.position.add(new Vector2(256+64, -512)), 0, 2, entity_sprites.get("explosion"), 12, 3, false
-                        ), ball.position.add(new Vector2(256+64, -512)));
+                    let result = ball.die();
 
-                        play_audio("explosion");
-                    } else {
-                        board.spawn_particle(new Particle(
-                            ball.position.add(new Vector2(144, -512)), 0, 1, entity_sprites.get("explosion"), 12, 3, false
-                        ), ball.position.add(new Vector2(144, -512)));
+                    if (!result.skip_default_explosion) {
+                        if (ball.show_stats) {
+                            board.spawn_particle(new Particle(
+                                ball.position.add(new Vector2(256+64, -512)), 0, 2, entity_sprites.get("explosion"), 12, 3, false
+                            ), ball.position.add(new Vector2(256+64, -512)));
 
-                        // TODO make this something else thats less impactful
-                        play_audio("explosion");
+                            play_audio("explosion");
+                        } else {
+                            board.spawn_particle(new Particle(
+                                ball.position.add(new Vector2(144, -512)), 0, 1, entity_sprites.get("explosion"), 12, 3, false
+                            ), ball.position.add(new Vector2(144, -512)));
+
+                            // TODO make this something else thats less impactful
+                            play_audio("explosion");
+                        }
                     }
 
                     return false;
@@ -1390,12 +1504,35 @@ function game_loop() {
             });
         }
 
-        board.particles_step(delta_time);
+        // we only need to do balls' ailments steps once per frame
+        board.balls.forEach(ball => ball.ailments_step(board, delta_time / 1000));
 
+        board.particles_step(delta_time);
         
         if (board?.remaining_players().length <= 1) {
+            board.get_all_player_balls(board.remaining_players()[0]).forEach(ball => ball.takes_damage = false);
+
             match_end_timeout -= delta_time;
             if (match_end_timeout <= 0) {
+                if (board.remaining_players().length == 1 && winrate_tracking) {
+                    let winning_balls = board.get_all_player_balls(board.remaining_players()[0]).filter(ball => ball.show_stats);
+                    if (winning_balls.length >= 1) {
+                        let winning_ball = winning_balls[0];
+                        let winning_ball_class = selectable_balls.find(t => winning_ball instanceof t);
+
+                        let losing_balls = start_balls.filter(b => b.name != winning_ball_class.name);
+                        
+                        if (losing_balls.length >= 1) {
+                            let winning_ball_index = selectable_balls.findIndex(t => winning_ball instanceof t);
+                            let losing_ball_index = selectable_balls.findIndex(t => losing_balls[0].name == t.name);
+                            
+                            win_matrix[winning_ball_index][losing_ball_index] += 1;
+                        }
+
+                        console.log(" ".repeat(12) + selectable_balls.map(t => t.name.padEnd(12)).join("") + "\n" + win_matrix.map((a, i) => `${selectable_balls[i].name.padEnd(12)}` + a.map((b, j) => `${b === 0 ? "-" : b}`.padEnd(12)).join("")).join("\n"))
+                    }
+                }
+                
                 exit_battle();
             }
         }

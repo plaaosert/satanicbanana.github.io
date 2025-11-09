@@ -21,7 +21,7 @@
     <canvas width="8" height="8" id="hidden-prerender-canvas" style="display:none"></canvas>
 
     <div class="everything-container">
-        <div class="spacer hidden">
+        <div class="spacer hidden nodisplay">
             <p>Hi</p>
         </div>
 
@@ -125,7 +125,7 @@
             </canvas>
         </div>
 
-        <div class="modding-frame hidden" id="modding_frame">
+        <div class="modding-frame hidden nodisplay" id="modding_frame">
             <span>If you have a mod paste it here. This is literally pure JS code that the game will run through eval(). I do not take responsibility.</span>
             <br><br>
             <textarea id="mod-text" onchange="refresh_mod_text()"></textarea>

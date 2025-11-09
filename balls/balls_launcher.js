@@ -44,6 +44,8 @@ function spawn_selected_balls() {
             new Vector2(512*11, 512*5),
         ]
 
+        let balls = [];
+
         cols.forEach((col, index) => {
             let elem = document.querySelector(`select[name='ball${index+1}']`);
             if (elem.value != "None") {
@@ -58,9 +60,12 @@ function spawn_selected_balls() {
                     ball.randomise_weapon_rotations();
 
                     board.spawn_ball(ball, positions[index])
+                    balls.push(ball_proto);
                 }
             }
         })
+
+        start_balls = balls;
 
         board.balls.forEach(ball => ball.add_velocity(random_on_circle(random_float(512 * 6, 512 * 12))));
     
@@ -143,7 +148,9 @@ function load_mod() {
 }
 
 let selectable_balls = [
-    HammerBall, SordBall, DaggerBall, BowBall, MagnumBall, NeedleBall
+    HammerBall, SordBall, DaggerBall,
+    BowBall, MagnumBall, NeedleBall,
+    RailgunBall, PotionBall, GrenadeBall
 ]
 
 let match_end_timeout = 0;
@@ -244,13 +251,37 @@ document.addEventListener("DOMContentLoaded", function() {
         selectable_balls.forEach(ball => elem.options.add(new Option(ball.name)));
     });
 
-    document.querySelector("select[name='ball1']").value = "NeedleBall";
-    document.querySelector("select[name='ball2']").value = "HammerBall";
+    document.querySelector("select[name='ball1']").value = "GrenadeBall";
+    document.querySelector("select[name='ball2']").value = "SordBall";
 
     update_ballinfo('ball1');
     update_ballinfo('ball2');
     update_ballinfo('ball3');
     update_ballinfo('ball4');
+
+    if (winrate_tracking) {
+        setInterval(() => {
+            if (!board) {
+                document.querySelector("select[name='ball1']").value = random_from_array(selectable_balls).name;
+                if (force_ball1) {
+                    document.querySelector("select[name='ball1']").value = force_ball1.name;
+                }
+
+                document.querySelector("select[name='ball2']").value = random_from_array(selectable_balls.filter(t => t.name != document.querySelector("select[name='ball1']").value)).name;
+
+                update_ballinfo('ball1');
+                update_ballinfo('ball2');
+
+                spawn_selected_balls();
+            }
+        }, 100);
+    }
 })
 
 // TODO make levelling information exist somewhere - probably need to think about that when we come to RPG theming really
+
+let winrate_tracking = false;
+let force_ball1 = NeedleBall;
+let win_matrix = [];
+selectable_balls.forEach(_ => win_matrix.push(new Array(selectable_balls.length).fill(0)));
+let start_balls = [];

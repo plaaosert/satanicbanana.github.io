@@ -29,7 +29,7 @@ function get_pixel_from_imagedata(imagedata, x, y) {
 }
 
 function write_rotated_imagedata(canvas, ctx, x, y, imagedata, angle_rad) {
-    if (angle_rad) {
+    if (angle_rad !== undefined) {
         ctx.translate(x, y);
         ctx.rotate(angle_rad);
         ctx.putImageData(imagedata, Math.round(-imagedata.width / 2), Math.round(-imagedata.height / 2));
@@ -44,7 +44,7 @@ function write_rotated_image(canvas, ctx, x, y, image, w, h, angle_rad) {
     var width = image.width;
     var height = image.height;
 
-    if (angle_rad) {
+    if (angle_rad !== undefined) {
         ctx.translate(x, y);
         ctx.rotate(angle_rad);
         ctx.drawImage(image, -w / 2, -h / 2, w, h);

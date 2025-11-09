@@ -4,6 +4,10 @@
     initial-value: 1.0;
 }
 
+.nodisplay {
+  display: none;
+}
+
 .everything-container {
   display: flex;
 
