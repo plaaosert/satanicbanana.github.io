@@ -262,8 +262,8 @@ document.addEventListener("DOMContentLoaded", function() {
     document.querySelector("select[name='ball1']").value = random_from_array(selectable_balls_for_random).name;
     document.querySelector("select[name='ball2']").value = random_from_array(selectable_balls_for_random.filter(t => t.name != document.querySelector("select[name='ball1']").value)).name;
 
-    document.querySelector("select[name='ball1']").value = "SordBall";
-    document.querySelector("select[name='ball2']").value = "DummyBall";
+    // document.querySelector("select[name='ball1']").value = "SordBall";
+    // document.querySelector("select[name='ball2']").value = "DummyBall";
 
     update_ballinfo('ball1');
     update_ballinfo('ball2');

@@ -342,9 +342,7 @@ class WeaponBall extends Ball {
 }
 
 class DummyBall extends WeaponBall {
-    weapon_step(board, delta_time) {
-        this.hp -= 200 * delta_time;
-    }
+
 }
 
 class HammerBall extends WeaponBall {
