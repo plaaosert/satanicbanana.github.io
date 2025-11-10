@@ -43,6 +43,7 @@ yellowed_chars = []
 dropped_chars = []
 target_word = "unset"
 target_length = target_word.length;
+letters_in_target_word = []
 
 solved_num = 0
 score = 0
@@ -206,6 +207,8 @@ function set_new_word(word) {
 		locked_chars = [];
 		yellowed_chars = [];
 		dropped_chars = [];
+
+		letters_in_target_word = count_letters(word);
 		
 		for (var i=0; i<target_length; i++) {
 			locked_chars.push(null);
@@ -224,6 +227,20 @@ function set_new_word(word) {
 		last_game_str += "\nPlay this scenario:\n" + document.location.href;
 		document.getElementById("input-box").disabled = true;
 	}
+}
+
+function count_letters(word) {
+	var letters_in_word = [];
+
+	for (let letter of word) {
+		if (letters_in_word[letter] === undefined) {
+			letters_in_word[letter] = 1;
+		} else {
+			letters_in_word[letter]++;
+		}
+	}
+
+	return letters_in_word;
 }
 
 
@@ -268,6 +285,9 @@ function add_new_guessed_word(word) {
 	guess_str = ""
 	
 	word_chars = []
+
+	guessed_char_count = []
+
 	for (var i=0; i<target_length; i++) {
 		if (word.charAt(i) == target_word.charAt(i)) {
 			word_chars.push("_");
@@ -284,11 +304,18 @@ function add_new_guessed_word(word) {
 		
 		var c_t = target_word.charAt(i);
 		var c_w = word.charAt(i);
+
+		if (guessed_char_count[c_w] === undefined) {
+			guessed_char_count[c_w] = 1;
+		} else {
+			guessed_char_count[c_w]++;
+		}
+
 		if (c_t == c_w) {
 			span.classList.add("green-letter");
 			guess_str += "🟩"
 			locked_chars[i] = c_t;
-		} else if (word_chars.includes(c_w)) {
+		} else if (word_chars.includes(c_w) && guessed_char_count[c_w] <= letters_in_target_word[c_w]) {
 			if (!yellowed_chars.includes(c_w)) {
 				yellowed_chars.push(c_w);
 			}
