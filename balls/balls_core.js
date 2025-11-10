@@ -113,6 +113,7 @@ let mouse_position = new Vector2(0, 0);
 
 const PHYS_GRANULARITY = 1280;
 const COLL_GRANULARITY = PHYS_GRANULARITY / 4;  // COLL_GRANULARITY => do collision checks every N physics steps
+const COLLS_PER_FRAME = PHYS_GRANULARITY / COLL_GRANULARITY;
 const DEFAULT_BALL_RESTITUTION = 1;
 const DEFAULT_BALL_FRICTION = 1;
 
@@ -1251,13 +1252,16 @@ function game_loop() {
 
     let phys_gran = PHYS_GRANULARITY;
     let coll_gran = COLL_GRANULARITY;
+    let cps = COLLS_PER_FRAME;
 
     if (keys_down["KeyR"] ^ winrate_tracking) {
         let factor = 4;
 
         phys_gran *= factor;
-        coll_gran *= factor;
+        // coll_gran *= factor;
         delta_time *= factor;
+
+        cps = phys_gran / coll_gran;
     }
 
     if (board) {
@@ -1265,9 +1269,8 @@ function game_loop() {
         for (let i=0; i<phys_gran; i++) {
             board.physics_step(delta_time / (1000 * phys_gran));
 
-            // additional collision step on the last frame
-            if (i % coll_gran == 0 || i == phys_gran-1) {
-                let coll_delta_time = delta_time / (1000 * phys_gran);
+            if ((i+1) % coll_gran == 0) {
+                let coll_delta_time = delta_time / (1000 * cps);
 
                 // if multiple weapons collide, the first one takes priority
                 let hitstop = 0;

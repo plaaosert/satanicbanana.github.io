@@ -271,7 +271,7 @@ document.addEventListener("DOMContentLoaded", function() {
     update_ballinfo('ball4');
 
     if (winrate_tracking) {
-        setInterval(() => {
+        repeater_interval = setInterval(() => {
             if (!board) {
                 document.querySelector("select[name='ball1']").value = random_from_array(selectable_balls_for_random).name;
                 if (force_ball1) {
@@ -291,7 +291,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // TODO make levelling information exist somewhere - probably need to think about that when we come to RPG theming really
 
-let winrate_tracking = true;
+let winrate_tracking = false;
+let repeater_interval = null;
 let force_ball1 = null;
 let win_matrix = [];
 selectable_balls_for_random.forEach(_ => win_matrix.push(new Array(selectable_balls_for_random.length).fill(0)));

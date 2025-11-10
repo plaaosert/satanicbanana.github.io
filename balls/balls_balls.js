@@ -2043,21 +2043,21 @@ class PotionPuddleProjectile extends Projectile {
         switch (this.effect_index) {
             case 0: {
                 // rupture
-                ball.rupture_intensity += 900 * this.intensity * delta_time;
+                ball.rupture_intensity += 6 * this.intensity * delta_time;
                 break;
             }
 
             case 1: {
                 // poison
-                let dur = 850 * this.intensity * delta_time;
+                let dur = 3 * this.intensity * delta_time;
                 ball.poison_duration = Math.max(ball.poison_duration + dur, dur);
-                ball.poison_intensity += 350 * this.intensity * delta_time;
+                ball.poison_intensity += 3 * this.intensity * delta_time;
                 break;
             }
 
             case 2: {
                 // damage
-                ball.lose_hp(2300 * this.intensity * delta_time);
+                ball.lose_hp(9 * this.intensity * delta_time);
                 break;
             }
 
