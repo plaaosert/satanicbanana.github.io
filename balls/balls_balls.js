@@ -1124,7 +1124,7 @@ class RailgunBall extends WeaponBall {
 
         let result = super.hit_other_with_projectile(other, with_projectile);
 
-        other.invuln_duration = 0.025;
+        other.invuln_duration = 0.015;
 
         return result;
     }
@@ -1134,7 +1134,7 @@ class RailgunBall extends WeaponBall {
         this.speed_base *= 1.5;
         this.hit_decay = 0.6;
 
-        parrier.invuln_duration = 0.025;
+        parrier.invuln_duration = 0.015;
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
@@ -2043,21 +2043,21 @@ class PotionPuddleProjectile extends Projectile {
         switch (this.effect_index) {
             case 0: {
                 // rupture
-                ball.rupture_intensity += 6 * this.intensity * delta_time;
+                ball.rupture_intensity += 5 * this.intensity * delta_time;
                 break;
             }
 
             case 1: {
                 // poison
-                let dur = 3 * this.intensity * delta_time;
+                let dur = 2.5 * this.intensity * delta_time;
                 ball.poison_duration = Math.max(ball.poison_duration + dur, dur);
-                ball.poison_intensity += 3 * this.intensity * delta_time;
+                ball.poison_intensity += 1.5 * this.intensity * delta_time;
                 break;
             }
 
             case 2: {
                 // damage
-                ball.lose_hp(9 * this.intensity * delta_time);
+                ball.lose_hp(7 * this.intensity * delta_time);
                 break;
             }
 
