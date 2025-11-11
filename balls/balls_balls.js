@@ -462,8 +462,8 @@ class SordBall extends WeaponBall {
         // additionally knock the other ball away
         let result = super.hit_other(other, with_weapon_index, this.damage_base);
 
-        this.damage_base += 0.5 * (1 + (this.level * 0.15));
-        this.speed_base += (45 / 4) * (1 + (this.level * 0.15));
+        this.damage_base += 0.6 * (1 + (this.level * 0.175));
+        this.speed_base += (60 / 4) * (1 + (this.level * 0.15));
 
         if (this.level >= AWAKEN_LEVEL) {
             this.weapon_data[0].size_multiplier += 0.04 * 16;
@@ -567,7 +567,7 @@ class DaggerBall extends WeaponBall {
         this.speed_base *= 2;
         this.damage_base *= 1.5;
 
-        this.hit_decay = 1.5 + (0.2 * this.level);
+        this.hit_decay = 1.4 + (0.2 * this.level);
 
         return result;
     }
@@ -638,7 +638,7 @@ class BowBall extends WeaponBall {
         this.arrow_size_mult = 1 + (this.level * 0.03);
         this.arrow_speed = 10000 + (this.level * 2000);
 
-        this.shot_cooldown_max = 0.6 + (this.level * -0.015);
+        this.shot_cooldown_max = 0.65 + (this.level * -0.015);
         this.shot_cooldown = this.shot_cooldown_max;
 
         this.multishot_cooldown = 0;
@@ -782,10 +782,10 @@ class MagnumBall extends WeaponBall {
         this.coin_damage_base = 1;
         this.speed_base = 90;
 
-        this.shot_cooldown_max = 0.6 + (this.level * -0.01);
+        this.shot_cooldown_max = 0.575 + (this.level * -0.01);
         this.shot_cooldown = this.shot_cooldown_max;
 
-        this.coin_shot_cooldown_max = 0.5 + (this.level * -0.01);
+        this.coin_shot_cooldown_max = 0.48 + (this.level * -0.01);
         this.coin_shot_cooldown = this.coin_shot_cooldown_max;
     }
 
@@ -893,19 +893,19 @@ class NeedleBall extends WeaponBall {
         this.quote = "Many thanks for your kind donation! It's always hard getting food\non the table as a mother of six trillion.";
 
         this.weapon_data = [
-            new BallWeapon(can_clone ? 1 : 0.7, "needle", [
+            new BallWeapon(can_clone ? 0.9 : 0.6, "needle", [
                 {pos: new Vector2(60, 64), radius: 4},
                 {pos: new Vector2(52, 64), radius: 4},
                 {pos: new Vector2(40, 64), radius: 8},
                 {pos: new Vector2(24, 64), radius: 8},
             ]),
-            new BallWeapon(can_clone ? 1 : 0.7, "needle", [
+            new BallWeapon(can_clone ? 0.9 : 0.6, "needle", [
                 {pos: new Vector2(60, 64), radius: 4},
                 {pos: new Vector2(52, 64), radius: 4},
                 {pos: new Vector2(40, 64), radius: 8},
                 {pos: new Vector2(24, 64), radius: 8},
             ]),
-            new BallWeapon(can_clone ? 1 : 0.7, "needle", [
+            new BallWeapon(can_clone ? 0.9 : 0.6, "needle", [
                 {pos: new Vector2(60, 64), radius: 4},
                 {pos: new Vector2(52, 64), radius: 4},
                 {pos: new Vector2(40, 64), radius: 8},
@@ -917,7 +917,7 @@ class NeedleBall extends WeaponBall {
         this.rupture_base = 0.5 * (can_clone ? 1 : 0.5);
         this.poison_duration_base = 1;
 
-        this.speed_base = 315;
+        this.speed_base = 300;
         this.split_chance = 0.5 + (this.level * 0.04);
         this.split_ratio = 0.1;
 
@@ -1057,7 +1057,7 @@ class RailgunBall extends WeaponBall {
         ]
 
         this.proj_damage_base = 12;
-        this.speed_base = 80;
+        this.speed_base = 95;
 
         this.shot_cooldown_max_base = 0.7 + (this.level * -0.02);
         this.shot_cooldown_max = this.shot_cooldown_max_base;
@@ -1209,7 +1209,7 @@ class PotionBall extends WeaponBall {
         this.shot_cooldowns = [0, 0, 0, 0].map(_ => random_float(...this.shot_cooldown_max_range));
         this.weapon_regeneration_times = [0,0,0,0];
         this.max_weapon_regeneration_time = 1.6;
-        this.potion_smash_penalty = 3;
+        this.potion_smash_penalty = 5;
     }
 
     weapon_step(board, time_delta) {
@@ -1312,7 +1312,7 @@ class GrenadeBall extends WeaponBall {
         super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "Grenade";
-        this.description_brief = "Throws grenades. Grenades bounce around for up to 3 seconds before exploding. If a grenade takes damage, it will explode immediately. Explosions can trigger other grenades, and deal 75% damage to the thrower as well.";
+        this.description_brief = "Throws grenades. Grenades bounce around for up to 3 seconds before exploding. If a grenade takes damage, it will explode immediately. Explosions can trigger other grenades, and deal 70% damage to the thrower as well.";
         this.level_description = "Increases throw frequency.";
         this.max_level_description = "Increases grenades' fuse timer to 30 seconds and increases throwing frequency by an additional 1.5x.";
         this.quote = "I can't hear anything. Am I dying? Is this the end?";
@@ -1374,7 +1374,7 @@ class GrenadeBall extends WeaponBall {
 
         let dmg = with_projectile.damage;
         if (other.id == this.id && with_projectile instanceof GrenadeExplosionProjectile) {
-            dmg *= 0.75;
+            dmg *= 0.70;
         }
         let result = other.get_hit_by_projectile(dmg * (this.player?.stats?.damage_bonus ?? 1), hitstop);
         
@@ -1521,7 +1521,7 @@ class GlassBall extends WeaponBall {
             ])
         ];
 
-        this.damage_base = 2.5 + (0.25 * level);
+        this.damage_base = 2.6 + (0.25 * level);
         this.speed_base = 315 + (22.5 * level);
 
         this.charge = 0;

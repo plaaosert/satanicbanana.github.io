@@ -22,7 +22,8 @@
 
     <div class="everything-container">
         <div class="spacer hidden nodisplay">
-            <p>Hi</p>
+            <p id="game_results" style="white-space: pre;">Hi</p>
+            <button onclick="navigator.clipboard.writeText(document.querySelector('#game_results').textContent).then(() => alert('copied'), () => alert('couldnt'))">copy</button>
         </div>
 
         <div class="game-container" id="game-container" style="display: none;">

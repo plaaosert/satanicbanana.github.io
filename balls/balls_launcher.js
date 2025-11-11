@@ -271,14 +271,34 @@ document.addEventListener("DOMContentLoaded", function() {
     update_ballinfo('ball4');
 
     if (winrate_tracking) {
+        displayelement = document.querySelector(".spacer p");
+        document.querySelector(".spacer").classList.remove("nodisplay");
+        document.querySelector(".spacer").classList.remove("hidden");
+
         repeater_interval = setInterval(() => {
             if (!board) {
-                document.querySelector("select[name='ball1']").value = random_from_array(selectable_balls_for_random).name;
-                if (force_ball1) {
-                    document.querySelector("select[name='ball1']").value = force_ball1.name;
+                // increase ball2 by 1. if this would make it > selectable_balls length,
+                // increase ball1 by 1 (unless force_ball1 is enabled)
+                let increment = true;
+
+                while (increment) {
+                    ball2_index++;
+                    if (ball2_index >= selectable_balls_for_random.length) {
+                        ball2_index = 0;
+                        ball1_index = (ball1_index + 1) % selectable_balls_for_random.length;
+                    }
+
+                    if (force_ball1) {
+                        ball1_index = selectable_balls_for_random.findIndex(b => b.name == force_ball1.name);
+                    }
+
+                    if (ball1_index != ball2_index) {
+                        increment = false;
+                    }
                 }
 
-                document.querySelector("select[name='ball2']").value = random_from_array(selectable_balls_for_random.filter(t => t.name != document.querySelector("select[name='ball1']").value)).name;
+                document.querySelector("select[name='ball1']").value = selectable_balls_for_random[ball1_index].name;
+                document.querySelector("select[name='ball2']").value = selectable_balls_for_random[ball2_index].name;
 
                 update_ballinfo('ball1');
                 update_ballinfo('ball2');
@@ -294,6 +314,18 @@ document.addEventListener("DOMContentLoaded", function() {
 let winrate_tracking = false;
 let repeater_interval = null;
 let force_ball1 = null;
+
+let displayelement = null;
+
+let readable_table = false;
+
+let ball1_index = 0;
+if (force_ball1) {
+    ball1_index = selectable_balls_for_random.findIndex(b => b.name == force_ball1.name);
+}
+
+let ball2_index = 0;
+
 let win_matrix = [];
 selectable_balls_for_random.forEach(_ => win_matrix.push(new Array(selectable_balls_for_random.length).fill(0)));
 let start_balls = [];

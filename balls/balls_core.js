@@ -111,7 +111,7 @@ let canvas_y = 0;
 
 let mouse_position = new Vector2(0, 0);
 
-const PHYS_GRANULARITY = 1280;
+const PHYS_GRANULARITY = 8;
 const COLL_GRANULARITY = PHYS_GRANULARITY / 4;  // COLL_GRANULARITY => do collision checks every N physics steps
 const COLLS_PER_FRAME = PHYS_GRANULARITY / COLL_GRANULARITY;
 const DEFAULT_BALL_RESTITUTION = 1;
@@ -934,15 +934,18 @@ function render_victory(board, time_until_end) {
     let ctx = layers.ui1.ctx;
 
     let t = (8000 - time_until_end) / 1000;
+    let rps = board.remaining_players();
+    let b = null;
+    if (rps.length >= 1) {
+        b = board.get_all_player_balls(rps[0]).filter(ball => ball.show_stats)[0];
+    }
 
-    if (board.remaining_players().length <= 0) {
+    if (!b) {
         // draw
         if (t > 3) {
             write_text(ctx, "DRAW", canvas_width/2, 256, "white", "MS Gothic", 144, true);
         }
     } else {
-        let b = board.get_all_player_balls(board.remaining_players()[0]).filter(ball => ball.show_stats)[0];
-
         if (t > 2) {
             write_text(ctx, "VICTORY", canvas_width/2, 256, "white", "MS Gothic", 144, true);
         }
@@ -1121,14 +1124,16 @@ function render_game(board, collision_boxes=false, velocity_lines=false) {
             ctx.strokeStyle = ball.colour.lerp(Colour.white, 0.75).css();
             ctx.stroke();
 
+            let hp = Math.max(0, ball.hp);
+
             ctx.fillStyle = "black";
             ctx.font = "22px \"ms gothic\"";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillText(Math.ceil(ball.hp), ball_screen_pos.x-0.5, ball_screen_pos.y-0.5);
-            ctx.fillText(Math.ceil(ball.hp), ball_screen_pos.x+0.5, ball_screen_pos.y-0.5);
-            ctx.fillText(Math.ceil(ball.hp), ball_screen_pos.x-0.5, ball_screen_pos.y+0.5);
-            ctx.fillText(Math.ceil(ball.hp), ball_screen_pos.x+0.5, ball_screen_pos.y+0.5);
+            ctx.fillText(Math.ceil(hp), ball_screen_pos.x-0.5, ball_screen_pos.y-0.5);
+            ctx.fillText(Math.ceil(hp), ball_screen_pos.x+0.5, ball_screen_pos.y-0.5);
+            ctx.fillText(Math.ceil(hp), ball_screen_pos.x-0.5, ball_screen_pos.y+0.5);
+            ctx.fillText(Math.ceil(hp), ball_screen_pos.x+0.5, ball_screen_pos.y+0.5);
 
             ctx.closePath();
 
@@ -1198,8 +1203,9 @@ function render_descriptions(board) {
                 layers.ui2.ctx, `${ball.name}`, l[0], l[1], ball.colour.css(), "MS Gothic", 16
             )
 
+            let hp = Math.max(0, ball.hp);
             write_text(
-                layers.ui2.ctx, `[${"#".repeat(Math.ceil(ball.hp * 0.4))}${" ".repeat(Math.floor((100 - ball.hp) * 0.4))}]`, l[0], l[1] + 12, ball.colour.css(), "MS Gothic", 9
+                layers.ui2.ctx, `[${"#".repeat(Math.ceil(hp * 0.4))}${" ".repeat(Math.floor((100 - hp) * 0.4))}]`, l[0], l[1] + 12, ball.colour.css(), "MS Gothic", 9
             )
             
             if (ball.poison_duration > 0) {
@@ -1255,7 +1261,7 @@ function game_loop() {
     let cps = COLLS_PER_FRAME;
 
     if (keys_down["KeyR"] ^ winrate_tracking) {
-        let factor = 4;
+        let factor = 128;
 
         phys_gran *= factor;
         // coll_gran *= factor;
@@ -1581,7 +1587,11 @@ function game_loop() {
                             win_matrix[winning_ball_index][losing_ball_index] += 1;
                         }
 
-                        console.log(" ".repeat(12) + selectable_balls_for_random.map(t => t.name.padEnd(12)).join("") + "\n" + win_matrix.map((a, i) => `${selectable_balls_for_random[i].name.padEnd(12)}` + a.map((b, j) => `${b === 0 ? "-" : b}`.padEnd(12)).join("")).join("\n"))
+                        if (readable_table) {
+                            displayelement.textContent = (" ".repeat(12) + selectable_balls_for_random.map(t => t.name.padEnd(12)).join("") + "\n" + win_matrix.map((a, i) => `${selectable_balls_for_random[i].name.padEnd(12)}` + a.map((b, j) => `${b === 0 ? "-" : b}`.padEnd(12)).join("")).join("\n"));
+                        } else {
+                            displayelement.textContent = (win_matrix.map(t => t.map(v => v == 0 ? "-" : v).join("\t")).join("\n"));
+                        }
                     }
                 }
                 
