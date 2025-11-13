@@ -308,7 +308,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }, 100);
     }
 
-    document.querySelector("select[name='ball1']").value = "HandBall";
+    // document.querySelector("select[name='ball1']").value = "HandBall";
 })
 
 // TODO make levelling information exist somewhere - probably need to think about that when we come to RPG theming really
