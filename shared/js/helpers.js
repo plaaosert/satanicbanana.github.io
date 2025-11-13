@@ -45,6 +45,14 @@ function removeFadeOut( el, speed ) {
   
 */
 
+function deg2rad(d) {
+    return d * (Math.PI / 180);
+}
+
+function rad2deg(r) {
+    return r * (180 / Math.PI);
+}
+
 function positive_mod(n, m) {
     return ((n % m) + m) % m;
 }
@@ -116,6 +124,31 @@ function lerp_arr(from, to, amt, round=false) {
 function balance_weighted_array(arr) {
     let sum = arr.reduce((p, c) => p + c[0], 0);
     return arr.map(t => [t[0] / sum, ...t.slice(1)]);
+}
+
+function get_sorted_index(arr, val) {
+    // assumes arr is already sorted
+    let low = 0;
+    let high = arr.length;
+
+    while (low < high) {
+        var mid = (low + high) >>> 1;
+        if (arr[mid] < val) low = mid + 1;
+        else high = mid;
+    }
+    return low;
+}
+
+function get_sorted_index_with_property(arr, val, property) {
+    let low = 0;
+    let high = arr.length;
+
+    while (low < high) {
+        var mid = (low + high) >>> 1;
+        if (arr[mid][property] < val) low = mid + 1;
+        else high = mid;
+    }
+    return low;
 }
 
 /*

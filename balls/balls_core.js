@@ -59,15 +59,36 @@ const entity_sprites = new Map([
     ["glass", 1, "weapon/"],
     ["glass_angry", 1, "weapon/"],
 
-    ["explosion", 16, "explosion/"],
-    ["explosion_grenade", 16, "explosion_grenade/"],
+    ["hand_neutral", 1, "weapon/hands/"],
+    ["hand_open", 1, "weapon/hands/"],
+    ["hand_grab", 1, "weapon/hands/"],
+    ["hand_block", 1, "weapon/hands/"],
+    ["hand_punch", 1, "weapon/hands/"],
+
+    ["hand_neutral_r", 1, "weapon/hands/"],
+    ["hand_open_r", 1, "weapon/hands/"],
+    ["hand_grab_r", 1, "weapon/hands/"],
+    ["hand_block_r", 1, "weapon/hands/"],
+    ["hand_punch_r", 1, "weapon/hands/"],
+
+    ["FLIPS_YOU_OFF", 1, "weapon/hands/"],
+
+    ["hand_punch_particles", 1, "weapon/hands/"],
+
+    ["explosion", 16, "explosion/"],  // Game Maker Classic
+
+    ["lightning", 7, "lightning/"],
+
+    ["explosion_grenade", 16, "explosion_grenade/"],  // Game Maker Classic
+
+    ["explosion3", 8, "explosion3/"],  // Sonic Rush Adventure
 ].map((v, i) => {
     let ts = [];
 
     if (v[1] > 1) {
         for (let i=0; i<v[1]; i++) {
             let t = new Image(128, 128);
-            t.src = `img/${v[2]}/${v[0]}_${i.toString().padStart(3, "0")}.png`;
+            t.src = `img/${v[2]}${v[0]}_${i.toString().padStart(3, "0")}.png`;
             t.style.imageRendering = "pixelated";
 
             num_textures_needed++;
@@ -166,6 +187,14 @@ async function load_audio() {
     audio.set("explosion2", await load_audio_item("snd/explosion2.mp3"));
     // dragon ball z
     audio.set("strongpunch", await load_audio_item("snd/strongpunch.wav"));
+    // johnny test
+    audio.set("whipcrack", await load_audio_item("snd/whipcrack.mp3"));
+    // vine thud
+    audio.set("vine_thud", await load_audio_item("snd/vine_thud.mp3"));
+    // guilty gear: strive (ADV_057.ogg)
+    audio.set("grab", await load_audio_item("snd/grab.mp3"));
+    // dragon ball z (explosion.wav)
+    audio.set("wall_smash", await load_audio_item("snd/wall_smash.mp3"));
 }
 
 function play_audio(name) {
@@ -183,7 +212,7 @@ function play_audio(name) {
 class Particle {
     static id_inc = 0;
 
-    constructor(position, rotation_angle, size, sprites, frame_speed, duration, looping) {
+    constructor(position, rotation_angle, size, sprites, frame_speed, duration, looping, delay=0) {
         this.position = position;
         this.rotation_angle = rotation_angle;
         this.size = size * PARTICLE_SIZE_MULTIPLIER;
@@ -195,14 +224,43 @@ class Particle {
         this.lifetime = 0;
         this.framecount = sprites.length;
         this.cur_frame = 0;
+
+        this.delay = delay;
     }
 
     pass_time(time_delta) {
+        if (this.delay >= 0) {
+            this.delay -= time_delta;
+            if (this.delay < 0) {
+                this.lifetime += -this.delay;
+            }
+
+            return;
+        }
+
         this.lifetime += time_delta;
         this.cur_frame = Math.floor(this.lifetime * this.frame_speed)
         if (this.looping) {
             this.cur_frame = this.cur_frame % this.framecount;
         }
+    }
+}
+
+class Timer {
+    static id_inc = 0;
+
+    constructor(func, trigger_time, repeat=false) {
+        this.id = Timer.id_inc;
+        Timer.id_inc++;
+        
+        this.func = func;
+        this.trigger_time = trigger_time;
+        this.original_trigger_time = trigger_time;
+        this.repeat = repeat;
+    }
+
+    reset() {
+        this.trigger_time = this.original_trigger_time;
     }
 }
 
@@ -221,6 +279,7 @@ class Board {
         this.balls = [];
         this.projectiles = [];
         this.particles = [];
+        this.timers = [];
         this.lines = [
             // corner walls
             {
@@ -284,8 +343,24 @@ class Board {
         this.gravity = new Vector2(0, 9810);
 
         this.hitstop_time = 0;
+
+        this.played_whipcrack = false;
     }
     
+    set_timer(timer) {
+        let index = get_sorted_index_with_property(this.timers, timer.trigger_time, "trigger_time");
+
+        this.timers.splice(index, 0, timer);
+    }
+
+    in_bounds(pos) {
+        return (
+            pos.x >= 0 &&
+            pos.x < this.size.x &&
+            pos.y >= 0 &&
+            pos.y < this.size.y)
+    }
+
     remaining_players() {
         let balls_ids = this.balls.map(ball => ball.player.id);
         let players = this.balls.filter((t, i) => balls_ids.indexOf(t.player.id) === i).map(b => b.player);
@@ -329,6 +404,21 @@ class Board {
         )
     }
 
+    timers_step(time_delta) {
+        this.timers.forEach(timer => timer.trigger_time -= time_delta);
+        while (this.timers[0]?.trigger_time <= 0) {
+            // remove, then re-add if repeat
+            let trigger = this.timers.shift();
+
+            trigger.func(this);
+
+            if (trigger.repeat) {
+                trigger.reset();
+                this.set_timer(trigger);
+            }
+        }
+    }
+
     particles_step(time_delta) {
         if (this.hitstop_time > 0) {
             time_delta *= Number.EPSILON;
@@ -351,6 +441,9 @@ class Board {
 
         // make the balls move
         this.balls.forEach(ball => {
+            if (ball.skip_physics)
+                return;  // skip_physics balls should completely stop
+
             // if the ball is in a wall, wake it up by force
             if (ball.position.x - ball.radius < -0.1 || ball.position.x + ball.radius > this.size.x+0.1 || ball.position.y + ball.radius > this.size.y+0.1) {
 
@@ -381,6 +474,9 @@ class Board {
 
         // then, apply gravity to balls
         this.balls.forEach(ball => {
+            if (ball.skip_physics)
+                return;  // skip_physics balls should completely stop
+
             if (!ball.at_rest) {
                 let time_delta_factor = 1;
                 if (ball.hitstop > 0) {
@@ -400,6 +496,9 @@ class Board {
         let sthis = this;
         this.balls.forEach(ball1 => {
             sthis.balls.forEach(ball2 => {
+                if (ball1.skip_physics || ball2.skip_physics)
+                    return;  // skip_physics balls should completely stop
+
                 if (ball1.id == ball2.id) {
                     return;
                 }
@@ -429,6 +528,8 @@ class Board {
 
         // check wall and ground bounces
         this.balls.forEach(ball => {
+            if (ball.skip_physics)
+                return;  // skip_physics balls should completely stop
             /*
             ball.check_ground_bounce(sthis);
             ball.check_ceiling_bounce(sthis);
@@ -450,6 +551,9 @@ class Board {
 
         // force everything back in bounds
         this.balls.forEach(ball => {
+            if (ball.skip_physics)
+                return;  // skip_physics balls should completely stop
+
             ball.position.x = Math.max(ball.radius, Math.min(this.size.x - ball.radius, ball.position.x));
             ball.position.y = Math.max(ball.radius, Math.min(this.size.y - ball.radius, ball.position.y));
         });
@@ -480,6 +584,8 @@ class Ball {
         this.rest_threshold = PHYS_GRANULARITY * 64;
 
         this.last_pos = new Vector2(0, 0);
+
+        this.skip_physics = false;
     }
 
     set_pos(to) {
@@ -900,7 +1006,7 @@ function render_diagnostics(board) {
         return;
 
     write_text(
-        layers.debug_front.ctx, `system energy | ${Math.round(board.balls.reduce((t, ball) => {
+        layers.debug_front.ctx, `system energy | ${Math.round(board.balls.filter(ball => !ball.skip_physics).reduce((t, ball) => {
             let kinetic_energy = 0.5 * ball.mass * ball.velocity.sqr_magnitude();
 
             let height = board.size.y - ball.position.y;
@@ -951,6 +1057,25 @@ function render_victory(board, time_until_end) {
         }
 
         if (t > 3) {
+            if (b instanceof HandBall) {
+                // special stupid behaviour for this thing in specific
+                if (!board.played_whipcrack) {
+                    b.skip_physics = true;
+                    b.weapon_data = [];
+
+                    let part_pos = b.position.add(new Vector2(
+                        b.radius * 1,
+                        b.radius * 0.9
+                    ));
+
+                    let part = new Particle(part_pos, 0, 1, entity_sprites.get("FLIPS_YOU_OFF"), 0, 100);
+                    board.spawn_particle(part, part_pos);
+
+                    play_audio("whipcrack");
+                    board.played_whipcrack = true;
+                }
+            }
+
             write_text(ctx, b.name, canvas_width/2, 256 + 72, b.colour.css(), "MS Gothic", 72, true);
         }
 
@@ -986,6 +1111,10 @@ function render_game(board, collision_boxes=false, velocity_lines=false) {
 
     // particles
     board.particles.forEach(particle => {
+        if (particle.delay > 0) {
+            return;
+        }
+
         let particle_screen_pos = new Vector2(
             (particle.position.x) * screen_scaling_factor,
             (particle.position.y) * screen_scaling_factor,
@@ -1281,6 +1410,9 @@ function game_loop() {
                 // if multiple weapons collide, the first one takes priority
                 let hitstop = 0;
 
+                // triggers
+                board.timers_step(coll_delta_time);
+
                 // projectile weaponsteps
                 board.projectiles.forEach(projectile => {
                     projectile.weapon_step(board, coll_delta_time)
@@ -1289,8 +1421,14 @@ function game_loop() {
                 // parrying (weapon on weapon)
                 colliding_parries.clear();
                 board.balls.forEach(ball => {
+                    if (ball.skip_physics)
+                        return;  // skip_physics balls should completely stop
+
                     if (ball.invuln_duration <= 0) {
                         board.balls.forEach(other => {
+                            if (other.skip_physics)
+                                return;  // skip_physics balls should completely stop
+
                             if (colliding_parries.has((ball.id * 10000000) + other.id) || ball.allied_with(other)) {
                                 return;
                             }
@@ -1348,6 +1486,9 @@ function game_loop() {
 
                 // projectile parrying (weapon on projectile)
                 board.balls.forEach(ball => {
+                    if (ball.skip_physics)
+                        return;  // skip_physics balls should completely stop
+
                     // don't check our own team's projectiles
                     let projectiles = board.projectiles.filter(projectile => 
                         projectile.active && 
@@ -1432,9 +1573,15 @@ function game_loop() {
 
                 // hitting (weapon on ball)
                 board.balls.forEach(ball => {
+                    if (ball.skip_physics)
+                        return;  // skip_physics balls should completely stop
+
                     if (ball.invuln_duration <= 0) {
                         // OK to check for hits (not in invuln window)
                         board.balls.forEach(other => {
+                            if (other.skip_physics)
+                                return;  // skip_physics balls should completely stop
+
                             // make sure we don't check collisions with our own team
                             if (!ball.allied_with(other)) {
                                 let colliding_weapons = ball.check_weapons_hit_from(other);
@@ -1467,6 +1614,9 @@ function game_loop() {
 
                 // projectile hitting (projectile on ball)
                 board.balls.forEach(ball => {
+                    if (ball.skip_physics)
+                        return;  // skip_physics balls should completely stop
+
                     if (ball.invuln_duration <= 0) {
                         // don't check our own projectiles
                         let projectiles = board.projectiles.filter(projectile => 
@@ -1531,6 +1681,11 @@ function game_loop() {
             }
 
             board.balls = board.balls.filter(ball => {
+                // keep skip_physics balls around
+                if (ball.skip_physics) {
+                    return true
+                }
+
                 if (ball.hp > 0) {
                     return true;
                 } else {
@@ -1559,7 +1714,7 @@ function game_loop() {
         }
 
         // we only need to do balls' ailments steps once per frame
-        board.balls.forEach(ball => ball.ailments_step(board, delta_time / 1000));
+        board.balls.filter(ball => !ball.skip_physics).forEach(ball => ball.ailments_step(board, delta_time / 1000));
 
         board.particles_step(delta_time);
         

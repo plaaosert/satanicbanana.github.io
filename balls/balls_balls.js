@@ -15,6 +15,8 @@ class BallWeapon {
         this.reversed = false;
 
         this.unparriable = false;
+
+        this.offset = new Vector2(0, 0);
     }
 
     rotate(by_deg, reverse) {
@@ -140,6 +142,10 @@ class WeaponBall extends Ball {
 
     get_weapon_offset(weapon) {
         let offset = new Vector2(this.radius + ((weapon.size_multiplier * 0.75) * 128 * 0.5), 0);
+
+        // add the weapon's personal offset
+        offset = offset.add(weapon.offset.mul(weapon.size_multiplier));
+
         offset = offset.rotate(weapon.angle);
 
         return offset;  // this is the center of the weapon
@@ -356,7 +362,7 @@ class HammerBall extends WeaponBall {
         this.quote = "I'm sure you understand.\nThe subject of my victory is quite the heavy topic.";
 
         this.weapon_data = [
-            new BallWeapon(1 + (level * 0), "hamer", [
+            new BallWeapon(0.95 + (level * 0), "hamer", [
                 {pos: new Vector2(104, 32), radius: 24},
                 {pos: new Vector2(104, 48), radius: 24},
                 {pos: new Vector2(104, 64), radius: 24},
@@ -462,7 +468,7 @@ class SordBall extends WeaponBall {
         // additionally knock the other ball away
         let result = super.hit_other(other, with_weapon_index, this.damage_base);
 
-        this.damage_base += 0.6 * (1 + (this.level * 0.175));
+        this.damage_base += 0.5 * (1 + (this.level * 0.175));
         this.speed_base += (60 / 4) * (1 + (this.level * 0.15));
 
         if (this.level >= AWAKEN_LEVEL) {
@@ -782,10 +788,10 @@ class MagnumBall extends WeaponBall {
         this.coin_damage_base = 1;
         this.speed_base = 90;
 
-        this.shot_cooldown_max = 0.575 + (this.level * -0.01);
+        this.shot_cooldown_max = 0.59 + (this.level * -0.01);
         this.shot_cooldown = this.shot_cooldown_max;
 
-        this.coin_shot_cooldown_max = 0.48 + (this.level * -0.01);
+        this.coin_shot_cooldown_max = 0.49 + (this.level * -0.01);
         this.coin_shot_cooldown = this.coin_shot_cooldown_max;
     }
 
@@ -1333,7 +1339,7 @@ class GrenadeBall extends WeaponBall {
 
         this.speed_base = 135;
 
-        this.shot_cooldown_max = 1.4 - (0.05 * this.level);
+        this.shot_cooldown_max = 1.475 - (0.05 * this.level);
         if (this.level >= AWAKEN_LEVEL) {
             this.shot_cooldown_max /= 1.5;
         }
@@ -1462,6 +1468,11 @@ class GrenadeProjectileBall extends WeaponBall {
         this.rotation_speed = random_float(270, 540);
     }
 
+    update_particles(time_delta) {
+        this.linked_particle.position = this.position;
+        this.linked_particle.rotation_angle += this.rotation_speed * (time_delta * (Math.PI / 180))
+    }
+
     physics_step(board, time_delta) {
         super.physics_step(board, time_delta);
 
@@ -1469,8 +1480,7 @@ class GrenadeProjectileBall extends WeaponBall {
             time_delta = time_delta * HITSTOP_DELTATIME_PENALTY;
         }
 
-        this.linked_particle.position = this.position;
-        this.linked_particle.rotation_angle += this.rotation_speed * (time_delta * (Math.PI / 180))
+        this.update_particles(time_delta);
     }
 
     weapon_step(board, time_delta) {
@@ -1522,7 +1532,7 @@ class GlassBall extends WeaponBall {
         ];
 
         this.damage_base = 2.6 + (0.25 * level);
-        this.speed_base = 315 + (22.5 * level);
+        this.speed_base = 320 + (22.5 * level);
 
         this.charge = 0;
         this.charge_decay_per_sec = 0;
@@ -1591,6 +1601,558 @@ class GlassBall extends WeaponBall {
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
                 ctx, `Multiplies rupture by 1.5x after each hit.`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 10
+            )
+        }
+    }
+}
+
+class HandBall extends WeaponBall {
+    static hitboxes = {
+        "hand_neutral": [
+            // this is the same as parry, because the parry action turns the hand into the parry hand
+            {pos: new Vector2(60, 16), radius: 6},
+            {pos: new Vector2(60, 28), radius: 10},
+            {pos: new Vector2(56, 48), radius: 12},
+            {pos: new Vector2(60, 68), radius: 16},
+            {pos: new Vector2(48, 96), radius: 28},
+            {pos: new Vector2(24, 114), radius: 16},
+        ],
+
+        "hand_block": [
+            {pos: new Vector2(60, 16), radius: 6},
+            {pos: new Vector2(60, 28), radius: 10},
+            {pos: new Vector2(56, 48), radius: 12},
+            {pos: new Vector2(60, 68), radius: 16},
+            {pos: new Vector2(48, 96), radius: 28},
+            {pos: new Vector2(24, 114), radius: 16},
+        ],
+
+        "hand_open": [
+            {pos: new Vector2(60, 16), radius: 6},
+            {pos: new Vector2(60, 28), radius: 10},
+            {pos: new Vector2(56, 48), radius: 12},
+            {pos: new Vector2(60, 68), radius: 16},
+            {pos: new Vector2(48, 96), radius: 28},
+            {pos: new Vector2(24, 114), radius: 16},
+        ],
+
+        "hand_punch": [
+            {pos: new Vector2(64, 64), radius: 36},
+            {pos: new Vector2(64-36, 64), radius: 18},
+            {pos: new Vector2(64-36-18, 64), radius: 9},
+        ],
+
+        "hand_grab": [
+            // no hitboxes because grab "cutscene"
+        ],
+    }
+
+    static lightning_parts = (() => {
+        let l = entity_sprites.get("lightning");
+
+        return [
+            l[0],
+            l[1],
+            l[2],
+
+            l[3], l[3], l[3], 
+            l[3], l[3], l[3], 
+            l[3], l[3], l[3], 
+            l[3], l[3], l[3], 
+            l[3], l[3], l[3], 
+            l[3], l[3], l[3], 
+            l[3], l[3], l[3], 
+            l[3], l[3], l[3], 
+            l[3], l[3], l[3], 
+            l[3], l[3], l[3], 
+
+            l[3], l[3], l[3], 
+            l[3], l[3], l[3], 
+            l[3], l[3], l[3], 
+            l[3], l[3], l[3], 
+            l[3], l[3], l[3], 
+            l[3], l[3], l[3], 
+            l[3], l[3], l[3], 
+            l[3], l[3], l[3], 
+            l[3], l[3], l[3], 
+            l[3], l[3], l[3], 
+
+            l[4],
+            l[5],
+            l[6],
+        ]
+    })();
+
+    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Hand";
+        this.description_brief = "(INCOMPLETE!!!!!!!!!) Hands move semi-randomly and independently. Hands randomly punch directly forwards. An idle hand will prepare to grab a ball if it's close, then throw it at an opposite wall at very high speed if the grab is successful.";
+        this.level_description = "Speeds up punch recovery and makes hands larger.";
+        this.max_level_description = "(INCOMPLETE!!!!!!!!!) After a successful grab, punches the grabbed target multiple times for additional damage before throwing it.";
+        this.quote = "It doesn't count as a self-insert if it's just my hands.";
+
+        this.weapon_data = [
+            new BallWeapon(0.5, "hand_neutral", [
+
+            ]),
+
+            new BallWeapon(0.5, "hand_neutral", [
+
+            ]),
+        ];
+
+        this.hands_speeds = [0, 0];
+        this.hands_speed_range = [-20, 60];
+        this.hands_speed_timeouts = [0, 0];
+        this.hands_speed_timeout_range = [0.5, 2];
+        this.hands_sprites = ["hand_neutral", "hand_neutral"];
+        this.punch_timeout_range = [0.6, 2]
+        this.punch_timeouts = [random_float(...this.punch_timeout_range), random_float(...this.punch_timeout_range)];
+        this.punch_recovery = 0.4 - (this.level * 0.02);
+        this.punch_active_duration = 0.06;
+
+        this.grab_ready_distance = this.radius * 4;
+        this.sqr_grab_ready_distance = this.grab_ready_distance * this.grab_ready_distance;
+        this.grab_seek_speed = 18000;
+        this.parry_delay = 0;
+
+        this.punch_damage = 8;
+        this.other_damage = 0;
+        this.grab_damage_initial = 4;
+        this.grab_damage_impact = 12;
+        this.grab_info = [
+            {stored_velocity: null, ball: null, amount_to_rotate: null, rotated_so_far: null, speed: 0},
+            {stored_velocity: null, ball: null, amount_to_rotate: null, rotated_so_far: null, speed: 0}
+        ]
+    
+        this.board = null;
+    }
+
+    weapon_step(board, time_delta) {
+        // this.velocity = new Vector2(0, 0);
+        this.board = board;
+
+        for (let i=0; i<this.weapon_data.length; i++) {
+            let make_hitboxes = true;
+
+            this.weapon_data[i].reversed = false;
+
+            switch (this.hands_sprites[i]) {
+                case "hand_neutral": {
+                    let balls_sqr_distances = board.balls.filter(ball => !ball.allied_with(this)).map(ball => ball.position.sqr_distance(this.position));
+                    if (balls_sqr_distances.some(d => d <= this.sqr_grab_ready_distance)) {
+                        this.hands_sprites[i] = "hand_open";
+                        this.weapon_data[i].offset = new Vector2(0, 0);
+                    } else {
+                        this.punch_timeouts[i] -= time_delta;
+                        this.weapon_data[i].offset = new Vector2(Math.min(0, -64 + (Math.pow(this.punch_timeouts[i], 2) * 256)), 0);
+                        if (this.punch_timeouts[i] <= 0) {
+                            this.hands_sprites[i] = "hand_punch";
+
+                            let pos = this.position.add(new Vector2(this.weapon_data[0].size_multiplier * 32, 0).rotate(this.weapon_data[0].angle));
+                            let particle = new Particle(
+                                pos, this.weapon_data[0].angle, 1, entity_sprites.get("hand_punch_particles"), 0, 0.2, false
+                            )
+
+                            // board.spawn_particle(particle, pos);
+
+                            this.weapon_data[i].offset = new Vector2(96, 0);
+                            this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.7;
+                            this.punch_timeouts[i] = this.punch_recovery;
+                            this.hands_speed_timeouts[i] = 0;
+                        } else {
+                            this.weapon_data[i].rotate(this.hands_speeds[i] * time_delta, i % 2 == 1);
+                            this.hands_speed_timeouts[i] -= time_delta;
+                            if (this.hands_speed_timeouts[i] <= 0) {
+                                this.hands_speed_timeouts[i] = random_float(...this.hands_speed_timeout_range);
+
+                                this.hands_speeds[i] = random_float(...this.hands_speed_range) + random_float(...this.hands_speed_range) + random_float(...this.hands_speed_range);
+                            }
+                        }
+                    }
+
+                    break;
+                }
+
+                case "hand_open": {
+                    let closest = board.balls.filter(ball => !ball.allied_with(this)).reduce((pb, ball) => {
+                        let sqr_dist = ball.position.sqr_distance(this.position);
+                        if (pb) {
+                            return sqr_dist < pb[1] ? [ball, sqr_dist] : pb;
+                        } else {
+                            return [ball, sqr_dist];
+                        }
+                    }, null);
+                    if (closest[1] > this.sqr_grab_ready_distance) {
+                        this.hands_sprites[i] = "hand_neutral";
+                        this.weapon_data[i].offset = new Vector2(32, 0);
+                    } else {
+                        // quickly move hand towards it 
+                        this.weapon_data[i].offset = new Vector2(32, 0);
+                        
+                        // let sign = Math.sign(closest[0].position.angle(this.position));
+
+                        // this.weapon_data[i].rotate(this.grab_seek_speed * sign * time_delta * (Math.PI / 180));
+                    }
+
+                    break;
+                }
+                
+                case "hand_punch": {
+                    this.punch_timeouts[i] -= time_delta;
+                    this.weapon_data[i].offset = new Vector2(Math.max(96, 96 + -8 + ((this.punch_timeouts[i] * 8) / this.punch_recovery)), 0);
+                    
+                    make_hitboxes = this.punch_timeouts[i] >= this.punch_recovery - this.punch_active_duration;
+                    
+                    if (this.punch_timeouts[i] <= 0) {
+                        this.hands_sprites[i] = "hand_neutral";
+
+                        let pos = this.position.add(new Vector2(this.weapon_data[0].size_multiplier * 32, 0).rotate(this.weapon_data[0].angle));
+                        let particle = new Particle(
+                            pos, this.weapon_data[0].angle, 1, entity_sprites.get("hand_punch_particles"), 0, 0.2, false
+                        )
+
+                        // board.spawn_particle(particle, pos);
+
+                        this.weapon_data[i].offset = new Vector2(0, 0);
+                        this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.5;
+                        this.punch_timeouts[i] = random_float(...this.punch_timeout_range);
+                    }
+
+                    break;
+                }
+
+                case "hand_block": {
+                    this.parry_delay -= time_delta;
+                    this.weapon_data[i].offset = new Vector2(0, 0);
+                    
+                    if (this.parry_delay <= 0) {
+                        this.hands_sprites[i] = "hand_neutral";
+
+                        this.weapon_data[i].offset = new Vector2(0, 0);
+                        this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.5;
+                    }
+
+                    break;
+                }
+
+                case "hand_grab": {
+                    // need to do a whole bunch of code here for the grab but for now just make sure the positions always match
+                    this.grab_info[i].speed += 50 * time_delta;
+                    this.weapon_data[i].rotate(rad2deg(this.grab_info[i].speed * time_delta), i % 2 == 1);
+                    this.grab_info[i].rotated_so_far += this.grab_info[i].speed * time_delta;
+                    // console.log(`Rotated ${rad2deg(this.grab_info[i].speed * time_delta)}deg, ${rad2deg(this.grab_info[i].amount_to_rotate - this.grab_info[i].rotated_so_far)}deg remaining`)
+
+                    if (this.grab_info[i].rotated_so_far >= (this.grab_info[i].amount_to_rotate + (Math.PI / 8))) {
+                        let rollback = this.grab_info[i].rotated_so_far - this.grab_info[i].amount_to_rotate;
+                        this.weapon_data[i].rotate(rad2deg(rollback), i % 2 == 0);
+
+                        // throw it. for now just drop it to show we're doing something
+                        console.log("Thrown!");
+                        this.hands_sprites[i] = "hand_neutral";
+                        this.weapon_data[i].offset = new Vector2(0, 0);
+                        this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.5;
+
+                        // We can get the wall to select by getting the current angle of the weapon
+                        this.grab_info[i].ball.hitstop = 1;
+
+                        let vec = new Vector2(0, 1 * (i % 2 == 0 ? 1 : -1)).rotate(this.weapon_data[i].angle);
+                        let new_position = this.grab_info[i].ball.position.copy();
+
+                        if (Math.abs(vec.x) >= 0.5) {
+                            // right or left
+                            if (vec.x < 0) {
+                                // left
+                                new_position.x = this.grab_info[i].ball.radius;
+                            } else {
+                                // right
+                                new_position.x = this.board.size.x - this.grab_info[i].ball.radius;
+                            }
+                        } else {
+                            // up or down
+                            if (vec.y < 0) {
+                                // up
+                                new_position.y = this.grab_info[i].ball.radius;
+                            } else {
+                                // down
+                                new_position.y = this.board.size.y - this.grab_info[i].ball.radius;
+                            } 
+                        }
+
+                        // now make particles along the way
+                        let cpos = this.grab_info[i].ball.position;
+                        let stopping = 2;
+                        let times = 0;
+                        let size_factor = this.grab_info[i].ball.radius / this.radius;
+                        let delay = 0.02 * size_factor;
+                        while (stopping > 0) {
+                            if (!board.in_bounds(cpos)) {
+                                stopping--;
+                            }
+
+                            let part = new Particle(
+                                cpos, this.weapon_data[i].angle + ((i % 2 == 0 ? 1 : -1) * Math.PI/2),
+                                size_factor, HandBall.lightning_parts, 4 / delay, 
+                                999, false, 0 + (times * delay)
+                            );
+
+                            board.spawn_particle(part, cpos);
+                            
+                            times++;
+                            cpos = cpos.add(vec.mul(128 * size_factor * PARTICLE_SIZE_MULTIPLIER));
+                        }
+
+                        this.grab_info[i].ball.display = false;
+
+                        board.set_timer(new Timer(
+                            board => {
+                                this.grab_info[i].ball.skip_physics = false;
+                                this.grab_info[i].ball.display = true;
+
+                                this.grab_info[i].ball.position = new_position;
+                                this.grab_info[i].ball.lose_hp(this.grab_damage_impact);
+
+                                play_audio("wall_smash");
+
+                                let pos = this.grab_info[i].ball.position.sub(
+                                    vec.mul(size_factor * 2 * this.grab_info[i].ball.radius)
+                                )
+
+                                let part = new Particle(
+                                    pos, vec.angle() - (Math.PI /2),
+                                    size_factor * 2, entity_sprites.get("explosion3"), 12, 
+                                    999
+                                );
+
+                                board.spawn_particle(part, pos);
+                            }, delay * (times-1)
+                        ))
+
+                        this.grab_info[i].ball.display = false;
+
+                        this.velocity = (this.position.sub(this.grab_info[i].ball.position).normalize()).mul(this.grab_info[i].stored_velocity.magnitude());
+                    } else {
+                        let ballpos = this.position.add(this.get_weapon_offset(this.weapon_data[i]));
+                        this.grab_info[i].ball.position = ballpos;
+                        this.velocity = new Vector2(0, 0);
+
+                        // special case for balls with particles
+                        if (this.grab_info[i].ball.update_particles) {
+                            this.grab_info[i].ball.update_particles(time_delta);
+                        }
+                    }
+
+                    break;
+                }
+            }
+
+            if (make_hitboxes) {
+                this.weapon_data[i].hitboxes = HandBall.hitboxes[this.hands_sprites[i]];
+            } else {
+                this.weapon_data[i].hitboxes = [];
+            }
+
+            this.weapon_data[i].sprite = this.hands_sprites[i] + (i % 2 == 0 ? "" : "_r");
+        }
+    }
+
+    parry_weapon(with_weapon_index, other_ball, other_weapon_id) {
+        // nothing
+        this.block_hand(with_weapon_index);
+    }
+
+    parry_projectile(with_weapon_index, projectile) {
+        // nothing
+        this.block_hand(with_weapon_index);
+    }
+
+    block_hand(with_weapon_index) {
+        this.hands_sprites[with_weapon_index] = "hand_block";
+        this.weapon_data[with_weapon_index].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.5;
+        this.parry_delay = 0.5;
+    }
+
+    hit_other(other, with_weapon_index) {
+        // additionally knock the other ball away
+        let result = {};
+
+        if (this.hands_sprites[with_weapon_index] == "hand_punch" || this.hands_sprites[with_weapon_index] == "hand_block") {
+            let dmg = this.punch_damage;
+            if (this.hands_sprites[with_weapon_index] != "hand_punch") {
+                dmg = 0;
+            }
+            
+            result = super.hit_other(other, with_weapon_index, dmg);
+
+            let diff_vec = other.position.sub(this.position).normalize();
+            let share = 1;
+
+            let other_diff_add = diff_vec.mul(share);
+
+            let other_mag = other.velocity.magnitude();
+
+            let new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
+
+            other.velocity = new_other_velocity;
+
+            other.invuln_duration *= 2;
+        } else if (this.hands_sprites[with_weapon_index] == "hand_open") {
+            // GRAB!!!!!!!
+            result = super.hit_other(other, with_weapon_index, this.grab_damage_initial);
+            this.grab_ball(with_weapon_index, other);
+        } else {
+            result = super.hit_other(other, with_weapon_index, 0);
+        }
+
+        return result;
+    }
+
+    grab_ball(with_weapon_index, ball) {
+        play_audio("grab");
+
+        this.hands_sprites[with_weapon_index] = "hand_grab";
+        this.weapon_data[with_weapon_index].size_multiplier = WEAPON_SIZE_MULTIPLIER * 1;
+
+        this.grab_info[with_weapon_index].ball = ball;
+        ball.skip_physics = true;
+        
+        // find the target angle by looking at the situations on all four directions.
+        // remember we're checking the ball's position, not our own
+        let expected_grab_ball_offset = this.get_weapon_offset(this.weapon_data[with_weapon_index]);
+
+        // rotate to 180deg and 270deg, and check distance from the board side bounds.
+        // so for facing to the right, check up/down and that the ball would be in bounds
+        // we always want to rotate at least 180deg, so start from the first cardinal angle >= 180deg
+        let rotation_sign = with_weapon_index % 2 == 0 ? 1 : -1;
+
+        let check_angle_begin = this.weapon_data[with_weapon_index].angle;
+        let check_angle_diff = (Math.PI * (5/2) * rotation_sign) + (Math.sign(check_angle_begin) * ((Math.PI / 2) - (Math.abs(check_angle_begin) % (Math.PI / 2))));  // amount to rotate to get to the next cardinal angle
+        let check_next = check_angle_diff;
+        console.log("its grab time bitch");
+        console.log(`Weapon index: ${with_weapon_index} (* ${rotation_sign})`);
+        console.log(`Weapon angle is ${rad2deg(this.weapon_data[with_weapon_index].angle)}deg`);
+        console.log(`Started at ${rad2deg(check_angle_begin)}deg`);
+        console.log(`Beginning checks at ${rad2deg(check_next)}deg`);
+        console.log(`So first composite rotation is ${rad2deg(check_angle_begin + check_next)}`);
+
+        // TODO this still doesn't work right.
+        // TODO the rest of the throw logic
+        // TODO make the balls intangible while theyre doing this,
+        // and make sure weapons don't do anything during this
+
+        let angle_rotated = Math.abs(check_angle_diff);
+
+        let possible_rotations = [];
+
+        while (possible_rotations.length < 4) {
+            if (check_next % (Math.PI * 2) == 0) {
+                // skip if it's 360deg
+            } else {
+                let ball_rotated = this.position.add(expected_grab_ball_offset.rotate(check_next));
+
+                let rotation_mod = (check_angle_begin + check_next) % Math.PI;
+                // if closer to PI/2, it's y. if closer to 0, it's x.
+                // 0 - 90 - 180
+                // ABS to get 90 - 0 - 90
+                let rotation_abs = Math.abs(rotation_mod - (Math.PI / 4));
+
+                let significant_coordinate = rotation_abs <= Math.PI / 4 ? ball_rotated.x : ball_rotated.y;
+
+                // check that the position +- radius is < / > the bound
+                let lower_bound = significant_coordinate - ball.radius;
+                let upper_bound = significant_coordinate + ball.radius;
+
+                if (lower_bound >= 0) {
+                    if (upper_bound < this.board.size.x) {
+                        // we found it!
+                        console.log(`Found! Adding rotation ${rad2deg(angle_rotated)}deg`)
+                        possible_rotations.push([check_next, angle_rotated]);
+                    }
+                }
+            }
+
+            angle_rotated += (Math.PI / 2);
+            check_next += rotation_sign * (Math.PI / 2);
+        }
+
+        console.log("Got two rotations.");
+        let best = [null, -9999];
+        possible_rotations.forEach(r => {
+            let vec = new Vector2(0, 1 * rotation_sign).rotate(r[0] + check_angle_begin);
+            let coord = 0;
+            let target = 0;
+
+            let score_bias = 1; 
+            // a hand rotating clockwise wants to throw right or down
+            // a hand rotating anticlockwise wants to throw left or up
+
+            if (Math.abs(vec.x) >= 0.5) {
+                // right or left
+                coord = this.position.x;
+                if (vec.x < 0) {
+                    // left
+                    target = 0;
+                    if (with_weapon_index % 2 == 0) {
+                        score_bias = 0.5;
+                    } else {
+                        score_bias = 2;
+                    }
+                } else {
+                    // right
+                    target = this.board.size.x;
+                    if (with_weapon_index % 2 == 1) {
+                        score_bias = 0.5;
+                    } else {
+                        score_bias = 2;
+                    }
+                }
+            } else {
+                coord = this.position.y;
+                // up or down
+                if (vec.y < 0) {
+                    // up
+                    target = 0;
+                    if (with_weapon_index % 2 == 0) {
+                        score_bias = 0.5;
+                    } else {
+                        score_bias = 2;
+                    }
+                } else {
+                    // down
+                    target = this.board.size.y;
+                    if (with_weapon_index % 2 == 1) {
+                        score_bias = 0.5;
+                    } else {
+                        score_bias = 2;
+                    }
+                }
+            }
+
+            let result = Math.abs(target - coord) * score_bias;
+            console.log(`${rad2deg(r[1])} (${rad2deg((r[1] * rotation_sign) + check_angle_begin) % 360}, ${vec.toString()}) has result ${result} (${coord} <=> ${target})`)
+            // we want as much distance as possible
+            if (result-50 > best[1]) {
+                best = [r, result];
+            }
+        })
+
+        console.log(`Got our best rotation - ${rad2deg(best[0][1])}`);
+        console.log(`So will rotate from ${rad2deg(check_angle_begin)}deg to ${rad2deg(check_angle_begin + (best[0][1] * rotation_sign))}`);
+
+        this.grab_info[with_weapon_index].amount_to_rotate = best[0][1];
+        this.grab_info[with_weapon_index].rotated_so_far = 0;
+        this.grab_info[with_weapon_index].speed = 0;
+        this.grab_info[with_weapon_index].stored_velocity = this.velocity;
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor) {
+        write_text(
+            ctx, `Hand`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+        )
+        if (this.level >= AWAKEN_LEVEL) {
+            write_text(
+                ctx, `Hand...`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 10
             )
         }
     }
