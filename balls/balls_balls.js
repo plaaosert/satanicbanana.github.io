@@ -92,7 +92,8 @@ class WeaponBall extends Ball {
 
     randomise_weapon_rotations() {
         this.weapon_data.forEach(w => {
-            w.angle = random_float(0, 360);
+            w.angle = 0;
+            w.rotate(random_float(0, 360));
         })
     }
 
@@ -339,10 +340,10 @@ class WeaponBall extends Ball {
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, "This thing has no stats", x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+            ctx, "This thing has no stats", x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, "im serious", x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+            ctx, "im serious", x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
         )
     }
 }
@@ -415,20 +416,20 @@ class HammerBall extends WeaponBall {
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, `Damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+            ctx, `Damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, "Knocks enemies back when striking them.", x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 12
+            ctx, "Knocks enemies back when striking them.", x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Second hammer damage: ${(this.damage_base / 2).toFixed(2)}`, x_anchor, y_anchor + 36, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 12
+                ctx, `Second hammer damage: ${(this.damage_base / 2).toFixed(2)}`, x_anchor, y_anchor + 36, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
             )
             write_text(
-                ctx, `Second hammer rotation speed: ${(this.speed_base * 1.6).toFixed(0)} deg/s`, x_anchor, y_anchor + 48, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 12
+                ctx, `Second hammer rotation speed: ${(this.speed_base * 1.6).toFixed(0)} deg/s`, x_anchor, y_anchor + 48, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
             )
         }
     }
@@ -456,7 +457,7 @@ class SordBall extends WeaponBall {
         ];
 
         this.damage_base = 1 + (0.5 * level);
-        this.speed_base = 180 + (45 * level);
+        this.speed_base = 160 + (45 * level);
     }
 
     weapon_step(board, time_delta) {
@@ -480,17 +481,17 @@ class SordBall extends WeaponBall {
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, `Damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+            ctx, `Damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Hits harder and rotates faster every strike.`, x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 10
+            ctx, `Hits harder and rotates faster every strike.`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 10
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Size multiplier: ${(this.weapon_data[0].size_multiplier / 16).toFixed(2)}`, x_anchor, y_anchor + 36, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 12
+                ctx, `Size multiplier: ${(this.weapon_data[0].size_multiplier / 16).toFixed(2)}`, x_anchor, y_anchor + 36, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
             )
         }
     }
@@ -573,7 +574,7 @@ class DaggerBall extends WeaponBall {
         this.speed_base *= 2;
         this.damage_base *= 1.5;
 
-        this.hit_decay = 1.4 + (0.2 * this.level);
+        this.hit_decay = 1.35 + (0.2 * this.level);
 
         return result;
     }
@@ -595,23 +596,23 @@ class DaggerBall extends WeaponBall {
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, `Damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+            ctx, `Damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Bonus decay time: ${(1.5 + (0.2 * this.level)).toFixed(1)}`, x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 12
+            ctx, `Bonus decay time: ${(1.5 + (0.2 * this.level)).toFixed(1)}`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Faster rotation speed (x2) and damage (x1.5)`, x_anchor, y_anchor + 36, this.colour.css(), "MS Gothic", 10
+            ctx, `Faster rotation speed (x2) and damage (x1.5)`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 10
         )
         write_text(
-            ctx, `every strike. Bonus decays when not striking.`, x_anchor, y_anchor + 48, this.colour.css(), "MS Gothic", 10
+            ctx, `every strike. Bonus decays when not striking.`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 10
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Projectiles/s: ${(this.speed_base >= 1000 ? 1 / this.projectiles_cooldown_max : 0).toFixed(1)}`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 12
+                ctx, `Projectiles/s: ${(this.speed_base >= 1000 ? 1 / this.projectiles_cooldown_max : 0).toFixed(1)}`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
             )
         }
     }
@@ -639,12 +640,12 @@ class BowBall extends WeaponBall {
         ]
 
         this.proj_damage_base = 4;
-        this.speed_base = 135;
+        this.speed_base = 150;
 
         this.arrow_size_mult = 1 + (this.level * 0.03);
         this.arrow_speed = 10000 + (this.level * 2000);
 
-        this.shot_cooldown_max = 0.65 + (this.level * -0.015);
+        this.shot_cooldown_max = 0.64 + (this.level * -0.015);
         this.shot_cooldown = this.shot_cooldown_max;
 
         this.multishot_cooldown = 0;
@@ -721,29 +722,29 @@ class BowBall extends WeaponBall {
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, `Arrow damage: ${this.proj_damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+            ctx, `Arrow damage: ${this.proj_damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Multishot: ${this.multishots_max}`, x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 10
+            ctx, `Multishot: ${this.multishots_max}`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 10
         )
         write_text(
-            ctx, `Arrow size: ${this.arrow_size_mult.toFixed(3)}`, x_anchor, y_anchor + 36, this.colour.css(), "MS Gothic", 10
+            ctx, `Arrow size: ${this.arrow_size_mult.toFixed(3)}`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 10
         )
         write_text(
-            ctx, `Arrow speed: ${this.arrow_speed}`, x_anchor, y_anchor + 48, this.colour.css(), "MS Gothic", 10
+            ctx, `Arrow speed: ${this.arrow_speed}`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 10
         )
         write_text(
-            ctx, `Multishot + damage increases with successful hits.`, x_anchor, y_anchor + 60, this.colour.css(), "MS Gothic", 10
+            ctx, `Multishot + damage increases with successful hits.`, x_anchor, y_anchor + 60, this.colour.css(), CANVAS_FONTS, 10
         )
         write_text(
-            ctx, `Has a weak melee attack: 2 damage.`, x_anchor, y_anchor + 72, this.colour.css(), "MS Gothic", 10
+            ctx, `Has a weak melee attack: 2 damage.`, x_anchor, y_anchor + 72, this.colour.css(), CANVAS_FONTS, 10
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Shoots an additional arrow every shot.`, x_anchor, y_anchor + 84, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 10
+                ctx, `Shoots an additional arrow every shot.`, x_anchor, y_anchor + 84, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
             )
         }
     }
@@ -863,26 +864,26 @@ class MagnumBall extends WeaponBall {
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, `Bullet damage: ${this.proj_damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+            ctx, `Bullet damage: ${this.proj_damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Gun rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+            ctx, `Gun rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Coin damage: ${this.coin_damage_base.toFixed(2)}`, x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 12
+            ctx, `Coin damage: ${this.coin_damage_base.toFixed(2)}`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Coin rotation speed: ${(this.speed_base * 2.5).toFixed(0)} deg/s`, x_anchor, y_anchor + 36, this.colour.css(), "MS Gothic", 12
+            ctx, `Coin rotation speed: ${(this.speed_base * 2.5).toFixed(0)} deg/s`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Shots ricochet off coins for double damage.`, x_anchor, y_anchor + 48, this.colour.css(), "MS Gothic", 10
+            ctx, `Shots ricochet off coins for double damage.`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 10
         )
         write_text(
-            ctx, `Ricochet shots can't be parried.`, x_anchor, y_anchor + 60, this.colour.css(), "MS Gothic", 10
+            ctx, `Ricochet shots can't be parried.`, x_anchor, y_anchor + 60, this.colour.css(), CANVAS_FONTS, 10
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Has an additional coin thrower.`, x_anchor, y_anchor + 72, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 12
+                ctx, `Has an additional coin thrower.`, x_anchor, y_anchor + 72, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
             )
         }
     }
@@ -940,8 +941,8 @@ class NeedleBall extends WeaponBall {
     weapon_step(board, time_delta) {
         // rotate the weapon
         this.rotate_weapon(0, this.speed_base * time_delta);
-        this.rotate_weapon(1, this.speed_base * 1.9 * time_delta);
-        this.rotate_weapon(2, this.speed_base * 0.9 * time_delta);
+        this.rotate_weapon(1, this.speed_base * 1.7 * time_delta);
+        this.rotate_weapon(2, this.speed_base * 0.6 * time_delta);
 
         if (this.parent?.hp <= 0) {
             this.lose_hp(10 * time_delta, true);
@@ -1012,23 +1013,23 @@ class NeedleBall extends WeaponBall {
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, `Damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+            ctx, `Damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `${this.level >= AWAKEN_LEVEL ? "Poison" : "Rupture"} per hit: ${this.rupture_base.toFixed(1)}`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+            ctx, `${this.level >= AWAKEN_LEVEL ? "Poison" : "Rupture"} per hit: ${this.rupture_base.toFixed(1)}`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 12
+            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Copy chance: ${(this.split_chance * 100).toFixed(0)}%`, x_anchor, y_anchor + 36, this.colour.css(), "MS Gothic", 12
+            ctx, `Copy chance: ${(this.split_chance * 100).toFixed(0)}%`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Copy HP ratio: ${(this.split_ratio * 100).toFixed(0)}%`, x_anchor, y_anchor + 48, this.colour.css(), "MS Gothic", 12
+            ctx, `Copy HP ratio: ${(this.split_ratio * 100).toFixed(0)}%`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 12
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Applies poison instead of rupture.`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 12
+                ctx, `Applies poison instead of rupture.`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
             )
         }
     }
@@ -1145,20 +1146,20 @@ class RailgunBall extends WeaponBall {
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, `Bullet damage: ${this.proj_damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+            ctx, `Bullet damage: ${this.proj_damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Gun rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+            ctx, `Gun rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `On shot hit or parry, rotation speed increases,`, x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 10
+            ctx, `On shot hit or parry, rotation speed increases,`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 10
         )
         write_text(
-            ctx, `and quickly fire another shot.`, x_anchor, y_anchor + 36, this.colour.css(), "MS Gothic", 10
+            ctx, `and quickly fire another shot.`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 10
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Has two railguns that mirror positions.`, x_anchor, y_anchor + 48, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 12
+                ctx, `Has two railguns that mirror positions.`, x_anchor, y_anchor + 48, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
             )
         }
     }
@@ -1303,11 +1304,11 @@ class PotionBall extends WeaponBall {
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, `Potion impact damage: ${this.potion_impact_damage.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+            ctx, `Potion impact damage: ${this.potion_impact_damage.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Gains another potion that freezes time.`, x_anchor, y_anchor + 12, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 12
+                ctx, `Gains another potion that freezes time.`, x_anchor, y_anchor + 12, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
             )
         }
     }
@@ -1413,30 +1414,30 @@ class GrenadeBall extends WeaponBall {
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, `Strike damage: ${this.damage_base.toFixed(0)}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+            ctx, `Strike damage: ${this.damage_base.toFixed(0)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Grenade damage: ${this.grenade_damage_base.toFixed(0)}`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+            ctx, `Grenade damage: ${this.grenade_damage_base.toFixed(0)}`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Grenade fuse: ${this.grenade_fuse}s`, x_anchor, y_anchor + 24, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 12
+                ctx, `Grenade fuse: ${this.grenade_fuse}s`, x_anchor, y_anchor + 24, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
             )
 
             write_text(
-                ctx, `Grenades/s: ${(1 / this.shot_cooldown_max).toFixed(2)}`, x_anchor, y_anchor + 48, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 12
+                ctx, `Grenades/s: ${(1 / this.shot_cooldown_max).toFixed(2)}`, x_anchor, y_anchor + 48, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
             )
         } else {
             write_text(
-                ctx, `Grenade fuse: ${this.grenade_fuse}s`, x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 12
+                ctx, `Grenade fuse: ${this.grenade_fuse}s`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
             )
 
             write_text(
-                ctx, `Grenades/s: ${(1 / this.shot_cooldown_max).toFixed(2)}`, x_anchor, y_anchor + 48, this.colour.css(), "MS Gothic", 12
+                ctx, `Grenades/s: ${(1 / this.shot_cooldown_max).toFixed(2)}`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 12
             )
         }
         write_text(
-            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 36, this.colour.css(), "MS Gothic", 12
+            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 12
         )
     }
 }
@@ -1575,32 +1576,32 @@ class GlassBall extends WeaponBall {
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, `Rupture per hit: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+            ctx, `Rupture per hit: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Vorpal strike damage: ${(this.damage_base * this.vorpal_mult).toFixed(0)}`, x_anchor, y_anchor + 12, this.colour.css(), "MS Gothic", 12
+            ctx, `Vorpal strike damage: ${(this.damage_base * this.vorpal_mult).toFixed(0)}`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Charge: ${this.charge.toFixed(0)}`, x_anchor, y_anchor + 24, this.colour.css(), "MS Gothic", 12
+            ctx, `Charge: ${this.charge.toFixed(0)}`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
         )
         if (this.charge >= this.charge_threshold) {
             write_text(
-                ctx, `[${"!".repeat(20)}]`, x_anchor + 96, y_anchor + 24, this.colour.css(), "MS Gothic", 12
+                ctx, `[${"!".repeat(20)}]`, x_anchor + 96, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
             )
         } else {
             write_text(
-                ctx, `[${">".repeat(Math.floor(20 * (this.charge / this.charge_threshold)))}${" ".repeat(20 - Math.floor(20 * (this.charge / this.charge_threshold)))}]`, x_anchor + 96, y_anchor + 24, this.colour.css(), "MS Gothic", 12
+                ctx, `[${">".repeat(Math.floor(20 * (this.charge / this.charge_threshold)))}${" ".repeat(20 - Math.floor(20 * (this.charge / this.charge_threshold)))}]`, x_anchor + 96, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
             )
         }
         write_text(
-            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 36, this.colour.css(), "MS Gothic", 12
+            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Normal strikes apply rupture instead of damage.`, x_anchor, y_anchor + 48, this.colour.css(), "MS Gothic", 10
+            ctx, `Normal strikes apply rupture instead of damage.`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 10
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Multiplies rupture by 1.5x after each hit.`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 10
+                ctx, `Multiplies rupture by 1.5x after each hit.`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
             )
         }
     }
@@ -1644,6 +1645,10 @@ class HandBall extends WeaponBall {
 
         "hand_grab": [
             // no hitboxes because grab "cutscene"
+        ],
+
+        "hand_tired": [
+            // no hitboxes because tired
         ],
     }
 
@@ -1715,18 +1720,30 @@ class HandBall extends WeaponBall {
         this.grab_ready_distance = this.radius * 4;
         this.sqr_grab_ready_distance = this.grab_ready_distance * this.grab_ready_distance;
         this.grab_seek_speed = 18000;
-        this.parry_delay = 0;
+        this.parry_delays = [0, 0];
 
         this.punch_damage = 8;
         this.other_damage = 0;
-        this.grab_damage_initial = 4;
+        this.grab_damage_initial = 3;
         this.grab_damage_impact = 12;
         this.grab_info = [
             {stored_velocity: null, ball: null, amount_to_rotate: null, rotated_so_far: null, speed: 0},
             {stored_velocity: null, ball: null, amount_to_rotate: null, rotated_so_far: null, speed: 0}
         ]
     
+        this.post_grab_cooldown = 9;
+        this.post_block_cooldown = 1.75;
+        this.tired_delays = [0, 0];
+
         this.board = null;
+
+        this.debug = false;
+    }
+
+    debug_log(...msg) {
+        if (this.debug) {
+            console.log(...msg);
+        }
     }
 
     weapon_step(board, time_delta) {
@@ -1827,14 +1844,15 @@ class HandBall extends WeaponBall {
                 }
 
                 case "hand_block": {
-                    this.parry_delay -= time_delta;
+                    this.parry_delays[i] -= time_delta;
                     this.weapon_data[i].offset = new Vector2(0, 0);
                     
-                    if (this.parry_delay <= 0) {
-                        this.hands_sprites[i] = "hand_neutral";
+                    if (this.parry_delays[i] <= 0) {
+                        this.hands_sprites[i] = "hand_tired";
+                        this.tired_delays[i] = this.post_block_cooldown;
 
                         this.weapon_data[i].offset = new Vector2(0, 0);
-                        this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.5;
+                        this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.4;
                     }
 
                     break;
@@ -1845,49 +1863,53 @@ class HandBall extends WeaponBall {
                     this.grab_info[i].speed += 50 * time_delta;
                     this.weapon_data[i].rotate(rad2deg(this.grab_info[i].speed * time_delta), i % 2 == 1);
                     this.grab_info[i].rotated_so_far += this.grab_info[i].speed * time_delta;
-                    // console.log(`Rotated ${rad2deg(this.grab_info[i].speed * time_delta)}deg, ${rad2deg(this.grab_info[i].amount_to_rotate - this.grab_info[i].rotated_so_far)}deg remaining`)
+                    // this.debug_log(`Rotated ${rad2deg(this.grab_info[i].speed * time_delta)}deg, ${rad2deg(this.grab_info[i].amount_to_rotate - this.grab_info[i].rotated_so_far)}deg remaining`)
 
                     if (this.grab_info[i].rotated_so_far >= (this.grab_info[i].amount_to_rotate + (Math.PI / 8))) {
                         let rollback = this.grab_info[i].rotated_so_far - this.grab_info[i].amount_to_rotate;
+                        let throwball = this.grab_info[i].ball;
+                        
                         this.weapon_data[i].rotate(rad2deg(rollback), i % 2 == 0);
 
                         // throw it. for now just drop it to show we're doing something
-                        console.log("Thrown!");
-                        this.hands_sprites[i] = "hand_neutral";
+                        this.debug_log("Thrown!");
+                        this.hands_sprites[i] = "hand_tired";
+                        this.tired_delays[i] = this.post_grab_cooldown;
+
                         this.weapon_data[i].offset = new Vector2(0, 0);
-                        this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.5;
+                        this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.4;
 
                         // We can get the wall to select by getting the current angle of the weapon
-                        this.grab_info[i].ball.hitstop = 1;
+                        throwball.hitstop = 1;
 
                         let vec = new Vector2(0, 1 * (i % 2 == 0 ? 1 : -1)).rotate(this.weapon_data[i].angle);
-                        let new_position = this.grab_info[i].ball.position.copy();
+                        let new_position = throwball.position.copy();
 
                         if (Math.abs(vec.x) >= 0.5) {
                             // right or left
                             if (vec.x < 0) {
                                 // left
-                                new_position.x = this.grab_info[i].ball.radius;
+                                new_position.x = throwball.radius;
                             } else {
                                 // right
-                                new_position.x = this.board.size.x - this.grab_info[i].ball.radius;
+                                new_position.x = this.board.size.x - throwball.radius;
                             }
                         } else {
                             // up or down
                             if (vec.y < 0) {
                                 // up
-                                new_position.y = this.grab_info[i].ball.radius;
+                                new_position.y = throwball.radius;
                             } else {
                                 // down
-                                new_position.y = this.board.size.y - this.grab_info[i].ball.radius;
+                                new_position.y = this.board.size.y - throwball.radius;
                             } 
                         }
 
                         // now make particles along the way
-                        let cpos = this.grab_info[i].ball.position;
+                        let cpos = throwball.position;
                         let stopping = 2;
                         let times = 0;
-                        let size_factor = this.grab_info[i].ball.radius / this.radius;
+                        let size_factor = throwball.radius / this.radius;
                         let delay = 0.02 * size_factor;
                         while (stopping > 0) {
                             if (!board.in_bounds(cpos)) {
@@ -1906,20 +1928,22 @@ class HandBall extends WeaponBall {
                             cpos = cpos.add(vec.mul(128 * size_factor * PARTICLE_SIZE_MULTIPLIER));
                         }
 
-                        this.grab_info[i].ball.display = false;
+                        throwball.display = false;
+                        this.debug_log(`${throwball.id} phasing out`);
 
-                        board.set_timer(new Timer(
+                        let timer = new Timer(
                             board => {
-                                this.grab_info[i].ball.skip_physics = false;
-                                this.grab_info[i].ball.display = true;
+                                this.debug_log(`${throwball.id} phasing back in`);
+                                throwball.skip_physics = false;
+                                throwball.display = true;
 
-                                this.grab_info[i].ball.position = new_position;
-                                this.grab_info[i].ball.lose_hp(this.grab_damage_impact);
+                                throwball.position = new_position;
+                                throwball.lose_hp(this.grab_damage_impact);
 
                                 play_audio("wall_smash");
 
-                                let pos = this.grab_info[i].ball.position.sub(
-                                    vec.mul(size_factor * 2 * this.grab_info[i].ball.radius)
+                                let pos = throwball.position.sub(
+                                    vec.mul(size_factor * 2 * throwball.radius)
                                 )
 
                                 let part = new Particle(
@@ -1930,9 +1954,13 @@ class HandBall extends WeaponBall {
 
                                 board.spawn_particle(part, pos);
                             }, delay * (times-1)
-                        ))
+                        );
 
-                        this.grab_info[i].ball.display = false;
+                        board.set_timer(timer);
+
+                        this.debug_log(`${throwball.id} set timer ID ${timer.id} for ${delay * (times-1)} to phase back in`);
+
+                        throwball.display = false;
 
                         this.velocity = (this.position.sub(new_position).normalize()).mul(this.grab_info[i].stored_velocity.magnitude());
                     } else {
@@ -1944,6 +1972,31 @@ class HandBall extends WeaponBall {
                         if (this.grab_info[i].ball.update_particles) {
                             this.grab_info[i].ball.update_particles(time_delta);
                         }
+                    }
+
+                    break;
+                }
+
+                case "hand_tired": {
+                    this.tired_delays[i] -= time_delta;
+                    this.weapon_data[i].offset = new Vector2(0, 0);
+                    
+                    if (this.tired_delays[i] <= 0) {
+                        this.hands_sprites[i] = "hand_neutral";
+
+                        this.weapon_data[i].offset = new Vector2(0, 0);
+                        this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.5;
+                    } else {
+                        // hands drift downwards
+                        let angle_rotated = positive_mod(this.weapon_data[i].angle - (Math.PI / 2), Math.PI * 2);
+                        let side = random_from_array([-1, 1]);
+                        if (angle_rotated > Math.PI) {
+                            side = 1;
+                        } else if (angle_rotated < Math.PI) {
+                            side = -1;
+                        }
+
+                        this.weapon_data[i].rotate(side * time_delta * 25);
                     }
 
                     break;
@@ -1973,7 +2026,7 @@ class HandBall extends WeaponBall {
     block_hand(with_weapon_index) {
         this.hands_sprites[with_weapon_index] = "hand_block";
         this.weapon_data[with_weapon_index].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.5;
-        this.parry_delay = 0.5;
+        this.parry_delays[with_weapon_index] = 0.5;
     }
 
     hit_other(other, with_weapon_index) {
@@ -2032,12 +2085,12 @@ class HandBall extends WeaponBall {
         let check_angle_begin = this.weapon_data[with_weapon_index].angle;
         let check_angle_diff = (Math.PI * (5/2) * rotation_sign) + (Math.sign(check_angle_begin) * ((Math.PI / 2) - (Math.abs(check_angle_begin) % (Math.PI / 2))));  // amount to rotate to get to the next cardinal angle
         let check_next = check_angle_diff;
-        console.log("its grab time bitch");
-        console.log(`Weapon index: ${with_weapon_index} (* ${rotation_sign})`);
-        console.log(`Weapon angle is ${rad2deg(this.weapon_data[with_weapon_index].angle)}deg`);
-        console.log(`Started at ${rad2deg(check_angle_begin)}deg`);
-        console.log(`Beginning checks at ${rad2deg(check_next)}deg`);
-        console.log(`So first composite rotation is ${rad2deg(check_angle_begin + check_next)}`);
+        this.debug_log("its grab time bitch");
+        this.debug_log(`Weapon index: ${with_weapon_index} (* ${rotation_sign})`);
+        this.debug_log(`Weapon angle is ${rad2deg(this.weapon_data[with_weapon_index].angle)}deg`);
+        this.debug_log(`Started at ${rad2deg(check_angle_begin)}deg`);
+        this.debug_log(`Beginning checks at ${rad2deg(check_next)}deg`);
+        this.debug_log(`So first composite rotation is ${rad2deg(check_angle_begin + check_next)}`);
 
         // TODO this still doesn't work right.
         // TODO the rest of the throw logic
@@ -2069,7 +2122,7 @@ class HandBall extends WeaponBall {
                 if (lower_bound >= 0) {
                     if (upper_bound < this.board.size.x) {
                         // we found it!
-                        console.log(`Found! Adding rotation ${rad2deg(angle_rotated)}deg`)
+                        this.debug_log(`Found! Adding rotation ${rad2deg(angle_rotated)}deg`)
                         possible_rotations.push([check_next, angle_rotated]);
                     }
                 }
@@ -2079,7 +2132,7 @@ class HandBall extends WeaponBall {
             check_next += rotation_sign * (Math.PI / 2);
         }
 
-        console.log("Got two rotations.");
+        this.debug_log("Got two rotations.");
         let best = [null, -9999];
         possible_rotations.forEach(r => {
             let vec = new Vector2(0, 1 * rotation_sign).rotate(r[0] + check_angle_begin);
@@ -2133,15 +2186,15 @@ class HandBall extends WeaponBall {
             }
 
             let result = Math.abs(target - coord) * score_bias;
-            console.log(`${rad2deg(r[1])} (${rad2deg((r[1] * rotation_sign) + check_angle_begin) % 360}, ${vec.toString()}) has result ${result} (${coord} <=> ${target})`)
+            this.debug_log(`${rad2deg(r[1])} (${rad2deg((r[1] * rotation_sign) + check_angle_begin) % 360}, ${vec.toString()}) has result ${result} (${coord} <=> ${target})`)
             // we want as much distance as possible
             if (result-50 > best[1]) {
                 best = [r, result];
             }
         })
 
-        console.log(`Got our best rotation - ${rad2deg(best[0][1])}`);
-        console.log(`So will rotate from ${rad2deg(check_angle_begin)}deg to ${rad2deg(check_angle_begin + (best[0][1] * rotation_sign))}`);
+        this.debug_log(`Got our best rotation - ${rad2deg(best[0][1])}`);
+        this.debug_log(`So will rotate from ${rad2deg(check_angle_begin)}deg to ${rad2deg(check_angle_begin + (best[0][1] * rotation_sign))}`);
 
         this.grab_info[with_weapon_index].amount_to_rotate = best[0][1];
         this.grab_info[with_weapon_index].rotated_so_far = 0;
@@ -2151,11 +2204,11 @@ class HandBall extends WeaponBall {
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, `Hand`, x_anchor, y_anchor, this.colour.css(), "MS Gothic", 12
+            ctx, `Hand`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Hand...`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), "MS Gothic", 10
+                ctx, `Hand...`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
             )
         }
     }
