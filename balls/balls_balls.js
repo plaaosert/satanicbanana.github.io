@@ -1784,16 +1784,19 @@ class HandBall extends WeaponBall {
                             return [ball, sqr_dist];
                         }
                     }, null);
-                    if (closest[1] > this.sqr_grab_ready_distance) {
-                        this.hands_sprites[i] = "hand_neutral";
-                        this.weapon_data[i].offset = new Vector2(32, 0);
-                    } else {
-                        // quickly move hand towards it 
-                        this.weapon_data[i].offset = new Vector2(32, 0);
-                        
-                        // let sign = Math.sign(closest[0].position.angle(this.position));
 
-                        // this.weapon_data[i].rotate(this.grab_seek_speed * sign * time_delta * (Math.PI / 180));
+                    if (closest) {
+                        if (closest[1] > this.sqr_grab_ready_distance) {
+                            this.hands_sprites[i] = "hand_neutral";
+                            this.weapon_data[i].offset = new Vector2(32, 0);
+                        } else {
+                            // quickly move hand towards it 
+                            this.weapon_data[i].offset = new Vector2(32, 0);
+                            
+                            // let sign = Math.sign(closest[0].position.angle(this.position));
+
+                            // this.weapon_data[i].rotate(this.grab_seek_speed * sign * time_delta * (Math.PI / 180));
+                        }
                     }
 
                     break;
@@ -1931,7 +1934,7 @@ class HandBall extends WeaponBall {
 
                         this.grab_info[i].ball.display = false;
 
-                        this.velocity = (this.position.sub(this.grab_info[i].ball.position).normalize()).mul(this.grab_info[i].stored_velocity.magnitude());
+                        this.velocity = (this.position.sub(new_position).normalize()).mul(this.grab_info[i].stored_velocity.magnitude());
                     } else {
                         let ballpos = this.position.add(this.get_weapon_offset(this.weapon_data[i]));
                         this.grab_info[i].ball.position = ballpos;

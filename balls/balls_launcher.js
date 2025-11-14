@@ -158,7 +158,11 @@ let selectable_balls = [
     GlassBall, HandBall
 ]
 
-let selectable_balls_for_random = selectable_balls.filter(ball => ball.name != "DummyBall");
+let banned_for_random = [
+    DummyBall, HandBall
+]
+
+let selectable_balls_for_random = selectable_balls.filter(ball => !banned_for_random.some(c => c.name == ball.name));
 
 let match_end_timeout = 0;
 let render_victory_enabled = true;
@@ -275,6 +279,9 @@ document.addEventListener("DOMContentLoaded", function() {
         document.querySelector(".spacer").classList.remove("nodisplay");
         document.querySelector(".spacer").classList.remove("hidden");
 
+        document.querySelector("#ball1_check").checked = awaken_ball1;
+        document.querySelector("#ball2_check").checked = awaken_ball2;
+
         repeater_interval = setInterval(() => {
             if (!board) {
                 // increase ball2 by 1. if this would make it > selectable_balls length,
@@ -327,6 +334,9 @@ if (force_ball1) {
 }
 
 let ball2_index = 0;
+
+let awaken_ball1 = false;
+let awaken_ball2 = false;
 
 let win_matrix = [];
 selectable_balls_for_random.forEach(_ => win_matrix.push(new Array(selectable_balls_for_random.length).fill(0)));
