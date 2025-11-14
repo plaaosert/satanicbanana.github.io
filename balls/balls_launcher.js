@@ -159,7 +159,7 @@ let selectable_balls = [
 ]
 
 let banned_for_random = [
-    DummyBall, HandBall
+    DummyBall, /* HandBall */
 ]
 
 let selectable_balls_for_random = selectable_balls.filter(ball => !banned_for_random.some(c => c.name == ball.name));

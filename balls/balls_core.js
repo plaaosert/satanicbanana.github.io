@@ -21,6 +21,8 @@ const prerender_ctx = prerender_canvas.getContext("2d");
 
 const PARTICLE_SIZE_MULTIPLIER = 16;
 
+const CANVAS_FONTS = "MS Gothic, Roboto Mono, monospace";
+
 let num_textures_loaded = 0;
 let num_textures_needed = 0;
 
@@ -64,12 +66,14 @@ const entity_sprites = new Map([
     ["hand_grab", 1, "weapon/hands/"],
     ["hand_block", 1, "weapon/hands/"],
     ["hand_punch", 1, "weapon/hands/"],
+    ["hand_tired", 1, "weapon/hands/"],
 
     ["hand_neutral_r", 1, "weapon/hands/"],
     ["hand_open_r", 1, "weapon/hands/"],
     ["hand_grab_r", 1, "weapon/hands/"],
     ["hand_block_r", 1, "weapon/hands/"],
     ["hand_punch_r", 1, "weapon/hands/"],
+    ["hand_tired_r", 1, "weapon/hands/"],
 
     ["FLIPS_YOU_OFF", 1, "weapon/hands/"],
 
@@ -276,6 +280,8 @@ class Board {
             this.size.y * 1.1
         ]
 
+        this.duration = 0;
+
         this.balls = [];
         this.projectiles = [];
         this.particles = [];
@@ -363,7 +369,7 @@ class Board {
 
     remaining_players() {
         let balls_ids = this.balls.map(ball => ball.player.id);
-        let players = this.balls.filter((t, i) => balls_ids.indexOf(t.player.id) === i).map(b => b.player);
+        let players = this.balls.filter((t, i) => t.show_stats && balls_ids.indexOf(t.player.id) === i).map(b => b.player);
         return players;
     }
 
@@ -406,9 +412,16 @@ class Board {
 
     timers_step(time_delta) {
         this.timers.forEach(timer => timer.trigger_time -= time_delta);
+        /*
+        if (this.timers.length > 0) {
+            console.log(`${this.timers.length} timers left`);
+        }
+        */
         while (this.timers[0]?.trigger_time <= 0) {
             // remove, then re-add if repeat
             let trigger = this.timers.shift();
+            
+            // console.log(`Triggering timer ID ${trigger.id}`);
 
             trigger.func(this);
 
@@ -557,6 +570,8 @@ class Board {
             ball.position.x = Math.max(ball.radius, Math.min(this.size.x - ball.radius, ball.position.x));
             ball.position.y = Math.max(ball.radius, Math.min(this.size.y - ball.radius, ball.position.y));
         });
+
+        this.duration += time_delta;
     }
 }
 
@@ -967,7 +982,7 @@ function render_diagnostics(board) {
     let fps = 1000/avg_frame_time;
 
     write_text(
-        layers.debug_front.ctx, `fps: ${Math.round(fps)}`, 10, 16, "#fff", "MS Gothic", 9
+        layers.debug_front.ctx, `fps: ${Math.round(fps)}`, 10, 16, "#fff", CANVAS_FONTS, 9
     )
 
     let frame_times_raw = [render_durations, calc_durations, wait_durations].map(arr => {
@@ -979,7 +994,7 @@ function render_diagnostics(board) {
     })
 
     write_text(
-        layers.debug_front.ctx, `frame spread:`, 10, 28, "#fff", "MS Gothic", 9
+        layers.debug_front.ctx, `frame spread:`, 10, 28, "#fff", CANVAS_FONTS, 9
     )
 
     let total_bar_length = 48;
@@ -991,15 +1006,15 @@ function render_diagnostics(board) {
     ]
 
     write_text(
-        layers.debug_front.ctx, frame_time_splits[0] + "draw" + " " + "#".repeat(bars[0]), 10, 28+12, "#0f0", "MS Gothic", 9
+        layers.debug_front.ctx, frame_time_splits[0] + "draw" + " " + "#".repeat(bars[0]), 10, 28+12, "#0f0", CANVAS_FONTS, 9
     )
 
     write_text(
-        layers.debug_front.ctx, frame_time_splits[1] + "calc" + " " + "#".repeat(bars[1]), 10, 28+12+12, "#f00", "MS Gothic", 9
+        layers.debug_front.ctx, frame_time_splits[1] + "calc" + " " + "#".repeat(bars[1]), 10, 28+12+12, "#f00", CANVAS_FONTS, 9
     )
 
     write_text(
-        layers.debug_front.ctx, frame_time_splits[2] + "wait" + " " + "#".repeat(bars[2]), 10, 28+12+12+12, "#666", "MS Gothic", 9
+        layers.debug_front.ctx, frame_time_splits[2] + "wait" + " " + "#".repeat(bars[2]), 10, 28+12+12+12, "#666", CANVAS_FONTS, 9
     )
 
     if (!board)
@@ -1013,7 +1028,7 @@ function render_diagnostics(board) {
             let gravitational_energy = ball.mass * board.gravity.y * height;
 
             return t + kinetic_energy + gravitational_energy;
-        }, 0))}`, 10, 28+12+12+12+24, "white", "MS Gothic", 9
+        }, 0))}`, 10, 28+12+12+12+24, "white", CANVAS_FONTS, 9
     )
 
     let board_d_y = 28+12+12+12+24+24;
@@ -1021,11 +1036,11 @@ function render_diagnostics(board) {
     board.balls.forEach((ball, index) => {
         let t = board_d_y + (36 * index);
         write_text(
-            layers.debug_front.ctx, `ball ${index} invuln | ` + "#".repeat(Math.max(0, Math.floor(ball.invuln_duration * 200))), 10, t, ball.invuln_duration > 0 ? ball.colour.css() : "gray", "MS Gothic", 9
+            layers.debug_front.ctx, `ball ${index} invuln | ` + "#".repeat(Math.max(0, Math.floor(ball.invuln_duration * 200))), 10, t, ball.invuln_duration > 0 ? ball.colour.css() : "gray", CANVAS_FONTS, 9
         )
 
         write_text(
-            layers.debug_front.ctx, `      hitstop | ` + "#".repeat(Math.max(0, Math.floor(ball.hitstop * 200))), 10, t + 12, ball.hitstop > 0 ? ball.colour.css() : "gray", "MS Gothic", 9
+            layers.debug_front.ctx, `      hitstop | ` + "#".repeat(Math.max(0, Math.floor(ball.hitstop * 200))), 10, t + 12, ball.hitstop > 0 ? ball.colour.css() : "gray", CANVAS_FONTS, 9
         )
     });
 }
@@ -1049,11 +1064,11 @@ function render_victory(board, time_until_end) {
     if (!b) {
         // draw
         if (t > 3) {
-            write_text(ctx, "DRAW", canvas_width/2, 256, "white", "MS Gothic", 144, true);
+            write_text(ctx, "DRAW", canvas_width/2, 256, "white", CANVAS_FONTS, 144, true);
         }
     } else {
         if (t > 2) {
-            write_text(ctx, "VICTORY", canvas_width/2, 256, "white", "MS Gothic", 144, true);
+            write_text(ctx, "VICTORY", canvas_width/2, 256, "white", CANVAS_FONTS, 144, true);
         }
 
         if (t > 3) {
@@ -1076,24 +1091,46 @@ function render_victory(board, time_until_end) {
                 }
             }
 
-            write_text(ctx, b.name, canvas_width/2, 256 + 72, b.colour.css(), "MS Gothic", 72, true);
+            write_text(ctx, b.name, canvas_width/2, 256 + 72, b.colour.css(), CANVAS_FONTS, 72, true);
         }
 
         if (t > 4.25) {
             let quote = b.quote.split("\n");
+            for (let x=-2; x<3; x++) {
+                for (let y=-2; y<3; y++) {
+                    if (!(x==y && x==0)) {
+                        quote.forEach((q, i) => {
+                            write_text(
+                                ctx, (i == 0 ? "\"" : "") + q + (i >= quote.length-1 ? "\"" : ""),
+                                canvas_width/2 + x, 256 + 72 + 36 + (16 * i) + y,
+                                "black", CANVAS_FONTS, 16, true
+                            );
+                        })
+                    }
+                }
+            }
+
             quote.forEach((q, i) => {
-                write_text(ctx, (i == 0 ? "\"" : "") + q + (i >= quote.length-1 ? "\"" : ""), canvas_width/2, 256 + 72 + 36 + (16 * i), b.colour.css(), "MS Gothic", 16, true);
+                write_text(
+                    ctx, (i == 0 ? "\"" : "") + q + (i >= quote.length-1 ? "\"" : ""),
+                    canvas_width/2 + 0, 256 + 72 + 36 + (16 * i) + 0,
+                    b.colour.css(), CANVAS_FONTS, 16, true
+                );
             })
         }
     }
 }
 
-function render_game(board, collision_boxes=false, velocity_lines=false) {
+function render_game(board, collision_boxes=false, velocity_lines=false, background_tint=null) {
     layers.fg1.ctx.clearRect(0, 0, canvas_width, canvas_height);
     layers.fg2.ctx.clearRect(0, 0, canvas_width, canvas_height);
     layers.fg3.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
     layers.bg1.ctx.clearRect(0, 0, canvas_width, canvas_height);
+    if (background_tint) {
+        layers.bg3.ctx.fillStyle = background_tint;
+        layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height);
+    }
 
     if (true) {
         layers.debug_back.ctx.clearRect(0, 0, canvas_width, canvas_height);
@@ -1256,7 +1293,7 @@ function render_game(board, collision_boxes=false, velocity_lines=false) {
             let hp = Math.max(0, ball.hp);
 
             ctx.fillStyle = "black";
-            ctx.font = "22px \"ms gothic\"";
+            ctx.font = `22px ${CANVAS_FONTS}`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText(Math.ceil(hp), ball_screen_pos.x-0.5, ball_screen_pos.y-0.5);
@@ -1329,23 +1366,23 @@ function render_descriptions(board) {
             let l = layout[index];
 
             write_text(
-                layers.ui2.ctx, `${ball.name}`, l[0], l[1], ball.colour.css(), "MS Gothic", 16
+                layers.ui2.ctx, `${ball.name}`, l[0], l[1], ball.colour.css(), CANVAS_FONTS, 16
             )
 
             let hp = Math.max(0, ball.hp);
             write_text(
-                layers.ui2.ctx, `[${"#".repeat(Math.ceil(hp * 0.4))}${" ".repeat(Math.floor((100 - hp) * 0.4))}]`, l[0], l[1] + 12, ball.colour.css(), "MS Gothic", 9
+                layers.ui2.ctx, `[${"#".repeat(Math.ceil(hp * 0.4))}${" ".repeat(Math.floor((100 - hp) * 0.4))}]`, l[0], l[1] + 12, ball.colour.css(), CANVAS_FONTS, 9
             )
             
             if (ball.poison_duration > 0) {
                 write_text(
-                    layers.ui2.ctx, `☣ ${ball.poison_intensity.toFixed(2).padEnd(5)} | ${ball.poison_duration.toFixed(1)}s`, l[0], l[1] + 12 + 12, ball.colour.css(), "MS Gothic", 12
+                    layers.ui2.ctx, `☣ ${ball.poison_intensity.toFixed(2).padEnd(5)} | ${ball.poison_duration.toFixed(1)}s`, l[0], l[1] + 12 + 12, ball.colour.css(), CANVAS_FONTS, 12
                 )
             }
 
             if (ball.rupture_intensity >= 0.01) {
                 write_text(
-                    layers.ui2.ctx, `➴ ${ball.rupture_intensity.toFixed(2).padEnd(5)}`, l[0] + 128, l[1] + 12 + 12, ball.colour.css(), "MS Gothic", 12
+                    layers.ui2.ctx, `➴ ${ball.rupture_intensity.toFixed(2).padEnd(5)}`, l[0] + 128, l[1] + 12 + 12, ball.colour.css(), CANVAS_FONTS, 12
                 )
             }
 
@@ -1359,13 +1396,20 @@ let last_frame = Date.now();
 let colliding_parries = new Set();
 let colliding_proj2projs = new Set();
 
+let max_game_duration = 300;
+let game_end_col = new Colour(36, 0, 0).css();
+
 function game_loop() {
     framecount++;
 
     let frame_start_time = Date.now();
 
     if (board && board.stepped_physics) {
-        render_game(board, keys_down["KeyQ"], false);
+        if (board.duration > max_game_duration) {
+            render_game(board, keys_down["KeyQ"], false, game_end_col);
+        } else {
+            render_game(board, keys_down["KeyQ"], false);
+        }
         render_descriptions(board);
     }
 
@@ -1677,40 +1721,46 @@ function game_loop() {
                     });
                 })
 
-                // board.hitstop_time = Math.max(hitstop, board.hitstop_time);
-            }
-
-            board.balls = board.balls.filter(ball => {
-                // keep skip_physics balls around
-                if (ball.skip_physics) {
-                    return true
+                // if the board duration is past the max duration, deal 5dps to all balls
+                if (board.duration > max_game_duration) {
+                    board.balls.forEach(ball => ball.lose_hp(5 * coll_delta_time));
                 }
 
-                if (ball.hp > 0) {
-                    return true;
-                } else {
-                    let result = ball.die();
-
-                    if (!result.skip_default_explosion) {
-                        if (ball.show_stats) {
-                            board.spawn_particle(new Particle(
-                                ball.position.add(new Vector2(256+64, -512)), 0, 2, entity_sprites.get("explosion"), 12, 3, false
-                            ), ball.position.add(new Vector2(256+64, -512)));
-
-                            play_audio("explosion");
-                        } else {
-                            board.spawn_particle(new Particle(
-                                ball.position.add(new Vector2(144, -512)), 0, 1, entity_sprites.get("explosion"), 12, 3, false
-                            ), ball.position.add(new Vector2(144, -512)));
-
-                            // TODO make this something else thats less impactful
-                            play_audio("explosion");
-                        }
+                // cull any dead balls
+                board.balls = board.balls.filter(ball => {
+                    // keep skip_physics balls around
+                    if (ball.skip_physics) {
+                        return true
                     }
 
-                    return false;
-                }
-            });
+                    if (ball.hp > 0) {
+                        return true;
+                    } else {
+                        let result = ball.die();
+
+                        if (!result.skip_default_explosion) {
+                            if (ball.show_stats) {
+                                board.spawn_particle(new Particle(
+                                    ball.position.add(new Vector2(256+64, -512)), 0, 2, entity_sprites.get("explosion"), 12, 3, false
+                                ), ball.position.add(new Vector2(256+64, -512)));
+
+                                play_audio("explosion");
+                            } else {
+                                board.spawn_particle(new Particle(
+                                    ball.position.add(new Vector2(144, -512)), 0, 1, entity_sprites.get("explosion"), 12, 3, false
+                                ), ball.position.add(new Vector2(144, -512)));
+
+                                // TODO make this something else thats less impactful
+                                play_audio("explosion");
+                            }
+                        }
+
+                        return false;
+                    }
+                });
+
+                // board.hitstop_time = Math.max(hitstop, board.hitstop_time);
+            }
         }
 
         // we only need to do balls' ailments steps once per frame
@@ -1719,7 +1769,10 @@ function game_loop() {
         board.particles_step(delta_time);
         
         if (board?.remaining_players().length <= 1) {
-            board.get_all_player_balls(board.remaining_players()[0]).forEach(ball => ball.takes_damage = false);
+            let players = board.remaining_players();
+            if (players.length > 0) {
+                board.get_all_player_balls(players[0]).forEach(ball => ball.takes_damage = false);
+            }
 
             match_end_timeout -= delta_time;
 
