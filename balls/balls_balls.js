@@ -1629,12 +1629,11 @@ class HandBall extends WeaponBall {
         ],
 
         "hand_open": [
-            {pos: new Vector2(60, 16), radius: 6},
+            // shim off the top and bottom hitboxes
             {pos: new Vector2(60, 28), radius: 10},
             {pos: new Vector2(56, 48), radius: 12},
             {pos: new Vector2(60, 68), radius: 16},
             {pos: new Vector2(48, 96), radius: 28},
-            {pos: new Vector2(24, 114), radius: 16},
         ],
 
         "hand_punch": [
@@ -1767,17 +1766,17 @@ class HandBall extends WeaponBall {
                         if (this.punch_timeouts[i] <= 0) {
                             this.hands_sprites[i] = "hand_punch";
 
-                            let pos = this.position.add(new Vector2(this.weapon_data[0].size_multiplier * 32, 0).rotate(this.weapon_data[0].angle));
-                            let particle = new Particle(
-                                pos, this.weapon_data[0].angle, 1, entity_sprites.get("hand_punch_particles"), 0, 0.2, false
-                            )
-
-                            // board.spawn_particle(particle, pos);
-
                             this.weapon_data[i].offset = new Vector2(96, 0);
                             this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.7;
                             this.punch_timeouts[i] = this.punch_recovery;
                             this.hands_speed_timeouts[i] = 0;
+
+                            let pos = this.position.add(this.get_weapon_offset(this.weapon_data[i]));
+                            let particle = new Particle(
+                                pos, this.weapon_data[i].angle, 1, entity_sprites.get("hand_punch_particles"), 24, 0.2, false
+                            )
+
+                            // board.spawn_particle(particle, pos);
                         } else {
                             this.weapon_data[i].rotate(this.hands_speeds[i] * time_delta, i % 2 == 1);
                             this.hands_speed_timeouts[i] -= time_delta;
@@ -1827,13 +1826,6 @@ class HandBall extends WeaponBall {
                     
                     if (this.punch_timeouts[i] <= 0) {
                         this.hands_sprites[i] = "hand_neutral";
-
-                        let pos = this.position.add(new Vector2(this.weapon_data[0].size_multiplier * 32, 0).rotate(this.weapon_data[0].angle));
-                        let particle = new Particle(
-                            pos, this.weapon_data[0].angle, 1, entity_sprites.get("hand_punch_particles"), 0, 0.2, false
-                        )
-
-                        // board.spawn_particle(particle, pos);
 
                         this.weapon_data[i].offset = new Vector2(0, 0);
                         this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.5;

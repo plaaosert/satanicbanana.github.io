@@ -77,7 +77,7 @@ const entity_sprites = new Map([
 
     ["FLIPS_YOU_OFF", 1, "weapon/hands/"],
 
-    ["hand_punch_particles", 1, "weapon/hands/"],
+    ["hand_punch_particles", 7, "weapon/hands/hand_punch_particles/"],
 
     ["explosion", 16, "explosion/"],  // Game Maker Classic
 
