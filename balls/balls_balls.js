@@ -1691,10 +1691,12 @@ class HandBall extends WeaponBall {
         super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "Hand";
-        this.description_brief = "(INCOMPLETE!!!!!!!!!) Hands move semi-randomly and independently. Hands randomly punch directly forwards. An idle hand will prepare to grab a ball if it's close, then throw it at an opposite wall at very high speed if the grab is successful.";
+        this.description_brief = "Hands move semi-randomly and independently. Hands randomly punch directly forwards. An idle hand will prepare to grab a ball if it's close, then throw it at an opposite wall at very high speed if the grab is successful.";
         this.level_description = "Speeds up punch recovery and makes hands larger.";
-        this.max_level_description = "(INCOMPLETE!!!!!!!!!) After a successful grab, punches the grabbed target multiple times for additional damage before throwing it.";
+        this.max_level_description = "Hands are now removed when they become tired (after parrying or throwing). New hands sprout every 2 seconds, doubled for each currently active hand.";
         this.quote = "It doesn't count as a self-insert if it's just my hands.";
+
+        this.hand_size = 0.5 + (0.0125 * this.level);
 
         this.weapon_data = [
             new BallWeapon(0.5, "hand_neutral", [
@@ -1706,20 +1708,20 @@ class HandBall extends WeaponBall {
             ]),
         ];
 
-        this.hands_speeds = [0, 0];
+        this.hands_speeds = [0, 0]; // X
         this.hands_speed_range = [-20, 60];
-        this.hands_speed_timeouts = [0, 0];
+        this.hands_speed_timeouts = [0, 0]; // X
         this.hands_speed_timeout_range = [0.5, 2];
-        this.hands_sprites = ["hand_neutral", "hand_neutral"];
-        this.punch_timeout_range = [0.6, 2]
-        this.punch_timeouts = [random_float(...this.punch_timeout_range), random_float(...this.punch_timeout_range)];
+        this.hands_sprites = ["hand_neutral", "hand_neutral"]; // X
+        this.punch_timeout_range = [0.6, 2];
+        this.punch_timeouts = [random_float(...this.punch_timeout_range), random_float(...this.punch_timeout_range)]; // X
         this.punch_recovery = 0.4 - (this.level * 0.02);
         this.punch_active_duration = 0.06;
 
         this.grab_ready_distance = this.radius * 4;
         this.sqr_grab_ready_distance = this.grab_ready_distance * this.grab_ready_distance;
         this.grab_seek_speed = 18000;
-        this.parry_delays = [0, 0];
+        this.parry_delays = [0, 0]; // X
 
         this.punch_damage = 8;
         this.other_damage = 0;
@@ -1728,11 +1730,14 @@ class HandBall extends WeaponBall {
         this.grab_info = [
             {stored_velocity: null, ball: null, amount_to_rotate: null, rotated_so_far: null, speed: 0},
             {stored_velocity: null, ball: null, amount_to_rotate: null, rotated_so_far: null, speed: 0}
-        ]
+        ] // X
     
         this.post_grab_cooldown = 9;
         this.post_block_cooldown = 1.75;
-        this.tired_delays = [0, 0];
+        this.tired_delays = [0, 0]; // X
+
+        this.hand_sprout_timeout = 0;
+        this.hand_sprout_base = 2;
 
         this.board = null;
 
@@ -1749,6 +1754,27 @@ class HandBall extends WeaponBall {
         // this.velocity = new Vector2(0, 0);
         this.board = board;
 
+        if (this.level >= AWAKEN_LEVEL) {
+            this.hand_sprout_timeout += time_delta;
+            if (this.hand_sprout_timeout >= this.hand_sprout_base * Math.pow(2, this.hands_sprites.length)) {
+                this.hand_sprout_timeout = 0;
+                
+                this.hands_speeds.push(0);
+                this.hands_speed_timeouts.push(0);
+                this.hands_sprites.push("hand_neutral");
+                this.punch_timeouts.push(random_float(...this.punch_timeout_range));
+                this.parry_delays.push(0);
+                this.grab_info.push({});
+                this.tired_delays.push(0);
+
+                let w = new BallWeapon(this.hand_size, "hand_neutral", []);
+                this.weapon_data.push(w);
+                w.rotate(random_float(0, 360));
+            }
+        }
+
+        let deletion_indices = [];
+
         for (let i=0; i<this.weapon_data.length; i++) {
             let make_hitboxes = true;
 
@@ -1756,7 +1782,8 @@ class HandBall extends WeaponBall {
 
             switch (this.hands_sprites[i]) {
                 case "hand_neutral": {
-                    let balls_sqr_distances = board.balls.filter(ball => !ball.allied_with(this)).map(ball => ball.position.sqr_distance(this.position));
+                    let handpos = this.position.add(this.get_weapon_offset(this.weapon_data[i]));
+                    let balls_sqr_distances = board.balls.filter(ball => !ball.allied_with(this) && !ball.skip_physics).map(ball => ball.position.sqr_distance(handpos));
                     if (balls_sqr_distances.some(d => d <= this.sqr_grab_ready_distance)) {
                         this.hands_sprites[i] = "hand_open";
                         this.weapon_data[i].offset = new Vector2(0, 0);
@@ -1792,8 +1819,9 @@ class HandBall extends WeaponBall {
                 }
 
                 case "hand_open": {
-                    let closest = board.balls.filter(ball => !ball.allied_with(this)).reduce((pb, ball) => {
-                        let sqr_dist = ball.position.sqr_distance(this.position);
+                    let handpos = this.position.add(this.get_weapon_offset(this.weapon_data[i]));
+                    let closest = board.balls.filter(ball => !ball.allied_with(this) && !ball.skip_physics).reduce((pb, ball) => {
+                        let sqr_dist = ball.position.sqr_distance(handpos);
                         if (pb) {
                             return sqr_dist < pb[1] ? [ball, sqr_dist] : pb;
                         } else {
@@ -1802,7 +1830,7 @@ class HandBall extends WeaponBall {
                     }, null);
 
                     if (closest) {
-                        if (closest[1] > this.sqr_grab_ready_distance) {
+                        if (closest[1] > this.sqr_grab_ready_distance * 1.5) {
                             this.hands_sprites[i] = "hand_neutral";
                             this.weapon_data[i].offset = new Vector2(32, 0);
                         } else {
@@ -1813,6 +1841,9 @@ class HandBall extends WeaponBall {
 
                             // this.weapon_data[i].rotate(this.grab_seek_speed * sign * time_delta * (Math.PI / 180));
                         }
+                    } else {
+                        this.hands_sprites[i] = "hand_neutral";
+                        this.weapon_data[i].offset = new Vector2(32, 0);
                     }
 
                     break;
@@ -1853,15 +1884,24 @@ class HandBall extends WeaponBall {
                 case "hand_grab": {
                     // need to do a whole bunch of code here for the grab but for now just make sure the positions always match
                     this.grab_info[i].speed += 50 * time_delta;
-                    this.weapon_data[i].rotate(rad2deg(this.grab_info[i].speed * time_delta), i % 2 == 1);
-                    this.grab_info[i].rotated_so_far += this.grab_info[i].speed * time_delta;
+
+                    let rot_amt = this.grab_info[i].speed * time_delta;
+                    this.weapon_data[i].rotate(rad2deg(rot_amt), i % 2 == 1);
+                    this.grab_info[i].rotated_so_far += rot_amt;
                     // this.debug_log(`Rotated ${rad2deg(this.grab_info[i].speed * time_delta)}deg, ${rad2deg(this.grab_info[i].amount_to_rotate - this.grab_info[i].rotated_so_far)}deg remaining`)
+
+                    this.grab_info[i].ball.weapon_data.forEach(w => {
+                        w.angle += rot_amt * (i % 2 == 0 ? 1 : -1)
+                    });
 
                     if (this.grab_info[i].rotated_so_far >= (this.grab_info[i].amount_to_rotate + (Math.PI / 8))) {
                         let rollback = this.grab_info[i].rotated_so_far - this.grab_info[i].amount_to_rotate;
                         let throwball = this.grab_info[i].ball;
                         
                         this.weapon_data[i].rotate(rad2deg(rollback), i % 2 == 0);
+                        throwball.weapon_data.forEach(w => {
+                            w.angle += rollback * (i % 2 == 0 ? 1 : -1)
+                        });
 
                         // throw it. for now just drop it to show we're doing something
                         this.debug_log("Thrown!");
@@ -1970,25 +2010,32 @@ class HandBall extends WeaponBall {
                 }
 
                 case "hand_tired": {
-                    this.tired_delays[i] -= time_delta;
-                    this.weapon_data[i].offset = new Vector2(0, 0);
-                    
-                    if (this.tired_delays[i] <= 0) {
-                        this.hands_sprites[i] = "hand_neutral";
-
-                        this.weapon_data[i].offset = new Vector2(0, 0);
-                        this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.5;
+                    if (this.level >= AWAKEN_LEVEL) {
+                        // delete it and make sure to splice out of all relevant containers
+                        // wow this sounds like i should have linked them all together into an object
+                        // instead of keeping track of 7 arrays...... oh well!!!
+                        deletion_indices.push(i);
                     } else {
-                        // hands drift downwards
-                        let angle_rotated = positive_mod(this.weapon_data[i].angle - (Math.PI / 2), Math.PI * 2);
-                        let side = random_from_array([-1, 1]);
-                        if (angle_rotated > Math.PI) {
-                            side = 1;
-                        } else if (angle_rotated < Math.PI) {
-                            side = -1;
-                        }
+                        this.tired_delays[i] -= time_delta;
+                        this.weapon_data[i].offset = new Vector2(0, 0);
+                        
+                        if (this.tired_delays[i] <= 0) {
+                            this.hands_sprites[i] = "hand_neutral";
 
-                        this.weapon_data[i].rotate(side * time_delta * 25);
+                            this.weapon_data[i].offset = new Vector2(0, 0);
+                            this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.5;
+                        } else {
+                            // hands drift downwards
+                            let angle_rotated = positive_mod(this.weapon_data[i].angle - (Math.PI / 2), Math.PI * 2);
+                            let side = random_from_array([-1, 1]);
+                            if (angle_rotated > Math.PI) {
+                                side = 1;
+                            } else if (angle_rotated < Math.PI) {
+                                side = -1;
+                            }
+
+                            this.weapon_data[i].rotate(side * time_delta * 25);
+                        }
                     }
 
                     break;
@@ -2003,6 +2050,39 @@ class HandBall extends WeaponBall {
 
             this.weapon_data[i].sprite = this.hands_sprites[i] + (i % 2 == 0 ? "" : "_r");
         }
+
+
+        for (let d_i=0; d_i<deletion_indices.length; d_i++) {
+            let i = deletion_indices[d_i];
+
+            let offset = this.get_weapon_offset(this.weapon_data[i]).mul(2);
+            let pos = this.position.add(offset);
+            let part = new Particle(
+                pos, this.weapon_data[i].angle + (Math.PI / 2), 1,
+                entity_sprites.get("explosion3"),
+                12, 999
+            );
+
+            board.spawn_particle(part, pos);
+
+            this.hands_speeds.splice(i, 1);
+            this.hands_speed_timeouts.splice(i, 1);
+            this.hands_sprites.splice(i, 1);
+            this.punch_timeouts.splice(i, 1);
+            this.parry_delays.splice(i, 1);
+            this.grab_info.splice(i, 1);
+            this.tired_delays.splice(i, 1);
+
+            this.weapon_data.splice(i, 1);
+
+            deletion_indices = deletion_indices.map(d => {
+                if (d > i) {
+                    return d-1;
+                }
+
+                return d;
+            })
+        };
     }
 
     parry_weapon(with_weapon_index, other_ball, other_weapon_id) {
@@ -2075,7 +2155,7 @@ class HandBall extends WeaponBall {
         let rotation_sign = with_weapon_index % 2 == 0 ? 1 : -1;
 
         let check_angle_begin = this.weapon_data[with_weapon_index].angle;
-        let check_angle_diff = (Math.PI * (5/2) * rotation_sign) + (Math.sign(check_angle_begin) * ((Math.PI / 2) - (Math.abs(check_angle_begin) % (Math.PI / 2))));  // amount to rotate to get to the next cardinal angle
+        let check_angle_diff = (Math.PI * (7/2) * rotation_sign) + (Math.sign(check_angle_begin) * ((Math.PI / 2) - (Math.abs(check_angle_begin) % (Math.PI / 2))));  // amount to rotate to get to the next cardinal angle
         let check_next = check_angle_diff;
         this.debug_log("its grab time bitch");
         this.debug_log(`Weapon index: ${with_weapon_index} (* ${rotation_sign})`);
@@ -2200,7 +2280,18 @@ class HandBall extends WeaponBall {
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Hand...`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+                ctx, `Hands: ${this.hands_sprites.length}`, x_anchor, y_anchor + 48, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+            )
+            let timeout = (this.hand_sprout_base * Math.pow(2, this.hands_sprites.length));
+            let timeleft = (this.hand_sprout_base * Math.pow(2, this.hands_sprites.length)) - this.hand_sprout_timeout
+            write_text(
+                ctx, `Time until next hand: ${timeleft.toFixed(1)}s / ${timeout.toFixed(1)}s`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+            )
+            let bar_l = 32;
+            let prop = timeleft / timeout;
+            let empties = Math.max(0, Math.min(bar_l, Math.ceil(prop * bar_l)));
+            write_text(
+                ctx, `[${"#".repeat(bar_l - empties)}${" ".repeat(empties)}]`, x_anchor, y_anchor + 72, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
             )
         }
     }
