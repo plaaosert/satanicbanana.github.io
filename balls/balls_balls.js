@@ -2196,11 +2196,112 @@ class HandBall extends WeaponBall {
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, `Hand`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+            ctx, `The hand.`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        )
+        write_text(
+            ctx, `Punch damage: ${this.punch_damage.toFixed(2)}`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+        )
+        write_text(
+            ctx, `Grab damage: ${this.grab_damage_initial.toFixed(2)} + ${this.grab_damage_impact.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
                 ctx, `Hand...`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+            )
+        }
+    }
+}
+
+class ChakramBall extends WeaponBall {
+    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Glass";
+        this.description_brief = "Normal strikes apply rupture but deal no damage. When hitting a target with rupture, charges up the weapon based on the rupture on the target before the strike. At 25 charge or more, the next hit deals a vorpal strike with damage equal to 16x the rupture that would be applied, then loses all charge.";
+        this.level_description = "Increases base rupture and makes the weapon rotate faster.";
+        this.max_level_description = "Multiplies the target's rupture by 2x after each hit.";
+        this.quote = "[unintelligible animalistic grunting]";
+
+        this.weapon_data = [
+            new BallWeapon(1, "glass", [
+                {pos: new Vector2(76, 64), radius: 6},
+                {pos: new Vector2(64, 64), radius: 12},
+                {pos: new Vector2(48, 64), radius: 16},
+                {pos: new Vector2(32, 64), radius: 16},
+                {pos: new Vector2(16, 64), radius: 16},
+            ])
+        ];
+
+        this.damage_base = 2.6 + (0.25 * level);
+        this.speed_base = 320 + (22.5 * level);
+
+        this.charge = 0;
+        this.charge_decay_per_sec = 0;
+        this.charge_threshold = 100;
+
+        this.vorpal_mult = 16;
+    }
+
+    weapon_step(board, time_delta) {
+        // rotate the weapon
+        this.rotate_weapon(0, this.speed_base * time_delta);
+
+        this.charge = Math.max(0, this.charge - (this.charge_decay_per_sec * time_delta));
+        if (this.charge >= this.charge_threshold) {
+            this.weapon_data[0].sprite = "glass_angry";
+        } else {
+            this.weapon_data[0].sprite = "glass";
+        }
+    }
+
+    hit_other(other, with_weapon_index) {
+        // additionally knock the other ball away
+        let result = {};
+        if (this.charge >= this.charge_threshold) {
+            result = super.hit_other(other, with_weapon_index, this.damage_base * this.vorpal_mult);
+            this.charge = 0;
+            result.snd = "strongpunch";
+        } else {
+            result = super.hit_other(other, with_weapon_index, 0);
+            this.charge += other.rupture_intensity * 10;
+            other.rupture_intensity += this.damage_base;
+        }
+
+        if (this.level >= AWAKEN_LEVEL) {
+            other.rupture_intensity *= 2;
+        }
+
+        return result;
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor) {
+        write_text(
+            ctx, `Rupture per hit: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        )
+        write_text(
+            ctx, `Vorpal strike damage: ${(this.damage_base * this.vorpal_mult).toFixed(0)}`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+        )
+        write_text(
+            ctx, `Charge: ${this.charge.toFixed(0)}`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
+        )
+        if (this.charge >= this.charge_threshold) {
+            write_text(
+                ctx, `[${"!".repeat(20)}]`, x_anchor + 96, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
+            )
+        } else {
+            write_text(
+                ctx, `[${">".repeat(Math.floor(20 * (this.charge / this.charge_threshold)))}${" ".repeat(20 - Math.floor(20 * (this.charge / this.charge_threshold)))}]`, x_anchor + 96, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
+            )
+        }
+        write_text(
+            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 12
+        )
+        write_text(
+            ctx, `Normal strikes apply rupture instead of damage.`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 10
+        )
+        if (this.level >= AWAKEN_LEVEL) {
+            write_text(
+                ctx, `Multiplies rupture by 1.5x after each hit.`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
             )
         }
     }
