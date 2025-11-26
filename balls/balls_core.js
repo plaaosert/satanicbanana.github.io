@@ -79,6 +79,10 @@ const entity_sprites = new Map([
 
     ["hand_punch_particles", 7, "weapon/hands/hand_punch_particles/"],
 
+    ["chakram", 1, "weapon/"],
+    ["chakram_weapon", 1, "weapon/"],
+    ["chakram_projectile", 1, "weapon/"],
+
     ["explosion", 16, "explosion/"],  // Game Maker Classic
 
     ["lightning", 7, "lightning/"],
@@ -274,10 +278,10 @@ class Board {
 
         this.size = size;
         this.projectile_delete_bounds = [
-            -this.size.x * 0.1,
-            this.size.x * 1.1,
-            -this.size.y * 0.1,
-            this.size.y * 1.1
+            -this.size.x * 0.5,
+            this.size.x * 1.5,
+            -this.size.y * 0.5,
+            this.size.y * 1.5
         ]
 
         this.duration = 0;
@@ -1581,7 +1585,7 @@ function game_loop() {
                             }
                         }
 
-                        if (projectile.play_parried_audio) {
+                        if (ball.invuln_duration <= 0 && projectile.play_parried_audio) {
                             play_parried_audio = true;
                         }
 

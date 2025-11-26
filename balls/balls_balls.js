@@ -789,10 +789,10 @@ class MagnumBall extends WeaponBall {
         this.coin_damage_base = 1;
         this.speed_base = 90;
 
-        this.shot_cooldown_max = 0.59 + (this.level * -0.01);
+        this.shot_cooldown_max = 0.55 + (this.level * -0.01);
         this.shot_cooldown = this.shot_cooldown_max;
 
-        this.coin_shot_cooldown_max = 0.49 + (this.level * -0.01);
+        this.coin_shot_cooldown_max = 0.48 + (this.level * -0.01);
         this.coin_shot_cooldown = this.coin_shot_cooldown_max;
     }
 
@@ -1608,6 +1608,15 @@ class GlassBall extends WeaponBall {
 }
 
 class HandBall extends WeaponBall {
+    static emojis = {
+        "hand_neutral": "✌",
+        "hand_block": "✌",
+        "hand_open": "✌",
+        "hand_punch": "☝",
+        "hand_grab": "✍",
+        "hand_tired": "✶",
+    };
+    
     static hitboxes = {
         "hand_neutral": [
             // this is the same as parry, because the parry action turns the hand into the parry hand
@@ -1716,7 +1725,7 @@ class HandBall extends WeaponBall {
         this.punch_timeout_range = [0.6, 2];
         this.punch_timeouts = [random_float(...this.punch_timeout_range), random_float(...this.punch_timeout_range)]; // X
         this.punch_recovery = 0.4 - (this.level * 0.02);
-        this.punch_active_duration = 0.06;
+        this.punch_active_duration = 0.1;
 
         this.grab_ready_distance = this.radius * 4;
         this.sqr_grab_ready_distance = this.grab_ready_distance * this.grab_ready_distance;
@@ -1732,8 +1741,8 @@ class HandBall extends WeaponBall {
             {stored_velocity: null, ball: null, amount_to_rotate: null, rotated_so_far: null, speed: 0}
         ] // X
     
-        this.post_grab_cooldown = 9;
-        this.post_block_cooldown = 1.75;
+        this.post_grab_cooldown = 8.5;
+        this.post_block_cooldown = 1.5;
         this.tired_delays = [0, 0]; // X
 
         this.hand_sprout_timeout = 0;
@@ -2274,30 +2283,57 @@ class HandBall extends WeaponBall {
         this.grab_info[with_weapon_index].stored_velocity = this.velocity;
     }
 
+    die() {
+        let result = super.die();
+
+        // free all thrown balls
+        this.grab_info.forEach(g => {
+            if (g && g.ball) {
+                g.ball.display = true;
+                g.ball.skip_physics = false;
+            }
+        })
+
+        return result;
+    }
+
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, `The hand.`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+            ctx, `The hand.   `, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
         )
+        this.hands_sprites.forEach((s, i) => {
+            write_text(
+                ctx, HandBall.emojis[s], (12 * 6) + (i * 12) + x_anchor, y_anchor, s == "hand_tired" ? "gray" : this.colour.css(), CANVAS_FONTS, 12
+            )
+        })
+
         write_text(
             ctx, `Punch damage: ${this.punch_damage.toFixed(2)}`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Grab damage: ${this.grab_damage_initial.toFixed(2)} + ${this.grab_damage_impact.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+            ctx, `Grab damage: ${this.grab_damage_initial.toFixed(2)} + ${this.grab_damage_impact.toFixed(2)}`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Hands: ${this.hands_sprites.length}`, x_anchor, y_anchor + 48, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+                ctx, `Hands: ${this.hands_sprites.length}`, x_anchor, y_anchor + 36, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
             )
             let timeout = (this.hand_sprout_base * Math.pow(2, this.hands_sprites.length));
             let timeleft = (this.hand_sprout_base * Math.pow(2, this.hands_sprites.length)) - this.hand_sprout_timeout
             write_text(
-                ctx, `Time until next hand: ${timeleft.toFixed(1)}s / ${timeout.toFixed(1)}s`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+                ctx, `Time until next hand: ${timeleft.toFixed(1)}s / ${timeout.toFixed(1)}s`, x_anchor, y_anchor + 48, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
             )
             let bar_l = 32;
             let prop = timeleft / timeout;
             let empties = Math.max(0, Math.min(bar_l, Math.ceil(prop * bar_l)));
             write_text(
-                ctx, `[${"#".repeat(bar_l - empties)}${" ".repeat(empties)}]`, x_anchor, y_anchor + 72, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+                ctx, `[${"#".repeat(bar_l - empties)}${" ".repeat(empties)}]`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+            )
+        } else {
+            write_text(
+                ctx, `Parry tiredness duration: ${this.post_block_cooldown.toFixed(2)}s`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 12
+            )
+            write_text(
+                ctx, `Throw tiredness duration: ${this.post_grab_cooldown.toFixed(2)}s`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 12
             )
         }
     }
@@ -2307,92 +2343,148 @@ class ChakramBall extends WeaponBall {
     constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
-        this.name = "Glass";
-        this.description_brief = "Normal strikes apply rupture but deal no damage. When hitting a target with rupture, charges up the weapon based on the rupture on the target before the strike. At 25 charge or more, the next hit deals a vorpal strike with damage equal to 16x the rupture that would be applied, then loses all charge.";
-        this.level_description = "Increases base rupture and makes the weapon rotate faster.";
-        this.max_level_description = "Multiplies the target's rupture by 2x after each hit.";
-        this.quote = "[unintelligible animalistic grunting]";
+        this.name = "Chakram";
+        this.description_brief = "Throws a large chakram that orbits around self before returning.";
+        this.level_description = "Increases the time for which the chakram remains in orbit and the damage it deals while thrown.";
+        this.max_level_description = "The chakram now also applies rupture equal to damage.";
+        this.quote = "它叫手里剑我一直在说";
 
+        this.weapon_data = [];
+        this.reset_weapons();
+
+        // weapon is rotated -45deg
+
+        this.damage_base = 2;
+
+        this.chakram_damage_base = 6 + (0.25 * level);
+        this.chakram_rotation_speed = Math.PI * 4;
+        this.chakram_orbit_time = 4 + (0.125 * level);
+        this.chakram_min_dist = this.radius * 0.75;
+        this.chakram_max_dist = this.radius * 4;
+
+        this.speed_base = 60;
+        this.speed_current = this.speed_base;
+        this.windup_speed_mod = 900;
+
+        this.throw_cooldown_max = [4, 8];
+        this.throw_cooldown = random_float(...this.throw_cooldown_max);
+
+        this.throw_windup_max = 1.5;
+        this.throw_windup = this.throw_windup_max;
+
+        this.mode = "idle";
+        this.weapon_reversed = false;
+    }
+
+    reset_weapons() {
         this.weapon_data = [
-            new BallWeapon(1, "glass", [
-                {pos: new Vector2(76, 64), radius: 6},
-                {pos: new Vector2(64, 64), radius: 12},
-                {pos: new Vector2(48, 64), radius: 16},
-                {pos: new Vector2(32, 64), radius: 16},
-                {pos: new Vector2(16, 64), radius: 16},
+            new BallWeapon(1, "chakram_weapon", [
+                // {pos: new Vector2(52, 64), radius: 18},
+
+                // {pos: new Vector2(52-16, 64-16), radius: 10},
+                // {pos: new Vector2(52-24, 64-24), radius: 6},
+                // {pos: new Vector2(52-36, 64-20), radius: 6},
+
+                {pos: new Vector2(52+16, 64+16), radius: 10},
+                {pos: new Vector2(52+24, 64+24), radius: 6},
+                {pos: new Vector2(52+36, 64+20), radius: 6},
+
+                {pos: new Vector2(52+16, 64-16), radius: 10},
+                {pos: new Vector2(52+16, 64-28), radius: 6},
+                {pos: new Vector2(52+10, 64-40), radius: 6},
+
+                // {pos: new Vector2(52-16, 64+16), radius: 10},
+                {pos: new Vector2(52-16, 64+28), radius: 6},
+                {pos: new Vector2(52-10, 64+40), radius: 6},
             ])
         ];
 
-        this.damage_base = 2.6 + (0.25 * level);
-        this.speed_base = 320 + (22.5 * level);
-
-        this.charge = 0;
-        this.charge_decay_per_sec = 0;
-        this.charge_threshold = 100;
-
-        this.vorpal_mult = 16;
+        this.weapon_data[0].offset = new Vector2(-48, 0);
+        this.weapon_data[0].reversed = this.weapon_reversed;
     }
 
     weapon_step(board, time_delta) {
         // rotate the weapon
-        this.rotate_weapon(0, this.speed_base * time_delta);
+        if (this.mode != "thrown") {
+            this.rotate_weapon(0, this.speed_current * time_delta);
 
-        this.charge = Math.max(0, this.charge - (this.charge_decay_per_sec * time_delta));
-        if (this.charge >= this.charge_threshold) {
-            this.weapon_data[0].sprite = "glass_angry";
-        } else {
-            this.weapon_data[0].sprite = "glass";
+            if (this.mode == "idle") {
+                if (this.speed_current > this.speed_base) {
+                    this.speed_current = Math.max(this.speed_base, this.speed_current - (this.windup_speed_mod * 0.5 * time_delta));
+                }
+
+                this.throw_cooldown -= time_delta;
+                if (this.throw_cooldown <= 0) {
+                    this.throw_cooldown = random_float(...this.throw_cooldown_max);
+                    this.throw_windup = this.throw_windup_max;
+                    this.mode = "windup";
+                    this.weapon_data[0].reverse();
+                    this.speed_current = -this.speed_base;
+                }
+            } else if (this.mode == "windup") {
+                this.throw_windup -= time_delta;
+                this.speed_current += this.windup_speed_mod * time_delta;
+                if (this.throw_windup <= 0) {
+                    // throw projectile
+                    let pos = this.position.add(this.get_weapon_offset(this.weapon_data[0]));
+                    let proj = new ChakramProjectile(
+                        this, 0, pos, this.chakram_damage_base,
+                        1, this.weapon_data[0].angle, this.chakram_rotation_speed * (this.reversed ^ this.weapon_data[0].reversed ? -1 : 1),
+                        this.chakram_orbit_time, this.chakram_min_dist, this.chakram_max_dist
+                    );
+
+                    board.spawn_projectile(proj, pos);
+                    
+                    this.mode = "thrown";
+                    
+                    this.weapon_reversed = this.weapon_data[0].reversed;
+                    this.weapon_data = [];
+                }
+            }
         }
     }
 
     hit_other(other, with_weapon_index) {
         // additionally knock the other ball away
         let result = {};
-        if (this.charge >= this.charge_threshold) {
-            result = super.hit_other(other, with_weapon_index, this.damage_base * this.vorpal_mult);
-            this.charge = 0;
-            result.snd = "strongpunch";
-        } else {
-            result = super.hit_other(other, with_weapon_index, 0);
-            this.charge += other.rupture_intensity * 10;
-            other.rupture_intensity += this.damage_base;
-        }
 
+        result = super.hit_other(other, with_weapon_index, this.damage_base);
+
+        return result;
+    }
+
+    hit_other_with_projectile(other, with_projectile) {
+        // projectiles have their own damage
+        // console.log(`hit ${other.name} with projectile`);
+
+        let hitstop = BASE_HITSTOP_TIME;
+
+        let dmg = with_projectile.damage * (this.player?.stats?.damage_bonus ?? 1);
+        let result = other.get_hit_by_projectile(dmg, hitstop);
+        
         if (this.level >= AWAKEN_LEVEL) {
-            other.rupture_intensity *= 2;
+            other.rupture_intensity += dmg;
         }
 
+        this.hitstop = Math.max(this.hitstop, hitstop);
+
+        result.hitstop = hitstop;
         return result;
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
-            ctx, `Rupture per hit: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+            ctx, `Chakram impact damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Vorpal strike damage: ${(this.damage_base * this.vorpal_mult).toFixed(0)}`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+            ctx, `Chakram thrown damage: ${this.chakram_damage_base.toFixed(2)}`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Charge: ${this.charge.toFixed(0)}`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
-        )
-        if (this.charge >= this.charge_threshold) {
-            write_text(
-                ctx, `[${"!".repeat(20)}]`, x_anchor + 96, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
-            )
-        } else {
-            write_text(
-                ctx, `[${">".repeat(Math.floor(20 * (this.charge / this.charge_threshold)))}${" ".repeat(20 - Math.floor(20 * (this.charge / this.charge_threshold)))}]`, x_anchor + 96, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
-            )
-        }
-        write_text(
-            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 12
-        )
-        write_text(
-            ctx, `Normal strikes apply rupture instead of damage.`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 10
+            ctx, `Chakram orbit duration: ${this.chakram_orbit_time.toFixed(3)}s`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Multiplies rupture by 1.5x after each hit.`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+                ctx, `Chakram rupture on hit: ${this.chakram_damage_base.toFixed(2)}`, x_anchor, y_anchor + 36, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
             )
         }
     }
@@ -2688,10 +2780,15 @@ class MagnumProjectile extends HitscanProjectile {
 
     hit_other_projectile(other) {
         if (other instanceof MagnumCoinProjectile && other.source.id == this.source.id) {
+            // if the coin is out of bounds, ignore it
+            if (!this.board.in_bounds(other.position)) {
+                return;
+            }
+
             // ricoshot
             // search for an enemy
             let enemies = this.board.balls.filter(ball => ball.id != this.source.id);
-            let coins = this.board.projectiles.filter(proj => proj.id != other.id && proj.active && proj instanceof MagnumCoinProjectile && proj.lifetime > 0.1);
+            let coins = this.board.projectiles.filter(proj => proj.id != other.id && proj.active && proj instanceof MagnumCoinProjectile && proj.lifetime > 0.1 && this.board.in_bounds(proj.position));
 
             let target = null;
             if (coins.length > 0) {
@@ -2719,7 +2816,7 @@ class MagnumProjectile extends HitscanProjectile {
                     other.position.add(new Vector2(16, -32)), 0, 0.2, entity_sprites.get("explosion"), 12, 3, false
                 )
                 particle.lifetime += 0.1;
-                board.spawn_particle(particle, other.position.add(new Vector2(16, -32)));
+                this.board.spawn_particle(particle, other.position.add(new Vector2(16, -32)));
 
                 this.target_position = other.position;
 
@@ -3000,3 +3097,93 @@ class GrenadeExplosionProjectile extends Projectile {
         this.active = true;
     }
 }
+
+class ChakramProjectile extends Projectile {
+    // orbits around thrower, going from origin distance to max distance then back to origin
+    // before vanishing again and re-enabling the weapon on the ball
+    constructor(source, source_weapon_index, position, damage, size, initial_angle, rotation_speed, rotation_time, min_dist, max_dist) {
+        super(source, source_weapon_index, position, damage, size, new Vector2(1, 0), 0);
+
+        this.sprite = `chakram_projectile`
+
+        this.hitboxes = [
+            {pos: new Vector2(0, 0), radius: 48},
+        ];
+
+        this.initial_angle = initial_angle;
+        this.direction_angle = initial_angle + deg2rad(45);
+
+        this.cur_angle = this.initial_angle;
+
+        this.rotation_speed = rotation_speed;
+        this.rotation_time = rotation_time;
+        this.lifetime = 0;
+
+        this.min_dist = min_dist;
+        this.max_dist = max_dist;
+
+        this.sprite_angle_change_speed = 1440;
+
+        this.hitstop = 0;
+    }
+    
+    physics_step(time_delta) {
+        this.hitstop -= time_delta;
+        let delta_time = time_delta;
+        if (this.hitstop > 0) {
+            delta_time *= HITSTOP_DELTATIME_PENALTY;
+        }
+
+        this.lifetime += delta_time;
+        this.cur_angle += this.rotation_speed * delta_time;
+
+        if (this.lifetime > this.rotation_time) {
+            this.active = false;
+            this.source.mode = "idle";
+            this.source.reset_weapons();
+            this.source.weapon_data[0].angle = this.cur_angle;
+        }
+
+        this.direction_angle += (this.sprite_angle_change_speed * Math.sign(this.rotation_speed) * (Math.PI / 180)) * delta_time;
+        this.direction = new Vector2(1, 0).rotate(this.direction_angle);
+    
+        // dist should be min_dist at 0, max_dist at 0.5 and min_dist again at 1
+        let lifetime_proportion = this.lifetime / this.rotation_time;
+        let dist_lerp_amt = 2 * (0.5 - Math.abs(lifetime_proportion - 0.5));
+        
+        this.sprite = dist_lerp_amt < 0.1 ? `chakram` : `chakram_projectile`;
+        
+        let dist = lerp(this.min_dist, this.max_dist, dist_lerp_amt);
+        let newpos = new Vector2(dist, 0).rotate(this.cur_angle).add(this.source.position);
+
+        for (let i=0; i<4; i++) {
+            this.position = this.position.lerp(newpos, 1 - Math.pow(0.00001, delta_time));
+        }
+    }
+
+    hit_other_projectile(other_projectile) {
+        // each projectile is responsible for destroying itself
+        // so piercing projectiles just... don't
+        this.active = true;
+    }
+
+    get_parried(by) {
+        this.active = true;
+    }
+
+    hit_ball(ball, delta_time) {
+        this.hitstop = Math.max(this.hitstop, BASE_HITSTOP_TIME);
+
+        this.active = true;
+    }
+}
+
+// new wandball:
+// randomly picks colours from:
+// black (RARE) - shoots a big bouncing ball unaffected by gravity that does contact damage before eventually disintegrating 
+// cyan - shoots a spread of icicle projectiles
+// green - shoots multiple balls that cause long-duration low-intensity poison when touched, and are destroyed instantly on touch or hit
+// magenta - shoots chaining lightning
+// red - fires a single fireball directly forwards
+//
+// flashes white when casting (to hide the colour change)

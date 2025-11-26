@@ -155,7 +155,7 @@ let selectable_balls = [
     HammerBall, SordBall, DaggerBall,
     BowBall, MagnumBall, NeedleBall,
     RailgunBall, PotionBall, GrenadeBall,
-    GlassBall, HandBall
+    GlassBall, HandBall, ChakramBall
 ]
 
 let banned_for_random = [
@@ -315,7 +315,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }, 100);
     }
 
-    // document.querySelector("select[name='ball1']").value = "HandBall";
+    // document.querySelector("select[name='ball1']").value = "ChakramBall";
 })
 
 // TODO make levelling information exist somewhere - probably need to think about that when we come to RPG theming really
