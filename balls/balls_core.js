@@ -83,6 +83,18 @@ const entity_sprites = new Map([
     ["chakram_weapon", 1, "weapon/"],
     ["chakram_projectile", 1, "weapon/"],
 
+    ["wand_black", 1, "weapon/"],
+    ["wand_cyan", 1, "weapon/"],
+    ["wand_green", 1, "weapon/"],
+    ["wand_magenta", 1, "weapon/"],
+    ["wand_red", 1, "weapon/"],
+    ["wand_white", 1, "weapon/"],
+
+    ["wand_fireball", 1, "weapon/"],
+    ["wand_icicle", 1, "weapon/"],
+    ["wand_poison_barb", 1, "weapon/"],
+    ["super_orb", 1, "weapon/"],
+
     ["explosion", 16, "explosion/"],  // Game Maker Classic
 
     ["lightning", 7, "lightning/"],
@@ -1233,6 +1245,10 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
                     continue;
                 }
 
+                if (projectile.ignore_smoothing) {
+                    w_factor = 1;
+                }
+
                 layer.ctx.lineWidth = w_factor * max_width;
 
                 layer.ctx.beginPath();
@@ -1721,7 +1737,10 @@ function game_loop() {
                         }
                         colliding_proj2projs.add(proj.id + (1000000 * projectile.id));
 
-                        play_audio("thud");
+                        // if either projectile was active and now isn't, play a thud
+                        if (!proj.active || !projectile.active) {
+                            play_audio("thud");
+                        }
                     });
                 })
 

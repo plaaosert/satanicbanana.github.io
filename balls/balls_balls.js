@@ -466,7 +466,6 @@ class SordBall extends WeaponBall {
     }
 
     hit_other(other, with_weapon_index) {
-        // additionally knock the other ball away
         let result = super.hit_other(other, with_weapon_index, this.damage_base);
 
         this.damage_base += 0.5 * (1 + (this.level * 0.175));
@@ -568,7 +567,6 @@ class DaggerBall extends WeaponBall {
     }
 
     hit_other(other, with_weapon_index) {
-        // additionally knock the other ball away
         let result = super.hit_other(other, with_weapon_index, this.damage_base);
 
         this.speed_base *= 2;
@@ -580,7 +578,6 @@ class DaggerBall extends WeaponBall {
     }
 
     hit_other_with_projectile(other, with_projectile) {
-        // additionally knock the other ball away
         let result = super.hit_other_with_projectile(other, with_projectile);
 
         this.hitstop = 0;
@@ -702,7 +699,6 @@ class BowBall extends WeaponBall {
     }
 
     hit_other_with_projectile(other, with_projectile) {
-        // additionally knock the other ball away
         let result = super.hit_other_with_projectile(other, with_projectile);
 
         this.multishots_levelup_req--;
@@ -856,7 +852,6 @@ class MagnumBall extends WeaponBall {
     }
 
     hit_other_with_projectile(other, with_projectile) {
-        // additionally knock the other ball away
         let result = super.hit_other_with_projectile(other, with_projectile);
 
         return result;
@@ -1488,6 +1483,7 @@ class GrenadeProjectileBall extends WeaponBall {
         this.lifetime += time_delta;
         if (this.lifetime >= this.max_fuse) {
             this.hp = 0;
+            this.last_damage_source = null;
         }
     }
 
@@ -1555,7 +1551,6 @@ class GlassBall extends WeaponBall {
     }
 
     hit_other(other, with_weapon_index) {
-        // additionally knock the other ball away
         let result = {};
         if (this.charge >= this.charge_threshold) {
             result = super.hit_other(other, with_weapon_index, this.damage_base * this.vorpal_mult);
@@ -2111,7 +2106,6 @@ class HandBall extends WeaponBall {
     }
 
     hit_other(other, with_weapon_index) {
-        // additionally knock the other ball away
         let result = {};
 
         if (this.hands_sprites[with_weapon_index] == "hand_punch" || this.hands_sprites[with_weapon_index] == "hand_block") {
@@ -2358,7 +2352,7 @@ class ChakramBall extends WeaponBall {
 
         this.chakram_damage_base = 6 + (0.25 * level);
         this.chakram_rotation_speed = Math.PI * 4;
-        this.chakram_orbit_time = 4 + (0.125 * level);
+        this.chakram_orbit_time = 4 + (0.25 * level);
         this.chakram_min_dist = this.radius * 0.75;
         this.chakram_max_dist = this.radius * 4;
 
@@ -2445,7 +2439,6 @@ class ChakramBall extends WeaponBall {
     }
 
     hit_other(other, with_weapon_index) {
-        // additionally knock the other ball away
         let result = {};
 
         result = super.hit_other(other, with_weapon_index, this.damage_base);
@@ -2487,6 +2480,487 @@ class ChakramBall extends WeaponBall {
                 ctx, `Chakram rupture on hit: ${this.chakram_damage_base.toFixed(2)}`, x_anchor, y_anchor + 36, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
             )
         }
+    }
+}
+
+class WandBall extends WeaponBall {
+    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Wand";
+        this.description_brief = "Has a wand that uses one of 5 random spells each time it activates - a spread of icicles, a fireball, a salvo of bouncing poison barbs, chaining lightning or, rarely, a terrifying, dense black ball.";
+        this.level_description = "Reduces the delay between spell casts.";
+        this.max_level_description = "Upgrades each spell - more icicles, larger fireball, barbs hit up to twice, more lightning chains, more damaging black ball.";
+        this.quote = "Chat did you see that guy lmao what a loser";
+
+        this.weapon_data = [
+            new BallWeapon(1, "wand_white", [
+                {pos: new Vector2(86, 64), radius: 12},
+                
+                {pos: new Vector2(68, 64), radius: 6},
+                {pos: new Vector2(56, 64), radius: 6},
+                {pos: new Vector2(44, 64), radius: 6},
+                {pos: new Vector2(32, 64), radius: 6},
+            ])
+        ];
+        this.weapon_data[0].offset = new Vector2(-24, 0);
+
+        this.damage_base = 1;
+        this.speed_base = 180;
+
+        this.cast_delay_max = [1.5 - (this.level * 0.1), 3 - (this.level * 0.2)];
+        this.cast_delay = random_float(...this.cast_delay_max);
+
+        this.cast_flash_timeout = 0;
+
+        this.spell_chances = balance_weighted_array([
+            [0.1, "black"],
+            [1, "cyan"],
+            [1, "green"],
+            [1, "magenta"],
+            [1, "red"],
+        ]);
+        this.current_spell = null;
+        this.pick_next_spell();
+
+        this.icicle_damage = 4;
+        this.additional_icicle_count = 2;  // 2 on each side plus the main one so 5 total
+        this.icicle_velocity = 10000;
+        this.icicle_velocity_per_additional = -1000;
+        this.icicle_angle_per_additional = deg2rad(7.5);
+        this.icicle_delay_per_additional = 0.05;
+
+        this.fireball_damage = 12;
+        this.fireball_size_mult = 1;
+        this.fireball_velocity = 4000;
+
+        this.poison_barb_count = 3;
+        this.poison_barb_intensity = 1;
+        this.poison_barb_hp = 1;
+        this.poison_barb_duration = 4;
+        this.poison_barb_velocity = 2500;
+        
+        this.chain_lightning_chain_chance = 0.15;
+        this.chain_lightning_damage = 3;
+        this.chain_lightning_distance = 1000;
+        this.chain_lightning_spread = deg2rad(45);
+        this.chain_lightning_delay_per_chain = 0.02;
+
+        this.black_ball_damage = 8;
+        this.black_ball_duration = 16;
+        this.black_ball_velocity = 15000;
+
+        if (this.level >= AWAKEN_LEVEL) {
+            this.additional_icicle_count = 3;
+            this.fireball_size_mult = 1.5;
+            this.poison_barb_hp = 2;
+            this.chain_lightning_chain_chance = 0.3;
+            this.black_ball_damage = 12;
+        }
+    }
+
+    pick_next_spell() {
+        let last_spell = this.current_spell;
+        while (this.current_spell == last_spell) {
+            this.current_spell = weighted_random_from_arr(this.spell_chances)[1];
+        }
+    }
+
+    hit_other(other, with_weapon_index) {
+        let result = super.hit_other(other, with_weapon_index, this.damage_base);
+
+        return result;
+    }
+
+    weapon_step(board, time_delta) {
+        // rotate the weapon
+        this.rotate_weapon(0, this.speed_base * time_delta);
+
+        if (this.cast_flash_timeout >= 0) {
+            this.weapon_data[0].sprite = "wand_white";
+        } else {
+            this.weapon_data[0].sprite = `wand_${this.current_spell}`;
+        }
+
+        this.cast_flash_timeout -= time_delta;
+        this.cast_delay -= time_delta;
+        if (this.cast_delay <= 0) {
+            // time to cast!
+            this.cast_delay = random_float(...this.cast_delay_max);
+            this.cast_flash_timeout = 0.5;
+
+            let position = this.position.add(this.get_weapon_offset(this.weapon_data[0]).mul(1.5));
+            switch (this.current_spell) {
+                case "black": {
+                    let velocity = new Vector2(this.black_ball_velocity, 0).rotate(this.weapon_data[0].angle)
+                    let new_ball = new WandBlackBall(
+                        this.mass * 1, this.radius * 0.75, this.colour,
+                        this.bounce_factor, this.friction_factor,
+                        this.player, this.level,
+                        this.black_ball_damage, this.black_ball_duration
+                    )
+
+                    new_ball.invuln_duration = BALL_INVULN_DURATION;
+                    new_ball.show_stats = false;
+
+                    new_ball.velocity = velocity;
+                    new_ball.parent = this;
+
+                    let part = new Particle(new_ball.position, 0, 1, entity_sprites.get("super_orb"), 0, 1000000);
+                    board.spawn_particle(part, new_ball.position);
+                    new_ball.linked_particle = part;
+                    
+                    board.spawn_ball(new_ball, position);
+                    break;
+                }
+
+                case "cyan": {
+                    // icicles
+                    let initial_vector = new Vector2(1, 0).rotate(this.weapon_data[0].angle);
+
+                    let proj = new WandIcicleProjectile(
+                        this, 0, position, this.icicle_damage, 1,
+                        initial_vector, this.icicle_velocity, new Vector2(0, 0)
+                    )
+                    board.spawn_projectile(proj, position);
+
+                    for (let i=0; i<this.additional_icicle_count; i++) {
+                        board.set_timer(new Timer(() => {
+                            let _position = this.position.add(this.get_weapon_offset(this.weapon_data[0]).mul(1.5));
+
+                            [1, -1].forEach(sign => {
+                                let angle_mod = this.icicle_angle_per_additional * (i+1) * sign;
+                                
+                                let new_vector = initial_vector.rotate(angle_mod);
+
+                                let proj = new WandIcicleProjectile(
+                                    this, 0, _position, this.icicle_damage, 1,
+                                    new_vector, this.icicle_velocity + ((i+1) * this.icicle_velocity_per_additional), new Vector2(0, 0)
+                                )
+                                board.spawn_projectile(proj, _position);
+                            })
+                        }, this.icicle_delay_per_additional * (i+1)))
+                    }
+
+                    break;
+                }
+
+                case "green": {
+                    for (let i=0; i<this.poison_barb_count; i++) {
+                        let velocity = new Vector2(this.poison_barb_velocity * random_float(0.5, 2), 0).rotate(this.weapon_data[0].angle)
+                        let new_ball = new WandGreenBall(
+                            this.mass * 0.1, this.radius * 0.15, this.colour,
+                            this.bounce_factor, this.friction_factor,
+                            this.player, this.level,
+                            this.poison_barb_duration, this.poison_barb_intensity
+                        )
+
+                        new_ball.hp = this.poison_barb_hp;
+
+                        new_ball.invuln_duration = BALL_INVULN_DURATION;
+                        new_ball.show_stats = false;
+
+                        new_ball.velocity = velocity;
+                        new_ball.parent = this;
+
+                        let part = new Particle(new_ball.position, 0, 1, entity_sprites.get("wand_poison_barb"), 0, 1000000);
+                        board.spawn_particle(part, new_ball.position);
+                        new_ball.linked_particle = part;
+                        
+                        board.spawn_ball(new_ball, position);
+                    }
+                    break;
+                }
+
+                case "magenta": {
+                    let lightnings = [[position, this.weapon_data[0].angle]];
+
+                    let loops = 0;
+                    while (lightnings.length > 0) {
+                        let new_lightnings = [];
+                        lightnings.forEach(lgt => {
+                            let pos = lgt[0];
+                            let angle = lgt[1];
+
+                            if (!board.in_bounds(pos)) {
+                                return;
+                            }
+
+                            let repeats = 1;
+                            if (random_float(0, 1) < this.chain_lightning_chain_chance) {
+                                repeats = 2;
+                            }
+
+                            for (let i=0; i<repeats; i++) {
+                                let new_angle = angle + (random_float(-1, 1) * this.chain_lightning_spread);
+
+                                let direction = new Vector2(this.chain_lightning_distance, 0).rotate(new_angle);
+
+                                let newpos = pos.add(direction);
+
+                                // make a timer to create a hitscan projectile from pos to pos+direction
+                                // then append the new lightning node
+                                let timer = new Timer(() => {
+                                    let proj = new WandMagentaProjectile(
+                                        this, 0, pos, this.chain_lightning_damage, newpos
+                                    );
+
+                                    board.spawn_projectile(proj, pos);
+                                }, this.chain_lightning_delay_per_chain * loops);
+
+                                board.set_timer(timer);
+
+                                new_lightnings.push([newpos, new_angle]);
+                            }
+                        })
+
+                        loops++;
+                        lightnings = new_lightnings;
+                    }
+
+                    break;
+                }
+
+                case "red": {
+                    let initial_vector = new Vector2(1, 0).rotate(this.weapon_data[0].angle);
+
+                    let proj = new WandFireballProjectile(
+                        this, 0, position, this.fireball_damage, this.fireball_size_mult,
+                        initial_vector, this.fireball_velocity, new Vector2(0, 0)
+                    )
+
+                    proj.board = board;
+
+                    board.spawn_projectile(proj, position);
+
+                    break;
+                }
+            }
+
+            this.pick_next_spell();
+        }
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor) {
+        write_text(
+            ctx,
+            `${this.current_spell == "cyan" ? " - " : ""}Icicle: ${this.icicle_damage.toFixed(2)}dmg, ${1 + (this.additional_icicle_count * 2)} icicles`,
+            x_anchor, y_anchor,
+            this.current_spell == "cyan" ? "cyan" : "grey", CANVAS_FONTS, 12
+        )
+
+        write_text(
+            ctx,
+            `${this.current_spell == "red" ? " - " : ""}Fireball: ${this.fireball_damage.toFixed(2)}dmg (hit + explosion), ${this.fireball_size_mult}x size`,
+            x_anchor, y_anchor + 12,
+            this.current_spell == "red" ? "red" : "grey", CANVAS_FONTS, 10
+        )
+
+        write_text(
+            ctx,
+            `${this.current_spell == "green" ? " - " : ""}Poison: ${this.poison_barb_count} barbs, ${this.poison_barb_intensity} poison for ${this.poison_barb_duration}s, ${this.poison_barb_hp} hit(s)`,
+            x_anchor, y_anchor + 24,
+            this.current_spell == "green" ? "green" : "grey", CANVAS_FONTS, 10
+        )
+
+        write_text(
+            ctx,
+            `${this.current_spell == "magenta" ? " - " : ""}Lightning: ${this.chain_lightning_damage.toFixed(2)}dmg, ${(this.chain_lightning_chain_chance * 100).toFixed(0)}% chain chance`,
+            x_anchor, y_anchor + 36,
+            this.current_spell == "magenta" ? "magenta" : "grey", CANVAS_FONTS, 12
+        )
+
+        write_text(
+            ctx,
+            `${this.current_spell == "black" ? " - " : ""}Ball: ${this.black_ball_damage.toFixed(2)}dmg, ${this.black_ball_duration}s duration`,
+            x_anchor, y_anchor + 48,
+            this.current_spell == "white" ? "white" : "grey", CANVAS_FONTS, 12
+        )
+
+        if (this.level >= AWAKEN_LEVEL) {
+            write_text(
+                ctx, `More icicles, larger fireball, barbs hit twice,`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+            )
+            write_text(
+                ctx, `more lightning chains, more damaging black ball.`, x_anchor, y_anchor + 72, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+            )
+        }
+    }
+}
+
+class WandBlackBall extends WeaponBall {
+    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, hit_damage, duration) {
+        super(mass, radius, colour, bounce_factor, friction_factor, player, level, false);
+
+        this.name = "Wand Black Ball Projectile";
+        this.description_brief = "Fired from the wand ball";
+        this.level_description = "-";
+        this.max_level_description = "-";
+
+        this.weapon_data = [
+            new BallWeapon(1, "super_orb", [
+                {pos: new Vector2(64, 64), radius: 26},
+            ])
+        ];
+
+        this.weapon_data[0].offset = new Vector2(-72, 0);
+
+        this.lifetime = 0;
+        this.duration = duration;
+        this.hit_damage = hit_damage;
+
+        this.hp = 100000;
+        this.show_stats = false;
+
+        this.parent = null;
+
+        this.linked_particle = null;
+
+        this.display = false;
+
+        this.rotation_speed = random_float(0, 0);
+    }
+
+    update_particles(time_delta) {
+        this.linked_particle.position = this.position;
+        this.linked_particle.rotation_angle += this.rotation_speed * (time_delta * (Math.PI / 180))
+    }
+
+    physics_step(board, time_delta) {
+        super.physics_step(board, time_delta);
+
+        if (this.hitstop > 0) {
+            time_delta = time_delta * HITSTOP_DELTATIME_PENALTY;
+        }
+
+        this.update_particles(time_delta);
+    }
+
+    weapon_step(board, time_delta) {
+        this.lifetime += time_delta;
+        if (this.lifetime >= this.duration) {
+            this.hp = 0;
+        }
+    }
+
+    hit_other(other, with_weapon_index) {
+        // additionally knock the other ball away
+        let dmg = this.hit_damage;
+
+        let result = super.hit_other(other, with_weapon_index, dmg);
+
+        let diff_vec = other.position.sub(this.position).normalize();
+        let share = 1;
+
+        let other_diff_add = diff_vec.mul(share);
+
+        let other_mag = other.velocity.magnitude();
+
+        let new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
+
+        other.velocity = new_other_velocity;
+
+        other.invuln_duration *= 2;
+
+        return result;
+    }
+
+    die() {
+        this.linked_particle.lifetime = Number.POSITIVE_INFINITY;
+
+        // TODO add a "pop" particle effect when this goes away
+
+        return {skip_default_explosion: true};
+    }
+}
+
+class WandGreenBall extends WeaponBall {
+    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, poison_duration, poison_intensity) {
+        super(mass, radius, colour, bounce_factor, friction_factor, player, level, false);
+
+        this.name = "Wand Green Ball Projectile";
+        this.description_brief = "Fired from the wand ball";
+        this.level_description = "-";
+        this.max_level_description = "-";
+
+        this.weapon_data = [
+            new BallWeapon(1, "wand_poison_barb", [
+                {pos: new Vector2(64, 64), radius: 12},
+            ])
+        ];
+
+        this.weapon_data[0].offset = new Vector2(-52.5, 0);
+
+        this.lifetime = 0;
+        this.duration = Number.POSITIVE_INFINITY;
+        
+        this.damage_poison_duration = poison_duration;
+        this.damage_poison_intensity = poison_intensity;
+
+        this.hp = 1;
+        this.show_stats = false;
+
+        this.parent = null;
+
+        this.linked_particle = null;
+
+        this.display = false;
+
+        this.rotation_speed = random_float(0, 0);
+    }
+
+    update_particles(time_delta) {
+        this.linked_particle.position = this.position;
+        this.linked_particle.rotation_angle += this.rotation_speed * (time_delta * (Math.PI / 180))
+    }
+
+    physics_step(board, time_delta) {
+        super.physics_step(board, time_delta);
+
+        if (this.hitstop > 0) {
+            time_delta = time_delta * HITSTOP_DELTATIME_PENALTY;
+        }
+
+        this.update_particles(time_delta);
+    }
+
+    weapon_step(board, time_delta) {
+        this.lifetime += time_delta;
+        if (this.lifetime >= this.duration) {
+            this.hp = 0;
+        }
+    }
+
+    hit_other(other, with_weapon_index) {
+        // additionally poison
+        let dmg = 0;
+
+        let result = super.hit_other(other, with_weapon_index, dmg);
+
+        other.poison_duration = Math.max(other.poison_duration + this.damage_poison_duration, this.damage_poison_duration);
+        other.poison_intensity += this.damage_poison_intensity;
+
+        this.hp -= 1;
+
+        return result;
+    }
+
+    parry_weapon(with_weapon_index, other_ball, other_weapon_id) {
+        this.hp -= 1;
+
+        other_ball.weapon_data[other_weapon_id]?.reverse()
+    }
+
+    parry_projectile(with_weapon_index, projectile) {
+        this.hp -= 1;
+    }
+
+    die() {
+        this.linked_particle.lifetime = Number.POSITIVE_INFINITY;
+
+        // TODO add a "pop" particle effect when this goes away
+
+        return {skip_default_explosion: true};
     }
 }
 
@@ -2827,6 +3301,18 @@ class MagnumProjectile extends HitscanProjectile {
         } else {
             // do nothing
         }
+    }
+}
+
+class WandMagentaProjectile extends HitscanProjectile {
+    constructor(source, source_weapon_index, position, damage, target_position) {
+        super(source, source_weapon_index, position, damage, target_position);
+
+        this.max_width = 9;
+        this.sprite_colour = "magenta";
+
+        this.ignore_smoothing = true;
+        this.parriable = false;
     }
 }
 
@@ -3175,6 +3661,69 @@ class ChakramProjectile extends Projectile {
         this.hitstop = Math.max(this.hitstop, BASE_HITSTOP_TIME);
 
         this.active = true;
+    }
+}
+
+class WandIcicleProjectile extends InertiaRespectingStraightLineProjectile {
+    constructor(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
+        super(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
+    
+        this.sprite = "wand_icicle";
+        this.hitboxes = [
+            {pos: new Vector2(-20, 0), radius: 4},
+            {pos: new Vector2(-16, 0), radius: 4},
+            {pos: new Vector2(-12, 0), radius: 4},
+            {pos: new Vector2(-8, 0), radius: 4},
+            {pos: new Vector2(-4, 0), radius: 4},
+            {pos: new Vector2(0, 0), radius: 4},
+            {pos: new Vector2(4, 0), radius: 4},
+            {pos: new Vector2(8, 0), radius: 4},
+            {pos: new Vector2(12, 0), radius: 4},
+            {pos: new Vector2(16, 0), radius: 4},
+            {pos: new Vector2(20, 0), radius: 4},
+        ];    
+    }
+}
+
+class WandFireballProjectile extends InertiaRespectingStraightLineProjectile {
+    constructor(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
+        super(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
+    
+        this.sprite = "wand_fireball";
+        this.hitboxes = [
+            {pos: new Vector2(0, 0), radius: 16},
+        ];
+
+        this.board = null;
+    }
+
+    make_explosion() {
+        let proj = new GrenadeExplosionProjectile(
+            this.source, this.source_weapon_index,
+            this.position, this.damage, 1.5
+        );
+
+        proj.can_hit_allied = false;
+        proj.can_hit_source = false;
+
+        play_audio("explosion2");
+
+        this.board.spawn_projectile(proj, this.position);
+    }
+
+    hit_other_projectile(other_projectile) {
+        this.make_explosion();
+        this.active = false;
+    }
+
+    get_parried(by) {
+        this.make_explosion();
+        this.active = false;
+    }
+
+    hit_ball(ball, delta_time) {
+        this.make_explosion();
+        this.active = false;
     }
 }
 
