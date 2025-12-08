@@ -376,6 +376,8 @@ let selectable_balls_for_random = selectable_balls.filter(ball => !banned_for_ra
 let match_end_timeout = 0;
 let render_victory_enabled = true;
 
+let user_interacted_with_fps_select = false;
+
 document.addEventListener("DOMContentLoaded", function() {
     get_canvases();
 
@@ -464,8 +466,18 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 50)
 
     // set up to try and match the frame speed with the user's fps
-    setTimeout(() => {
+    let try_detect_framerate = () => {
+        if (user_interacted_with_fps_select) {
+            console.log(`User interacted - aborting check`);
+            return;  // dont fuck with the user if they already touched the page
+        }
+
         let deltas = time_deltas.slice(12);
+        if (deltas.length <= 0) {
+            console.log("No deltas!");
+            return;
+        }
+
         let avg_delta = deltas.reduce((p, c) => p+c, 0) / deltas.length;
         let fps_expected = 1000 / avg_delta;
         let diffs = fps_checks.map(c => Math.abs(c - fps_expected));
@@ -473,10 +485,19 @@ document.addEventListener("DOMContentLoaded", function() {
         let lowest = Math.min(...diffs);
         let fps_picked = fps_checks[diffs.findIndex(t => t == lowest)];
 
+        if (isNaN(fps_picked)) {
+            console.log("Picked FPS is NaN?!");
+            return;
+        }
+
         console.log(`Detected FPS: ${fps_expected} - applying "1/${fps_picked}"`);
 
         document.querySelector("#fps-select").value = `1/${fps_picked}`;
-    }, 200);
+    }
+
+    setTimeout(try_detect_framerate, 200);
+    setTimeout(try_detect_framerate, 400);
+    setTimeout(try_detect_framerate, 600);
 
     window.addEventListener("resize", handle_resize);
 

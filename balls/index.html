@@ -111,7 +111,7 @@
                     <div class="row spacing">
                         <!-- <button style="font-size: 20px;" onclick="">???</button> -->
                         <span>Frame speed:</span>
-                        <select id="fps-select">
+                        <select id="fps-select" onclick="user_interacted_with_fps_select=true;" onchange="user_interacted_with_fps_select=true;">
                             <option>1/60</option>
                             <option>1/90</option>
                             <option>1/120</option>
@@ -231,8 +231,8 @@
 	<script src="../shared/js/canvas_helpers.js?v=01"></script>
 	
     <script src="balls_core.js?v=10"></script>
-    <script src="balls_balls.js?v=12"></script>
-    <script src="balls_launcher.js?v=12"></script>
+    <script src="balls_balls.js?v=13"></script>
+    <script src="balls_launcher.js?v=13"></script>
     
     <script src="balls_campaign.js?v=02"></script>
 
