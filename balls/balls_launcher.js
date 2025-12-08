@@ -1,4 +1,8 @@
 let board = null;
+let last_replay = "";
+let fps_checks = [
+    60, 90, 120, 144, 240, 480
+]
 
 document.addEventListener("DOMContentLoaded", async function() {
     await load_audio();
@@ -6,21 +10,82 @@ document.addEventListener("DOMContentLoaded", async function() {
 
 function spawn_testing_balls() {
     board = new Board(new Vector2(512 * 16, 512 * 16));
-    // board.spawn_ball(new SordBall(1, 512, Colour.red, null, null, {id: 0}), new Vector2(512*4, 512*4));
-    // board.spawn_ball(new HammerBall(1, 512, Colour.yellow, null, null, {id: 1}, true), new Vector2(512*12, 512*12));
-    board.spawn_ball(new MagnumBall(1, 512, Colour.green, null, null, {id: 2}), new Vector2(512*5, 512*11));
-    board.spawn_ball(new SordBall(1, 512, Colour.cyan, null, null, {id: 3}, true), new Vector2(512*11, 512*5));
+    // board.spawn_ball(new SordBall(board, 1, 512, Colour.red, null, null, {id: 0}), new Vector2(512*4, 512*4));
+    // board.spawn_ball(new HammerBall(board, 1, 512, Colour.yellow, null, null, {id: 1}, true), new Vector2(512*12, 512*12));
+    board.spawn_ball(new MagnumBall(board, 1, 512, Colour.green, null, null, {id: 2}), new Vector2(512*5, 512*11));
+    board.spawn_ball(new SordBall(board, 1, 512, Colour.cyan, null, null, {id: 3}, true), new Vector2(512*11, 512*5));
 
-    board.balls[0].add_velocity(random_on_circle(random_float(0, 512 * 10)));
-    board.balls[1]?.add_velocity(random_on_circle(random_float(0, 512 * 10)));
-    board.balls[2]?.add_velocity(random_on_circle(random_float(0, 512 * 10)));
-    board.balls[3]?.add_velocity(random_on_circle(random_float(0, 512 * 10)));
+    board.record_starting_balls();
+
+    let seed = Math.random().toString().slice(2);
+    board.set_random_seed(seed);
+
+    board.balls[0].add_velocity(random_on_circle(random_float(0, 512 * 10, board.random), board.random));
+    board.balls[1]?.add_velocity(random_on_circle(random_float(0, 512 * 10, board.random), board.random));
+    board.balls[2]?.add_velocity(random_on_circle(random_float(0, 512 * 10, board.random), board.random));
+    board.balls[3]?.add_velocity(random_on_circle(random_float(0, 512 * 10, board.random), board.random));
 }
 
-function exit_battle() {
+function save_replay_button() {
+    // copy the replay to the clipboard
+    navigator.clipboard.writeText(last_replay).then(function() {
+		console.log('Copied replay to clipboard!');
+		
+		document.getElementById("save_replay_button").textContent = "Copied!"
+		document.getElementById("save_replay_button").classList.add("green");
+		
+		setTimeout(function() {
+			document.getElementById("save_replay_button").textContent = "Copy last game's replay"
+		document.getElementById("save_replay_button").classList.remove("green");
+		}, 2500);
+	}, function(err) {
+        console.error('Something went wrong: ', err);
+	});
+}
+
+function load_replay_button() {
+    let replay = prompt("Enter replay string below:");
+
+    try {
+        load_replay(replay);
+    } catch (e) {
+        alert(`There was a problem parsing the replay!!\n\nError:\n${e}`);
+    }
+}
+
+function exit_battle(save_replay=true) {
+    if (!board)
+        return;
+
+    if (board.forced_time_deltas != 0 && save_replay) {
+        // we might have a replay
+        // replay needs:
+        // - framespeed
+        // - starting balls + order
+        // - random seed
+        // that's it!
+        // TODO also save colour and start positions...
+        let replay = {
+            framespeed: board.forced_time_deltas && Math.round(1000 / board.forced_time_deltas),
+            balls: board.starting_balls,
+            seed: board.random_seed
+        }
+
+        last_replay = btoa(JSON.stringify(replay));
+    }
+
     board = null;
     document.querySelector(".game-container").classList.add("popout");
     document.querySelector(".game-container").classList.remove("popin");
+
+    if (last_replay) {
+        document.querySelector("#save_replay_button").disabled = false;
+    } else {
+        document.querySelector("#save_replay_button").disabled = true;
+    }
+
+    game_paused = true;
+    update_sim_speed_display();
 }
 
 function enter_battle() {
@@ -31,43 +96,117 @@ function enter_battle() {
 
     document.querySelector(".game-container").classList.add("popin");
     document.querySelector(".game-container").classList.remove("popout");
+
+    game_paused = false;
+    update_sim_speed_display();
+}
+
+function load_replay(replay_as_text) {
+    let replay = JSON.parse(atob(replay_as_text));
+
+    if (!(replay.framespeed && replay.seed && replay.balls)) {
+        throw Error("Replay doesn't have all necessary fields!");
+    }
+
+    let framespeed = replay.framespeed;
+    let seed = replay.seed;
+
+    // hardcoded... for now
+    let cols = [Colour.red, Colour.yellow, Colour.green, Colour.cyan];
+    let positions = [
+        new Vector2(512*4, 512*4),
+        new Vector2(512*12, 512*12),
+        new Vector2(512*5, 512*11),
+        new Vector2(512*11, 512*5),
+    ]
+
+    let ball_classes = replay.balls.map(b => {
+        return selectable_balls.find(t => t.name == b);
+    })
+
+    start_game(
+        framespeed, seed,
+        cols, positions,
+        ball_classes
+    );
 }
 
 function spawn_selected_balls() {
+    let framespeed = [...fps_checks, 0][
+        document.querySelector("#fps-select").selectedIndex
+    ];
+    
+    let seed = document.querySelector("#sandbox-random-seed").value || Math.random().toString().slice(2);
+
+    let cols = [Colour.red, Colour.yellow, Colour.green, Colour.cyan];
+    let positions = [
+        new Vector2(512*4, 512*4),
+        new Vector2(512*12, 512*12),
+        new Vector2(512*5, 512*11),
+        new Vector2(512*11, 512*5),
+    ]
+
+    let ball_classes = [];
+    for (let i=0; i<cols.length; i++) {
+        let elem = document.querySelector(`select[name='ball${i+1}']`);
+        let ball_proto = selectable_balls.find(t => t.name == elem?.value);
+
+        ball_classes.push(ball_proto);
+    }
+
+    start_game(
+        framespeed, seed,
+        cols, positions,
+        ball_classes
+    );
+}
+
+function start_game(framespeed, seed, cols, positions, ball_classes) {
     setTimeout(() => {
         board = new Board(new Vector2(512 * 16, 512 * 16));
-        let cols = [Colour.red, Colour.yellow, Colour.green, Colour.cyan];
-        let positions = [
-            new Vector2(512*4, 512*4),
-            new Vector2(512*12, 512*12),
-            new Vector2(512*5, 512*11),
-            new Vector2(512*11, 512*5),
-        ]
+
+        // set up random seed and framespeed
+        
+        board.expected_fps = framespeed;
+        board.forced_time_deltas = framespeed == 0 ? 0 : 1000 / framespeed;
+        board.set_random_seed(seed);
 
         let balls = [];
 
         cols.forEach((col, index) => {
-            let elem = document.querySelector(`select[name='ball${index+1}']`);
-            if (elem.value != "None") {
-                let ball_proto = selectable_balls.find(t => t.name == elem.value);
-                if (ball_proto) {
-                    let lvl = document.querySelector(`#ball${index+1}_check`).checked ? 7 : 0;
+            let ball_proto = ball_classes[index];
+            if (ball_proto) {
+                let lvl = document.querySelector(`#ball${index+1}_level`).value - 1;
 
-                    let ball = new ball_proto(
-                        1, 512, col, null, null, {id: index}, lvl, index % 2 == 1
-                    );
+                let ball = new ball_proto(
+                    board,
+                    1, 512, col, null, null, {
+                        id: index,
+                        stats: {
+                            damage_bonus: 1,
+                            defense_bonus: 1,
+                            ailment_resistance: 1,
+                        }
+                    }, lvl, index % 2 == 1
+                );
 
-                    ball.randomise_weapon_rotations();
+                ball.randomise_weapon_rotations();
 
-                    board.spawn_ball(ball, positions[index])
-                    balls.push(ball_proto);
-                }
+                board.spawn_ball(ball, positions[index])
+                balls.push(ball_proto);
             }
         })
 
         start_balls = balls;
 
-        board.balls.forEach(ball => ball.add_velocity(random_on_circle(random_float(512 * 6, 512 * 12))));
+        board.starting_balls = ball_classes.map(c => c?.name);
+
+        board.balls.forEach(ball => ball.add_velocity(
+            random_on_circle(
+                random_float(512 * 6, 512 * 12, board.random),
+                board.random)
+            )
+        );
     
         if (board.remaining_players().length == 1) {
             match_end_timeout = 3 * 1000;
@@ -80,7 +219,7 @@ function spawn_selected_balls() {
             render_victory_enabled = true;
         }
 
-        board.hitstop_time = 0.5;
+        board.hitstop_time = winrate_tracking ? 0 : 0.5;
     }, 0);
 
     enter_battle();
@@ -95,7 +234,7 @@ function update_ballinfo(ballid) {
 
     if (ball_proto) {
         let testball = new ball_proto(
-            1, 512, Colour.white, null, null, {}, 1, false
+            null, 1, 512, Colour.white, null, null, {}, 1, false
         );
 
         info_elem.textContent = testball.description_brief;
@@ -107,7 +246,10 @@ function update_ballinfo(ballid) {
 }
 
 function update_awaken_showhide(ballid) {
-    if (document.querySelector(`#${ballid}_check`).checked) {
+    let lv = document.querySelector(`#${ballid}_level`).value;
+    document.querySelector(`#${ballid}_level_number`).textContent = lv;
+
+    if (lv >= AWAKEN_LEVEL) {
         document.querySelector(`#${ballid}_a_info`).classList.remove("hidden");
     } else {
         document.querySelector(`#${ballid}_a_info`).classList.add("hidden");
@@ -148,6 +290,61 @@ function load_mod() {
 
     document.querySelector("#mod-text").value = "";
     refresh_mod_text()
+}
+
+const MAX_SPEED_MULT = 256;
+const MIN_SPEED_MULT = 1 / 256;
+function mod_simulation_speed(e, by) {
+    if (!board)
+        return;
+
+    game_speed_mult *= by;
+    game_speed_mult = Math.max(MIN_SPEED_MULT, Math.min(MAX_SPEED_MULT, game_speed_mult));
+    update_sim_speed_display();
+}
+
+function reset_simulation_speed() {
+    if (!board)
+        return;
+
+    game_speed_mult = 1;
+    update_sim_speed_display();
+}
+
+function toggle_pause_simulation() {
+    if (!board)
+        return;
+
+    game_paused = !game_paused;
+    update_sim_speed_display();
+}
+
+let speed_alert_elem = null;
+let speed_display_elem = null;
+let speed_alert_original = null;
+let speed_alert_actual = null;
+function update_sim_speed_display(temporary_modifiers=1) {
+    let elem = speed_display_elem;
+    
+    if (!board) {
+        elem.textContent = "- Paused -";
+        speed_alert_elem.classList.add("hidden");
+        return;
+    }
+
+    if (game_paused) {
+        elem.textContent = "- Paused -";
+    } else {
+        if (game_fps_catchup_modifier != 1) {
+            elem.textContent = `Speed x${game_speed_mult * temporary_modifiers} (x${game_fps_catchup_modifier.toFixed(2)})`;
+            speed_alert_elem.classList.remove("hidden");
+            speed_alert_original.textContent = `${board.expected_fps}fps`;
+            speed_alert_actual.textContent = `${fps_current.toFixed(0)}fps`;
+        } else {
+            elem.textContent = `Speed x${game_speed_mult * temporary_modifiers}`;
+            speed_alert_elem.classList.add("hidden");
+        }
+    }
 }
 
 let selectable_balls = [
@@ -226,7 +423,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         switch (code) {
             case "Digit1": {
-                exit_battle();
+                exit_battle(false);
                 break;
             }
         }
@@ -253,12 +450,25 @@ document.addEventListener("DOMContentLoaded", function() {
             clearInterval(interval);
             game_loop();
         }
-    }, 200)
+    }, 50)
+
+    // set up to try and match the frame speed with the user's fps
+    setTimeout(() => {
+        let deltas = time_deltas.slice(12);
+        let avg_delta = deltas.reduce((p, c) => p+c, 0) / deltas.length;
+        let fps_expected = 1000 / avg_delta;
+        let diffs = fps_checks.map(c => Math.abs(c - fps_expected));
+
+        let lowest = Math.min(...diffs);
+        let fps_picked = fps_checks[diffs.findIndex(t => t == lowest)];
+
+        document.querySelector("#fps-select").value = `1/${fps_picked}`;
+    }, 200);
 
     window.addEventListener("resize", handle_resize);
 
     // set up options
-    let options_elems = document.querySelectorAll("select");
+    let options_elems = document.querySelectorAll("select.sandbox-ball-select");
     options_elems.forEach(elem => {
         elem.options.add(new Option("None"))
         selectable_balls.forEach(ball => elem.options.add(new Option(ball.name)));
@@ -267,8 +477,8 @@ document.addEventListener("DOMContentLoaded", function() {
     document.querySelector("select[name='ball1']").value = random_from_array(selectable_balls_for_random).name;
     document.querySelector("select[name='ball2']").value = random_from_array(selectable_balls_for_random.filter(t => t.name != document.querySelector("select[name='ball1']").value)).name;
 
-    // document.querySelector("select[name='ball1']").value = "SordBall";
-    // document.querySelector("select[name='ball2']").value = "DummyBall";
+    // document.querySelector("select[name='ball1']").value = "DummyBall";
+    // document.querySelector("select[name='ball2']").value = "SordBall";
 
     update_ballinfo('ball1');
     update_ballinfo('ball2');
@@ -280,8 +490,8 @@ document.addEventListener("DOMContentLoaded", function() {
         document.querySelector(".spacer").classList.remove("nodisplay");
         document.querySelector(".spacer").classList.remove("hidden");
 
-        document.querySelector("#ball1_check").checked = awaken_ball1;
-        document.querySelector("#ball2_check").checked = awaken_ball2;
+        document.querySelector("#ball1_level").value = ball1_start_level;
+        document.querySelector("#ball2_level").value = ball2_start_level;
 
         repeater_interval = setInterval(() => {
             if (!board) {
@@ -316,12 +526,19 @@ document.addEventListener("DOMContentLoaded", function() {
         }, 100);
     }
 
+    speed_alert_elem = document.querySelector("#speed_alert_main");
+    speed_display_elem = document.querySelector("#speed_display");
+    speed_alert_original = document.querySelector("#fps_original");
+    speed_alert_actual = document.querySelector("#fps_user");
+
     // document.querySelector("select[name='ball1']").value = "WandBall";
 })
 
 // TODO make levelling information exist somewhere - probably need to think about that when we come to RPG theming really
 
 let winrate_tracking = false;
+let muted = false;
+
 let repeater_interval = null;
 let force_ball1 = null;
 
@@ -336,8 +553,8 @@ if (force_ball1) {
 
 let ball2_index = 0;
 
-let awaken_ball1 = false;
-let awaken_ball2 = false;
+let ball1_start_level = 1;
+let ball2_start_level = 1;
 
 let win_matrix = [];
 selectable_balls_for_random.forEach(_ => win_matrix.push(new Array(selectable_balls_for_random.length).fill(0)));

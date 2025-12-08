@@ -134,7 +134,7 @@ const entity_sprites = new Map([
     return [v[0], ts]
 }));
 
-const fps = 144;
+let fps_current = 0;
 
 let layers = {};
 let keys_down = {};
@@ -183,8 +183,14 @@ gain_node.connect(audio_context.destination);
 let gain = 0.1;
 gain_node.gain.setValueAtTime(gain, audio_context.currentTime);
 
+let audio_playing = [];
+
 async function load_audio_item(path) {
-    let resp = await fetch(`https://plaao.net/balls/${path}`);
+    return await load_audio_from_url(`https://plaao.net/balls/${path}`);;
+}
+
+async function load_audio_from_url(path) {
+    let resp = await fetch(`${path}`);
     let array_buffer = await resp.arrayBuffer();
 
     let audio_buffer = await audio_context.decodeAudioData(array_buffer);
@@ -215,16 +221,27 @@ async function load_audio() {
     audio.set("grab", await load_audio_item("snd/grab.mp3"));
     // dragon ball z (explosion.wav)
     audio.set("wall_smash", await load_audio_item("snd/wall_smash.mp3"));
+    // dog theme (temp)
+    audio.set("unarmed_theme", await load_audio_from_url("https://scrimblo.foundation/uploads/heat_haze_shadow.mp3"))
 }
 
 function play_audio(name) {
+    if (muted)
+        return;
+
     let source = audio_context.createBufferSource();
     
     source.buffer = audio.get(name);
 
     source.connect(gain_node);
 
+    let obj = {source: source, ended: false}
+    source.addEventListener("ended", () => obj.ended = true);
+    audio_playing.push(obj);
+
     source.start();
+
+    return audio_playing.length-1;
 
     // console.log(`played sound ${name}`);
 }
@@ -367,8 +384,21 @@ class Board {
         this.hitstop_time = 0;
 
         this.played_whipcrack = false;
+
+        this.forced_time_deltas = 0;
+        this.expected_fps = 0;
+
+        this.random = null;
+        this.random_seed = null;
+
+        this.starting_balls = null;
     }
     
+    set_random_seed(seed) {
+        this.random_seed = seed;
+        this.random = get_seeded_randomiser(seed);
+    }
+
     set_timer(timer) {
         let index = get_sorted_index_with_property(this.timers, timer.trigger_time, "trigger_time");
 
@@ -416,6 +446,8 @@ class Board {
     spawn_ball(ball, position) {
         ball.position = position;
         this.balls.push(ball);
+
+        ball.board = this;
 
         return ball;
     }
@@ -557,7 +589,7 @@ class Board {
 
         // check wall and ground bounces
         this.balls.forEach(ball => {
-            if (ball.skip_physics)
+            if (ball.skip_physics || ball.ignore_bounds_checking)
                 return;  // skip_physics balls should completely stop
             /*
             ball.check_ground_bounce(sthis);
@@ -580,7 +612,7 @@ class Board {
 
         // force everything back in bounds
         this.balls.forEach(ball => {
-            if (ball.skip_physics)
+            if (ball.skip_physics || ball.ignore_bounds_checking)
                 return;  // skip_physics balls should completely stop
 
             ball.position.x = Math.max(ball.radius, Math.min(this.size.x - ball.radius, ball.position.x));
@@ -594,10 +626,12 @@ class Board {
 class Ball {
     static id_inc = 0;
 
-    constructor(mass, radius, colour, bounce_factor, friction_factor) {
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor) {
         this.id = Ball.id_inc;
         Ball.id_inc++;
         
+        this.board = board;
+
         this.position = new Vector2(0, 0);
         this.mass = mass; // g
         this.radius = radius;  // m
@@ -886,7 +920,7 @@ class Ball {
         let dlen = delta.magnitude();
 
         if (dlen == 0) {
-            this.add_pos(new Vector2((Math.random() * 0.0001) - 0.00005, (Math.random() * 0.0001) - 0.00005))
+            this.add_pos(new Vector2((this.board.random() * 0.0001) - 0.00005, (this.board.random() * 0.0001) - 0.00005))
             return;
         }
 
@@ -1052,11 +1086,11 @@ function render_diagnostics(board) {
     board.balls.forEach((ball, index) => {
         let t = board_d_y + (36 * index);
         write_text(
-            layers.debug_front.ctx, `ball ${index} invuln | ` + "#".repeat(Math.max(0, Math.floor(ball.invuln_duration * 200))), 10, t, ball.invuln_duration > 0 ? ball.colour.css() : "gray", CANVAS_FONTS, 9
+            layers.debug_front.ctx, `ball ${index} invuln | ` + "#".repeat(Math.max(0, Math.floor(Math.min(128, ball.invuln_duration * 200)))), 10, t, ball.invuln_duration > 0 ? ball.colour.css() : "gray", CANVAS_FONTS, 9
         )
 
         write_text(
-            layers.debug_front.ctx, `      hitstop | ` + "#".repeat(Math.max(0, Math.floor(ball.hitstop * 200))), 10, t + 12, ball.hitstop > 0 ? ball.colour.css() : "gray", CANVAS_FONTS, 9
+            layers.debug_front.ctx, `      hitstop | ` + "#".repeat(Math.max(0, Math.floor(Math.min(128, ball.hitstop * 200)))), 10, t + 12, ball.hitstop > 0 ? ball.colour.css() : "gray", CANVAS_FONTS, 9
         )
     });
 }
@@ -1336,8 +1370,10 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
                 let siz = weapon.size_multiplier * screen_scaling_factor * 128;
                 let pos = ball.position.add(offset).mul(screen_scaling_factor);
 
-                write_rotated_image(layers.fg3.canvas, layers.fg3.ctx, pos.x, pos.y, entity_sprites.get(weapon.sprite)[0], siz, siz, weapon.angle);
-            
+                if (weapon.sprite) {
+                    write_rotated_image(layers.fg3.canvas, layers.fg3.ctx, pos.x, pos.y, entity_sprites.get(weapon.sprite)[0], siz, siz, weapon.angle);
+                }
+
                 if (collision_boxes) {
                     // render the collision boxes on debug_back as green circles
                     // collision boxes are based on the original 128x128 sizing
@@ -1389,9 +1425,37 @@ function render_descriptions(board) {
                 layers.ui2.ctx, `${ball.name}`, l[0], l[1], ball.colour.css(), CANVAS_FONTS, 16
             )
 
-            let hp = Math.max(0, ball.hp);
+            let hp = Math.max(0, Math.min(100, ball.hp));
+            let hp_ailments = ball.get_ailment_hp_loss();
+            // we want to write first the healthy hp, then the poison hp, then the rupture hp
+            // #####===:::
+            let hp_after_ailments = Math.max(0, Math.min(100, hp - (hp_ailments.poison + hp_ailments.rupture)));
+            let str = "";
+            let max_segments = 40;
+            let remaining_segments = max_segments;
+            let hp_segments = (hp_after_ailments / 100) * max_segments;
+            let rupture_segments = (Math.min(hp_ailments.rupture, hp) / 100) * max_segments;
+            let poison_segments = (Math.min(hp_ailments.poison, hp) / 100) * max_segments;
+            let empty_segments = Math.max(0, max_segments - (hp_segments + rupture_segments + poison_segments));
+
+            // now we have all our segments
+            let chars = "#<= ";
+            let adjustment = 0;
+            // i need to think more on how to "rasterize" these segments so that:
+            // - hp never shows empty if the ball is alive
+            // - even if all hp is taken up by ailments
+            // (so need to ceil pretty much all the hp)
+            // (but this causes the issue of making ailments take up too much space on the bar)
+            str = "#".repeat(Math.ceil(hp_segments + rupture_segments + poison_segments)) + " ".repeat(Math.floor(empty_segments));
+
+            /*
             write_text(
                 layers.ui2.ctx, `[${"#".repeat(Math.ceil(hp * 0.4))}${" ".repeat(Math.floor((100 - hp) * 0.4))}]`, l[0], l[1] + 12, ball.colour.css(), CANVAS_FONTS, 9
+            )
+            */
+
+            write_text(
+                layers.ui2.ctx, `[${str}]`, l[0], l[1] + 12, ball.colour.css(), CANVAS_FONTS, 9
             )
             
             if (ball.poison_duration > 0) {
@@ -1419,8 +1483,22 @@ let colliding_proj2projs = new Set();
 let max_game_duration = 300;
 let game_end_col = new Colour(36, 0, 0).css();
 
+let game_speed_mult = 1;
+let game_paused = false;
+let game_subticks = 0;  // for fixed-time
+
+// if fps is at least this much different from the expected,
+// start applying correction
+let game_fps_threshold = 5;
+let game_fps_catchup_modifier = 1;
+
 function game_loop() {
     framecount++;
+
+    // discard any frames 50ms or longer for fps calcs (likely anomalous)
+    let filtered_frame_times = last_frame_times.filter(f => f < 50);
+    let avg_frame_time = filtered_frame_times.reduce((a, b) => a + b, 0) / filtered_frame_times.length;
+    fps_current = 1000/avg_frame_time;
 
     let frame_start_time = Date.now();
 
@@ -1442,391 +1520,439 @@ function game_loop() {
     let delta_time = calc_start_time - last_calc_time;
     last_calc_time = calc_start_time;
 
-    // delta_time can be maximum 50ms
-    delta_time = Math.min(delta_time, 50);
-
-    if (keys_down["KeyE"]) {
-        delta_time /= 10;
-    }
-
-    let phys_gran = PHYS_GRANULARITY;
-    let coll_gran = COLL_GRANULARITY;
-    let cps = COLLS_PER_FRAME;
-
-    if (keys_down["KeyR"] ^ winrate_tracking) {
-        let factor = 128;
-
-        phys_gran *= factor;
-        // coll_gran *= factor;
-        delta_time *= factor;
-
-        cps = phys_gran / coll_gran;
-    }
-
+    // clean up old audio
+    audio_playing = audio_playing.filter(audio => !audio.ended);
+    
     if (board) {
-        // COLL_GRANULARITY => do collision checks every N physics steps
-        for (let i=0; i<phys_gran; i++) {
-            board.physics_step(delta_time / (1000 * phys_gran));
+        let game_delta_time = delta_time;
+        let speed_mult = game_speed_mult;
+        game_fps_catchup_modifier = 1;
 
-            if ((i+1) % coll_gran == 0) {
-                let coll_delta_time = delta_time / (1000 * cps);
+        if (game_paused) {
+            speed_mult *= 0;
+        }
 
-                // if multiple weapons collide, the first one takes priority
-                let hitstop = 0;
+        if (board.forced_time_deltas == 0) {
+            // delta_time can be maximum 50ms when running realtime
+            game_delta_time = Math.min(game_delta_time, 50);
+        } else {
+            // if forced, set to forced
+            game_delta_time = board.forced_time_deltas;
 
-                // triggers
-                board.timers_step(coll_delta_time);
+            // now let's calculate our catchup modifier if needed
+            // and add it to speed_mult
+            let expected_fps = board.expected_fps;
+            let expected_fps_diff = Math.abs(expected_fps - fps_current);
+            if (expected_fps_diff > game_fps_threshold) {
+                // we need to multiply the game speed so that it reaches the threshold
+                // e.g. expected 144fps, running 60fps => run 144/60 = 2.4x faster
+                game_fps_catchup_modifier = expected_fps / fps_current;
 
-                // projectile weaponsteps
-                board.projectiles.forEach(projectile => {
-                    projectile.weapon_step(board, coll_delta_time)
-                })
+                speed_mult *= game_fps_catchup_modifier;
+            }
+        }
 
-                // parrying (weapon on weapon)
-                colliding_parries.clear();
-                board.balls.forEach(ball => {
-                    if (ball.skip_physics)
-                        return;  // skip_physics balls should completely stop
+        let temporary_modifiers = 1;
+        if (keys_down["KeyE"]) {
+            speed_mult /= 8;
+            temporary_modifiers /= 8;
+        }
 
-                    if (ball.invuln_duration <= 0) {
-                        board.balls.forEach(other => {
-                            if (other.skip_physics)
-                                return;  // skip_physics balls should completely stop
+        if (keys_down["KeyR"] ^ winrate_tracking) {
+            speed_mult *= 128;
+            temporary_modifiers *= 128;
+        }
 
-                            if (colliding_parries.has((ball.id * 10000000) + other.id) || ball.allied_with(other)) {
-                                return;
-                            }
+        update_sim_speed_display(temporary_modifiers);
 
-                            if (ball.id != other.id) {
-                                let colliding_pairs = ball.check_weapon_to_weapon_hit_from(other);
+        let phys_gran = PHYS_GRANULARITY;
+        let coll_gran = COLL_GRANULARITY;
+        let cps = COLLS_PER_FRAME;
 
-                                if (colliding_pairs.length > 0) {
-                                    colliding_parries.add((ball.id * 10000000) + other.id);
-                                    colliding_parries.add((other.id * 10000000) + ball.id);
+        // realtime does things differently (interpolates frames),
+        // fixed-time doesn't have that luxury
+        let num_repeats = 1;
 
-                                    let colliding_pair = colliding_pairs[0];
+        if (board.forced_time_deltas == 0) {
+            phys_gran *= speed_mult;
+            game_delta_time *= speed_mult;
 
-                                    let source_index = colliding_pair[0];
-                                    let other_index = colliding_pair[1];
+            cps = phys_gran / coll_gran;
+        } else {
+            game_subticks += speed_mult;
+            num_repeats = Math.floor(game_subticks);
+            game_subticks -= num_repeats;
+        }
 
-                                    // parry causes an explosive force of the balls away from each other
-                                    // plus the directions of the weapons reverse
-                                    ball.reverse_weapon(source_index);
-                                    other.reverse_weapon(other_index);
+        // the "for" component only comes into effect when we're fixed-time
+        for (let tick_repeats=0; tick_repeats<num_repeats; tick_repeats++) {
+            // COLL_GRANULARITY => do collision checks every N physics steps
+            for (let i=0; i<phys_gran; i++) {
+                board.physics_step(game_delta_time / (1000 * phys_gran));
 
-                                    ball.parry_weapon(source_index, other, other_index);
-                                    other.parry_weapon(other_index, ball, source_index);
+                if ((i+1) % coll_gran == 0) {
+                    let coll_game_delta_time = game_delta_time / (1000 * cps);
 
-                                    let diff_vec = other.position.sub(ball.position).normalize();
+                    // if multiple weapons collide, the first one takes priority
+                    let hitstop = 0;
 
-                                    // we're going to get the magnitude of the directions, *0.25,
-                                    // add *0.75 of the difference vector, and remultiply
-                                    let share = 0.75;
+                    // triggers
+                    board.timers_step(coll_game_delta_time);
 
-                                    let ball_diff_add = diff_vec.mul(-share);
-                                    let other_diff_add = ball_diff_add.mul(-1);
-
-                                    let ball_mag = ball.velocity.magnitude();
-                                    let other_mag = other.velocity.magnitude();
-
-                                    new_ball_velocity = ball.velocity.div(ball_mag).mul(1 - share).add(ball_diff_add).normalize().mul(ball_mag)
-                                    new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
-
-                                    ball.velocity = new_ball_velocity;
-                                    other.velocity = new_other_velocity;
-
-                                    ball.last_hit = 1;
-                                    other.last_hit = 1;
-
-                                    ball.invuln_duration = Math.max(ball.invuln_duration, BALL_INVULN_DURATION);
-                                    other.invuln_duration = Math.max(other.invuln_duration, BALL_INVULN_DURATION);
-
-                                    play_audio("parry");
-                                }
-                            }
-                        });
-                    }
-                })
-
-                // projectile parrying (weapon on projectile)
-                board.balls.forEach(ball => {
-                    if (ball.skip_physics)
-                        return;  // skip_physics balls should completely stop
-
-                    // don't check our own team's projectiles
-                    let projectiles = board.projectiles.filter(projectile => 
-                        projectile.active && 
-                        !projectile.ignore_balls.has(ball.id) && 
-                        (!ball.allied_with(projectile.source) || projectile.can_hit_allied) &&
-                        (ball.id != projectile.source.id || projectile.can_hit_source)
-                    );
-                    
-                    let intersecting_projectiles = ball.check_weapon_to_projectiles_hits(projectiles);
-
-                    let play_parried_audio = false;
-                    intersecting_projectiles.forEach(projectile_data => {
-                        let projectile = projectile_data[1];
-                        let parry_weapon_index = projectile_data[0];
-
-                        if (!projectile.parriable) {
-                            return;
-                        }
-
-                        // if the projectile is hitscan AND colliding with both the ball and the weapon,
-                        // only parry it if the closest weapon hitbox is closer to the origin than the ball
-                        if (projectile instanceof HitscanProjectile) {
-                            let ball_hit_by_projectile = ball.check_projectiles_hit_from([projectile]);
-                            if (ball_hit_by_projectile.length > 0) {
-                                // get a list of the weapon's hitboxes
-                                let source_weapon = ball.weapon_data[parry_weapon_index];
-
-                                let weapon_offset = ball.get_weapon_offset(source_weapon);
-                                let hitboxes_offsets = ball.get_hitboxes_offsets(source_weapon);
-
-                                let closest_weapon_hitbox_dist = Number.POSITIVE_INFINITY;
-                                hitboxes_offsets.forEach((offset, index) => {
-                                    let hitbox_pos = ball.position.add(weapon_offset).add(offset);
-                                    let hitbox_dist = hitbox_pos.sqr_distance(projectile.position);
-
-                                    // we also need to take into account hitbox radius (take away hitbox square radius from dist)
-                                    closest_weapon_hitbox_dist = Math.min(closest_weapon_hitbox_dist, hitbox_dist - Math.pow(source_weapon.hitboxes[index].radius, 2));
-                                })
-
-                                // now compare. we only parry if closest_weapon_hitbox_dist is smaller
-                                let ball_dist = ball.position.sqr_distance(projectile.position);
-
-                                if (ball_dist < closest_weapon_hitbox_dist) {
-                                    return;
-                                }
-                            }
-                        }
-
-                        if (ball.invuln_duration <= 0 && projectile.play_parried_audio) {
-                            play_parried_audio = true;
-                        }
-
-                        // board will clean it up
-                        projectile.get_parried(ball);
-
-                        ball.reverse_weapon(parry_weapon_index);
-                        ball.parry_projectile(parry_weapon_index, projectile);
-                        
-                        projectile.source.get_projectile_parried(ball, projectile);
-
-                        // we actually move the ball in the direction the projectile was travelling
-                        let diff_vec = projectile.direction;
-
-                        // we're going to get the magnitude of the directions, *0.25,
-                        // add *0.25 of the difference vector, and remultiply
-                        let share = 0.25;
-
-                        let ball_diff_add = diff_vec.mul(share);
-                        let ball_mag = ball.velocity.magnitude();
-                        new_ball_velocity = ball.velocity.div(ball_mag).mul(1 - share).add(ball_diff_add).normalize().mul(ball_mag);
-                        ball.velocity = new_ball_velocity;
-                        
-                        ball.last_hit = 1;
-                        
-                        ball.invuln_duration = Math.max(ball.invuln_duration, BALL_INVULN_DURATION * 0.5);
+                    // projectile weaponsteps
+                    board.projectiles.forEach(projectile => {
+                        projectile.weapon_step(board, coll_game_delta_time)
                     })
 
-                    if (play_parried_audio) {
-                        play_audio("parry2");
-                    }
-                });
+                    // parrying (weapon on weapon)
+                    colliding_parries.clear();
+                    board.balls.forEach(ball => {
+                        if (ball.skip_physics)
+                            return;  // skip_physics balls should completely stop
 
-                // hitting (weapon on ball)
-                board.balls.forEach(ball => {
-                    if (ball.skip_physics)
-                        return;  // skip_physics balls should completely stop
+                        if (ball.invuln_duration <= 0) {
+                            board.balls.forEach(other => {
+                                if (other.skip_physics)
+                                    return;  // skip_physics balls should completely stop
 
-                    if (ball.invuln_duration <= 0) {
-                        // OK to check for hits (not in invuln window)
-                        board.balls.forEach(other => {
-                            if (other.skip_physics)
-                                return;  // skip_physics balls should completely stop
-
-                            // make sure we don't check collisions with our own team
-                            if (!ball.allied_with(other)) {
-                                let colliding_weapons = ball.check_weapons_hit_from(other);
-                                if (colliding_weapons.length > 0) {
-                                    let weapon_index = colliding_weapons[0];  // ignore all others
-
-                                    ball.last_hit = 0;
-                                    let result = other.hit_other(ball, weapon_index);
-                                    ball.last_damage_source = other;
-                                    
-                                    if (!result.snd) {
-                                        if (result.dmg >= 8) {
-                                            play_audio("impact_heavy");
-                                        } else {
-                                            play_audio("impact");
-                                        }
-                                    } else {
-                                        play_audio(result.snd);
-                                    }
-
-                                    // TODO - need to at this point do accounting on damage taken/dealt,
-                                    // and end the game / remove balls if they die
-
-                                    hitstop = Math.max(hitstop, result.hitstop ?? 0);
+                                if (colliding_parries.has((ball.id * 10000000) + other.id) || ball.allied_with(other)) {
+                                    return;
                                 }
-                            }
-                        })
-                    }
-                })
 
-                // projectile hitting (projectile on ball)
-                board.balls.forEach(ball => {
-                    if (ball.skip_physics)
-                        return;  // skip_physics balls should completely stop
+                                if (ball.id != other.id) {
+                                    let colliding_pairs = ball.check_weapon_to_weapon_hit_from(other);
 
-                    if (ball.invuln_duration <= 0) {
-                        // don't check our own projectiles
+                                    if (colliding_pairs.length > 0) {
+                                        colliding_parries.add((ball.id * 10000000) + other.id);
+                                        colliding_parries.add((other.id * 10000000) + ball.id);
+
+                                        let colliding_pair = colliding_pairs[0];
+
+                                        let source_index = colliding_pair[0];
+                                        let other_index = colliding_pair[1];
+
+                                        // parry causes an explosive force of the balls away from each other
+                                        // plus the directions of the weapons reverse
+                                        ball.reverse_weapon(source_index);
+                                        other.reverse_weapon(other_index);
+
+                                        ball.parry_weapon(source_index, other, other_index);
+                                        other.parry_weapon(other_index, ball, source_index);
+
+                                        let diff_vec = other.position.sub(ball.position).normalize();
+
+                                        // we're going to get the magnitude of the directions, *0.25,
+                                        // add *0.75 of the difference vector, and remultiply
+                                        let share = 0.75;
+
+                                        let ball_diff_add = diff_vec.mul(-share);
+                                        let other_diff_add = ball_diff_add.mul(-1);
+
+                                        let ball_mag = ball.velocity.magnitude();
+                                        let other_mag = other.velocity.magnitude();
+
+                                        new_ball_velocity = ball.velocity.div(ball_mag).mul(1 - share).add(ball_diff_add).normalize().mul(ball_mag)
+                                        new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
+
+                                        ball.velocity = new_ball_velocity;
+                                        other.velocity = new_other_velocity;
+
+                                        ball.last_hit = 1;
+                                        other.last_hit = 1;
+
+                                        ball.invuln_duration = Math.max(ball.invuln_duration, BALL_INVULN_DURATION);
+                                        other.invuln_duration = Math.max(other.invuln_duration, BALL_INVULN_DURATION);
+
+                                        play_audio("parry");
+                                    }
+                                }
+                            });
+                        }
+                    })
+
+                    // projectile parrying (weapon on projectile)
+                    board.balls.forEach(ball => {
+                        if (ball.skip_physics)
+                            return;  // skip_physics balls should completely stop
+
+                        // don't check our own team's projectiles
                         let projectiles = board.projectiles.filter(projectile => 
                             projectile.active && 
                             !projectile.ignore_balls.has(ball.id) && 
                             (!ball.allied_with(projectile.source) || projectile.can_hit_allied) &&
                             (ball.id != projectile.source.id || projectile.can_hit_source)
                         );
-
-                        let intersecting_projectiles = ball.check_projectiles_hit_from(projectiles);
                         
-                        // same rules as normal thing except we go through the get_hit_by for projectiles instead
-                        // and delete the projectile
-                        intersecting_projectiles.forEach(projectile => {
-                            if (this.invuln_duration > 0) {
-                                return;  // don't care if now invuln
+                        let intersecting_projectiles = ball.check_weapon_to_projectiles_hits(projectiles);
+
+                        let play_parried_audio = false;
+                        intersecting_projectiles.forEach(projectile_data => {
+                            let projectile = projectile_data[1];
+                            let parry_weapon_index = projectile_data[0];
+
+                            if (!projectile.parriable) {
+                                return;
                             }
 
-                            ball.last_hit = 0;
-                            let result = projectile.source.hit_other_with_projectile(ball, projectile);
-                            projectile.hit_ball(ball, coll_delta_time);
-                            ball.last_damage_source = projectile.source;
+                            // if the projectile is hitscan AND colliding with both the ball and the weapon,
+                            // only parry it if the closest weapon hitbox is closer to the origin than the ball
+                            if (projectile instanceof HitscanProjectile) {
+                                let ball_hit_by_projectile = ball.check_projectiles_hit_from([projectile]);
+                                if (ball_hit_by_projectile.length > 0) {
+                                    // get a list of the weapon's hitboxes
+                                    let source_weapon = ball.weapon_data[parry_weapon_index];
 
-                            if (!result.mute) {
-                                play_audio("impact");
+                                    let weapon_offset = ball.get_weapon_offset(source_weapon);
+                                    let hitboxes_offsets = ball.get_hitboxes_offsets(source_weapon);
+
+                                    let closest_weapon_hitbox_dist = Number.POSITIVE_INFINITY;
+                                    hitboxes_offsets.forEach((offset, index) => {
+                                        let hitbox_pos = ball.position.add(weapon_offset).add(offset);
+                                        let hitbox_dist = hitbox_pos.sqr_distance(projectile.position);
+
+                                        // we also need to take into account hitbox radius (take away hitbox square radius from dist)
+                                        closest_weapon_hitbox_dist = Math.min(closest_weapon_hitbox_dist, hitbox_dist - Math.pow(source_weapon.hitboxes[index].radius, 2));
+                                    })
+
+                                    // now compare. we only parry if closest_weapon_hitbox_dist is smaller
+                                    let ball_dist = ball.position.sqr_distance(projectile.position);
+
+                                    if (ball_dist < closest_weapon_hitbox_dist) {
+                                        return;
+                                    }
+                                }
                             }
 
-                            hitstop = Math.max(hitstop, result.hitstop ?? 0);
-                        });
-                    }
-                })
+                            if (ball.invuln_duration <= 0 && projectile.play_parried_audio) {
+                                play_parried_audio = true;
+                            }
 
-                // projectile collisions (projectile on projectile)
-                colliding_proj2projs.clear()
-                board.projectiles.forEach(projectile => {
-                    if (!projectile.active || !projectile.collides_other_projectiles) 
-                        return;
+                            // board will clean it up
+                            projectile.get_parried(ball);
 
-                    let projectiles_in_scope = board.projectiles.filter(other => 
-                        projectile.id !== other.id &&
-                        other.parriable && other.collides_other_projectiles &&
-                        (!other.source.allied_with(projectile.source) || (projectile.can_hit_allied && other.can_hit_allied))
-                    );
+                            ball.reverse_weapon(parry_weapon_index);
+                            ball.parry_projectile(parry_weapon_index, projectile);
+                            
+                            projectile.source.get_projectile_parried(ball, projectile);
 
-                    let projectiles_colliding = projectile.check_projectiles_colliding(projectiles_in_scope);
-                    projectiles_colliding = projectiles_colliding.filter(proj => !colliding_proj2projs.has(proj.id + (1000000 * projectile.id)))
+                            // we actually move the ball in the direction the projectile was travelling
+                            let diff_vec = projectile.direction;
 
-                    projectiles_colliding.forEach(proj => {
-                        if (proj.parriable) {
-                            projectile.hit_other_projectile(proj);
-                        }
-                        if (projectile.parriable) {
-                            proj.hit_other_projectile(projectile);
-                        }
-                        colliding_proj2projs.add(proj.id + (1000000 * projectile.id));
+                            // we're going to get the magnitude of the directions, *0.25,
+                            // add *0.25 of the difference vector, and remultiply
+                            let share = 0.25;
 
-                        // if either projectile was active and now isn't, play a thud
-                        if (!proj.active || !projectile.active) {
-                            play_audio("thud");
+                            let ball_diff_add = diff_vec.mul(share);
+                            let ball_mag = ball.velocity.magnitude();
+                            new_ball_velocity = ball.velocity.div(ball_mag).mul(1 - share).add(ball_diff_add).normalize().mul(ball_mag);
+                            ball.velocity = new_ball_velocity;
+                            
+                            ball.last_hit = 1;
+                            
+                            ball.invuln_duration = Math.max(ball.invuln_duration, BALL_INVULN_DURATION * 0.5);
+                        })
+
+                        if (play_parried_audio) {
+                            play_audio("parry2");
                         }
                     });
-                })
 
-                // if the board duration is past the max duration, deal 5dps to all balls
-                if (board.duration > max_game_duration) {
-                    board.balls.forEach(ball => ball.lose_hp(5 * coll_delta_time));
-                }
+                    // hitting (weapon on ball)
+                    board.balls.forEach(ball => {
+                        if (ball.skip_physics)
+                            return;  // skip_physics balls should completely stop
 
-                // cull any dead balls
-                board.balls = board.balls.filter(ball => {
-                    // keep skip_physics balls around
-                    if (ball.skip_physics) {
-                        return true
+                        if (ball.invuln_duration <= 0) {
+                            // OK to check for hits (not in invuln window)
+                            board.balls.forEach(other => {
+                                if (other.skip_physics)
+                                    return;  // skip_physics balls should completely stop
+
+                                // make sure we don't check collisions with our own team
+                                if (!ball.allied_with(other)) {
+                                    let colliding_weapons = ball.check_weapons_hit_from(other);
+                                    if (colliding_weapons.length > 0) {
+                                        let weapon_index = colliding_weapons[0];  // ignore all others
+
+                                        ball.last_hit = 0;
+                                        let result = other.hit_other(ball, weapon_index);
+                                        ball.last_damage_source = other;
+                                        
+                                        if (!result.snd) {
+                                            if (result.dmg >= 8) {
+                                                play_audio("impact_heavy");
+                                            } else {
+                                                play_audio("impact");
+                                            }
+                                        } else {
+                                            play_audio(result.snd);
+                                        }
+
+                                        // TODO - need to at this point do accounting on damage taken/dealt,
+                                        // and end the game / remove balls if they die
+
+                                        hitstop = Math.max(hitstop, result.hitstop ?? 0);
+                                    }
+                                }
+                            })
+                        }
+                    })
+
+                    // projectile hitting (projectile on ball)
+                    board.balls.forEach(ball => {
+                        if (ball.skip_physics)
+                            return;  // skip_physics balls should completely stop
+
+                        if (ball.invuln_duration <= 0) {
+                            // don't check our own projectiles
+                            let projectiles = board.projectiles.filter(projectile => 
+                                projectile.active && 
+                                !projectile.ignore_balls.has(ball.id) && 
+                                (!ball.allied_with(projectile.source) || projectile.can_hit_allied) &&
+                                (ball.id != projectile.source.id || projectile.can_hit_source)
+                            );
+
+                            let intersecting_projectiles = ball.check_projectiles_hit_from(projectiles);
+                            
+                            // same rules as normal thing except we go through the get_hit_by for projectiles instead
+                            // and delete the projectile
+                            intersecting_projectiles.forEach(projectile => {
+                                if (this.invuln_duration > 0) {
+                                    return;  // don't care if now invuln
+                                }
+
+                                ball.last_hit = 0;
+                                let result = projectile.source.hit_other_with_projectile(ball, projectile);
+                                projectile.hit_ball(ball, coll_game_delta_time);
+                                ball.last_damage_source = projectile.source;
+
+                                if (!result.mute) {
+                                    play_audio("impact");
+                                }
+
+                                hitstop = Math.max(hitstop, result.hitstop ?? 0);
+                            });
+                        }
+                    })
+
+                    // projectile collisions (projectile on projectile)
+                    colliding_proj2projs.clear()
+                    board.projectiles.forEach(projectile => {
+                        if (!projectile.active || !projectile.collides_other_projectiles) 
+                            return;
+
+                        let projectiles_in_scope = board.projectiles.filter(other => 
+                            projectile.id !== other.id &&
+                            other.parriable && other.collides_other_projectiles &&
+                            (!other.source.allied_with(projectile.source) || (projectile.can_hit_allied && other.can_hit_allied))
+                        );
+
+                        let projectiles_colliding = projectile.check_projectiles_colliding(projectiles_in_scope);
+                        projectiles_colliding = projectiles_colliding.filter(proj => !colliding_proj2projs.has(proj.id + (1000000 * projectile.id)))
+
+                        projectiles_colliding.forEach(proj => {
+                            if (proj.parriable) {
+                                projectile.hit_other_projectile(proj);
+                            }
+                            if (projectile.parriable) {
+                                proj.hit_other_projectile(projectile);
+                            }
+                            colliding_proj2projs.add(proj.id + (1000000 * projectile.id));
+
+                            // if either projectile was active and now isn't, play a thud
+                            if (!proj.active || !projectile.active) {
+                                play_audio("thud");
+                            }
+                        });
+                    })
+
+                    // if the board duration is past the max duration, deal 5dps to all balls
+                    if (board.duration > max_game_duration) {
+                        board.balls.forEach(ball => ball.lose_hp(5 * coll_game_delta_time));
                     }
 
-                    if (ball.hp > 0) {
-                        return true;
-                    } else {
-                        let result = ball.die();
+                    // cull any dead balls
+                    board.balls = board.balls.filter(ball => {
+                        // keep skip_physics balls around
+                        if (ball.skip_physics) {
+                            return true
+                        }
 
-                        if (!result.skip_default_explosion) {
-                            if (ball.show_stats) {
-                                board.spawn_particle(new Particle(
-                                    ball.position.add(new Vector2(256+64, -512)), 0, 2, entity_sprites.get("explosion"), 12, 3, false
-                                ), ball.position.add(new Vector2(256+64, -512)));
+                        if (ball.hp > 0) {
+                            return true;
+                        } else {
+                            let result = ball.die();
 
-                                play_audio("explosion");
+                            if (!result.skip_default_explosion) {
+                                if (ball.show_stats) {
+                                    board.spawn_particle(new Particle(
+                                        ball.position.add(new Vector2(256+64, -512)), 0, 2, entity_sprites.get("explosion"), 12, 3, false
+                                    ), ball.position.add(new Vector2(256+64, -512)));
+
+                                    play_audio("explosion");
+                                } else {
+                                    board.spawn_particle(new Particle(
+                                        ball.position.add(new Vector2(144, -512)), 0, 1, entity_sprites.get("explosion"), 12, 3, false
+                                    ), ball.position.add(new Vector2(144, -512)));
+
+                                    // TODO make this something else thats less impactful
+                                    play_audio("explosion");
+                                }
+                            }
+
+                            return false;
+                        }
+                    });
+
+                    // board.hitstop_time = Math.max(hitstop, board.hitstop_time);
+                }
+            }
+
+            board.particles_step(game_delta_time);
+            
+            if (board?.remaining_players().length <= 1) {
+                let players = board.remaining_players();
+                if (players.length > 0) {
+                    board.get_all_player_balls(players[0]).forEach(ball => ball.takes_damage = false);
+                }
+
+                match_end_timeout -= game_delta_time;
+                if (winrate_tracking) {
+                    match_end_timeout = 0;
+                }
+
+                // "animation"
+                render_victory(board, match_end_timeout);
+
+                if (match_end_timeout <= 0) {
+                    audio_playing.forEach(audio => audio.source.stop());
+
+                    if (board.remaining_players().length == 1 && winrate_tracking) {
+                        let winning_balls = board.get_all_player_balls(board.remaining_players()[0]).filter(ball => ball.show_stats);
+                        if (winning_balls.length >= 1) {
+                            let winning_ball = winning_balls[0];
+                            let winning_ball_class = selectable_balls_for_random.find(t => winning_ball instanceof t);
+
+                            let losing_balls = start_balls.filter(b => b.name != winning_ball_class.name);
+                            
+                            if (losing_balls.length >= 1) {
+                                let winning_ball_index = selectable_balls_for_random.findIndex(t => winning_ball instanceof t);
+                                let losing_ball_index = selectable_balls_for_random.findIndex(t => losing_balls[0].name == t.name);
+                                
+                                win_matrix[winning_ball_index][losing_ball_index] += 1;
+                            }
+
+                            if (readable_table) {
+                                displayelement.textContent = (" ".repeat(12) + selectable_balls_for_random.map(t => t.name.padEnd(12)).join("") + "\n" + win_matrix.map((a, i) => `${selectable_balls_for_random[i].name.padEnd(12)}` + a.map((b, j) => `${b === 0 ? "-" : b}`.padEnd(12)).join("")).join("\n"));
                             } else {
-                                board.spawn_particle(new Particle(
-                                    ball.position.add(new Vector2(144, -512)), 0, 1, entity_sprites.get("explosion"), 12, 3, false
-                                ), ball.position.add(new Vector2(144, -512)));
-
-                                // TODO make this something else thats less impactful
-                                play_audio("explosion");
+                                displayelement.textContent = (win_matrix.map(t => t.map(v => v == 0 ? "-" : v).join("\t")).join("\n"));
                             }
                         }
-
-                        return false;
                     }
-                });
-
-                // board.hitstop_time = Math.max(hitstop, board.hitstop_time);
-            }
-        }
-
-        // we only need to do balls' ailments steps once per frame
-        board.balls.filter(ball => !ball.skip_physics).forEach(ball => ball.ailments_step(board, delta_time / 1000));
-
-        board.particles_step(delta_time);
-        
-        if (board?.remaining_players().length <= 1) {
-            let players = board.remaining_players();
-            if (players.length > 0) {
-                board.get_all_player_balls(players[0]).forEach(ball => ball.takes_damage = false);
-            }
-
-            match_end_timeout -= delta_time;
-
-            // "animation"
-            render_victory(board, match_end_timeout);
-
-            if (match_end_timeout <= 0) {
-                if (board.remaining_players().length == 1 && winrate_tracking) {
-                    let winning_balls = board.get_all_player_balls(board.remaining_players()[0]).filter(ball => ball.show_stats);
-                    if (winning_balls.length >= 1) {
-                        let winning_ball = winning_balls[0];
-                        let winning_ball_class = selectable_balls_for_random.find(t => winning_ball instanceof t);
-
-                        let losing_balls = start_balls.filter(b => b.name != winning_ball_class.name);
-                        
-                        if (losing_balls.length >= 1) {
-                            let winning_ball_index = selectable_balls_for_random.findIndex(t => winning_ball instanceof t);
-                            let losing_ball_index = selectable_balls_for_random.findIndex(t => losing_balls[0].name == t.name);
-                            
-                            win_matrix[winning_ball_index][losing_ball_index] += 1;
-                        }
-
-                        if (readable_table) {
-                            displayelement.textContent = (" ".repeat(12) + selectable_balls_for_random.map(t => t.name.padEnd(12)).join("") + "\n" + win_matrix.map((a, i) => `${selectable_balls_for_random[i].name.padEnd(12)}` + a.map((b, j) => `${b === 0 ? "-" : b}`.padEnd(12)).join("")).join("\n"));
-                        } else {
-                            displayelement.textContent = (win_matrix.map(t => t.map(v => v == 0 ? "-" : v).join("\t")).join("\n"));
-                        }
-                    }
+                    
+                    exit_battle();
+                    break;
                 }
-                
-                exit_battle();
             }
         }
     }
@@ -1850,7 +1976,7 @@ function game_loop() {
     last_frame_times = last_frame_times.slice(-120);
 
     // next frame should arrive (1000/fps) ms later, so get the time left and compare it with the end time
-    let expected_next_frame = frame_start_time + (1000/fps);
+    let expected_next_frame = frame_start_time + (1000/fps_current);
     let time_to_wait = Math.max(0, expected_next_frame-last_frame_time);
 
     wait_durations.push(time_to_wait);

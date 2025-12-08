@@ -1,4 +1,4 @@
-const AWAKEN_LEVEL = 7;
+const AWAKEN_LEVEL = 99;
 const WEAPON_SIZE_MULTIPLIER = 16;
 const PROJ_SIZE_MULTIPLIER = 16;
 
@@ -32,8 +32,10 @@ class BallWeapon {
 // also implements weapon collision
 // levels go from 1 to 7, with 7 being an "awakened" level that has a bonus effect
 class WeaponBall extends Ball {
-    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
-        super(mass, radius, colour, bounce_factor, friction_factor);
+    static RUPTURE_CALCULATION_CONSTANT = Math.LN2
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor);
 
         this.name = "No Weapon";
         this.description_brief = "Does nothing. Unarmed, but not the awesome kind.";
@@ -43,9 +45,10 @@ class WeaponBall extends Ball {
 
         // player.stats:
         /*
-            rotation_speed [multiplier]
-            damage_bonus   [multiplier]
-            defense_bonus  [multiplier]
+            damage_bonus       [multiplier]
+            defense_bonus      [multiplier]
+            ailment_resistance [multiplier]
+            
             unique_level   [int]
         */
         this.player = player;
@@ -72,6 +75,8 @@ class WeaponBall extends Ball {
         this.show_stats = true;
         this.display = true;
 
+        this.lifetime = 0;
+
         this.rupture_intensity = 0;
 
         this.poison_intensity = 0;
@@ -80,10 +85,23 @@ class WeaponBall extends Ball {
         this.last_damage_source = null;
     }
 
+    get_ailment_hp_loss() {
+        // returns the amount of HP that will be lost to ailments
+        return {
+            // i love you integral calculator
+            // wow maths is so beautiful actually i should get on that shit again
+            "rupture": this.rupture_intensity / WeaponBall.RUPTURE_CALCULATION_CONSTANT,
+            "poison": this.poison_intensity * this.poison_duration
+        }
+    }
+
     lose_hp(amt, bypass_damage_prevention=false) {
         if (this.takes_damage || bypass_damage_prevention) {
             this.hp -= amt;
+            return amt;
         }
+
+        return 0;
     }
 
     allied_with(other) {
@@ -93,7 +111,7 @@ class WeaponBall extends Ball {
     randomise_weapon_rotations() {
         this.weapon_data.forEach(w => {
             w.angle = 0;
-            w.rotate(random_float(0, 360));
+            w.rotate(random_float(0, 360, this.board?.random));
         })
     }
 
@@ -123,6 +141,7 @@ class WeaponBall extends Ball {
 
     physics_step(board, time_delta) {
         // TODO think about how best to make this less annoying to override
+        this.lifetime += time_delta;
 
         this.hitstop -= time_delta;
         if (this.hitstop > 0) {
@@ -131,6 +150,7 @@ class WeaponBall extends Ball {
 
         super.physics_step(time_delta);
         this.weapon_step(board, time_delta);
+        this.ailments_step(board, time_delta);
 
         this.invuln_duration -= time_delta;
         this.weapon_data.forEach(w => w.angle = w.angle % (Math.PI * 2))
@@ -295,7 +315,7 @@ class WeaponBall extends Ball {
     get_hit(damage, hitstop) {
         // defense_bonus is a simple "divide damage by this" value
         let def = this.player?.stats?.defense_bonus ?? 1;
-        let final_damage = damage == 0 ? damage : Math.max(1, Math.round(damage * def));
+        let final_damage = damage == 0 ? damage : Math.max(1, Math.round(damage / def));
         
         this.lose_hp(final_damage);
         this.invuln_duration = Math.max(this.invuln_duration, BALL_INVULN_DURATION);
@@ -316,6 +336,44 @@ class WeaponBall extends Ball {
 
         result.hitstop = hitstop;
         return result;
+    }
+
+    apply_rupture(other, amt, scales_with_stat="damage_bonus") {
+        let final_amt = amt;
+        if (scales_with_stat) {
+            final_amt *= this.player?.stats[scales_with_stat] ?? 1;
+        }
+
+        other.receive_rupture(this, final_amt);
+    }
+
+    receive_rupture(other, amt) {
+        let final_amt = amt;
+        final_amt /= this.player?.stats?.ailment_resistance;
+
+        this.rupture_intensity += final_amt;
+    }
+
+    apply_poison(other, amt, duration, scales_with_stat="damage_bonus") {
+        // amt scales with damage
+        let final_amt = amt;
+        if (scales_with_stat) {
+            final_amt *= this.player?.stats[scales_with_stat] ?? 1;
+        }
+
+        other.receive_poison(this, final_amt, duration);
+    }
+
+    receive_poison(other, amt, duration) {
+        // duration scales with resistance
+        let final_duration = duration;
+        final_duration /= this.player?.stats?.ailment_resistance;
+
+        this.poison_intensity += amt;
+        this.poison_duration = Math.max(
+            this.poison_duration + final_duration,
+            final_duration
+        );
     }
 
     get_hit_by_projectile(damage, hitstop) {
@@ -349,12 +407,245 @@ class WeaponBall extends Ball {
 }
 
 class DummyBall extends WeaponBall {
+    // transforms into unarmedball when it takes a hit
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+        
+        this.max_level_description = "Seriously, it doesn't do anythin- wait... no...";
 
+        this.shake_duration_max = 4.5;
+        this.shake_shake_start = 1.5;
+        this.shake_shake_duration = this.shake_duration_max - this.shake_shake_start;
+        this.shake_flash_start = 3;
+        this.shake_flash_duration = this.shake_duration_max - this.shake_flash_start;
+        this.shake_current = 0;
+        this.shake_intensity_max = 1000;
+        this.shake_origin = null;
+        this.transforming = false;
+        this.done = false;
+
+        this.original_colour = this.colour;
+
+        this.child = null;
+    }
+
+    weapon_step(board, time_delta) {
+        if (this.transforming && !this.done) {
+            this.shake_current += time_delta
+
+            if (this.shake_current <= this.shake_duration_max) {
+                this.velocity = Vector2.zero;
+
+                this.position = this.shake_origin.add(
+                    random_on_circle(
+                        lerp(
+                            0, 
+                            this.shake_intensity_max, 
+                            random_float(0, 1) * (Math.max(0, (this.shake_current - this.shake_shake_start) / this.shake_shake_duration))
+                        ),
+                        this.board?.random
+                    )
+                )
+                this.colour = this.original_colour.lerp(Colour.white, Math.max(0, (this.shake_current - this.shake_flash_start) / this.shake_flash_duration))
+            } else {
+                // replace this ball with UnarmedBall
+                this.child = new UnarmedBall(
+                    this.board,
+                    this.mass, this.radius, this.original_colour,
+                    this.bounce_factor, this.friction_factor,
+                    this.player, this.level, false
+                )
+
+                this.child.velocity = random_on_circle(25000, this.board?.random);
+
+                this.hp = 0;
+                this.transforming = false;
+                this.done = true;
+
+                let b = this.board;
+                b.set_timer(new Timer(() => {
+                    b.spawn_ball(this.child, this.shake_origin);
+                    b.balls.forEach(ball => {
+                        ball.skip_physics = false;
+                        ball.takes_damage = true;
+                    });
+                }, 0.1))
+            }
+        }
+    }
+
+    die() {
+        return {}
+    }
+
+    start_transforming() {
+        play_audio("unarmed_theme");
+
+        this.transforming = true;
+        this.shake_origin = this.position;
+        this.skip_physics = false;
+        this.takes_damage = false;
+        this.ignore_bounds_checking = true;
+        this.board?.set_timer(new Timer(() => {
+            this.skip_physics = false;
+        }, 0.05))
+
+        this.board?.balls.forEach(ball => {
+            if (ball.id != this.id) {
+                ball.skip_physics = true;
+            }
+        });
+    }
+
+    get_hit(damage, hitstop) {
+        if (this.transforming) {
+            return {dmg: 0, dead: false};
+        }
+
+        let result = null;
+        if (this.level >= AWAKEN_LEVEL) {
+            result = super.get_hit(damage, 0.5);
+
+            this.start_transforming();
+        } else {
+            result = super.get_hit(damage, hitstop);
+        }
+
+        return result;
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor) {
+        write_text(
+            ctx, "This thing has no stats", x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        )
+        write_text(
+            ctx, "im serious", x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+        )
+        if (this.level >= AWAKEN_LEVEL) {
+            write_text(
+                ctx, `Or does it...?`, x_anchor, y_anchor + 24, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+            )
+        }
+    }
+}
+
+class UnarmedBall extends WeaponBall {
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Unarmed";
+        this.original_name = "Unarmed";
+        this.description_brief = "It's already too late.";
+        this.level_description = "It's already too strong.";
+        this.max_level_description = "It cannot improve on perfection.";
+        this.quote = "...pathetic.";
+
+        // deals damage on collision instead of on hit
+        // has no weapons
+        // damage based on speed
+        // gets faster every time it takes damage
+
+        this.weapon_data = [
+            new BallWeapon(1, "", [
+                {pos: new Vector2(64, 64), radius: 34},
+            ])
+        ];
+
+        this.weapon_data[0].offset = new Vector2(-80, 0);
+        this.weapon_data[0].unparriable = true;
+
+        this.intensity = 25000;
+        this.intensity_per_dmg = 1000;
+
+        this.damage_base = 1;
+        this.damage_per_speed = 1 / 5000;
+        this.damage_final = this.damage_base;
+        
+        this.defense_base = 0;
+        this.defense_per_speed = 1 / 2500;
+        this.defense_final = this.defense_base;
+
+        this.ailment_resistance = 0;
+
+        this.name_mutate_cooldown = 0;
+        this.name_mutate_cooldown_max = 0.01;
+    }
+
+    lose_hp(amt, bypass_damage_prevention=false) {
+        let taken = super.lose_hp(amt, bypass_damage_prevention);
+
+        this.intensity += this.intensity_per_dmg * taken;
+    }
+
+    weapon_step(board, time_delta) {
+        this.damage_final = this.damage_base + (this.damage_per_speed * this.velocity.magnitude());
+        this.defense_final = this.defense_base + (this.defense_per_speed * this.velocity.magnitude());
+
+        this.name_mutate_cooldown += time_delta;
+        while (this.name_mutate_cooldown > this.name_mutate_cooldown_max) {
+            this.name_mutate_cooldown -= this.name_mutate_cooldown_max
+            this.name = [...this.name].map((c, i) => {
+                let rand = random_float(0, 1, this.board?.random);
+                if (rand < 0.9) {
+                    // do nothihng
+                    return c;
+                } else if (rand < 0.925) {
+                    // set to random symbol
+                    return String.fromCharCode(random_int(32, 256, this.board?.random));
+                } else if (rand < 0.95) {
+                    // set to uppercase of original name
+                    return this.original_name[i].toUpperCase();
+                } else {
+                    // set to lowercase of original name
+                    return this.original_name[i].toLowerCase();
+                }
+            }).join("");
+        }
+    }
+
+    hit_other(other, with_weapon_index) {
+        let result = {};
+
+        result = super.hit_other(other, with_weapon_index, this.damage_final);
+
+        // set speed up to intensity
+        this.velocity = this.velocity.normalize().mul(this.intensity);
+
+        return result;
+    }
+
+    get_hit(damage, hitstop) {
+        let damage_reduced = Math.max(Math.min(damage, 1), damage - this.defense_final);
+
+        let result = super.get_hit(damage_reduced, hitstop);
+
+        // this.intensity += this.intensity_per_hit;
+
+        // set speed up to intensity
+        this.velocity = this.velocity.normalize().mul(this.intensity);
+
+        return result;
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor) {
+        write_text(
+            ctx, "It's all over.", x_anchor, y_anchor, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+        )
+        write_text(
+            ctx, `Intensity: ${this.intensity.toFixed(0)}`, x_anchor, y_anchor + 12, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+        )
+        write_text(
+            ctx, `Damage: ${this.damage_final.toFixed(2)}`, x_anchor, y_anchor + 24, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+        )
+        write_text(
+            ctx, `Defense: ${(this.defense_final).toFixed(2)}`, x_anchor, y_anchor + 36, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+        )
+    }
 }
 
 class HammerBall extends WeaponBall {
-    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
-        super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "Hammer";
         this.description_brief = "Has a huge hammer that does lots of damage each hit and knocks enemies back.";
@@ -382,7 +673,7 @@ class HammerBall extends WeaponBall {
             ]));
         }
 
-        this.damage_base = 8 + (1 * this.level);
+        this.damage_base = 8 + (0.1 * this.level);
         this.speed_base = 90;
     }
 
@@ -436,8 +727,8 @@ class HammerBall extends WeaponBall {
 }
 
 class SordBall extends WeaponBall {
-    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
-        super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "SORD";
         this.description_brief = "Deals more damage and rotates faster after every strike.";
@@ -456,8 +747,8 @@ class SordBall extends WeaponBall {
             ])
         ];
 
-        this.damage_base = 1 + (0.5 * level);
-        this.speed_base = 160 + (45 * level);
+        this.damage_base = 2 + (0.05 * level);
+        this.speed_base = 160 + (4.5 * level);
     }
 
     weapon_step(board, time_delta) {
@@ -468,8 +759,8 @@ class SordBall extends WeaponBall {
     hit_other(other, with_weapon_index) {
         let result = super.hit_other(other, with_weapon_index, this.damage_base);
 
-        this.damage_base += 0.5 * (1 + (this.level * 0.175));
-        this.speed_base += (60 / 4) * (1 + (this.level * 0.15));
+        this.damage_base += 0.5 * (1 + (this.level * 0.0175));
+        this.speed_base += (60 / 4) * (1 + (this.level * 0.015));
 
         if (this.level >= AWAKEN_LEVEL) {
             this.weapon_data[0].size_multiplier += 0.04 * 16;
@@ -497,8 +788,8 @@ class SordBall extends WeaponBall {
 }
 
 class DaggerBall extends WeaponBall {
-    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
-        super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "dagger";
         this.description_brief = "Rotates exponentially faster and deals exponentially more damage every strike. These bonuses decay back to zero when not continually striking.";
@@ -530,6 +821,8 @@ class DaggerBall extends WeaponBall {
 
         this.proj_damage_base = 1;
         this.proj_speed = 0;
+
+        this.hit_decay_max = 1.35 + (0.025 * this.level);
     }
 
     weapon_step(board, time_delta) {
@@ -543,7 +836,7 @@ class DaggerBall extends WeaponBall {
         }
 
         if (this.level >= AWAKEN_LEVEL) {
-            this.projectiles_cooldown_max = 0.5 / (this.speed_base / 1000);
+            this.projectiles_cooldown_max = 0.5 / (this.speed_base / 500);
             this.proj_speed = 9000 + (100 / this.projectiles_cooldown_max);
 
             if (this.speed_base >= 1000) {
@@ -556,6 +849,7 @@ class DaggerBall extends WeaponBall {
 
                     board.spawn_projectile(
                         new DaggerAwakenProjectile(
+                            this.board,
                             this, 0, fire_pos, this.proj_damage_base, 1,
                             new Vector2(1, 0).rotate(this.weapon_data[0].angle),
                             this.proj_speed, this.velocity.mul(0)
@@ -572,7 +866,7 @@ class DaggerBall extends WeaponBall {
         this.speed_base *= 2;
         this.damage_base *= 1.5;
 
-        this.hit_decay = 1.35 + (0.2 * this.level);
+        this.hit_decay = this.hit_decay_max
 
         return result;
     }
@@ -599,7 +893,7 @@ class DaggerBall extends WeaponBall {
             ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Bonus decay time: ${(1.5 + (0.2 * this.level)).toFixed(1)}`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
+            ctx, `Bonus decay time: ${this.hit_decay_max.toFixed(1)}`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
             ctx, `Faster rotation speed (x2) and damage (x1.5)`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 10
@@ -616,8 +910,8 @@ class DaggerBall extends WeaponBall {
 }
 
 class BowBall extends WeaponBall {
-    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
-        super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "Bow";
         this.description_brief = "Quickly fires sets of multiple arrows at a periodic interval. Successful arrow hits increase the number of arrows in each set and their damage.";
@@ -639,14 +933,12 @@ class BowBall extends WeaponBall {
         this.proj_damage_base = 4;
         this.speed_base = 150;
 
-        this.arrow_size_mult = 1 + (this.level * 0.03);
-        this.arrow_speed = 10000 + (this.level * 2000);
+        this.arrow_size_mult = 1 + (this.level * 0.005);
+        this.arrow_speed = 10000 + (this.level * 250);
 
-        this.shot_cooldown_max = 0.64 + (this.level * -0.015);
+        this.shot_cooldown_max = 0.625 + (this.level * -0.005);
         this.shot_cooldown = this.shot_cooldown_max;
 
-        this.multishot_cooldown = 0;
-        this.multishot_cooldown_max = 0.05;
         this.multishots = 0;
         this.multishots_max = 1;
         this.multishots_levelup_req = 1;
@@ -654,6 +946,10 @@ class BowBall extends WeaponBall {
         if (this.level >= AWAKEN_LEVEL) {
             this.multishots_max += 1;
         }
+        
+        this.multishot_cooldown = 0;
+        // 1/2th of the cooldown or 0.05, whichever is lower
+        this.multishot_cooldown_max = Math.min(0.05, (this.shot_cooldown_max / 2) / this.multishots_max);
     }
 
     weapon_step(board, time_delta) {
@@ -685,9 +981,10 @@ class BowBall extends WeaponBall {
             for (let i=0; i<times; i++) {
                 board.spawn_projectile(
                     new ArrowProjectile(
+                        this.board,
                         this, 0, fire_pos, this.proj_damage_base, 1 * this.arrow_size_mult,
-                        new Vector2(1, 0).rotate(this.weapon_data[0].angle + (random_float(-10, 10) * (Math.PI / 180))),
-                        this.arrow_speed * random_float(0.85, 1.15), this.velocity.mul(0)
+                        new Vector2(1, 0).rotate(this.weapon_data[0].angle + (random_float(-10, 10, this.board?.random) * (Math.PI / 180))),
+                        this.arrow_speed * random_float(0.85, 1.15, this.board?.random), this.velocity.mul(0)
                     ), fire_pos
                 )
             }
@@ -707,6 +1004,8 @@ class BowBall extends WeaponBall {
             this.proj_damage_base += 1;
 
             this.multishots_levelup_req = Math.max(1, this.multishots_max * this.multishots_max * 0.25);
+
+            this.multishot_cooldown_max = Math.min(0.05, (this.shot_cooldown_max / 2) / this.multishots_max);
         }
 
         return result;
@@ -747,8 +1046,8 @@ class BowBall extends WeaponBall {
 }
 
 class MagnumBall extends WeaponBall {
-    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
-        super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "Magnum";
         this.description_brief = "Throws coins and shoots a gun. If a gunshot hits a coin, it doubles in damage and ricochets to the nearest other coin, or enemy if there is no other coin.";
@@ -785,10 +1084,10 @@ class MagnumBall extends WeaponBall {
         this.coin_damage_base = 1;
         this.speed_base = 90;
 
-        this.shot_cooldown_max = 0.55 + (this.level * -0.01);
+        this.shot_cooldown_max = 0.54 + (this.level * -0.001);
         this.shot_cooldown = this.shot_cooldown_max;
 
-        this.coin_shot_cooldown_max = 0.48 + (this.level * -0.01);
+        this.coin_shot_cooldown_max = 0.47 + (this.level * -0.001);
         this.coin_shot_cooldown = this.coin_shot_cooldown_max;
     }
 
@@ -810,6 +1109,7 @@ class MagnumBall extends WeaponBall {
 
             board.spawn_projectile(
                 new MagnumProjectile(
+                    this.board,
                     this, 0, fire_pos, this.proj_damage_base,
                     new Vector2(1, 0).rotate(this.weapon_data[0].angle).mul(10000).add(fire_pos), 0
                 ), fire_pos
@@ -823,8 +1123,9 @@ class MagnumBall extends WeaponBall {
             let coin_fire_pos = this.position.add(coin_firing_offset);
             
             let coin_obj = new MagnumCoinProjectile(
+                this.board,
                 this, 1, coin_fire_pos, this.coin_damage_base, 1.5,
-                new Vector2(1, 0).rotate(this.weapon_data[1].angle), random_int(6000, 10000), board.gravity
+                new Vector2(1, 0).rotate(this.weapon_data[1].angle), random_int(6000, 10000, this.board?.random), board.gravity
             );
 
             board.spawn_projectile(
@@ -836,8 +1137,9 @@ class MagnumBall extends WeaponBall {
                 let coin2_fire_pos = this.position.add(coin2_firing_offset);
                 
                 let coin2_obj = new MagnumCoinProjectile(
+                    this.board,
                     this, 1, coin2_fire_pos, this.coin_damage_base, 1.5,
-                    new Vector2(1, 0).rotate(this.weapon_data[2].angle), random_int(6000, 10000), board.gravity
+                    new Vector2(1, 0).rotate(this.weapon_data[2].angle), random_int(6000, 10000, this.board?.random), board.gravity
                 );
 
                 board.spawn_projectile(
@@ -885,12 +1187,12 @@ class MagnumBall extends WeaponBall {
 }
 
 class NeedleBall extends WeaponBall {
-    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed, can_clone=true) {
-        super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed, can_clone=true) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "Needle";
-        this.description_brief = "Has three small needles. Needles apply 0.5 rupture per hit (stacking DOT that decays by 50%/s). When taking damage, 50% chance to use 10% current HP and create a smaller child copy with 4x the HP used that deals half damage and rupture. If the parent dies, all children die.";
-        this.level_description = "Increases split chance.";
+        this.description_brief = "Has three small needles. Needles apply 0.5 rupture per hit (stacking DOT that decays by 50%/s). When taking damage, chance to use 12.5% current HP and create a smaller child copy with 4x the HP used that deals half damage and rupture.";
+        this.level_description = "Increases split chance and reduces HP lost from splitting.";
         this.max_level_description = "Applies poison instead for 1s each. Poison deals the full DOT for its duration and refreshes when stacked.";
         this.quote = "Many thanks for your kind donation! It's always hard getting food\non the table as a mother of six trillion.";
 
@@ -920,8 +1222,9 @@ class NeedleBall extends WeaponBall {
         this.poison_duration_base = 1;
 
         this.speed_base = 300;
-        this.split_chance = 0.5 + (this.level * 0.04);
-        this.split_ratio = 0.1;
+        this.split_chance = 0.5 + (this.level * 0.005);
+        this.split_ratio = 0.125;
+        this.split_hp_save = (this.level * 0.005)
 
         this.children = [];
         this.parent = null;
@@ -929,8 +1232,6 @@ class NeedleBall extends WeaponBall {
         this.can_clone = can_clone;
         
         this.radius *= can_clone ? 1 : 0.75
-    
-        this.board = null;
     }
 
     weapon_step(board, time_delta) {
@@ -942,30 +1243,28 @@ class NeedleBall extends WeaponBall {
         if (this.parent?.hp <= 0) {
             this.lose_hp(10 * time_delta, true);
         }
-
-        this.board = board;
     }
 
     hit_other(other, with_weapon_index) {
         let result = super.hit_other(other, with_weapon_index, this.damage_base);
 
         if (this.level >= AWAKEN_LEVEL) {
-            other.poison_duration = Math.max(other.poison_duration + this.poison_duration_base, this.poison_duration_base);
-            other.poison_intensity += this.rupture_base;
+            this.apply_poison(other, this.rupture_base, this.poison_duration_base)
         } else {
-            other.rupture_intensity += this.rupture_base;
+            this.apply_rupture(other, this.rupture_base);
         }
 
         return result;
     }
 
     clone_chance() {
-        let c = Math.random();
+        let c = this.board?.random();
         if (this.can_clone && c < this.split_chance) {
             let hp_proportion = Math.floor(this.hp * this.split_ratio);
 
             if (hp_proportion > 0) {
                 let new_ball = new NeedleBall(
+                    this.board,
                     this.mass, this.radius, this.colour, this.bounce_factor,
                     this.friction_factor, this.player, this.level, this.reversed,
                     false
@@ -975,14 +1274,16 @@ class NeedleBall extends WeaponBall {
                 new_ball.invuln_duration = BALL_INVULN_DURATION;
 
                 if (true) {
-                    this.lose_hp(hp_proportion);
+                    let hp_lost = hp_proportion - (hp_proportion * this.split_hp_save);
+
+                    this.lose_hp(hp_lost);
                 }
 
                 new_ball.show_stats = false;
 
                 this.board?.spawn_ball(new_ball, this.position);
 
-                new_ball.add_impulse(random_on_circle(random_float(6000, 10000)));
+                new_ball.add_impulse(random_on_circle(random_float(6000, 10000, this.board?.random), this.board?.random));
 
                 this.children.push(new_ball);
                 new_ball.parent = this;
@@ -998,13 +1299,13 @@ class NeedleBall extends WeaponBall {
         return result;
     }
 
-    get_hit_by_projectile(damage, hitstop) {
-        let result = super.get_hit_by_projectile(damage, hitstop);
+    // get_hit_by_projectile(damage, hitstop) {
+    //     let result = super.get_hit_by_projectile(damage, hitstop);
 
-        this.clone_chance();
+    //     this.clone_chance();
 
-        return result;
-    }
+    //     return result;
+    // }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         write_text(
@@ -1020,24 +1321,27 @@ class NeedleBall extends WeaponBall {
             ctx, `Copy chance: ${(this.split_chance * 100).toFixed(0)}%`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Copy HP ratio: ${(this.split_ratio * 100).toFixed(0)}%`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 12
+            ctx, `Copy HP ratio: ${(this.split_ratio * 100).toFixed(1)}%`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 12
+        )
+        write_text(
+            ctx, `Split HP loss reduction: ${(this.split_hp_save * 100).toFixed(0)}%`, x_anchor, y_anchor + 60, this.colour.css(), CANVAS_FONTS, 12
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Applies poison instead of rupture.`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+                ctx, `Applies poison instead of rupture.`, x_anchor, y_anchor + 72, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
             )
         }
     }
 }
 
 class RailgunBall extends WeaponBall {
-    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
-        super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "Railgun";
         this.description_brief = "Shoots a beam projectile. If the shot hits or is parried, temporarily speeds up fire rate & rotation then quickly fires another shot. -[Original design by Boggy]";
         this.level_description = "Increases shot frequency.";
-        this.max_level_description = "Use two railguns that always mirror positions and always shoot together.";
+        this.max_level_description = "Use two railguns that always mirror positions and always shoot together, but damage is reduced by 33%.";
         this.quote = "Wow, it's hard to hold this thing!\nSeriously, take a look- No, really, try it!";
 
         this.weapon_data = [
@@ -1059,11 +1363,15 @@ class RailgunBall extends WeaponBall {
         ]
 
         this.proj_damage_base = 12;
+        if (this.level >= AWAKEN_LEVEL) {
+            this.proj_damage_base = 8;
+        }
+
         this.speed_base = 95;
 
-        this.shot_cooldown_max_base = 0.7 + (this.level * -0.02);
+        this.shot_cooldown_max_base = 0.7 + (this.level * -0.002);
         this.shot_cooldown_max = this.shot_cooldown_max_base;
-        this.shot_cooldown_rapidfire = 0.04 + (this.level * -0.005);
+        this.shot_cooldown_rapidfire = 0.04 + (this.level * -0.0005);
         this.shot_cooldown = this.shot_cooldown_max;
 
         this.hit_decay = 0;
@@ -1094,6 +1402,7 @@ class RailgunBall extends WeaponBall {
             let bullet1_end_pos = new Vector2(1, 0).rotate(this.weapon_data[0].angle).mul(10000).add(fire_pos);
             board.spawn_projectile(
                 new RailgunProjectile(
+                    this.board,
                     this, 0, fire_pos, this.proj_damage_base,
                     bullet1_end_pos,
                 ), fire_pos
@@ -1105,6 +1414,7 @@ class RailgunBall extends WeaponBall {
 
                 board.spawn_projectile(
                     new RailgunProjectile(
+                        this.board,
                         this, 0, fire_pos, this.proj_damage_base,
                         new Vector2(1, 0).rotate(this.weapon_data[1].angle).mul(10000).add(fire_pos),
                     ), fire_pos
@@ -1161,8 +1471,8 @@ class RailgunBall extends WeaponBall {
 }
 
 class PotionBall extends WeaponBall {
-    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
-        super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "Potion";
         this.description_brief = "Throws three different potions that create debilitating puddles of chemicals on impact (red is rupture, green is poison, blue is pure damage). Parrying anything with the held potion temporarily destroys the potion, creating a puddle.";
@@ -1190,10 +1500,10 @@ class PotionBall extends WeaponBall {
             ]));
         }
 
-        this.weapon_data[0].rotate(random_float(0, 360));
-        this.weapon_data[1].rotate(random_float(0, 360));
-        this.weapon_data[2].rotate(random_float(0, 360));
-        this.weapon_data[3]?.rotate(random_float(0, 360));
+        this.weapon_data[0].rotate(random_float(0, 360, this.board?.random));
+        this.weapon_data[1].rotate(random_float(0, 360, this.board?.random));
+        this.weapon_data[2].rotate(random_float(0, 360, this.board?.random));
+        this.weapon_data[3]?.rotate(random_float(0, 360, this.board?.random));
 
         this.weapon_data[1].reverse();
         this.weapon_data[3]?.reverse();
@@ -1205,13 +1515,15 @@ class PotionBall extends WeaponBall {
         this.potion_impact_damage = 2;
 
         this.speed_range = [135, 225]
-        this.speeds = [180, 180, 180, 180].map(_ => random_float(...this.speed_range));
+        this.speeds = [180, 180, 180, 180].map(_ => random_float(...this.speed_range, this.board?.random));
 
         this.shot_cooldown_max_range = [0.3, 1];
-        this.shot_cooldowns = [0, 0, 0, 0].map(_ => random_float(...this.shot_cooldown_max_range));
+        this.shot_cooldowns = [0, 0, 0, 0].map(_ => random_float(...this.shot_cooldown_max_range, this.board?.random));
         this.weapon_regeneration_times = [0,0,0,0];
         this.max_weapon_regeneration_time = 1.6;
         this.potion_smash_penalty = 5;
+
+        this.duration_mult = 1 + (0.0125 * this.level);
     }
 
     weapon_step(board, time_delta) {
@@ -1221,14 +1533,14 @@ class PotionBall extends WeaponBall {
                 this.weapon_regeneration_times[i] -= time_delta;
                 if (this.weapon_regeneration_times[i] <= 0) {
                     this.weapon_data[i].size_multiplier = 1 * 16
-                    this.speeds[i] = random_float(...this.speed_range);
+                    this.speeds[i] = random_float(...this.speed_range, this.board?.random);
                     this.weapon_data[i].hitboxes = [{pos: new Vector2(30, 64), radius: 14}];
                 }
             } else {
                 this.rotate_weapon(i, this.speeds[i] * time_delta);
                 this.shot_cooldowns[i] -= time_delta;
                 if (this.shot_cooldowns[i] < 0) {
-                    this.shot_cooldowns[i] = random_float(...this.shot_cooldown_max_range);
+                    this.shot_cooldowns[i] = random_float(...this.shot_cooldown_max_range, this.board?.random);
                 
                     // schut
                     let firing_offset = this.firing_offsets[0].mul(this.weapon_data[i].size_multiplier).rotate(this.weapon_data[i].angle);
@@ -1236,9 +1548,10 @@ class PotionBall extends WeaponBall {
 
                     board.spawn_projectile(
                         new PotionBottleProjectile(
+                            this.board,
                             this, i, fire_pos, this.potion_impact_damage, 1,
                             new Vector2(1, 0).rotate(this.weapon_data[i].angle),
-                            random_int(6000, 10000), board.gravity, i
+                            random_int(6000, 10000, this.board?.random), board.gravity, i, this.duration_mult
                         ), fire_pos
                     )
                     
@@ -1271,7 +1584,8 @@ class PotionBall extends WeaponBall {
 
         board.spawn_projectile(
             new PotionPuddleProjectile(
-                this, 0, fire_pos, 1, 2, index
+                this.board,
+                this, 0, fire_pos, 1, 2, index, this.duration_mult
             ), fire_pos
         )
 
@@ -1310,8 +1624,8 @@ class PotionBall extends WeaponBall {
 }
 
 class GrenadeBall extends WeaponBall {
-    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
-        super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "Grenade";
         this.description_brief = "Throws grenades. Grenades bounce around for up to 3 seconds before exploding. If a grenade takes damage, it will explode immediately. Explosions can trigger other grenades, and deal 70% damage to the thrower as well.";
@@ -1335,7 +1649,7 @@ class GrenadeBall extends WeaponBall {
 
         this.speed_base = 135;
 
-        this.shot_cooldown_max = 1.475 - (0.05 * this.level);
+        this.shot_cooldown_max = 1.475 - (0.005 * this.level);
         if (this.level >= AWAKEN_LEVEL) {
             this.shot_cooldown_max /= 1.5;
         }
@@ -1361,8 +1675,6 @@ class GrenadeBall extends WeaponBall {
                 new Vector2(1, 0).rotate(this.weapon_data[0].angle).mul(10000)
             )
         }
-
-        this.board = board;
     }
 
     hit_other(other, with_weapon_index) {
@@ -1388,6 +1700,7 @@ class GrenadeBall extends WeaponBall {
 
     make_grenade(position, velocity) {
         let new_ball = new GrenadeProjectileBall(
+            this.board,
             this.mass * 0.4, this.radius * 0.4, this.colour, this.bounce_factor,
             this.friction_factor, this.player, this.level,
             this.grenade_damage_base, this.grenade_fuse
@@ -1403,7 +1716,7 @@ class GrenadeBall extends WeaponBall {
         new_ball.parent = this;
 
         let part = new Particle(new_ball.position, 0, 1, entity_sprites.get("grenade"), 0, 1000000);
-        this.board.spawn_particle(part, new_ball.position);
+        this.board?.spawn_particle(part, new_ball.position);
         new_ball.linked_particle = part;
     }
 
@@ -1438,8 +1751,8 @@ class GrenadeBall extends WeaponBall {
 }
 
 class GrenadeProjectileBall extends WeaponBall {
-    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, explosion_damage, fuse) {
-        super(mass, radius, colour, bounce_factor, friction_factor, player, level, false);
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, explosion_damage, fuse) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, false);
 
         this.name = "Grenade Projectile";
         this.description_brief = "Thrown from the grenade ball";
@@ -1461,7 +1774,7 @@ class GrenadeProjectileBall extends WeaponBall {
 
         this.display = false;
 
-        this.rotation_speed = random_float(270, 540);
+        this.rotation_speed = random_float(270, 540, this.board?.random);
     }
 
     update_particles(time_delta) {
@@ -1497,6 +1810,7 @@ class GrenadeProjectileBall extends WeaponBall {
         let expl_position = this.position.add(new Vector2(10, -13).mul(2 * PROJ_SIZE_MULTIPLIER));
 
         let proj = new GrenadeExplosionProjectile(
+            this.board,
             this.parent, 0, expl_position, this.parent.grenade_damage_base, 2
         )
 
@@ -1509,11 +1823,11 @@ class GrenadeProjectileBall extends WeaponBall {
 }
 
 class GlassBall extends WeaponBall {
-    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
-        super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "Glass";
-        this.description_brief = "Normal strikes apply rupture but deal no damage. When hitting a target with rupture, charges up the weapon based on the rupture on the target before the strike. At 25 charge or more, the next hit deals a vorpal strike with damage equal to 16x the rupture that would be applied, then loses all charge.";
+        this.description_brief = "Normal strikes apply rupture but deal no damage. On hit, charges up based on the rupture on the target before the strike. At max charge, next hit consumes all charge to deal a vorpal strike with damage equal to 16x base rupture.";
         this.level_description = "Increases base rupture and makes the weapon rotate faster.";
         this.max_level_description = "Multiplies the target's rupture by 2x after each hit.";
         this.quote = "[unintelligible animalistic grunting]";
@@ -1528,8 +1842,8 @@ class GlassBall extends WeaponBall {
             ])
         ];
 
-        this.damage_base = 2.6 + (0.25 * level);
-        this.speed_base = 320 + (22.5 * level);
+        this.damage_base = 2.6 + (0.025 * level);
+        this.speed_base = 320 + (2.25 * level);
 
         this.charge = 0;
         this.charge_decay_per_sec = 0;
@@ -1559,7 +1873,7 @@ class GlassBall extends WeaponBall {
         } else {
             result = super.hit_other(other, with_weapon_index, 0);
             this.charge += other.rupture_intensity * 10;
-            other.rupture_intensity += this.damage_base;
+            this.apply_rupture(other, this.damage_base)
         }
 
         if (this.level >= AWAKEN_LEVEL) {
@@ -1596,7 +1910,7 @@ class GlassBall extends WeaponBall {
         )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Multiplies rupture by 1.5x after each hit.`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+                ctx, `Multiplies rupture by 2x after each hit.`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
             )
         }
     }
@@ -1691,23 +2005,23 @@ class HandBall extends WeaponBall {
         ]
     })();
 
-    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
-        super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "Hand";
         this.description_brief = "Hands move semi-randomly and independently. Hands randomly punch directly forwards. An idle hand will prepare to grab a ball if it's close, then throw it at an opposite wall at very high speed if the grab is successful.";
-        this.level_description = "Speeds up punch recovery and makes hands larger.";
-        this.max_level_description = "Hands are now removed when they become tired (after parrying or throwing). New hands sprout every 2 seconds, doubled for each currently active hand.";
+        this.level_description = "Speeds up punch recovery, makes hands larger and increases grab damage.";
+        this.max_level_description = "Hands are now removed when they become tired (after parrying or throwing). New hands sprout every 1 second, doubled for each currently active hand.";
         this.quote = "It doesn't count as a self-insert if it's just my hands.";
 
-        this.hand_size = 0.5 + (0.0125 * this.level);
+        this.hand_size = 0.5 + (0.002 * this.level);
 
         this.weapon_data = [
-            new BallWeapon(0.5, "hand_neutral", [
+            new BallWeapon(this.hand_size, "hand_neutral", [
 
             ]),
 
-            new BallWeapon(0.5, "hand_neutral", [
+            new BallWeapon(this.hand_size, "hand_neutral", [
 
             ]),
         ];
@@ -1718,8 +2032,8 @@ class HandBall extends WeaponBall {
         this.hands_speed_timeout_range = [0.5, 2];
         this.hands_sprites = ["hand_neutral", "hand_neutral"]; // X
         this.punch_timeout_range = [0.6, 2];
-        this.punch_timeouts = [random_float(...this.punch_timeout_range), random_float(...this.punch_timeout_range)]; // X
-        this.punch_recovery = 0.4 - (this.level * 0.02);
+        this.punch_timeouts = [random_float(...this.punch_timeout_range, this.board?.random), random_float(...this.punch_timeout_range, this.board?.random)]; // X
+        this.punch_recovery = 0.4 - (this.level * 0.002);
         this.punch_active_duration = 0.1;
 
         this.grab_ready_distance = this.radius * 4;
@@ -1730,7 +2044,7 @@ class HandBall extends WeaponBall {
         this.punch_damage = 8;
         this.other_damage = 0;
         this.grab_damage_initial = 3;
-        this.grab_damage_impact = 12;
+        this.grab_damage_impact = 12 + (this.level * 0.1);
         this.grab_info = [
             {stored_velocity: null, ball: null, amount_to_rotate: null, rotated_so_far: null, speed: 0},
             {stored_velocity: null, ball: null, amount_to_rotate: null, rotated_so_far: null, speed: 0}
@@ -1741,9 +2055,7 @@ class HandBall extends WeaponBall {
         this.tired_delays = [0, 0]; // X
 
         this.hand_sprout_timeout = 0;
-        this.hand_sprout_base = 2;
-
-        this.board = null;
+        this.hand_sprout_base = 1;
 
         this.debug = false;
     }
@@ -1756,8 +2068,6 @@ class HandBall extends WeaponBall {
 
     weapon_step(board, time_delta) {
         // this.velocity = new Vector2(0, 0);
-        this.board = board;
-
         if (this.level >= AWAKEN_LEVEL) {
             this.hand_sprout_timeout += time_delta;
             if (this.hand_sprout_timeout >= this.hand_sprout_base * Math.pow(2, this.hands_sprites.length)) {
@@ -1766,14 +2076,14 @@ class HandBall extends WeaponBall {
                 this.hands_speeds.push(0);
                 this.hands_speed_timeouts.push(0);
                 this.hands_sprites.push("hand_neutral");
-                this.punch_timeouts.push(random_float(...this.punch_timeout_range));
+                this.punch_timeouts.push(random_float(...this.punch_timeout_range, this.board?.random));
                 this.parry_delays.push(0);
                 this.grab_info.push({});
                 this.tired_delays.push(0);
 
                 let w = new BallWeapon(this.hand_size, "hand_neutral", []);
                 this.weapon_data.push(w);
-                w.rotate(random_float(0, 360));
+                w.rotate(random_float(0, 360, this.board?.random));
             }
         }
 
@@ -1812,9 +2122,9 @@ class HandBall extends WeaponBall {
                             this.weapon_data[i].rotate(this.hands_speeds[i] * time_delta, i % 2 == 1);
                             this.hands_speed_timeouts[i] -= time_delta;
                             if (this.hands_speed_timeouts[i] <= 0) {
-                                this.hands_speed_timeouts[i] = random_float(...this.hands_speed_timeout_range);
+                                this.hands_speed_timeouts[i] = random_float(...this.hands_speed_timeout_range, this.board?.random);
 
-                                this.hands_speeds[i] = random_float(...this.hands_speed_range) + random_float(...this.hands_speed_range) + random_float(...this.hands_speed_range);
+                                this.hands_speeds[i] = random_float(...this.hands_speed_range, this.board?.random) + random_float(...this.hands_speed_range, this.board?.random) + random_float(...this.hands_speed_range, this.board?.random);
                             }
                         }
                     }
@@ -1864,7 +2174,7 @@ class HandBall extends WeaponBall {
 
                         this.weapon_data[i].offset = new Vector2(0, 0);
                         this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.5;
-                        this.punch_timeouts[i] = random_float(...this.punch_timeout_range);
+                        this.punch_timeouts[i] = random_float(...this.punch_timeout_range, this.board?.random);
                     }
 
                     break;
@@ -2031,7 +2341,7 @@ class HandBall extends WeaponBall {
                         } else {
                             // hands drift downwards
                             let angle_rotated = positive_mod(this.weapon_data[i].angle - (Math.PI / 2), Math.PI * 2);
-                            let side = random_from_array([-1, 1]);
+                            let side = seeded_random_from_array([-1, 1], this.board?.random);
                             if (angle_rotated > Math.PI) {
                                 side = 1;
                             } else if (angle_rotated < Math.PI) {
@@ -2334,8 +2644,8 @@ class HandBall extends WeaponBall {
 }
 
 class ChakramBall extends WeaponBall {
-    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
-        super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "Chakram";
         this.description_brief = "Throws a large chakram that orbits around self before returning.";
@@ -2350,9 +2660,9 @@ class ChakramBall extends WeaponBall {
 
         this.damage_base = 2;
 
-        this.chakram_damage_base = 6 + (0.25 * level);
+        this.chakram_damage_base = 6 + (0.025 * level);
         this.chakram_rotation_speed = Math.PI * 4;
-        this.chakram_orbit_time = 4 + (0.25 * level);
+        this.chakram_orbit_time = 4 + (0.025 * level);
         this.chakram_min_dist = this.radius * 0.75;
         this.chakram_max_dist = this.radius * 4;
 
@@ -2361,7 +2671,7 @@ class ChakramBall extends WeaponBall {
         this.windup_speed_mod = 900;
 
         this.throw_cooldown_max = [4, 8];
-        this.throw_cooldown = random_float(...this.throw_cooldown_max);
+        this.throw_cooldown = random_float(...this.throw_cooldown_max, this.board?.random);
 
         this.throw_windup_max = 1.5;
         this.throw_windup = this.throw_windup_max;
@@ -2409,7 +2719,7 @@ class ChakramBall extends WeaponBall {
 
                 this.throw_cooldown -= time_delta;
                 if (this.throw_cooldown <= 0) {
-                    this.throw_cooldown = random_float(...this.throw_cooldown_max);
+                    this.throw_cooldown = random_float(...this.throw_cooldown_max, this.board?.random);
                     this.throw_windup = this.throw_windup_max;
                     this.mode = "windup";
                     this.weapon_data[0].reverse();
@@ -2422,6 +2732,7 @@ class ChakramBall extends WeaponBall {
                     // throw projectile
                     let pos = this.position.add(this.get_weapon_offset(this.weapon_data[0]));
                     let proj = new ChakramProjectile(
+                        this.board,
                         this, 0, pos, this.chakram_damage_base,
                         1, this.weapon_data[0].angle, this.chakram_rotation_speed * (this.reversed ^ this.weapon_data[0].reversed ? -1 : 1),
                         this.chakram_orbit_time, this.chakram_min_dist, this.chakram_max_dist
@@ -2456,7 +2767,7 @@ class ChakramBall extends WeaponBall {
         let result = other.get_hit_by_projectile(dmg, hitstop);
         
         if (this.level >= AWAKEN_LEVEL) {
-            other.rupture_intensity += dmg;
+            this.apply_rupture(other, dmg, "");
         }
 
         this.hitstop = Math.max(this.hitstop, hitstop);
@@ -2484,8 +2795,8 @@ class ChakramBall extends WeaponBall {
 }
 
 class WandBall extends WeaponBall {
-    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
-        super(mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "Wand";
         this.description_brief = "Has a wand that uses one of 5 random spells each time it activates - a spread of icicles, a fireball, a salvo of bouncing poison barbs, chaining lightning or, rarely, a terrifying, dense black ball.";
@@ -2508,8 +2819,8 @@ class WandBall extends WeaponBall {
         this.damage_base = 1;
         this.speed_base = 180;
 
-        this.cast_delay_max = [1.5 - (this.level * 0.1), 3 - (this.level * 0.2)];
-        this.cast_delay = random_float(...this.cast_delay_max);
+        this.cast_delay_max = [1.6 - (this.level * 0.011), 3.2 - (this.level * 0.022)];
+        this.cast_delay = random_float(...this.cast_delay_max, this.board?.random);
 
         this.cast_flash_timeout = 0;
 
@@ -2521,7 +2832,8 @@ class WandBall extends WeaponBall {
             [1, "red"],
         ]);
         this.current_spell = null;
-        this.pick_next_spell();
+        if (this.board)
+            this.pick_next_spell();
 
         this.icicle_damage = 4;
         this.additional_icicle_count = 2;  // 2 on each side plus the main one so 5 total
@@ -2544,14 +2856,14 @@ class WandBall extends WeaponBall {
         this.chain_lightning_damage = 3;
         this.chain_lightning_distance = 1000;
         this.chain_lightning_spread = deg2rad(45);
-        this.chain_lightning_delay_per_chain = 0.02;
+        this.chain_lightning_delay_per_chain = 0.015;
 
         this.black_ball_damage = 8;
         this.black_ball_duration = 16;
         this.black_ball_velocity = 15000;
 
         if (this.level >= AWAKEN_LEVEL) {
-            this.additional_icicle_count = 3;
+            this.additional_icicle_count = 4;
             this.fireball_size_mult = 1.5;
             this.poison_barb_hp = 2;
             this.chain_lightning_chain_chance = 0.3;
@@ -2562,7 +2874,7 @@ class WandBall extends WeaponBall {
     pick_next_spell() {
         let last_spell = this.current_spell;
         while (this.current_spell == last_spell) {
-            this.current_spell = weighted_random_from_arr(this.spell_chances)[1];
+            this.current_spell = weighted_seeded_random_from_arr(this.spell_chances, this.board?.random)[1];
         }
     }
 
@@ -2586,7 +2898,7 @@ class WandBall extends WeaponBall {
         this.cast_delay -= time_delta;
         if (this.cast_delay <= 0) {
             // time to cast!
-            this.cast_delay = random_float(...this.cast_delay_max);
+            this.cast_delay = random_float(...this.cast_delay_max, this.board?.random);
             this.cast_flash_timeout = 0.5;
 
             let position = this.position.add(this.get_weapon_offset(this.weapon_data[0]).mul(1.5));
@@ -2594,6 +2906,7 @@ class WandBall extends WeaponBall {
                 case "black": {
                     let velocity = new Vector2(this.black_ball_velocity, 0).rotate(this.weapon_data[0].angle)
                     let new_ball = new WandBlackBall(
+                        this.board,
                         this.mass * 1, this.radius * 0.75, this.colour,
                         this.bounce_factor, this.friction_factor,
                         this.player, this.level,
@@ -2619,6 +2932,7 @@ class WandBall extends WeaponBall {
                     let initial_vector = new Vector2(1, 0).rotate(this.weapon_data[0].angle);
 
                     let proj = new WandIcicleProjectile(
+                        this.board,
                         this, 0, position, this.icicle_damage, 1,
                         initial_vector, this.icicle_velocity, new Vector2(0, 0)
                     )
@@ -2634,6 +2948,7 @@ class WandBall extends WeaponBall {
                                 let new_vector = initial_vector.rotate(angle_mod);
 
                                 let proj = new WandIcicleProjectile(
+                                    this.board,
                                     this, 0, _position, this.icicle_damage, 1,
                                     new_vector, this.icicle_velocity + ((i+1) * this.icicle_velocity_per_additional), new Vector2(0, 0)
                                 )
@@ -2647,8 +2962,9 @@ class WandBall extends WeaponBall {
 
                 case "green": {
                     for (let i=0; i<this.poison_barb_count; i++) {
-                        let velocity = new Vector2(this.poison_barb_velocity * random_float(0.5, 2), 0).rotate(this.weapon_data[0].angle)
+                        let velocity = new Vector2(this.poison_barb_velocity * random_float(0.5, 2, this.board?.random), 0).rotate(this.weapon_data[0].angle)
                         let new_ball = new WandGreenBall(
+                            this.board,
                             this.mass * 0.1, this.radius * 0.15, this.colour,
                             this.bounce_factor, this.friction_factor,
                             this.player, this.level,
@@ -2687,12 +3003,12 @@ class WandBall extends WeaponBall {
                             }
 
                             let repeats = 1;
-                            if (random_float(0, 1) < this.chain_lightning_chain_chance) {
+                            if (random_float(0, 1, this.board?.random) < this.chain_lightning_chain_chance) {
                                 repeats = 2;
                             }
 
                             for (let i=0; i<repeats; i++) {
-                                let new_angle = angle + (random_float(-1, 1) * this.chain_lightning_spread);
+                                let new_angle = angle + (random_float(-1, 1, this.board?.random) * this.chain_lightning_spread);
 
                                 let direction = new Vector2(this.chain_lightning_distance, 0).rotate(new_angle);
 
@@ -2702,6 +3018,7 @@ class WandBall extends WeaponBall {
                                 // then append the new lightning node
                                 let timer = new Timer(() => {
                                     let proj = new WandMagentaProjectile(
+                                        this.board,
                                         this, 0, pos, this.chain_lightning_damage, newpos
                                     );
 
@@ -2725,6 +3042,7 @@ class WandBall extends WeaponBall {
                     let initial_vector = new Vector2(1, 0).rotate(this.weapon_data[0].angle);
 
                     let proj = new WandFireballProjectile(
+                        this.board,
                         this, 0, position, this.fireball_damage, this.fireball_size_mult,
                         initial_vector, this.fireball_velocity, new Vector2(0, 0)
                     )
@@ -2789,8 +3107,8 @@ class WandBall extends WeaponBall {
 }
 
 class WandBlackBall extends WeaponBall {
-    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, hit_damage, duration) {
-        super(mass, radius, colour, bounce_factor, friction_factor, player, level, false);
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, hit_damage, duration) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, false);
 
         this.name = "Wand Black Ball Projectile";
         this.description_brief = "Fired from the wand ball";
@@ -2818,7 +3136,7 @@ class WandBlackBall extends WeaponBall {
 
         this.display = false;
 
-        this.rotation_speed = random_float(0, 0);
+        this.rotation_speed = 0;
     }
 
     update_particles(time_delta) {
@@ -2875,8 +3193,8 @@ class WandBlackBall extends WeaponBall {
 }
 
 class WandGreenBall extends WeaponBall {
-    constructor(mass, radius, colour, bounce_factor, friction_factor, player, level, poison_duration, poison_intensity) {
-        super(mass, radius, colour, bounce_factor, friction_factor, player, level, false);
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, poison_duration, poison_intensity) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, false);
 
         this.name = "Wand Green Ball Projectile";
         this.description_brief = "Fired from the wand ball";
@@ -2937,8 +3255,11 @@ class WandGreenBall extends WeaponBall {
 
         let result = super.hit_other(other, with_weapon_index, dmg);
 
-        other.poison_duration = Math.max(other.poison_duration + this.damage_poison_duration, this.damage_poison_duration);
-        other.poison_intensity += this.damage_poison_intensity;
+        this.parent.apply_poison(
+            other,
+            this.damage_poison_intensity,
+            this.damage_poison_duration
+        )
 
         this.hp -= 1;
 
@@ -2968,11 +3289,13 @@ class Projectile {
     // projectiles have a position, a damage stat, a direction, speed and some hitboxes
     static id_inc = 0;
     
-    constructor(source, source_weapon_index, position, damage, size, direction, speed) {
+    constructor(board, source, source_weapon_index, position, damage, size, direction, speed) {
         this.id = Projectile.id_inc;
         Projectile.id_inc++;
         
         this.active = true;
+
+        this.board = board;
 
         this.source = source;
         this.source_weapon_index = source_weapon_index;
@@ -2995,8 +3318,6 @@ class Projectile {
 
         this.can_hit_allied = false;
         this.can_hit_source = false; // specifically for hit/parry from SOURCE ball
-
-        this.board = null;
 
         this.ignore_balls = new Set();
     }
@@ -3067,8 +3388,8 @@ class Projectile {
 }
 
 class StraightLineProjectile extends Projectile {
-    constructor(source, source_weapon_index, position, damage, size, direction, speed) {
-        super(source, source_weapon_index, position, damage, size, direction, speed);
+    constructor(board, source, source_weapon_index, position, damage, size, direction, speed) {
+        super(board, source, source_weapon_index, position, damage, size, direction, speed);
     }
 
     physics_step(time_delta) {
@@ -3077,8 +3398,8 @@ class StraightLineProjectile extends Projectile {
 }
 
 class InertiaRespectingStraightLineProjectile extends StraightLineProjectile {
-    constructor(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
-        super(source, source_weapon_index, position, damage, size, direction, speed);
+    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
+        super(board, source, source_weapon_index, position, damage, size, direction, speed);
 
         this.inertia_vel = inertia_vel;
     }
@@ -3093,8 +3414,8 @@ class HitscanProjectile extends Projectile {
     //  "HITSCAN"
     // and they have an additional sprite_colour parameter
     // and 
-    constructor(source, source_weapon_index, position, damage, target_position) {
-        super(source, source_weapon_index, position, damage, 1, new Vector2(0, 0), 0);
+    constructor(board, source, source_weapon_index, position, damage, target_position) {
+        super(board, source, source_weapon_index, position, damage, 1, new Vector2(0, 0), 0);
 
         this.target_position = target_position;
 
@@ -3145,7 +3466,7 @@ class HitscanProjectile extends Projectile {
 
         let scaled_bearing = this.bearing.mul(half_r);
 
-        let num_hitboxes = Math.floor(dist / half_r);
+        let num_hitboxes = Math.floor(dist / (half_r * PROJ_SIZE_MULTIPLIER));
         let cur_pos = this.position;
         let offset = new Vector2(0, 0);
 
@@ -3176,8 +3497,8 @@ class HitscanProjectile extends Projectile {
 }
 
 class RailgunProjectile extends HitscanProjectile {
-    constructor(source, source_weapon_index, position, damage, target_position) {
-        super(source, source_weapon_index, position, damage, target_position);
+    constructor(board, source, source_weapon_index, position, damage, target_position) {
+        super(board, source, source_weapon_index, position, damage, target_position);
 
         this.max_width = 36;
         this.sprite_colour = "cyan";
@@ -3185,8 +3506,8 @@ class RailgunProjectile extends HitscanProjectile {
 }
 
 class MagnumProjectile extends HitscanProjectile {
-    constructor(source, source_weapon_index, position, damage, target_position, ricochets) {
-        super(source, source_weapon_index, position, damage, target_position);
+    constructor(board, source, source_weapon_index, position, damage, target_position, ricochets) {
+        super(board, source, source_weapon_index, position, damage, target_position);
 
         this.sprite_colour = "yellow";
 
@@ -3272,12 +3593,13 @@ class MagnumProjectile extends HitscanProjectile {
             }
 
             if (!target) {
-                target = {position: other.position.add(random_on_circle(30000))}
+                target = {position: other.position.add(random_on_circle(30000, this.board?.random))}
             }
 
             if (target) {
                 this.board.spawn_projectile(
                     new MagnumProjectile(
+                        this.board,
                         this.source, this.source_weapon_index, 
                         other.position, this.damage,
                         target.position, this.ricochets + 1
@@ -3305,8 +3627,8 @@ class MagnumProjectile extends HitscanProjectile {
 }
 
 class WandMagentaProjectile extends HitscanProjectile {
-    constructor(source, source_weapon_index, position, damage, target_position) {
-        super(source, source_weapon_index, position, damage, target_position);
+    constructor(board, source, source_weapon_index, position, damage, target_position) {
+        super(board, source, source_weapon_index, position, damage, target_position);
 
         this.max_width = 9;
         this.sprite_colour = "magenta";
@@ -3317,8 +3639,8 @@ class WandMagentaProjectile extends HitscanProjectile {
 }
 
 class MagnumCoinProjectile extends Projectile {
-    constructor(source, source_weapon_index, position, damage, size, direction, speed, gravity) {
-        super(source, source_weapon_index, position, damage, size, direction, speed);
+    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, gravity) {
+        super(board, source, source_weapon_index, position, damage, size, direction, speed);
 
         this.gravity = gravity;
         this.velocity = this.direction.mul(this.speed);
@@ -3358,8 +3680,8 @@ class MagnumCoinProjectile extends Projectile {
 }
 
 class DaggerAwakenProjectile extends InertiaRespectingStraightLineProjectile {
-    constructor(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
-        super(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
+    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
+        super(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
 
         this.sprite = "pellet";
         this.hitboxes = [
@@ -3371,8 +3693,8 @@ class DaggerAwakenProjectile extends InertiaRespectingStraightLineProjectile {
 }
 
 class ArrowProjectile extends InertiaRespectingStraightLineProjectile {
-    constructor(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
-        super(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
+    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
+        super(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
     
         this.sprite = "arrow";
         this.hitboxes = [
@@ -3394,8 +3716,8 @@ class ArrowProjectile extends InertiaRespectingStraightLineProjectile {
 class PotionPuddleProjectile extends Projectile {
     static mults = [1, 0.6, 1, 0.3];
 
-    constructor(source, source_weapon_index, position, intensity, size, effect_index) {
-        super(source, source_weapon_index, position, 0, size, new Vector2(1, 0), 0);
+    constructor(board, source, source_weapon_index, position, intensity, size, effect_index, duration_mult) {
+        super(board, source, source_weapon_index, position, 0, size, new Vector2(1, 0), 0);
 
         this.sprite = `puddle${effect_index+1}`;
         this.hitboxes = [
@@ -3403,10 +3725,11 @@ class PotionPuddleProjectile extends Projectile {
         ];
 
         this.intensity = intensity;
+
         this.parriable = false;
         this.collides_other_projectiles = false;
 
-        this.duration = 5 * PotionPuddleProjectile.mults[effect_index];
+        this.duration = 5 * PotionPuddleProjectile.mults[effect_index] * duration_mult;
 
         this.effect_index = effect_index;
 
@@ -3428,21 +3751,33 @@ class PotionPuddleProjectile extends Projectile {
         switch (this.effect_index) {
             case 0: {
                 // rupture
-                ball.rupture_intensity += 5 * this.intensity * delta_time;
+                this.source.apply_rupture(
+                    ball, 5 * this.intensity * delta_time
+                )
+
                 break;
             }
 
             case 1: {
                 // poison
                 let dur = 2.5 * this.intensity * delta_time;
-                ball.poison_duration = Math.max(ball.poison_duration + dur, dur);
-                ball.poison_intensity += 1.5 * this.intensity * delta_time;
+                let amt = 1.5 * this.intensity * delta_time;
+                this.source.apply_poison(
+                    ball, amt, dur
+                );
+
                 break;
             }
 
             case 2: {
                 // damage
-                ball.lose_hp(7 * this.intensity * delta_time);
+                let dmg_mul = this.player?.stats?.damage_bonus ?? 1;
+                let def_mul = ball.player?.stats?.defense_bonus ?? 1;
+
+                let dmg = (7 * this.intensity * dmg_mul * delta_time) / def_mul;
+
+                ball.lose_hp(dmg);
+
                 break;
             }
 
@@ -3456,8 +3791,8 @@ class PotionPuddleProjectile extends Projectile {
 }
 
 class PotionBottleProjectile extends Projectile {
-    constructor(source, source_weapon_index, position, damage, size, direction, speed, gravity, effect_index) {
-        super(source, source_weapon_index, position, damage, size, direction, speed);
+    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, gravity, effect_index, duration_mult) {
+        super(board, source, source_weapon_index, position, damage, size, direction, speed);
 
         this.gravity = gravity;
         this.velocity = this.direction.mul(this.speed);
@@ -3469,7 +3804,9 @@ class PotionBottleProjectile extends Projectile {
             {pos: new Vector2(0, 0), radius: 16},
         ];
 
-        this.rotation_speed = random_float(270, 540);
+        this.rotation_speed = random_float(270, 540, this.board?.random);
+
+        this.duration_mult = duration_mult;
     }
 
     physics_step(time_delta) {
@@ -3484,7 +3821,8 @@ class PotionBottleProjectile extends Projectile {
     make_splash() {
         board.spawn_projectile(
             new PotionPuddleProjectile(
-                this.source, 0, this.position, 1, 2, this.effect_index
+                this.board,
+                this.source, 0, this.position, 1, 2, this.effect_index, this.duration_mult
             ), this.position
         )
     }
@@ -3509,8 +3847,8 @@ class PotionBottleProjectile extends Projectile {
 }
 
 class GrenadeExplosionProjectile extends Projectile {
-    constructor(source, source_weapon_index, position, damage, size) {
-        super(source, source_weapon_index, position, damage, size, new Vector2(1, 0), 0);
+    constructor(board, source, source_weapon_index, position, damage, size) {
+        super(board, source, source_weapon_index, position, damage, size, new Vector2(1, 0), 0);
 
         this.sprites = entity_sprites.get("explosion_grenade");
         this.framecount = this.sprites.length;
@@ -3587,8 +3925,8 @@ class GrenadeExplosionProjectile extends Projectile {
 class ChakramProjectile extends Projectile {
     // orbits around thrower, going from origin distance to max distance then back to origin
     // before vanishing again and re-enabling the weapon on the ball
-    constructor(source, source_weapon_index, position, damage, size, initial_angle, rotation_speed, rotation_time, min_dist, max_dist) {
-        super(source, source_weapon_index, position, damage, size, new Vector2(1, 0), 0);
+    constructor(board, source, source_weapon_index, position, damage, size, initial_angle, rotation_speed, rotation_time, min_dist, max_dist) {
+        super(board, source, source_weapon_index, position, damage, size, new Vector2(1, 0), 0);
 
         this.sprite = `chakram_projectile`
 
@@ -3665,8 +4003,8 @@ class ChakramProjectile extends Projectile {
 }
 
 class WandIcicleProjectile extends InertiaRespectingStraightLineProjectile {
-    constructor(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
-        super(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
+    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
+        super(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
     
         this.sprite = "wand_icicle";
         this.hitboxes = [
@@ -3686,19 +4024,18 @@ class WandIcicleProjectile extends InertiaRespectingStraightLineProjectile {
 }
 
 class WandFireballProjectile extends InertiaRespectingStraightLineProjectile {
-    constructor(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
-        super(source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
+    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
+        super(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
     
         this.sprite = "wand_fireball";
         this.hitboxes = [
             {pos: new Vector2(0, 0), radius: 16},
         ];
-
-        this.board = null;
     }
 
     make_explosion() {
         let proj = new GrenadeExplosionProjectile(
+            this.board,
             this.source, this.source_weapon_index,
             this.position, this.damage, 1.5
         );

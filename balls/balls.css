@@ -11,6 +11,8 @@
 .everything-container {
   display: flex;
 
+  flex-direction: column;
+
   justify-content: center;
   align-items: center;
 
@@ -19,6 +21,17 @@
   margin-top: 8vh;
   margin-left: 64px;
   margin-right: 64px;
+
+  color: white;
+}
+
+.everything-subcontainer {
+  display: flex;
+
+  flex-direction: row;
+
+  justify-content: center;
+  align-items: center;
 
   color: white;
 }
@@ -44,7 +57,9 @@
   align-items: center;
 
   flex-direction: column;
+}
 
+.behind-canvases.withborder {
   border: 1px solid white;
 }
 
@@ -57,8 +72,15 @@
 
   color: white;
 
-  margin-left: 16px;
-  margin-right: 16px;
+  margin-left: 32px;
+  margin-right: 32px;
+
+  width: calc(100% - 64px);
+}
+
+.behind-canvases .row.spacing>* {
+  margin-left: 4px;
+  margin-right: 4px;
 }
 
 .modding-frame {
@@ -81,11 +103,31 @@
 }
 
 .row.ballinfo span {
-  height: 36px;
+  height: 30px;
 
   font-size: 12px;
 
   text-align: center;
+}
+
+.row.ballinfo *, .row.ballsettings * {
+  color: var(--col);
+}
+
+.rows {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.columns {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: row;
+
+  width: 100%;
 }
 
 .behind-canvases select {
@@ -97,11 +139,24 @@
   height: 24px;
 }
 
-.everything-container button {
+.behind-canvases .inputbox {
   background-color: black;
   color: white;
 
   font-family: "MS Gothic", "terminus", "nec_apc";
+
+  height: 24px;
+}
+
+.everything-container button {
+  background-color: #222;
+  color: white;
+
+  font-family: "MS Gothic", "terminus", "nec_apc";
+}
+
+button:disabled {
+  color: #666;
 }
 
 .game-container * {
@@ -135,4 +190,178 @@
 
 .game-container.popout {
   animation: popout 0.2s ease-in forwards;
+}
+
+.slidecontainer {
+  margin-left: 16px;
+  margin-right: 16px;
+
+  --s: 8px;
+
+  width: calc(100% - 32px);
+}
+
+.slider {
+  user-select: none;
+
+  -webkit-appearance: none;
+  appearance: none;
+  height: var(--s);
+  width: 100%;
+  background: #444;
+  outline: none;
+  opacity: 1;
+  -webkit-transition: .2s;
+  transition: opacity .2s;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: var(--s);;
+  height: var(--s);;
+  background: var(--col);
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: var(--s);;
+  height: var(--s);;
+  background: var(--col);
+  cursor: pointer;
+}
+
+.tab-menu {
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-menu .tab-select-buttons-container {
+  display: grid;
+}
+
+.tab-menu .tab-select-buttons-container:before {
+  background-color: #333;
+  border: 1px solid gray;
+  content: "";
+
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.tab-menu .tab-select-buttons {
+  display: flex;
+  justify-content: left;
+
+  padding-top: 8px;
+  padding-bottom: 0;
+
+  margin-left: 8px;
+}
+
+.tab-select-buttons .selected {
+  min-height: 25px;
+  z-index: 999;
+  color: white;
+  border: 1px solid gray;
+  border-bottom: unset;
+  background-color: #111;
+  filter: unset;
+
+  align-content: start;
+}
+
+.tab-select-buttons .button {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.button {
+  flex: 1;
+  align-self: flex-start;
+
+  width: auto;
+  align-content: center;
+  text-align: center;
+  filter: contrast(2);
+
+  border: 1px solid lightgray;
+  color: lightgray;
+  background-color: #666;
+  user-select: none;
+
+  padding-top: 4px;
+  padding-bottom: 4px;
+
+  margin-right: 8px;
+
+  display: inline-block;
+}
+
+.button:hover {
+    background-color: #888;
+}
+
+.button:active {
+    background-color: #555;
+}
+
+.button.disabled {
+    background-color: #555;
+}
+
+.tab-content {
+  background-color: #111;
+  border: 1px solid gray;
+  border-top: none;
+
+  padding: 8px;
+}
+
+.sandbox-speed-buttons {
+  padding-top: 16px;
+
+  display: flex;
+
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+.speed-control {
+  user-select: none;
+}
+
+.speed-control.button {
+  width: 24px;
+  height: 24px;
+
+  align-self: unset;
+
+  padding: 0;
+  margin: 0 16px 0 16px;
+}
+
+.speed-control.label {
+  width: 192px;
+
+  display: flex; 
+  justify-content: center;
+}
+
+button.green {
+  color: lime;
+  background-color: #020;
+  border-color: #010;
+}
+
+.speed-alert {
+  font-size: 12px;
+
+  margin-top: 8px;
+  text-align: center;
+}
+
+.speed-alert .alert-item {
+  color: lime;
 }
