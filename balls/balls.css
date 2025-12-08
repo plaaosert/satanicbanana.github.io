@@ -124,6 +124,10 @@
   color: var(--col);
 }
 
+.ballsettings {
+  margin-bottom: 8px;
+}
+
 .rows {
   display: flex;
   justify-content: center;
@@ -374,4 +378,8 @@ button.green {
 
 .speed-alert .alert-item {
   color: lime;
+}
+
+.sandbox-team-select {
+  margin-right: 16px;
 }

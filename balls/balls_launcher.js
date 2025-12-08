@@ -4,6 +4,14 @@ let fps_checks = [
     60, 90, 120, 144, 240, 480
 ]
 
+let default_cols = [Colour.red, Colour.yellow, Colour.green, Colour.cyan];
+let default_positions = [
+    new Vector2(512*4, 512*4),
+    new Vector2(512*12, 512*12),
+    new Vector2(512*5, 512*11),
+    new Vector2(512*11, 512*5),
+]
+
 let last_winner = null;
 
 document.addEventListener("DOMContentLoaded", async function() {
@@ -73,7 +81,9 @@ function exit_battle(save_replay=true) {
             framespeed: board.forced_time_deltas && Math.round(1000 / board.forced_time_deltas),
             balls: board.starting_balls,
             levels: board.starting_levels,
-            seed: board.random_seed
+            players: board.starting_players,
+            cols: board.starting_cols,
+            seed: board.random_seed,
         }
 
         last_replay = btoa(JSON.stringify(replay));
@@ -125,24 +135,42 @@ function load_replay(replay_as_text) {
     let seed = replay.seed;
 
     // hardcoded... for now
-    let cols = [Colour.red, Colour.yellow, Colour.green, Colour.cyan];
-    let positions = [
-        new Vector2(512*4, 512*4),
-        new Vector2(512*12, 512*12),
-        new Vector2(512*5, 512*11),
-        new Vector2(512*11, 512*5),
-    ]
+    let positions = default_positions;
 
     let ball_classes = replay.balls.map(b => {
         return selectable_balls.find(t => t.name == b);
     })
 
-    let ball_levels = replay.levels ?? [0, 0, 0, 0];
+    let ball_levels = replay.levels ?? new Array(ball_classes.length).fill(0);
+
+    let players = [];
+    let cols = [];
+    // we need to gracefully handle situations where there are no players or cols
+    if (replay.players && replay.cols) {
+        // cols are in saveable (array) form so remember to transform them back
+        for (let i=0; i<ball_classes.length; i++) {
+            players.push(replay.players[i]);
+            cols.push(Colour.from_array(replay.cols[i]));
+        }
+    } else {
+        for (let i=0; i<ball_classes.length; i++) {
+            players.push({
+                id: i,
+                stats: {
+                    damage_bonus: 1,
+                    defense_bonus: 1,
+                    ailment_resistance: 1,
+                }
+            })
+            cols.push(default_cols[i]);
+        }
+    }
 
     start_game(
         framespeed, seed,
         cols, positions,
-        ball_classes, ball_levels
+        ball_classes, ball_levels,
+        players
     );
 }
 
@@ -152,14 +180,16 @@ function spawn_selected_balls() {
     ];
     
     let seed = document.querySelector("#sandbox-random-seed").value || Math.random().toString().slice(2);
+    
+    let positions = default_positions;
 
-    let cols = [Colour.red, Colour.yellow, Colour.green, Colour.cyan];
-    let positions = [
-        new Vector2(512*4, 512*4),
-        new Vector2(512*12, 512*12),
-        new Vector2(512*5, 512*11),
-        new Vector2(512*11, 512*5),
-    ]
+    let cols_indexes = [];
+    for (let i=0; i<positions.length; i++) {
+        let col_team = document.querySelector(`select[name='ball${i+1}_team']`).selectedIndex;
+        cols_indexes.push(col_team);
+    }
+
+    let cols = cols_indexes.map(c => default_cols[c]);
 
     let ball_classes = [];
     for (let i=0; i<cols.length; i++) {
@@ -175,14 +205,27 @@ function spawn_selected_balls() {
         ball_levels.push(lvl);
     }
 
+    let players = [];
+    for (let i=0; i<cols.length; i++) {
+        players.push({
+            id: cols_indexes[i],
+            stats: {
+                damage_bonus: 1,
+                defense_bonus: 1,
+                ailment_resistance: 1,
+            }
+        })
+    }
+
     start_game(
         framespeed, seed,
         cols, positions,
-        ball_classes, ball_levels
+        ball_classes, ball_levels,
+        players
     );
 }
 
-function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels) {
+function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels, players) {
     setTimeout(() => {
         board = new Board(new Vector2(512 * 16, 512 * 16));
 
@@ -200,14 +243,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
                 let lvl = ball_levels[index];
                 let ball = new ball_proto(
                     board,
-                    1, 512, col, null, null, {
-                        id: index,
-                        stats: {
-                            damage_bonus: 1,
-                            defense_bonus: 1,
-                            ailment_resistance: 1,
-                        }
-                    }, lvl, index % 2 == 1
+                    1, 512, col, null, null, players[index], lvl, index % 2 == 1
                 );
 
                 ball.randomise_weapon_rotations();
@@ -221,6 +257,8 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
 
         board.starting_balls = ball_classes.map(c => c?.name);
         board.starting_levels = ball_levels;
+        board.starting_players = players;
+        board.starting_cols = cols.map(c => c.data);
 
         board.balls.forEach(ball => ball.add_velocity(
             random_on_circle(
@@ -247,11 +285,17 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
 }
 
 function update_ballinfo(ballid) {
+    let ball_team = document.querySelector(`select[name='${ballid}_team']`).selectedIndex;
+
     let ball_classname = document.querySelector(`select[name='${ballid}']`).value;
     let ball_proto = selectable_balls.find(t => t.name == ball_classname);
 
-    let info_elem = document.querySelector(`#${ballid}_info span`);
-    let info_a_elem = document.querySelector(`#${ballid}_a_info span`);
+    let settings_elem = document.querySelector(`#${ballid}_settings`);
+    let info_parent_elem = document.querySelector(`#${ballid}_info`);
+    let info_a_parent_elem = document.querySelector(`#${ballid}_a_info`);
+
+    let info_elem = info_parent_elem.querySelector(`span`);
+    let info_a_elem = info_a_parent_elem.querySelector(`span`);
 
     if (ball_proto) {
         let testball = new ball_proto(
@@ -264,6 +308,10 @@ function update_ballinfo(ballid) {
         info_elem.textContent = "-";
         info_a_elem.textContent = "-";
     }
+
+    settings_elem.style.setProperty("--col", default_cols[ball_team].css());
+    info_parent_elem.style.setProperty("--col", default_cols[ball_team].css());
+    info_a_parent_elem.style.setProperty("--col", default_cols[ball_team].css());
 }
 
 function update_awaken_showhide(ballid) {

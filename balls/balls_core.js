@@ -396,6 +396,8 @@ class Board {
         this.random_seed = null;
 
         this.starting_balls = null;
+        this.starting_levels = null;
+        this.starting_players = null;
     }
     
     set_random_seed(seed) {
@@ -990,7 +992,8 @@ function render_victory(board, time_until_end) {
     let rps = board.remaining_players();
     let b = null;
     if (rps.length >= 1) {
-        b = board.get_all_player_balls(rps[0]).filter(ball => ball.show_stats)[0];
+        bs = board.get_all_player_balls(rps[0]).filter(ball => ball.show_stats);
+        b = bs[0];
     }
 
     if (!b) {
@@ -1023,7 +1026,7 @@ function render_victory(board, time_until_end) {
                 }
             }
 
-            write_text(ctx, b.name, canvas_width/2, 256 + 72, b.colour.css(), CANVAS_FONTS, 72, true);
+            write_text(ctx, `${b.name}${bs.length > 1 ? ` +${bs.length-1}`: ""}`, canvas_width/2, 256 + 72, b.colour.css(), CANVAS_FONTS, 72, true);
         }
 
         if (t > 4.25) {

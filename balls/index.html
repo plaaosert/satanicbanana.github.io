@@ -11,7 +11,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 
     <link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=01"/>
-	<link rel="stylesheet" type="text/css" href="balls.css?v=11"/>
+	<link rel="stylesheet" type="text/css" href="balls.css?v=12"/>
 </head>
 <body>
 	<div class="topbar">
@@ -35,8 +35,13 @@
 
             <div class="game-container" id="game-container" style="display: none;">
                 <div class="sandbox-menu behind-canvases withborder">
-                    <div class="row ballsettings" style="--col: rgb(255, 0, 0)">
-                        <p>Ball 1</p>
+                    <div id="ball1_settings" class="row ballsettings" style="--col: rgb(255, 0, 0)">
+                        <select class="sandbox-team-select" onchange="update_ballinfo('ball1')" name="ball1_team">
+                            <option selected>RED</option>
+                            <option>YLW</option>
+                            <option>GRN</option>
+                            <option>BLU</option>
+                        </select>
                         <select class="sandbox-ball-select" onchange="update_ballinfo('ball1')" name="ball1"></select>
                         <div style="flex-grow: 1;" class="rows">
                             <div class="slidecontainer">
@@ -52,8 +57,13 @@
                         <span>Scrimblo gumblo</p>
                     </div>
 
-                    <div class="row ballsettings" style="--col: rgb(255, 255, 0)">
-                        <p>Ball 2</p>
+                    <div id="ball2_settings" class="row ballsettings" style="--col: rgb(255, 255, 0)">
+                        <select class="sandbox-team-select" onchange="update_ballinfo('ball2')" name="ball2_team" select>
+                            <option>RED</option>
+                            <option selected>YLW</option>
+                            <option>GRN</option>
+                            <option>BLU</option>
+                        </select>
                         <select class="sandbox-ball-select" onchange="update_ballinfo('ball2')" name="ball2"></select>
                         <div style="flex-grow: 1;" class="rows">
                             <div class="slidecontainer">
@@ -69,8 +79,13 @@
                         <span>Scrimblo gumblo</p>
                     </div>
 
-                    <div class="row ballsettings" style="--col: rgb(0, 255, 0)">
-                        <p>Ball 3</p>
+                    <div id="ball3_settings" class="row ballsettings" style="--col: rgb(0, 255, 0)">
+                        <select class="sandbox-team-select" onchange="update_ballinfo('ball3')" name="ball3_team">
+                            <option>RED</option>
+                            <option>YLW</option>
+                            <option selected>GRN</option>
+                            <option>BLU</option>
+                        </select>
                         <select class="sandbox-ball-select" onchange="update_ballinfo('ball3')" name="ball3"></select>
                         <div style="flex-grow: 1;" class="rows">
                             <div class="slidecontainer">
@@ -86,8 +101,13 @@
                         <span>Scrimblo gumblo</p>
                     </div>
 
-                    <div class="row ballsettings" style="--col: rgb(0, 255, 255)">
-                        <p>Ball 4</p>
+                    <div id="ball4_settings" class="row ballsettings" style="--col: rgb(0, 255, 255)">
+                        <select class="sandbox-team-select" onchange="update_ballinfo('ball4')" name="ball4_team">
+                            <option>RED</option>
+                            <option>YLW</option>
+                            <option>GRN</option>
+                            <option selected>BLU</option>
+                        </select>
                         <select class="sandbox-ball-select" onchange="update_ballinfo('ball4')" name="ball4"></select>
                         <div style="flex-grow: 1;" class="rows">
                             <div class="slidecontainer">
@@ -225,9 +245,9 @@
     <script src="../shared/js/helpers.js?v=01"></script>
 	<script src="../shared/js/canvas_helpers.js?v=01"></script>
 	
-    <script src="balls_core.js?v=10"></script>
-    <script src="balls_balls.js?v=13"></script>
-    <script src="balls_launcher.js?v=13"></script>
+    <script src="balls_core.js?v=11"></script>
+    <script src="balls_balls.js?v=14"></script>
+    <script src="balls_launcher.js?v=14"></script>
     
     <script src="balls_campaign.js?v=02"></script>
 
