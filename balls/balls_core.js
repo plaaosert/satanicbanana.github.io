@@ -1558,6 +1558,11 @@ function game_loop() {
             temporary_modifiers /= 8;
         }
 
+        if (keys_down["KeyF"]) {
+            speed_mult *= 8;
+            temporary_modifiers *= 8;
+        }
+
         if (keys_down["KeyR"] ^ winrate_tracking) {
             speed_mult *= 128;
             temporary_modifiers *= 128;
