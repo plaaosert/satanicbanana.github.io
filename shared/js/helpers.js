@@ -1,5 +1,14 @@
 /*
 
+  Did you know browsers' approximations of maths functions aren't consistent?
+  I suppose I should have predicted that.
+  Anyway, here's a precision constant. Higher means more dangerous.
+
+*/
+const COMPAT_ROUNDING_FACTOR = 10000;
+
+/*
+
   CSS / Webpage 
 
 */
@@ -149,6 +158,14 @@ function get_sorted_index_with_property(arr, val, property) {
         else high = mid;
     }
     return low;
+}
+
+function compat_floor(v) {
+    return Math.floor(v * COMPAT_ROUNDING_FACTOR) / COMPAT_ROUNDING_FACTOR;
+}
+
+function compat_pow(x, y) {
+    return compat_floor(Math.pow(x, y));
 }
 
 /*
@@ -568,6 +585,12 @@ class Vector2 {
             lerp(this.x, to.x, amt),
             lerp(this.y, to.y, amt)
         )
+    }
+
+    compat_round() {
+        // multiply by COMPAT_ROUNDING_FACTOR, then round, then div by COMPAT_ROUNDING_FACTOR
+        this.x = Math.round(this.x * COMPAT_ROUNDING_FACTOR) / COMPAT_ROUNDING_FACTOR;
+        this.y = Math.round(this.y * COMPAT_ROUNDING_FACTOR) / COMPAT_ROUNDING_FACTOR;
     }
 }
 

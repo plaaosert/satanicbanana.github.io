@@ -250,7 +250,7 @@ class Particle {
     static id_inc = 0;
 
     constructor(position, rotation_angle, size, sprites, frame_speed, duration, looping, delay=0) {
-        this.position = position;
+        this.set_pos(position);
         this.rotation_angle = rotation_angle;
         this.size = size * PARTICLE_SIZE_MULTIPLIER;
         this.sprites = sprites;
@@ -263,6 +263,10 @@ class Particle {
         this.cur_frame = 0;
 
         this.delay = delay;
+    }
+
+    set_pos(to) {
+        this.position = to;
     }
 
     pass_time(time_delta) {
@@ -428,14 +432,14 @@ class Board {
     }
 
     spawn_particle(particle, position) {
-        particle.position = position;
+        particle.set_pos(position);
         this.particles.push(particle);
 
         return particle;
     }
 
     spawn_projectile(projectile, position) {
-        projectile.position = position;
+        projectile.set_pos(position);
         this.projectiles.push(projectile);
 
         projectile.board = this;
@@ -444,7 +448,7 @@ class Board {
     }
 
     spawn_ball(ball, position) {
-        ball.position = position;
+        ball.set_pos(position);
         this.balls.push(ball);
 
         ball.board = this;
@@ -497,18 +501,14 @@ class Board {
 
         this.hitstop_time -= time_delta;
         if (this.hitstop_time > 0) {
-            time_delta *= Number.EPSILON;
+            time_delta *= 0;
+            return;
         }
 
         // make the balls move
         this.balls.forEach(ball => {
             if (ball.skip_physics)
                 return;  // skip_physics balls should completely stop
-
-            // if the ball is in a wall, wake it up by force
-            if (ball.position.x - ball.radius < -0.1 || ball.position.x + ball.radius > this.size.x+0.1 || ball.position.y + ball.radius > this.size.y+0.1) {
-
-            }
 
             ball.physics_step(this, time_delta);
         })
@@ -568,7 +568,7 @@ class Board {
                     let coll_id = ball1.id + "," + ball2.id;
                     let coll_id2 = ball2.id + "," + ball1.id;
 
-                    if (!collisions_found.has(coll_id) && !collisions_found.has(coll_id2) && (!ball1.at_rest || !ball2.at_rest)) {
+                    if (!collisions_found.has(coll_id) && !collisions_found.has(coll_id2)) {
                         collisions.push({first: ball1, second: ball2});
 
                         collisions_found.add(coll_id);
@@ -617,6 +617,7 @@ class Board {
 
             ball.position.x = Math.max(ball.radius, Math.min(this.size.x - ball.radius, ball.position.x));
             ball.position.y = Math.max(ball.radius, Math.min(this.size.y - ball.radius, ball.position.y));
+            ball.position.compat_round();
         });
 
         this.duration += time_delta;
@@ -655,17 +656,13 @@ class Ball {
 
     set_pos(to) {
         this.position = to;
-        this.disable_rest();
-
+        this.position.compat_round();
+        
         return this;
     }
 
     add_pos(by, ignore_rest) {
-        this.position = this.position.add(by);
-
-        if (!ignore_rest) {
-            this.disable_rest();
-        }
+        this.set_pos(this.position.add(by));
     }
 
     disable_rest() {
@@ -677,136 +674,21 @@ class Ball {
         // p=mv
         // dv = I/m
         this.add_velocity(force.div(this.mass));
-        this.at_rest = false;
-        this.rest_counter = 0;
     }
 
     set_velocity(vel) {
         this.velocity = vel;
-        
-        if (vel.sqr_magnitude() > 0) {
-            this.disable_rest();
-        }
+        this.velocity.compat_round();
     }
 
     add_velocity(vel, ignore_rest) {
-        this.velocity = this.velocity.add(vel);
-
-        if (vel.sqr_magnitude() > 0 && !ignore_rest) {
-            this.disable_rest();
-        }
+        this.set_velocity(this.velocity.add(vel));
     }
 
     physics_step(time_delta) {
-        if (!this.at_rest) {
-            this.add_pos(this.velocity.mul(time_delta), true);
-
-            if (true) {
-                let friction_force = Math.min(this.velocity.magnitude(), this.mass * this.friction_factor * time_delta * 0);
-                this.velocity = this.velocity.sub(this.velocity.mul(friction_force));
-            } else {
-                this.velocity = this.velocity.mul(Math.pow(this.friction_factor, 1/PHYS_GRANULARITY))
-            }
-        } else {
-            this.set_velocity(new Vector2(0, 0));
-        }
-
-        let threshold = 0.05 * (time_delta / PHYS_GRANULARITY);
-        if (this.last_pos.sqr_distance(this.position) < threshold) {
-            this.rest_counter++;
-            if (this.rest_counter >= this.rest_threshold && !this.at_rest) {
-                // this.at_rest = true;
-                // console.log(this, "entered rest");
-            }
-        } else {
-            this.at_rest = false;
-            this.rest_counter = 0;
-        }
+        this.add_pos(this.velocity.mul(time_delta), true);
 
         this.last_pos = this.position;
-    }
-
-    check_ground_bounce(board) {
-        // roll back the ball by velocity until the point at which it touches the ground
-        // (get the distance of the ball from the ground, then multiply velocity by the number that makes distance equal radius and sub that from position)
-        // then multiply by coeff. of restitution -1
-        let dist = board.size.y - this.position.y - 33;
-        if (!this.at_rest && dist <= this.radius && Math.abs(this.velocity.y) > 0.000000001) {
-            let vel_rollback_mag = dist / this.velocity.y;
-
-            //this.add_pos(this.velocity.mul(-vel_rollback_mag));
-            this.position.y = board.size.y - this.radius - 33;
-
-            if (dist>0.0005 && this.velocity.sqr_magnitude() > 0.005) {
-                this.velocity.y *= -this.bounce_factor;
-            } else {
-                this.velocity.y = 0;
-            }
-
-            this.velocity.x *= this.friction_factor;
-        }
-    }
-
-    check_ceiling_bounce(board) {
-        // roll back the ball by velocity until the point at which it touches the ground
-        // (get the distance of the ball from the ground, then multiply velocity by the number that makes distance equal radius and sub that from position)
-        // then multiply by coeff. of restitution -1
-        let dist = this.position.y - 21;
-        if (!this.at_rest && dist <= this.radius && Math.abs(this.velocity.y) > 0.000000001) {
-            let vel_rollback_mag = dist / this.velocity.y;
-
-            //this.add_pos(this.velocity.mul(-vel_rollback_mag));
-            this.position.y = 21 + this.radius;
-
-            if (dist>0.0005 && this.velocity.sqr_magnitude() > 0.005) {
-                this.velocity.y *= -this.bounce_factor;
-            } else {
-                this.velocity.y = 0;
-            }
-
-            this.velocity.x *= this.friction_factor;
-        }
-    }
-
-    check_left_bounce(board) {
-        let dist = this.position.x - 21;
-        if (!this.at_rest && dist <= this.radius && Math.abs(this.velocity.x) > 0.000000001) {
-            let vel_rollback_mag = dist / this.velocity.x;
-
-            //this.add_pos(this.velocity.mul(-vel_rollback_mag));
-            this.position.x = 21 + this.radius;
-
-            if (dist>0.0005 && this.velocity.sqr_magnitude() > 0.005) {
-                this.velocity.x *= -this.bounce_factor;
-            } else {
-                this.velocity.x = 0;
-            }
-
-            this.velocity.y *= this.friction_factor;
-        }
-    }
-
-    check_right_bounce(board) {
-        let dist = board.size.x - 33 - this.position.x;
-        if (!this.at_rest && dist <= this.radius && Math.abs(this.velocity.x) > 0.000000001) {
-            let vel_rollback_mag = dist / this.velocity.x;
-
-            //this.add_pos(this.velocity.mul(-vel_rollback_mag));
-            this.position.x = board.size.x - this.radius - 33;
-
-            if (dist>0.0005 && this.velocity.sqr_magnitude() > 0.005) {
-                this.velocity.x *= -this.bounce_factor;
-            } else {
-                this.velocity.x = 0;
-            }
-
-            this.velocity.y *= this.friction_factor;
-        }
-    }
-
-    check_sides_bounce(board) {
-        this.check_left_bounce(board);
-        this.check_right_bounce(board);
     }
 
     collides_line(line) {
@@ -838,13 +720,13 @@ class Ball {
         let c = line.c;
         let distance = Math.abs(this.position.x * a + this.position.y * b + c) / Math.sqrt(a*a + b*b);
 
-        if (this.position.y >= 145 && line.id == 1) {
-            //debugger;
-        }
+        // if (this.position.y >= 145 && line.id == 1) {
+        //     //debugger;
+        // }
 
-        if (distance < this.radius) {
-            // console.log("collision: distance", distance, "with line ID", line.id);
-        }
+        // if (distance < this.radius) {
+        //     // console.log("collision: distance", distance, "with line ID", line.id);
+        // }
 
         return distance < this.radius;
     }
@@ -893,7 +775,7 @@ class Ball {
         this.add_pos(this.velocity.normalize().mul(-rollback_distance));
 
         // update velocity
-        this.velocity = new_velocity;
+        this.set_velocity(new_velocity);
 
         // console.log("rollback pos", this.position);
 
@@ -909,7 +791,7 @@ class Ball {
 
     collides(other) {
         let radius_sum = this.radius + other.radius;
-        let radius_sum_sqr = Math.pow(radius_sum, 2);
+        let radius_sum_sqr = compat_pow(radius_sum, 2);
 
         return other.position.sqr_distance(this.position) <= radius_sum_sqr;
     }
@@ -1422,7 +1304,7 @@ function render_descriptions(board) {
             let l = layout[index];
 
             write_text(
-                layers.ui2.ctx, `${ball.name}`, l[0], l[1], ball.colour.css(), CANVAS_FONTS, 16
+                layers.ui2.ctx, `${ball.name}  LV ${ball.level+1}`, l[0], l[1], ball.colour.css(), CANVAS_FONTS, 16
             )
 
             let hp = Math.max(0, Math.min(100, ball.hp));
@@ -1491,6 +1373,8 @@ let game_subticks = 0;  // for fixed-time
 // start applying correction
 let game_fps_threshold = 5;
 let game_fps_catchup_modifier = 1;
+
+let total_steps = 0;
 
 function game_loop() {
     framecount++;
@@ -1591,6 +1475,8 @@ function game_loop() {
 
         // the "for" component only comes into effect when we're fixed-time
         for (let tick_repeats=0; tick_repeats<num_repeats; tick_repeats++) {
+            total_steps++;
+
             // COLL_GRANULARITY => do collision checks every N physics steps
             for (let i=0; i<phys_gran; i++) {
                 board.physics_step(game_delta_time / (1000 * phys_gran));
@@ -1659,8 +1545,8 @@ function game_loop() {
                                         new_ball_velocity = ball.velocity.div(ball_mag).mul(1 - share).add(ball_diff_add).normalize().mul(ball_mag)
                                         new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
 
-                                        ball.velocity = new_ball_velocity;
-                                        other.velocity = new_other_velocity;
+                                        ball.set_velocity(new_ball_velocity);
+                                        other.set_velocity(new_other_velocity);
 
                                         ball.last_hit = 1;
                                         other.last_hit = 1;
@@ -1716,7 +1602,7 @@ function game_loop() {
                                         let hitbox_dist = hitbox_pos.sqr_distance(projectile.position);
 
                                         // we also need to take into account hitbox radius (take away hitbox square radius from dist)
-                                        closest_weapon_hitbox_dist = Math.min(closest_weapon_hitbox_dist, hitbox_dist - Math.pow(source_weapon.hitboxes[index].radius, 2));
+                                        closest_weapon_hitbox_dist = Math.min(closest_weapon_hitbox_dist, hitbox_dist - compat_pow(source_weapon.hitboxes[index].radius, 2));
                                     })
 
                                     // now compare. we only parry if closest_weapon_hitbox_dist is smaller
@@ -1750,7 +1636,7 @@ function game_loop() {
                             let ball_diff_add = diff_vec.mul(share);
                             let ball_mag = ball.velocity.magnitude();
                             new_ball_velocity = ball.velocity.div(ball_mag).mul(1 - share).add(ball_diff_add).normalize().mul(ball_mag);
-                            ball.velocity = new_ball_velocity;
+                            ball.set_velocity(new_ball_velocity);
                             
                             ball.last_hit = 1;
                             

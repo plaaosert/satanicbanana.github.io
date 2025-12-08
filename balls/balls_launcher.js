@@ -243,7 +243,7 @@ function update_ballinfo(ballid) {
 
     if (ball_proto) {
         let testball = new ball_proto(
-            null, 1, 512, Colour.white, null, null, {}, 1, false
+            {random: Math.random}, 1, 512, Colour.white, null, null, {}, 1, false
         );
 
         info_elem.textContent = testball.description_brief;
@@ -541,6 +541,8 @@ document.addEventListener("DOMContentLoaded", function() {
     speed_alert_actual = document.querySelector("#fps_user");
 
     // document.querySelector("select[name='ball1']").value = "WandBall";
+
+    // setTimeout(() => load_replay("eyJmcmFtZXNwZWVkIjoxNDQsImJhbGxzIjpbIk5lZWRsZUJhbGwiLCJOZWVkbGVCYWxsIiwiQ2hha3JhbUJhbGwiLCJDaGFrcmFtQmFsbCJdLCJsZXZlbHMiOlswLDAsMCwwXSwic2VlZCI6IjMzMjYxMTk3ODUxNjA1MDUifQ=="), 1000)
 })
 
 // TODO make levelling information exist somewhere - probably need to think about that when we come to RPG theming really

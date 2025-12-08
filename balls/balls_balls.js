@@ -111,7 +111,7 @@ class WeaponBall extends Ball {
     randomise_weapon_rotations() {
         this.weapon_data.forEach(w => {
             w.angle = 0;
-            w.rotate(random_float(0, 360, this.board?.random));
+            w.rotate(random_float(0, 360, this.board.random));
         })
     }
 
@@ -135,7 +135,7 @@ class WeaponBall extends Ball {
         // rupture deals intensity dps and reduces by 50%/s
         if (this.rupture_intensity > 0) {
             this.lose_hp(this.rupture_intensity * time_delta);
-            this.rupture_intensity = lerp(this.rupture_intensity, 0, 1 - Math.pow(0.5, time_delta));
+            this.rupture_intensity = lerp(this.rupture_intensity, 0, 1 - compat_pow(0.5, time_delta));
         }
     }
 
@@ -198,7 +198,7 @@ class WeaponBall extends Ball {
                 let hitbox = weapon.hitboxes[index];
 
                 let radius_sum = (hitbox.radius * weapon.size_multiplier) + this.radius;
-                let radius_sum_sqr = Math.pow(radius_sum, 2);
+                let radius_sum_sqr = compat_pow(radius_sum, 2);
 
                 return other.position.add(weapon_offset).add(hitbox_offset).sqr_distance(this.position) <= radius_sum_sqr;
             })
@@ -229,7 +229,7 @@ class WeaponBall extends Ball {
 
                     return other_hitboxes_offsets.some((other_hitbox_offset, other_index) => {
                         let radius_sum = (weapon.hitboxes[this_index].radius * weapon.size_multiplier) + (other_weapon.hitboxes[other_index].radius * other_weapon.size_multiplier);
-                        let radius_sum_sqr = Math.pow(radius_sum, 2);
+                        let radius_sum_sqr = compat_pow(radius_sum, 2);
 
                         let other_hitbox_pos = other.position.add(other_weapon_offset).add(other_hitbox_offset)
                         return this_hitbox_pos.sqr_distance(other_hitbox_pos) <= radius_sum_sqr
@@ -254,7 +254,7 @@ class WeaponBall extends Ball {
                 let hitbox = projectile.hitboxes[index];
 
                 let radius_sum = (hitbox.radius * projectile.size) + this.radius;
-                let radius_sum_sqr = Math.pow(radius_sum, 2);
+                let radius_sum_sqr = compat_pow(radius_sum, 2);
 
                 let other_hitbox_pos = projectile.position.add(hitbox_offset);
                 return this.position.sqr_distance(other_hitbox_pos) <= radius_sum_sqr
@@ -282,7 +282,7 @@ class WeaponBall extends Ball {
 
                     return projectile_hitboxes_offsets.some((projectile_hitbox_offset, projectile_index) => {
                         let radius_sum = (weapon.hitboxes[this_index].radius * weapon.size_multiplier) + (projectile.hitboxes[projectile_index].radius * projectile.size);
-                        let radius_sum_sqr = Math.pow(radius_sum, 2);
+                        let radius_sum_sqr = compat_pow(radius_sum, 2);
 
                         let projectile_hitbox_pos = projectile.position.add(projectile_hitbox_offset);
                         return this_hitbox_pos.sqr_distance(projectile_hitbox_pos) <= radius_sum_sqr
@@ -434,18 +434,18 @@ class DummyBall extends WeaponBall {
             this.shake_current += time_delta
 
             if (this.shake_current <= this.shake_duration_max) {
-                this.velocity = Vector2.zero;
+                this.set_velocity(Vector2.zero);
 
-                this.position = this.shake_origin.add(
+                this.set_pos(this.shake_origin.add(
                     random_on_circle(
                         lerp(
                             0, 
                             this.shake_intensity_max, 
                             random_float(0, 1) * (Math.max(0, (this.shake_current - this.shake_shake_start) / this.shake_shake_duration))
                         ),
-                        this.board?.random
+                        this.board.random
                     )
-                )
+                ))
                 this.colour = this.original_colour.lerp(Colour.white, Math.max(0, (this.shake_current - this.shake_flash_start) / this.shake_flash_duration))
             } else {
                 // replace this ball with UnarmedBall
@@ -456,7 +456,7 @@ class DummyBall extends WeaponBall {
                     this.player, this.level, false
                 )
 
-                this.child.velocity = random_on_circle(25000, this.board?.random);
+                this.child.set_velocity(random_on_circle(25000, this.board.random));
 
                 this.hp = 0;
                 this.transforming = false;
@@ -585,13 +585,13 @@ class UnarmedBall extends WeaponBall {
         while (this.name_mutate_cooldown > this.name_mutate_cooldown_max) {
             this.name_mutate_cooldown -= this.name_mutate_cooldown_max
             this.name = [...this.name].map((c, i) => {
-                let rand = random_float(0, 1, this.board?.random);
+                let rand = random_float(0, 1, this.board.random);
                 if (rand < 0.9) {
                     // do nothihng
                     return c;
                 } else if (rand < 0.925) {
                     // set to random symbol
-                    return String.fromCharCode(random_int(32, 256, this.board?.random));
+                    return String.fromCharCode(random_int(32, 256, this.board.random));
                 } else if (rand < 0.95) {
                     // set to uppercase of original name
                     return this.original_name[i].toUpperCase();
@@ -603,13 +603,17 @@ class UnarmedBall extends WeaponBall {
         }
     }
 
+    apply_intensity_vel() {
+        this.set_velocity(this.velocity.normalize().mul(this.intensity));
+    }
+
     hit_other(other, with_weapon_index) {
         let result = {};
 
         result = super.hit_other(other, with_weapon_index, this.damage_final);
 
         // set speed up to intensity
-        this.velocity = this.velocity.normalize().mul(this.intensity);
+        this.apply_intensity_vel();
 
         return result;
     }
@@ -622,7 +626,7 @@ class UnarmedBall extends WeaponBall {
         // this.intensity += this.intensity_per_hit;
 
         // set speed up to intensity
-        this.velocity = this.velocity.normalize().mul(this.intensity);
+        this.apply_intensity_vel();
 
         return result;
     }
@@ -698,7 +702,7 @@ class HammerBall extends WeaponBall {
 
         let new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
 
-        other.velocity = new_other_velocity;
+        other.set_velocity(new_other_velocity);
 
         other.invuln_duration *= 2;
 
@@ -831,8 +835,8 @@ class DaggerBall extends WeaponBall {
 
         this.hit_decay -= time_delta;
         if (this.hit_decay < 0) {
-            this.speed_base = lerp(this.speed_base, 360, 1 - Math.pow(0.25, time_delta));
-            this.damage_base = lerp(this.damage_base, 1, 1 - Math.pow(0.25, time_delta));
+            this.speed_base = lerp(this.speed_base, 360, 1 - compat_pow(0.25, time_delta));
+            this.damage_base = lerp(this.damage_base, 1, 1 - compat_pow(0.25, time_delta));
         }
 
         if (this.level >= AWAKEN_LEVEL) {
@@ -983,8 +987,8 @@ class BowBall extends WeaponBall {
                     new ArrowProjectile(
                         this.board,
                         this, 0, fire_pos, this.proj_damage_base, 1 * this.arrow_size_mult,
-                        new Vector2(1, 0).rotate(this.weapon_data[0].angle + (random_float(-10, 10, this.board?.random) * (Math.PI / 180))),
-                        this.arrow_speed * random_float(0.85, 1.15, this.board?.random), this.velocity.mul(0)
+                        new Vector2(1, 0).rotate(this.weapon_data[0].angle + (random_float(-10, 10, this.board.random) * (Math.PI / 180))),
+                        this.arrow_speed * random_float(0.85, 1.15, this.board.random), this.velocity.mul(0)
                     ), fire_pos
                 )
             }
@@ -1125,7 +1129,7 @@ class MagnumBall extends WeaponBall {
             let coin_obj = new MagnumCoinProjectile(
                 this.board,
                 this, 1, coin_fire_pos, this.coin_damage_base, 1.5,
-                new Vector2(1, 0).rotate(this.weapon_data[1].angle), random_int(6000, 10000, this.board?.random), board.gravity
+                new Vector2(1, 0).rotate(this.weapon_data[1].angle), random_int(6000, 10000, this.board.random), board.gravity
             );
 
             board.spawn_projectile(
@@ -1139,7 +1143,7 @@ class MagnumBall extends WeaponBall {
                 let coin2_obj = new MagnumCoinProjectile(
                     this.board,
                     this, 1, coin2_fire_pos, this.coin_damage_base, 1.5,
-                    new Vector2(1, 0).rotate(this.weapon_data[2].angle), random_int(6000, 10000, this.board?.random), board.gravity
+                    new Vector2(1, 0).rotate(this.weapon_data[2].angle), random_int(6000, 10000, this.board.random), board.gravity
                 );
 
                 board.spawn_projectile(
@@ -1258,7 +1262,7 @@ class NeedleBall extends WeaponBall {
     }
 
     clone_chance() {
-        let c = this.board?.random();
+        let c = this.board.random();
         if (this.can_clone && c < this.split_chance) {
             let hp_proportion = Math.floor(this.hp * this.split_ratio);
 
@@ -1283,7 +1287,7 @@ class NeedleBall extends WeaponBall {
 
                 this.board?.spawn_ball(new_ball, this.position);
 
-                new_ball.add_impulse(random_on_circle(random_float(6000, 10000, this.board?.random), this.board?.random));
+                new_ball.add_impulse(random_on_circle(random_float(6000, 10000, this.board.random), this.board.random));
 
                 this.children.push(new_ball);
                 new_ball.parent = this;
@@ -1388,8 +1392,8 @@ class RailgunBall extends WeaponBall {
 
         this.hit_decay -= time_delta;
         if (this.hit_decay < 0) {
-            this.speed_base = lerp(this.speed_base, 80, 1 - Math.pow(0.45, time_delta));
-            this.shot_cooldown_max = lerp(this.shot_cooldown_max, this.shot_cooldown_max_base, 1 - Math.pow(0.2, time_delta));
+            this.speed_base = lerp(this.speed_base, 80, 1 - compat_pow(0.45, time_delta));
+            this.shot_cooldown_max = lerp(this.shot_cooldown_max, this.shot_cooldown_max_base, 1 - compat_pow(0.2, time_delta));
         }
 
         if (this.shot_cooldown < 0) {
@@ -1500,10 +1504,10 @@ class PotionBall extends WeaponBall {
             ]));
         }
 
-        this.weapon_data[0].rotate(random_float(0, 360, this.board?.random));
-        this.weapon_data[1].rotate(random_float(0, 360, this.board?.random));
-        this.weapon_data[2].rotate(random_float(0, 360, this.board?.random));
-        this.weapon_data[3]?.rotate(random_float(0, 360, this.board?.random));
+        this.weapon_data[0].rotate(random_float(0, 360, this.board.random));
+        this.weapon_data[1].rotate(random_float(0, 360, this.board.random));
+        this.weapon_data[2].rotate(random_float(0, 360, this.board.random));
+        this.weapon_data[3]?.rotate(random_float(0, 360, this.board.random));
 
         this.weapon_data[1].reverse();
         this.weapon_data[3]?.reverse();
@@ -1515,10 +1519,10 @@ class PotionBall extends WeaponBall {
         this.potion_impact_damage = 2;
 
         this.speed_range = [135, 225]
-        this.speeds = [180, 180, 180, 180].map(_ => random_float(...this.speed_range, this.board?.random));
+        this.speeds = [180, 180, 180, 180].map(_ => random_float(...this.speed_range, this.board.random));
 
         this.shot_cooldown_max_range = [0.3, 1];
-        this.shot_cooldowns = [0, 0, 0, 0].map(_ => random_float(...this.shot_cooldown_max_range, this.board?.random));
+        this.shot_cooldowns = [0, 0, 0, 0].map(_ => random_float(...this.shot_cooldown_max_range, this.board.random));
         this.weapon_regeneration_times = [0,0,0,0];
         this.max_weapon_regeneration_time = 1.6;
         this.potion_smash_penalty = 5;
@@ -1533,14 +1537,14 @@ class PotionBall extends WeaponBall {
                 this.weapon_regeneration_times[i] -= time_delta;
                 if (this.weapon_regeneration_times[i] <= 0) {
                     this.weapon_data[i].size_multiplier = 1 * 16
-                    this.speeds[i] = random_float(...this.speed_range, this.board?.random);
+                    this.speeds[i] = random_float(...this.speed_range, this.board.random);
                     this.weapon_data[i].hitboxes = [{pos: new Vector2(30, 64), radius: 14}];
                 }
             } else {
                 this.rotate_weapon(i, this.speeds[i] * time_delta);
                 this.shot_cooldowns[i] -= time_delta;
                 if (this.shot_cooldowns[i] < 0) {
-                    this.shot_cooldowns[i] = random_float(...this.shot_cooldown_max_range, this.board?.random);
+                    this.shot_cooldowns[i] = random_float(...this.shot_cooldown_max_range, this.board.random);
                 
                     // schut
                     let firing_offset = this.firing_offsets[0].mul(this.weapon_data[i].size_multiplier).rotate(this.weapon_data[i].angle);
@@ -1551,7 +1555,7 @@ class PotionBall extends WeaponBall {
                             this.board,
                             this, i, fire_pos, this.potion_impact_damage, 1,
                             new Vector2(1, 0).rotate(this.weapon_data[i].angle),
-                            random_int(6000, 10000, this.board?.random), board.gravity, i, this.duration_mult
+                            random_int(6000, 10000, this.board.random), board.gravity, i, this.duration_mult
                         ), fire_pos
                     )
                     
@@ -1711,11 +1715,11 @@ class GrenadeBall extends WeaponBall {
 
         this.board?.spawn_ball(new_ball, position);
 
-        new_ball.velocity = velocity;
+        new_ball.set_velocity(velocity);
 
         new_ball.parent = this;
 
-        let part = new Particle(new_ball.position, 0, 1, entity_sprites.get("grenade"), 0, 1000000);
+        let part = new Particle(new_ball.position, 0, 1, entity_sprites.get("grenade"), 0, 999999);
         this.board?.spawn_particle(part, new_ball.position);
         new_ball.linked_particle = part;
     }
@@ -1774,11 +1778,11 @@ class GrenadeProjectileBall extends WeaponBall {
 
         this.display = false;
 
-        this.rotation_speed = random_float(270, 540, this.board?.random);
+        this.rotation_speed = random_float(270, 540, this.board.random);
     }
 
     update_particles(time_delta) {
-        this.linked_particle.position = this.position;
+        this.linked_particle.set_pos(this.position);
         this.linked_particle.rotation_angle += this.rotation_speed * (time_delta * (Math.PI / 180))
     }
 
@@ -2032,7 +2036,7 @@ class HandBall extends WeaponBall {
         this.hands_speed_timeout_range = [0.5, 2];
         this.hands_sprites = ["hand_neutral", "hand_neutral"]; // X
         this.punch_timeout_range = [0.6, 2];
-        this.punch_timeouts = [random_float(...this.punch_timeout_range, this.board?.random), random_float(...this.punch_timeout_range, this.board?.random)]; // X
+        this.punch_timeouts = [random_float(...this.punch_timeout_range, this.board.random), random_float(...this.punch_timeout_range, this.board.random)]; // X
         this.punch_recovery = 0.4 - (this.level * 0.002);
         this.punch_active_duration = 0.1;
 
@@ -2067,23 +2071,22 @@ class HandBall extends WeaponBall {
     }
 
     weapon_step(board, time_delta) {
-        // this.velocity = new Vector2(0, 0);
         if (this.level >= AWAKEN_LEVEL) {
             this.hand_sprout_timeout += time_delta;
-            if (this.hand_sprout_timeout >= this.hand_sprout_base * Math.pow(2, this.hands_sprites.length)) {
+            if (this.hand_sprout_timeout >= this.hand_sprout_base * compat_pow(2, this.hands_sprites.length)) {
                 this.hand_sprout_timeout = 0;
                 
                 this.hands_speeds.push(0);
                 this.hands_speed_timeouts.push(0);
                 this.hands_sprites.push("hand_neutral");
-                this.punch_timeouts.push(random_float(...this.punch_timeout_range, this.board?.random));
+                this.punch_timeouts.push(random_float(...this.punch_timeout_range, this.board.random));
                 this.parry_delays.push(0);
                 this.grab_info.push({});
                 this.tired_delays.push(0);
 
                 let w = new BallWeapon(this.hand_size, "hand_neutral", []);
                 this.weapon_data.push(w);
-                w.rotate(random_float(0, 360, this.board?.random));
+                w.rotate(random_float(0, 360, this.board.random));
             }
         }
 
@@ -2103,7 +2106,7 @@ class HandBall extends WeaponBall {
                         this.weapon_data[i].offset = new Vector2(0, 0);
                     } else {
                         this.punch_timeouts[i] -= time_delta;
-                        this.weapon_data[i].offset = new Vector2(Math.min(0, -64 + (Math.pow(this.punch_timeouts[i], 2) * 256)), 0);
+                        this.weapon_data[i].offset = new Vector2(Math.min(0, -64 + (compat_pow(this.punch_timeouts[i], 2) * 256)), 0);
                         if (this.punch_timeouts[i] <= 0) {
                             this.hands_sprites[i] = "hand_punch";
 
@@ -2122,9 +2125,9 @@ class HandBall extends WeaponBall {
                             this.weapon_data[i].rotate(this.hands_speeds[i] * time_delta, i % 2 == 1);
                             this.hands_speed_timeouts[i] -= time_delta;
                             if (this.hands_speed_timeouts[i] <= 0) {
-                                this.hands_speed_timeouts[i] = random_float(...this.hands_speed_timeout_range, this.board?.random);
+                                this.hands_speed_timeouts[i] = random_float(...this.hands_speed_timeout_range, this.board.random);
 
-                                this.hands_speeds[i] = random_float(...this.hands_speed_range, this.board?.random) + random_float(...this.hands_speed_range, this.board?.random) + random_float(...this.hands_speed_range, this.board?.random);
+                                this.hands_speeds[i] = random_float(...this.hands_speed_range, this.board.random) + random_float(...this.hands_speed_range, this.board.random) + random_float(...this.hands_speed_range, this.board.random);
                             }
                         }
                     }
@@ -2174,7 +2177,7 @@ class HandBall extends WeaponBall {
 
                         this.weapon_data[i].offset = new Vector2(0, 0);
                         this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.5;
-                        this.punch_timeouts[i] = random_float(...this.punch_timeout_range, this.board?.random);
+                        this.punch_timeouts[i] = random_float(...this.punch_timeout_range, this.board.random);
                     }
 
                     break;
@@ -2283,7 +2286,7 @@ class HandBall extends WeaponBall {
                                 throwball.skip_physics = false;
                                 throwball.display = true;
 
-                                throwball.position = new_position;
+                                throwball.set_pos(new_position);
                                 throwball.lose_hp(this.grab_damage_impact);
 
                                 play_audio("wall_smash");
@@ -2308,11 +2311,11 @@ class HandBall extends WeaponBall {
 
                         throwball.display = false;
 
-                        this.velocity = (this.position.sub(new_position).normalize()).mul(this.grab_info[i].stored_velocity.magnitude());
+                        this.set_velocity((this.position.sub(new_position).normalize()).mul(this.grab_info[i].stored_velocity.magnitude()));
                     } else {
                         let ballpos = this.position.add(this.get_weapon_offset(this.weapon_data[i]));
-                        this.grab_info[i].ball.position = ballpos;
-                        this.velocity = new Vector2(0, 0);
+                        this.grab_info[i].ball.set_pos(ballpos);
+                        this.set_velocity(new Vector2(0, 0));
 
                         // special case for balls with particles
                         if (this.grab_info[i].ball.update_particles) {
@@ -2341,7 +2344,7 @@ class HandBall extends WeaponBall {
                         } else {
                             // hands drift downwards
                             let angle_rotated = positive_mod(this.weapon_data[i].angle - (Math.PI / 2), Math.PI * 2);
-                            let side = seeded_random_from_array([-1, 1], this.board?.random);
+                            let side = seeded_random_from_array([-1, 1], this.board.random);
                             if (angle_rotated > Math.PI) {
                                 side = 1;
                             } else if (angle_rotated < Math.PI) {
@@ -2435,7 +2438,7 @@ class HandBall extends WeaponBall {
 
             let new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
 
-            other.velocity = new_other_velocity;
+            other.set_velocity(new_other_velocity);
 
             other.invuln_duration *= 2;
         } else if (this.hands_sprites[with_weapon_index] == "hand_open") {
@@ -2621,8 +2624,8 @@ class HandBall extends WeaponBall {
             write_text(
                 ctx, `Hands: ${this.hands_sprites.length}`, x_anchor, y_anchor + 36, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
             )
-            let timeout = (this.hand_sprout_base * Math.pow(2, this.hands_sprites.length));
-            let timeleft = (this.hand_sprout_base * Math.pow(2, this.hands_sprites.length)) - this.hand_sprout_timeout
+            let timeout = (this.hand_sprout_base * compat_pow(2, this.hands_sprites.length));
+            let timeleft = (this.hand_sprout_base * compat_pow(2, this.hands_sprites.length)) - this.hand_sprout_timeout
             write_text(
                 ctx, `Time until next hand: ${timeleft.toFixed(1)}s / ${timeout.toFixed(1)}s`, x_anchor, y_anchor + 48, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
             )
@@ -2671,7 +2674,7 @@ class ChakramBall extends WeaponBall {
         this.windup_speed_mod = 900;
 
         this.throw_cooldown_max = [4, 8];
-        this.throw_cooldown = random_float(...this.throw_cooldown_max, this.board?.random);
+        this.throw_cooldown = random_float(...this.throw_cooldown_max, this.board.random);
 
         this.throw_windup_max = 1.5;
         this.throw_windup = this.throw_windup_max;
@@ -2719,7 +2722,7 @@ class ChakramBall extends WeaponBall {
 
                 this.throw_cooldown -= time_delta;
                 if (this.throw_cooldown <= 0) {
-                    this.throw_cooldown = random_float(...this.throw_cooldown_max, this.board?.random);
+                    this.throw_cooldown = random_float(...this.throw_cooldown_max, this.board.random);
                     this.throw_windup = this.throw_windup_max;
                     this.mode = "windup";
                     this.weapon_data[0].reverse();
@@ -2820,7 +2823,7 @@ class WandBall extends WeaponBall {
         this.speed_base = 180;
 
         this.cast_delay_max = [1.6 - (this.level * 0.011), 3.2 - (this.level * 0.022)];
-        this.cast_delay = random_float(...this.cast_delay_max, this.board?.random);
+        this.cast_delay = random_float(...this.cast_delay_max, this.board.random);
 
         this.cast_flash_timeout = 0;
 
@@ -2874,7 +2877,7 @@ class WandBall extends WeaponBall {
     pick_next_spell() {
         let last_spell = this.current_spell;
         while (this.current_spell == last_spell) {
-            this.current_spell = weighted_seeded_random_from_arr(this.spell_chances, this.board?.random)[1];
+            this.current_spell = weighted_seeded_random_from_arr(this.spell_chances, this.board.random)[1];
         }
     }
 
@@ -2898,7 +2901,7 @@ class WandBall extends WeaponBall {
         this.cast_delay -= time_delta;
         if (this.cast_delay <= 0) {
             // time to cast!
-            this.cast_delay = random_float(...this.cast_delay_max, this.board?.random);
+            this.cast_delay = random_float(...this.cast_delay_max, this.board.random);
             this.cast_flash_timeout = 0.5;
 
             let position = this.position.add(this.get_weapon_offset(this.weapon_data[0]).mul(1.5));
@@ -2916,10 +2919,10 @@ class WandBall extends WeaponBall {
                     new_ball.invuln_duration = BALL_INVULN_DURATION;
                     new_ball.show_stats = false;
 
-                    new_ball.velocity = velocity;
+                    new_ball.set_velocity(velocity);
                     new_ball.parent = this;
 
-                    let part = new Particle(new_ball.position, 0, 1, entity_sprites.get("super_orb"), 0, 1000000);
+                    let part = new Particle(new_ball.position, 0, 1, entity_sprites.get("super_orb"), 0, 999999);
                     board.spawn_particle(part, new_ball.position);
                     new_ball.linked_particle = part;
                     
@@ -2962,7 +2965,7 @@ class WandBall extends WeaponBall {
 
                 case "green": {
                     for (let i=0; i<this.poison_barb_count; i++) {
-                        let velocity = new Vector2(this.poison_barb_velocity * random_float(0.5, 2, this.board?.random), 0).rotate(this.weapon_data[0].angle)
+                        let velocity = new Vector2(this.poison_barb_velocity * random_float(0.5, 2, this.board.random), 0).rotate(this.weapon_data[0].angle)
                         let new_ball = new WandGreenBall(
                             this.board,
                             this.mass * 0.1, this.radius * 0.15, this.colour,
@@ -2976,10 +2979,10 @@ class WandBall extends WeaponBall {
                         new_ball.invuln_duration = BALL_INVULN_DURATION;
                         new_ball.show_stats = false;
 
-                        new_ball.velocity = velocity;
+                        new_ball.set_velocity(velocity);
                         new_ball.parent = this;
 
-                        let part = new Particle(new_ball.position, 0, 1, entity_sprites.get("wand_poison_barb"), 0, 1000000);
+                        let part = new Particle(new_ball.position, 0, 1, entity_sprites.get("wand_poison_barb"), 0, 999999);
                         board.spawn_particle(part, new_ball.position);
                         new_ball.linked_particle = part;
                         
@@ -3003,12 +3006,12 @@ class WandBall extends WeaponBall {
                             }
 
                             let repeats = 1;
-                            if (random_float(0, 1, this.board?.random) < this.chain_lightning_chain_chance) {
+                            if (random_float(0, 1, this.board.random) < this.chain_lightning_chain_chance) {
                                 repeats = 2;
                             }
 
                             for (let i=0; i<repeats; i++) {
-                                let new_angle = angle + (random_float(-1, 1, this.board?.random) * this.chain_lightning_spread);
+                                let new_angle = angle + (random_float(-1, 1, this.board.random) * this.chain_lightning_spread);
 
                                 let direction = new Vector2(this.chain_lightning_distance, 0).rotate(new_angle);
 
@@ -3140,7 +3143,7 @@ class WandBlackBall extends WeaponBall {
     }
 
     update_particles(time_delta) {
-        this.linked_particle.position = this.position;
+        this.linked_particle.set_pos(this.position);
         this.linked_particle.rotation_angle += this.rotation_speed * (time_delta * (Math.PI / 180))
     }
 
@@ -3176,7 +3179,7 @@ class WandBlackBall extends WeaponBall {
 
         let new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
 
-        other.velocity = new_other_velocity;
+        other.set_velocity(new_other_velocity);
 
         other.invuln_duration *= 2;
 
@@ -3228,7 +3231,7 @@ class WandGreenBall extends WeaponBall {
     }
 
     update_particles(time_delta) {
-        this.linked_particle.position = this.position;
+        this.linked_particle.set_pos(this.position);
         this.linked_particle.rotation_angle += this.rotation_speed * (time_delta * (Math.PI / 180))
     }
 
@@ -3299,7 +3302,7 @@ class Projectile {
 
         this.source = source;
         this.source_weapon_index = source_weapon_index;
-        this.position = position;
+        this.set_pos(position);
         this.damage = damage;
         this.size = size * PROJ_SIZE_MULTIPLIER;
         this.direction = direction;
@@ -3320,6 +3323,10 @@ class Projectile {
         this.can_hit_source = false; // specifically for hit/parry from SOURCE ball
 
         this.ignore_balls = new Set();
+    }
+
+    set_pos(to) {
+        this.position = to;
     }
 
     physics_step(time_delta) {
@@ -3361,7 +3368,7 @@ class Projectile {
                     let other_hitbox = projectile.hitboxes[other_index];
                     
                     let radius_sum = (this_hitbox.radius * this.size) + (other_hitbox.radius * projectile.size);
-                    let radius_sum_sqr = Math.pow(radius_sum, 2);
+                    let radius_sum_sqr = compat_pow(radius_sum, 2);
 
                     let this_hitbox_pos = this.position.add(this_hitbox_offset);
                     let other_hitbox_pos = projectile.position.add(other_hitbox_offset);
@@ -3393,7 +3400,7 @@ class StraightLineProjectile extends Projectile {
     }
 
     physics_step(time_delta) {
-        this.position = this.position.add(this.direction.mul(this.speed * time_delta));
+        this.set_pos(this.position.add(this.direction.mul(this.speed * time_delta)));
     }
 }
 
@@ -3405,7 +3412,7 @@ class InertiaRespectingStraightLineProjectile extends StraightLineProjectile {
     }
 
     physics_step(time_delta) {
-        this.position = this.position.add(this.direction.mul(this.speed).add(this.inertia_vel).mul(time_delta));
+        this.set_pos(this.position.add(this.direction.mul(this.speed).add(this.inertia_vel).mul(time_delta)));
     }
 }
 
@@ -3562,7 +3569,7 @@ class MagnumProjectile extends HitscanProjectile {
                     let other_hitbox = projectile.hitboxes[other_index];
                     
                     let radius_sum = (this_hitbox.radius * this.size) + (other_hitbox.radius * projectile.size);
-                    let radius_sum_sqr = Math.pow(radius_sum, 2);
+                    let radius_sum_sqr = compat_pow(radius_sum, 2);
 
                     let this_hitbox_pos = this.position.add(this_hitbox_offset);
                     let other_hitbox_pos = projectile.position.add(other_hitbox_offset);
@@ -3593,7 +3600,7 @@ class MagnumProjectile extends HitscanProjectile {
             }
 
             if (!target) {
-                target = {position: other.position.add(random_on_circle(30000, this.board?.random))}
+                target = {position: other.position.add(random_on_circle(30000, this.board.random))}
             }
 
             if (target) {
@@ -3643,7 +3650,7 @@ class MagnumCoinProjectile extends Projectile {
         super(board, source, source_weapon_index, position, damage, size, direction, speed);
 
         this.gravity = gravity;
-        this.velocity = this.direction.mul(this.speed);
+        this.proj_velocity = this.direction.mul(this.speed);
 
         this.frame = 0;
         this.framecount = 5;
@@ -3660,9 +3667,9 @@ class MagnumCoinProjectile extends Projectile {
     }
 
     physics_step(time_delta) {
-        this.position = this.position.add(this.velocity.mul(time_delta));
+        this.set_pos(this.position.add(this.proj_velocity.mul(time_delta)));
 
-        this.velocity = this.velocity.add(this.gravity.mul(time_delta));
+        this.proj_velocity = this.proj_velocity.add(this.gravity.mul(time_delta));
 
         this.lifetime += time_delta;
         this.frame = Math.floor(this.lifetime * this.frame_speed)
@@ -3795,7 +3802,7 @@ class PotionBottleProjectile extends Projectile {
         super(board, source, source_weapon_index, position, damage, size, direction, speed);
 
         this.gravity = gravity;
-        this.velocity = this.direction.mul(this.speed);
+        this.proj_velocity = this.direction.mul(this.speed);
         this.effect_index = effect_index;
 
         this.sprite = `potion${effect_index+1}`
@@ -3804,15 +3811,15 @@ class PotionBottleProjectile extends Projectile {
             {pos: new Vector2(0, 0), radius: 16},
         ];
 
-        this.rotation_speed = random_float(270, 540, this.board?.random);
+        this.rotation_speed = random_float(270, 540, this.board.random);
 
         this.duration_mult = duration_mult;
     }
 
     physics_step(time_delta) {
-        this.position = this.position.add(this.velocity.mul(time_delta));
+        this.set_pos(this.position.add(this.proj_velocity.mul(time_delta)));
 
-        this.velocity = this.velocity.add(this.gravity.mul(time_delta));
+        this.proj_velocity = this.proj_velocity.add(this.gravity.mul(time_delta));
     
         this.direction_angle += (this.rotation_speed * (Math.PI / 180)) * time_delta;
         this.direction = new Vector2(1, 0).rotate(this.direction_angle);
@@ -3912,7 +3919,7 @@ class GrenadeExplosionProjectile extends Projectile {
 
         let new_other_velocity = ball.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
 
-        ball.velocity = new_other_velocity;
+        ball.set_velocity(new_other_velocity);
 
         ball.invuln_duration *= 2;
 
@@ -3980,9 +3987,7 @@ class ChakramProjectile extends Projectile {
         let dist = lerp(this.min_dist, this.max_dist, dist_lerp_amt);
         let newpos = new Vector2(dist, 0).rotate(this.cur_angle).add(this.source.position);
 
-        for (let i=0; i<4; i++) {
-            this.position = this.position.lerp(newpos, 1 - Math.pow(0.00001, delta_time));
-        }
+        this.set_pos(newpos);
     }
 
     hit_other_projectile(other_projectile) {
