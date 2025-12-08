@@ -68,6 +68,7 @@ function exit_battle(save_replay=true) {
         let replay = {
             framespeed: board.forced_time_deltas && Math.round(1000 / board.forced_time_deltas),
             balls: board.starting_balls,
+            levels: board.starting_levels,
             seed: board.random_seed
         }
 
@@ -124,10 +125,12 @@ function load_replay(replay_as_text) {
         return selectable_balls.find(t => t.name == b);
     })
 
+    let ball_levels = replay.levels ?? [0, 0, 0, 0];
+
     start_game(
         framespeed, seed,
         cols, positions,
-        ball_classes
+        ball_classes, ball_levels
     );
 }
 
@@ -154,14 +157,20 @@ function spawn_selected_balls() {
         ball_classes.push(ball_proto);
     }
 
+    let ball_levels = [];
+    for (let i=0; i<cols.length; i++) {
+        let lvl = document.querySelector(`#ball${i+1}_level`).value - 1;
+        ball_levels.push(lvl);
+    }
+
     start_game(
         framespeed, seed,
         cols, positions,
-        ball_classes
+        ball_classes, ball_levels
     );
 }
 
-function start_game(framespeed, seed, cols, positions, ball_classes) {
+function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels) {
     setTimeout(() => {
         board = new Board(new Vector2(512 * 16, 512 * 16));
 
@@ -176,8 +185,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes) {
         cols.forEach((col, index) => {
             let ball_proto = ball_classes[index];
             if (ball_proto) {
-                let lvl = document.querySelector(`#ball${index+1}_level`).value - 1;
-
+                let lvl = ball_levels[index];
                 let ball = new ball_proto(
                     board,
                     1, 512, col, null, null, {
@@ -200,6 +208,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes) {
         start_balls = balls;
 
         board.starting_balls = ball_classes.map(c => c?.name);
+        board.starting_levels = ball_levels;
 
         board.balls.forEach(ball => ball.add_velocity(
             random_on_circle(
