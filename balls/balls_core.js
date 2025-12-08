@@ -1304,7 +1304,7 @@ function render_descriptions(board) {
             let l = layout[index];
 
             write_text(
-                layers.ui2.ctx, `${ball.name}  LV ${ball.level+1}`, l[0], l[1], ball.colour.css(), CANVAS_FONTS, 16
+                layers.ui2.ctx, `${ball.name}  LV ${ball instanceof UnarmedBall ? "???" : ball.level+1}`, l[0], l[1], ball.colour.css(), CANVAS_FONTS, 16
             )
 
             let hp = Math.max(0, Math.min(100, ball.hp));

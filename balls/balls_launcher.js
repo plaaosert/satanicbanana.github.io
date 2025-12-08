@@ -45,6 +45,8 @@ function save_replay_button() {
 
 function load_replay_button() {
     let replay = prompt("Enter replay string below:");
+    if (!replay)
+        return;
 
     try {
         load_replay(replay);
@@ -470,6 +472,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
         let lowest = Math.min(...diffs);
         let fps_picked = fps_checks[diffs.findIndex(t => t == lowest)];
+
+        console.log(`Detected FPS: ${fps_expected} - applying "1/${fps_picked}"`);
 
         document.querySelector("#fps-select").value = `1/${fps_picked}`;
     }, 200);
