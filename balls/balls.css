@@ -103,7 +103,17 @@
 }
 
 .row.ballinfo span {
-  height: 30px;
+  height: 36px;
+
+  font-size: 12px;
+
+  text-align: center;
+}
+
+.row.ballinfo.ainfo span {
+  margin-top: 16px;
+
+  height: 24px;
 
   font-size: 12px;
 

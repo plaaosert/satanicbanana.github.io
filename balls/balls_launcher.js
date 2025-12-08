@@ -4,6 +4,8 @@ let fps_checks = [
     60, 90, 120, 144, 240, 480
 ]
 
+let last_winner = null;
+
 document.addEventListener("DOMContentLoaded", async function() {
     await load_audio();
 });
@@ -76,6 +78,14 @@ function exit_battle(save_replay=true) {
 
         last_replay = btoa(JSON.stringify(replay));
     }
+
+    let rps = board.remaining_players();
+    let b = null;
+    if (rps.length >= 1) {
+        b = board.get_all_player_balls(rps[0]).filter(ball => ball.show_stats)[0];
+    }
+
+    last_winner = b;
 
     board = null;
     document.querySelector(".game-container").classList.add("popout");
