@@ -306,7 +306,7 @@ class WeaponBall extends Ball {
         let hitstop = BASE_HITSTOP_TIME;
 
         let result = other.get_hit(damage * (this.player?.stats?.damage_bonus ?? 1), hitstop);
-        this.hitstop = Math.max(this.hitstop, hitstop);
+        this.apply_hitstop(hitstop);
 
         result.hitstop = hitstop;
         return result;
@@ -318,8 +318,8 @@ class WeaponBall extends Ball {
         let final_damage = damage == 0 ? damage : Math.max(1, Math.round(damage / def));
         
         this.lose_hp(final_damage);
-        this.invuln_duration = Math.max(this.invuln_duration, BALL_INVULN_DURATION);
-        this.hitstop = Math.max(this.hitstop, hitstop);
+        this.apply_invuln(BALL_INVULN_DURATION);
+        this.apply_hitstop(hitstop);
 
         return {dmg: final_damage, dead: this.hp <= 0};
     }
@@ -332,10 +332,23 @@ class WeaponBall extends Ball {
 
         let result = other.get_hit_by_projectile(with_projectile.damage * (this.player?.stats?.damage_bonus ?? 1), hitstop);
         
-        this.hitstop = Math.max(this.hitstop, hitstop);
+        this.apply_hitstop(hitstop);
 
         result.hitstop = hitstop;
         return result;
+    }
+
+    apply_hitstop(amt) {
+        // if hitstop is higher than applied, don't do anything
+        this.hitstop = Math.max(this.hitstop, amt);
+    }
+    
+    apply_invuln(amt, allow_reduction=false) {
+        if (allow_reduction) {
+            this.invuln_duration = amt;
+        } else {
+            this.invuln_duration = Math.max(this.invuln_duration, amt);
+        }
     }
 
     apply_rupture(other, amt, scales_with_stat="damage_bonus") {
@@ -481,6 +494,7 @@ class DummyBall extends WeaponBall {
     start_transforming() {
         play_audio("unarmed_theme");
 
+        this.hp = 100;
         this.transforming = true;
         this.shake_origin = this.position;
         this.skip_physics = false;
@@ -488,6 +502,8 @@ class DummyBall extends WeaponBall {
         this.ignore_bounds_checking = true;
         this.board?.set_timer(new Timer(() => {
             this.skip_physics = false;
+            this.takes_damage = false;
+            this.hp = 100;
         }, 0.05))
 
         this.board?.balls.forEach(ball => {
@@ -704,7 +720,7 @@ class HammerBall extends WeaponBall {
 
         other.set_velocity(new_other_velocity);
 
-        other.invuln_duration *= 2;
+        other.apply_invuln(BALL_INVULN_DURATION * 2);
 
         return result;
     }
@@ -1275,7 +1291,7 @@ class NeedleBall extends WeaponBall {
                 );
 
                 new_ball.hp = hp_proportion * 4;
-                new_ball.invuln_duration = BALL_INVULN_DURATION;
+                new_ball.apply_invuln(BALL_INVULN_DURATION);
 
                 if (true) {
                     let hp_lost = hp_proportion - (hp_proportion * this.split_hp_save);
@@ -1440,7 +1456,7 @@ class RailgunBall extends WeaponBall {
 
         let result = super.hit_other_with_projectile(other, with_projectile);
 
-        other.invuln_duration = 0.015;
+        other.apply_invuln(0.015, true);
 
         return result;
     }
@@ -1450,7 +1466,7 @@ class RailgunBall extends WeaponBall {
         this.speed_base *= 1.5;
         this.hit_decay = 0.6;
 
-        parrier.invuln_duration = 0.015;
+        parrier.apply_invuln(0.015, true);
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
@@ -1659,6 +1675,7 @@ class GrenadeBall extends WeaponBall {
         }
 
         this.shot_cooldown = this.shot_cooldown_max;
+        this.self_grenade_reduction = 0.7;
     }
 
     weapon_step(board, time_delta) {
@@ -1692,11 +1709,11 @@ class GrenadeBall extends WeaponBall {
 
         let dmg = with_projectile.damage;
         if (other.id == this.id && with_projectile instanceof GrenadeExplosionProjectile) {
-            dmg *= 0.70;
+            dmg *= this.self_grenade_reduction;
         }
         let result = other.get_hit_by_projectile(dmg * (this.player?.stats?.damage_bonus ?? 1), hitstop);
         
-        this.hitstop = Math.max(this.hitstop, hitstop);
+        this.apply_hitstop(hitstop);
 
         result.hitstop = hitstop;
         return result;
@@ -1710,7 +1727,7 @@ class GrenadeBall extends WeaponBall {
             this.grenade_damage_base, this.grenade_fuse
         );
 
-        new_ball.invuln_duration = BALL_INVULN_DURATION;
+        new_ball.apply_invuln(BALL_INVULN_DURATION);
         new_ball.show_stats = false;
 
         this.board?.spawn_ball(new_ball, position);
@@ -2229,7 +2246,7 @@ class HandBall extends WeaponBall {
                         this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.4;
 
                         // We can get the wall to select by getting the current angle of the weapon
-                        throwball.hitstop = 1;
+                        throwball.apply_hitstop(1);
 
                         let vec = new Vector2(0, 1 * (i % 2 == 0 ? 1 : -1)).rotate(this.weapon_data[i].angle);
                         let new_position = throwball.position.copy();
@@ -2440,7 +2457,7 @@ class HandBall extends WeaponBall {
 
             other.set_velocity(new_other_velocity);
 
-            other.invuln_duration *= 2;
+            other.apply_invuln(BALL_INVULN_DURATION * 2);
         } else if (this.hands_sprites[with_weapon_index] == "hand_open") {
             // GRAB!!!!!!!
             result = super.hit_other(other, with_weapon_index, this.grab_damage_initial);
@@ -2773,7 +2790,7 @@ class ChakramBall extends WeaponBall {
             this.apply_rupture(other, dmg, "");
         }
 
-        this.hitstop = Math.max(this.hitstop, hitstop);
+        this.apply_hitstop(hitstop);
 
         result.hitstop = hitstop;
         return result;
@@ -2916,7 +2933,7 @@ class WandBall extends WeaponBall {
                         this.black_ball_damage, this.black_ball_duration
                     )
 
-                    new_ball.invuln_duration = BALL_INVULN_DURATION;
+                    new_ball.apply_invuln(BALL_INVULN_DURATION);
                     new_ball.show_stats = false;
 
                     new_ball.set_velocity(velocity);
@@ -2976,7 +2993,7 @@ class WandBall extends WeaponBall {
 
                         new_ball.hp = this.poison_barb_hp;
 
-                        new_ball.invuln_duration = BALL_INVULN_DURATION;
+                        new_ball.apply_invuln(BALL_INVULN_DURATION);
                         new_ball.show_stats = false;
 
                         new_ball.set_velocity(velocity);
@@ -3181,7 +3198,7 @@ class WandBlackBall extends WeaponBall {
 
         other.set_velocity(new_other_velocity);
 
-        other.invuln_duration *= 2;
+        other.apply_invuln(BALL_INVULN_DURATION * 2);
 
         return result;
     }
@@ -3319,6 +3336,11 @@ class Projectile {
         this.collides_other_projectiles = true;
         this.play_parried_audio = true;
 
+        // TODO
+        // need to add source_player and source_ball
+        // so we have 3 levels of team-hits:
+        //  all on team, all from player ID, only from ball ID
+        // also need to split out team and player ID to allow for this
         this.can_hit_allied = false;
         this.can_hit_source = false; // specifically for hit/parry from SOURCE ball
 
@@ -3790,7 +3812,7 @@ class PotionPuddleProjectile extends Projectile {
 
             case 3: {
                 // hitstop
-                ball.hitstop = Math.max(ball.hitstop, 0.1);
+                ball.apply_hitstop(0.1);
                 break;
             }
         }
@@ -3921,7 +3943,7 @@ class GrenadeExplosionProjectile extends Projectile {
 
         ball.set_velocity(new_other_velocity);
 
-        ball.invuln_duration *= 2;
+        ball.apply_invuln(BALL_INVULN_DURATION * 2);
 
         this.ignore_balls.add(ball.id);
 
@@ -4001,6 +4023,7 @@ class ChakramProjectile extends Projectile {
     }
 
     hit_ball(ball, delta_time) {
+        // this one is fine because it's a projectile
         this.hitstop = Math.max(this.hitstop, BASE_HITSTOP_TIME);
 
         this.active = true;

@@ -999,11 +999,11 @@ function render_victory(board, time_until_end) {
     if (!b) {
         // draw
         if (t > 3) {
-            write_text(ctx, "DRAW", canvas_width/2, 256, "white", CANVAS_FONTS, 144, true);
+            write_pp_bordered_text(ctx, "DRAW", canvas_width/2, 256, "white", CANVAS_FONTS, 144, true, 2, "black");
         }
     } else {
         if (t > 2) {
-            write_text(ctx, "VICTORY", canvas_width/2, 256, "white", CANVAS_FONTS, 144, true);
+            write_pp_bordered_text(ctx, "VICTORY", canvas_width/2, 256, "white", CANVAS_FONTS, 144, true, 2, "black");
         }
 
         if (t > 3) {
@@ -1026,11 +1026,20 @@ function render_victory(board, time_until_end) {
                 }
             }
 
-            write_text(ctx, `${b.name}${bs.length > 1 ? ` +${bs.length-1}`: ""}`, canvas_width/2, 256 + 72, b.colour.css(), CANVAS_FONTS, 72, true);
+            write_pp_bordered_text(ctx, `${b.name}${bs.length > 1 ? ` +${bs.length-1}`: ""}`, canvas_width/2, 256 + 72, b.colour.css(), CANVAS_FONTS, 72, true, 2, "black");
         }
 
         if (t > 4.25) {
             let quote = b.quote.split("\n");
+            quote.forEach((q, i) => {
+                write_pp_bordered_text(
+                    ctx, (i == 0 ? "\"" : "") + q + (i >= quote.length-1 ? "\"" : ""),
+                    canvas_width/2, 256 + 72 + 36 + (16 * i),
+                    b.colour.css(), CANVAS_FONTS, 16, true, 2, "black"
+                )
+            });
+
+            /*
             for (let x=-2; x<3; x++) {
                 for (let y=-2; y<3; y++) {
                     if (!(x==y && x==0)) {
@@ -1052,6 +1061,7 @@ function render_victory(board, time_until_end) {
                     b.colour.css(), CANVAS_FONTS, 16, true
                 );
             })
+            */
         }
     }
 }
@@ -1379,6 +1389,8 @@ let game_fps_catchup_modifier = 1;
 
 let total_steps = 0;
 
+let fullpause_timeout = 0;
+
 function game_loop() {
     framecount++;
 
@@ -1389,7 +1401,7 @@ function game_loop() {
 
     let frame_start_time = Date.now();
 
-    if (board && board.stepped_physics) {
+    if (board) {
         if (board.duration > max_game_duration) {
             render_game(board, keys_down["KeyQ"], false, game_end_col);
         } else {
@@ -1416,6 +1428,11 @@ function game_loop() {
         game_fps_catchup_modifier = 1;
 
         if (game_paused) {
+            speed_mult *= 0;
+        }
+
+        fullpause_timeout -= delta_time / 1000;
+        if (fullpause_timeout > 0) {
             speed_mult *= 0;
         }
 
@@ -1451,8 +1468,8 @@ function game_loop() {
         }
 
         if (keys_down["KeyR"] ^ winrate_tracking) {
-            speed_mult *= 128;
-            temporary_modifiers *= 128;
+            speed_mult *= 512;
+            temporary_modifiers *= 512;
         }
 
         update_sim_speed_display(temporary_modifiers);
@@ -1554,8 +1571,8 @@ function game_loop() {
                                         ball.last_hit = 1;
                                         other.last_hit = 1;
 
-                                        ball.invuln_duration = Math.max(ball.invuln_duration, BALL_INVULN_DURATION);
-                                        other.invuln_duration = Math.max(other.invuln_duration, BALL_INVULN_DURATION);
+                                        ball.apply_invuln(BALL_INVULN_DURATION);
+                                        other.apply_invuln(BALL_INVULN_DURATION);
 
                                         play_audio("parry");
                                     }
@@ -1643,7 +1660,7 @@ function game_loop() {
                             
                             ball.last_hit = 1;
                             
-                            ball.invuln_duration = Math.max(ball.invuln_duration, BALL_INVULN_DURATION * 0.5);
+                            ball.apply_invuln(BALL_INVULN_DURATION * 0.5);
                         })
 
                         if (play_parried_audio) {

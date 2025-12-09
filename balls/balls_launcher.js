@@ -278,7 +278,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
             render_victory_enabled = true;
         }
 
-        board.hitstop_time = winrate_tracking ? 0 : 0.5;
+        fullpause_timeout = winrate_tracking ? 0 : 0.5;
     }, 0);
 
     enter_battle();
@@ -543,6 +543,10 @@ document.addEventListener("DOMContentLoaded", function() {
         let lowest = Math.min(...diffs);
         let fps_picked = fps_checks[diffs.findIndex(t => t == lowest)];
 
+        if (force_fps) {
+            fps_picked = 144;
+        }
+
         if (isNaN(fps_picked)) {
             console.log("Picked FPS is NaN?!");
             return;
@@ -631,6 +635,9 @@ document.addEventListener("DOMContentLoaded", function() {
 // TODO make levelling information exist somewhere - probably need to think about that when we come to RPG theming really
 
 let winrate_tracking = false;
+let force_fps = null;
+if (winrate_tracking)
+    force_fps = 144;
 let muted = false;
 
 let repeater_interval = null;

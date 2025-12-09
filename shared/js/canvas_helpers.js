@@ -78,6 +78,29 @@ function write_text(ctx, text, x, y, colour, font, fontsize, centered, stroke_w,
     ctx.fillText(text, x + offset_x, y + offset_y)
 }
 
+function write_pp_bordered_text(ctx, text, x, y, colour, font, fontsize, centered, radius, border_colour="black") {
+    let lb = -radius;
+    let ub = radius+1;
+
+    for (let xt=lb; xt<ub; xt++) {
+        for (let yt=lb; yt<ub; yt++) {
+            if (!(x==y && x==0)) {
+                write_text(
+                    ctx, text,
+                    x + xt, y + yt,
+                    border_colour, font, fontsize, centered
+                );
+            }
+        }
+    }
+
+    write_text(
+        ctx, text,
+        x + 0, y + 0,
+        colour, font, fontsize, centered
+    );
+}
+
 function draw_cone(ctx, x, y, r, colour, start_angle, end_angle) {
     if (Math.abs(start_angle - end_angle) >= Math.PI*2) {
         draw_circle(ctx, x, y, r, colour);
