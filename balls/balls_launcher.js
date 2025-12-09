@@ -1,3 +1,5 @@
+const BASE_URL = "https://plaao.net/balls";
+
 let board = null;
 let last_replay = "";
 let fps_checks = [
@@ -38,14 +40,14 @@ function spawn_testing_balls() {
 
 function save_replay_button() {
     // copy the replay to the clipboard
-    navigator.clipboard.writeText(last_replay).then(function() {
-		console.log('Copied replay to clipboard!');
+    navigator.clipboard.writeText(`${BASE_URL}?r=${last_replay}`).then(function() {
+		console.log('Copied replay link to clipboard!');
 		
 		document.getElementById("save_replay_button").textContent = "Copied!"
 		document.getElementById("save_replay_button").classList.add("green");
 		
 		setTimeout(function() {
-			document.getElementById("save_replay_button").textContent = "Copy last game's replay"
+			document.getElementById("save_replay_button").textContent = "Copy last game's replay link"
 		document.getElementById("save_replay_button").classList.remove("green");
 		}, 2500);
 	}, function(err) {
@@ -125,7 +127,20 @@ function enter_battle() {
 }
 
 function load_replay(replay_as_text) {
-    let replay = JSON.parse(atob(replay_as_text));
+    // it might be a URL - if it is, pick out the "r" query parameter
+    let replay_url = null;
+    try {
+        replay_url = new URL(replay_as_text);
+    } catch {};
+
+    let replay_text = replay_as_text;
+    if (replay_url) {
+        replay_text = new URLSearchParams(replay_url.search).get("r");
+        if (!replay_text) {
+            throw Error("Replay looks like a URL but doesn't have the necessary 'r' parameter");
+        }
+    }
+    let replay = JSON.parse(atob(replay_text));
 
     if (!(replay.framespeed && replay.seed && replay.balls)) {
         throw Error("Replay doesn't have all necessary fields!");
@@ -630,6 +645,13 @@ document.addEventListener("DOMContentLoaded", function() {
     // document.querySelector("select[name='ball1']").value = "WandBall";
 
     // setTimeout(() => load_replay("eyJmcmFtZXNwZWVkIjoxNDQsImJhbGxzIjpbIk5lZWRsZUJhbGwiLCJOZWVkbGVCYWxsIiwiQ2hha3JhbUJhbGwiLCJDaGFrcmFtQmFsbCJdLCJsZXZlbHMiOlswLDAsMCwwXSwic2VlZCI6IjMzMjYxMTk3ODUxNjA1MDUifQ=="), 1000)
+
+    // check querystring for a replay parameter - if it's present, load the replay instantly
+    let search_params = new URLSearchParams(window.location.search);
+    let replay = search_params.get("r");
+    if (replay) {
+        setTimeout(() => load_replay(replay), 50)
+    }
 })
 
 // TODO make levelling information exist somewhere - probably need to think about that when we come to RPG theming really

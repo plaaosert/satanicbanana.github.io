@@ -4091,13 +4091,3 @@ class WandFireballProjectile extends InertiaRespectingStraightLineProjectile {
         this.active = false;
     }
 }
-
-// new wandball:
-// randomly picks colours from:
-// black (RARE) - shoots a big bouncing ball unaffected by gravity that does contact damage before eventually disintegrating 
-// cyan - shoots a spread of icicle projectiles
-// green - shoots multiple balls that cause long-duration low-intensity poison when touched, and are destroyed instantly on touch or hit
-// magenta - shoots chaining lightning
-// red - fires a single fireball directly forwards
-//
-// flashes white when casting (to hide the colour change)
