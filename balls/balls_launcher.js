@@ -650,7 +650,13 @@ document.addEventListener("DOMContentLoaded", function() {
     let search_params = new URLSearchParams(window.location.search);
     let replay = search_params.get("r");
     if (replay) {
-        setTimeout(() => load_replay(replay), 50)
+        setTimeout(() => {
+            try {
+                load_replay(replay);
+            } catch (e) {
+                alert(`There was a problem parsing the replay!!\n\nError:\n${e}`);
+            }
+        }, 50)
     }
 })
 
