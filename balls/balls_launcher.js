@@ -11,9 +11,32 @@ let default_cols = [
     Colour.yellow,
     Colour.green,
     Colour.cyan,
+
+    Colour.from_hex("#e3910e"),
+    Colour.from_hex("#228c22"),
+    Colour.from_hex("#29e3a2"),
+    Colour.from_hex("#e30e59"),
+
+    Colour.from_hex("#9a39fa"),
     new Colour(255, 182, 201, 255),
     new Colour(230, 230, 230, 255),
 ];
+let col_names = [
+    "RED",
+    "YLW",
+    "GRN",
+    "BLU",
+
+    "ORN",
+    "DGN",
+    "SEA",
+    "MGT",
+
+    "VLT",
+    "PNK",
+    "WHT",
+]
+
 let default_positions = [
     new Vector2(512*4, 512*4),
     new Vector2(512*12, 512*12),
@@ -133,6 +156,7 @@ function enter_battle() {
 
     game_paused = false;
     update_sim_speed_display();
+    render_watermark();
 }
 
 function load_replay(replay_as_text) {
@@ -492,6 +516,8 @@ function setup_match_search(settings) {
     */
     searching = true;
     
+    last_board = null;
+
     // set up a repeater interval to run games until we find one, then copy the replay
     repeater_interval = setInterval(() => {
         if (!board) {
@@ -687,6 +713,18 @@ document.addEventListener("DOMContentLoaded", function() {
         elem.options.add(new Option("None"))
         selectable_balls.forEach(ball => elem.options.add(new Option(ball.name)));
     });
+
+    let teams_elems = document.querySelectorAll("select.sandbox-team-select");
+    teams_elems.forEach((elem, elem_idx) => {
+        default_cols.forEach((col, index) => {
+            let option = new Option(col_names[index]);
+            option.style.color = col.css();
+
+            elem.options.add(option);
+        })
+
+        elem.selectedIndex = elem_idx;
+    })
 
     document.querySelector("select[name='ball1']").value = random_from_array(selectable_balls_for_random).name;
     document.querySelector("select[name='ball2']").value = random_from_array(selectable_balls_for_random.filter(t => t.name != document.querySelector("select[name='ball1']").value)).name;

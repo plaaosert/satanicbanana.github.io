@@ -909,6 +909,19 @@ function handle_resize(event) {
     // )
 }
 
+function render_watermark() {
+    layers.front.ctx.clearRect(0, 0, canvas_width, canvas_height);
+
+    layers.front.ctx.globalAlpha = 0.5;
+    write_text(
+        layers.front.ctx,
+        `available for free at ${BASE_URL} :)`,
+        20, canvas_height - 20,
+        "white", CANVAS_FONTS, 20
+    );
+    layers.front.ctx.globalAlpha = 1;
+}
+
 function render_diagnostics(board) {
     layers.debug_front.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
@@ -1410,8 +1423,7 @@ function game_loop() {
         render_descriptions(board);
     }
 
-    render_diagnostics(board);
-
+    // render_diagnostics(board);
     
     let render_end_time = Date.now();
 
