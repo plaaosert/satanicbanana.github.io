@@ -2130,7 +2130,7 @@ class HandBall extends WeaponBall {
                             this.hands_sprites[i] = "hand_punch";
 
                             this.weapon_data[i].offset = new Vector2(96, 0);
-                            this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.7;
+                            this.weapon_data[i].size_multiplier = this.hand_size * WEAPON_SIZE_MULTIPLIER * 1.4;
                             this.punch_timeouts[i] = this.punch_recovery;
                             this.hands_speed_timeouts[i] = 0;
 
@@ -2195,7 +2195,7 @@ class HandBall extends WeaponBall {
                         this.hands_sprites[i] = "hand_neutral";
 
                         this.weapon_data[i].offset = new Vector2(0, 0);
-                        this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.5;
+                        this.weapon_data[i].size_multiplier = this.hand_size * WEAPON_SIZE_MULTIPLIER * 1;
                         this.punch_timeouts[i] = random_float(...this.punch_timeout_range, this.board.random);
                     }
 
@@ -2211,7 +2211,7 @@ class HandBall extends WeaponBall {
                         this.tired_delays[i] = this.post_block_cooldown;
 
                         this.weapon_data[i].offset = new Vector2(0, 0);
-                        this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.4;
+                        this.weapon_data[i].size_multiplier = this.hand_size * WEAPON_SIZE_MULTIPLIER * 0.8;
                     }
 
                     break;
@@ -2245,7 +2245,7 @@ class HandBall extends WeaponBall {
                         this.tired_delays[i] = this.post_grab_cooldown;
 
                         this.weapon_data[i].offset = new Vector2(0, 0);
-                        this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.4;
+                        this.weapon_data[i].size_multiplier = this.hand_size * WEAPON_SIZE_MULTIPLIER * 0.8;
 
                         // We can get the wall to select by getting the current angle of the weapon
                         throwball.apply_hitstop(1);
@@ -2359,7 +2359,7 @@ class HandBall extends WeaponBall {
                             this.hands_sprites[i] = "hand_neutral";
 
                             this.weapon_data[i].offset = new Vector2(0, 0);
-                            this.weapon_data[i].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.5;
+                            this.weapon_data[i].size_multiplier = this.hand_size * WEAPON_SIZE_MULTIPLIER;
                         } else {
                             // hands drift downwards
                             let angle_rotated = positive_mod(this.weapon_data[i].angle - (Math.PI / 2), Math.PI * 2);
@@ -2433,7 +2433,7 @@ class HandBall extends WeaponBall {
 
     block_hand(with_weapon_index) {
         this.hands_sprites[with_weapon_index] = "hand_block";
-        this.weapon_data[with_weapon_index].size_multiplier = WEAPON_SIZE_MULTIPLIER * 0.5;
+        this.weapon_data[with_weapon_index].size_multiplier = this.hand_size * WEAPON_SIZE_MULTIPLIER * 1;
         this.parry_delays[with_weapon_index] = 0.5;
     }
 
@@ -2475,7 +2475,7 @@ class HandBall extends WeaponBall {
         play_audio("grab");
 
         this.hands_sprites[with_weapon_index] = "hand_grab";
-        this.weapon_data[with_weapon_index].size_multiplier = WEAPON_SIZE_MULTIPLIER * 1;
+        this.weapon_data[with_weapon_index].size_multiplier = this.hand_size * WEAPON_SIZE_MULTIPLIER * 2;
 
         this.grab_info[with_weapon_index].ball = ball;
         ball.skip_physics = true;
@@ -3324,7 +3324,7 @@ class Projectile {
         this.set_pos(position);
         this.damage = damage;
         this.size = size * PROJ_SIZE_MULTIPLIER;
-        this.direction = this.set_dir(direction);
+        this.set_dir(direction);
 
         this.speed = speed;
 
