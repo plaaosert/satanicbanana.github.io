@@ -11,7 +11,7 @@ let default_cols = [
     Colour.yellow,
     Colour.green,
     Colour.cyan,
-    new Colour(255, 209, 220, 255),
+    new Colour(255, 182, 201, 255),
     new Colour(230, 230, 230, 255),
 ];
 let default_positions = [
