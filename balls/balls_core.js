@@ -1155,7 +1155,7 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
 
             layer.ctx.strokeStyle = projectile.sprite_colour;
 
-            let segments = 1000;
+            let segments = 100;
             let line_start_point = 0;
             let max_width = projectile.get_width();
             let remaining_line_segs = segments - line_start_point;

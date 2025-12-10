@@ -6,7 +6,14 @@ let fps_checks = [
     60, 90, 120, 144, 240, 480
 ]
 
-let default_cols = [Colour.red, Colour.yellow, Colour.green, Colour.cyan];
+let default_cols = [
+    Colour.red,
+    Colour.yellow,
+    Colour.green,
+    Colour.cyan,
+    Colour.magenta,
+    Colour.white
+];
 let default_positions = [
     new Vector2(512*4, 512*4),
     new Vector2(512*12, 512*12),
