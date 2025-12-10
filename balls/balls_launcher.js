@@ -11,8 +11,8 @@ let default_cols = [
     Colour.yellow,
     Colour.green,
     Colour.cyan,
-    Colour.magenta,
-    Colour.white
+    new Colour(255, 160, 160, 255),
+    new Colour(230, 230, 230, 255),
 ];
 let default_positions = [
     new Vector2(512*4, 512*4),
