@@ -1467,7 +1467,7 @@ function game_loop() {
             temporary_modifiers *= 8;
         }
 
-        if (keys_down["KeyR"] ^ winrate_tracking) {
+        if (keys_down["KeyR"] ^ searching) {
             speed_mult *= 512;
             temporary_modifiers *= 512;
         }
@@ -1828,7 +1828,7 @@ function game_loop() {
                 }
 
                 match_end_timeout -= game_delta_time;
-                if (winrate_tracking) {
+                if (searching) {
                     match_end_timeout = 0;
                 }
 
@@ -1861,7 +1861,7 @@ function game_loop() {
                         }
                     }
                     
-                    exit_battle();
+                    exit_battle(true);
                     break;
                 }
             }

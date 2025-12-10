@@ -383,3 +383,8 @@ button.green {
 .sandbox-team-select {
   margin-right: 16px;
 }
+
+button.sandbox-ball-random {
+  margin-left: 16px;
+  font-size: 18px;
+}

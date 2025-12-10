@@ -22,6 +22,7 @@ let default_positions = [
 ]
 
 let last_winner = null;
+let last_board = null;
 
 document.addEventListener("DOMContentLoaded", async function() {
     await load_audio();
@@ -96,15 +97,16 @@ function exit_battle(save_replay=true) {
         }
 
         last_replay = btoa(JSON.stringify(replay));
-    }
 
-    let rps = board.remaining_players();
-    let b = null;
-    if (rps.length >= 1) {
-        b = board.get_all_player_balls(rps[0]).filter(ball => ball.show_stats)[0];
-    }
+        let rps = board.remaining_players();
+        let b = null;
+        if (rps.length >= 1) {
+            b = board.get_all_player_balls(rps[0]).filter(ball => ball.show_stats)[0];
+        }
 
-    last_winner = b;
+        last_winner = b;
+        last_board = board;
+    }
 
     board = null;
     document.querySelector(".game-container").classList.add("popout");
@@ -300,7 +302,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
             render_victory_enabled = true;
         }
 
-        fullpause_timeout = winrate_tracking ? 0 : 0.5;
+        fullpause_timeout = searching ? 0 : 0.5;
     }, 0);
 
     enter_battle();
@@ -457,6 +459,100 @@ let match_end_timeout = 0;
 let render_victory_enabled = true;
 
 let user_interacted_with_fps_select = false;
+
+function setup_match_search_params(winning_team, survivor_hp_bounds, num_balls_survived, duration, randomise_balls) {
+    setup_match_search({
+        winning_team: winning_team ?? null,
+        survivor_hp_bounds: survivor_hp_bounds ?? null,
+        num_balls_survived: num_balls_survived ?? null,
+        duration: duration ?? null,
+        randomise_balls: randomise_balls ?? []
+    });
+}
+
+function cancel_match_search() {
+    if (board) {
+        exit_battle(false);
+    }
+
+    searching = false;
+    last_board = null;
+    clearInterval(repeater_interval);
+}
+
+function setup_match_search(settings) {
+    /*
+        {
+            winning_team: int
+            survivor_hp_bounds: [number, number]
+            num_balls_survived: number
+            duration: number,
+            randomise_balls: [int]
+        }
+    */
+    searching = true;
+    
+    // set up a repeater interval to run games until we find one, then copy the replay
+    repeater_interval = setInterval(() => {
+        if (!board) {
+            // does the last board satisfy the conditions?
+            let remaining_players = last_board?.remaining_players();
+            let winning_team = null;
+            let survivors = last_board?.balls.filter(ball => ball.show_stats);
+            if (remaining_players?.length == 1) {
+                winning_team = remaining_players[0].id;
+            }
+
+            let highest_survivor_hp = null;
+            let lowest_survivor_hp = null;
+            if (survivors?.length > 0) {
+                highest_survivor_hp = survivors?.reduce((p, c) => Math.max(p, c.hp), Number.NEGATIVE_INFINITY);
+                lowest_survivor_hp = survivors?.reduce((p, c) => Math.min(p, c.hp), Number.POSITIVE_INFINITY);
+            }
+
+            let num_balls_survived = survivors?.length;
+
+            let duration = last_board?.duration;
+
+            console.log(winning_team, lowest_survivor_hp, highest_survivor_hp, num_balls_survived, duration);
+
+            let lb = null;
+            let ub = null;
+            if (settings.survivor_hp_bounds) {
+                lb = settings.survivor_hp_bounds[0] ?? null;
+                ub = settings.survivor_hp_bounds[1] ?? null;
+            }
+
+            if (
+                (settings.winning_team === null || winning_team == settings.winning_team) &&
+                (ub === null || highest_survivor_hp <= ub) &&
+                (lb === null || lowest_survivor_hp >= lb) &&
+                (settings.num_balls_survived === null || num_balls_survived <= settings.num_balls_survived) &&
+                (settings.duration === null || duration <= settings.duration)
+            ) {
+                // this is valid, so turn searching off
+                cancel_match_search();
+                let response = confirm("Found it!\n\nPlay now?");
+                console.log(last_replay);
+                if (response) {
+                    load_replay(last_replay);
+                }
+            } else {
+                // apply the randomisation
+                let rand = settings.randomise_balls ?? [];
+                rand.forEach(index => {
+                    randomise_ballselect(`ball${index+1}`);
+                })
+
+                spawn_selected_balls();
+            }
+        }
+    }, 100);
+}
+
+function randomise_ballselect(ballid) {
+    document.querySelector(`select[name='${ballid}']`).value = random_from_array(selectable_balls_for_random).name;
+}
 
 document.addEventListener("DOMContentLoaded", function() {
     get_canvases();
@@ -669,10 +765,13 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // TODO make levelling information exist somewhere - probably need to think about that when we come to RPG theming really
 
-let winrate_tracking = false;
+let searching = false;
+let winrate_tracking = searching;
+
 let force_fps = null;
 if (winrate_tracking)
     force_fps = 144;
+
 let muted = false;
 
 let repeater_interval = null;

@@ -474,6 +474,8 @@ class DummyBall extends WeaponBall {
                 this.hp = 0;
                 this.transforming = false;
                 this.done = true;
+                this.skip_physics = false;
+                this.takes_damage = true;
 
                 let b = this.board;
                 b.set_timer(new Timer(() => {
@@ -514,7 +516,7 @@ class DummyBall extends WeaponBall {
     }
 
     get_hit(damage, hitstop) {
-        if (this.transforming) {
+        if (this.transforming || this.done) {
             return {dmg: 0, dead: false};
         }
 
@@ -3322,8 +3324,7 @@ class Projectile {
         this.set_pos(position);
         this.damage = damage;
         this.size = size * PROJ_SIZE_MULTIPLIER;
-        this.direction = direction;
-        this.direction_angle = this.direction.angle();
+        this.direction = this.set_dir(direction);
 
         this.speed = speed;
 
@@ -3349,6 +3350,14 @@ class Projectile {
 
     set_pos(to) {
         this.position = to;
+        this.position.compat_round();
+    }
+
+    set_dir(to) {
+        this.direction = to;
+        this.direction.compat_round();
+
+        this.direction_angle = compat_round(this.direction.angle());
     }
 
     physics_step(time_delta) {
@@ -3843,8 +3852,8 @@ class PotionBottleProjectile extends Projectile {
 
         this.proj_velocity = this.proj_velocity.add(this.gravity.mul(time_delta));
     
-        this.direction_angle += (this.rotation_speed * (Math.PI / 180)) * time_delta;
-        this.direction = new Vector2(1, 0).rotate(this.direction_angle);
+        let new_direction_angle = this.direction_angle + ((this.rotation_speed * (Math.PI / 180)) * time_delta);
+        this.set_dir(new Vector2(1, 0).rotate(new_direction_angle));
     }
 
     make_splash() {
@@ -3964,7 +3973,7 @@ class ChakramProjectile extends Projectile {
         ];
 
         this.initial_angle = initial_angle;
-        this.direction_angle = initial_angle + deg2rad(45);
+        this.set_dir(new Vector2(1, 0).rotate(this.initial_angle + deg2rad(45)));
 
         this.cur_angle = this.initial_angle;
 
@@ -3997,8 +4006,8 @@ class ChakramProjectile extends Projectile {
             this.source.weapon_data[0].angle = this.cur_angle;
         }
 
-        this.direction_angle += (this.sprite_angle_change_speed * Math.sign(this.rotation_speed) * (Math.PI / 180)) * delta_time;
-        this.direction = new Vector2(1, 0).rotate(this.direction_angle);
+        let new_direction_angle = this.direction_angle + ((this.sprite_angle_change_speed * Math.sign(this.rotation_speed) * (Math.PI / 180)) * delta_time);
+        this.set_dir(new Vector2(1, 0).rotate(new_direction_angle));
     
         // dist should be min_dist at 0, max_dist at 0.5 and min_dist again at 1
         let lifetime_proportion = this.lifetime / this.rotation_time;

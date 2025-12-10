@@ -164,6 +164,10 @@ function compat_floor(v) {
     return Math.floor(v * COMPAT_ROUNDING_FACTOR) / COMPAT_ROUNDING_FACTOR;
 }
 
+function compat_round(v) {
+    return Math.round(v * COMPAT_ROUNDING_FACTOR) / COMPAT_ROUNDING_FACTOR;
+}
+
 function compat_pow(x, y) {
     return compat_floor(Math.pow(x, y));
 }
