@@ -1613,7 +1613,7 @@ function game_loop() {
         render_descriptions(board);
     }
 
-    render_diagnostics(board);
+    // render_diagnostics(board);
     
     let render_end_time = Date.now();
 
