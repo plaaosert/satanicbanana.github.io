@@ -121,6 +121,8 @@ function switch_main(id_old, id_new) {
 
 def = "ocean";
 document.addEventListener("DOMContentLoaded", function() {
-	start_funcs[def]();
-	document.getElementById(def).style.display = "inline";
+	if (start_funcs[def]) {
+		start_funcs[def]();
+		document.getElementById(def).style.display = "inline";
+	};
 })

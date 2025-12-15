@@ -33,6 +33,13 @@ changes = [
         "typ": "major",
         "desc": "I have created a new... thing. <a class=\"new-thing\" href=\"turing/index.html\">turing</a> is an interactive visualiser for\nTuring machines and other assorted things, including the ET001B, a tiny (fake) CPU. Take a look."
     },
+
+    {
+        "ts": 1765829215,
+        "title": "Balls!!",
+        "typ": "major",
+        "desc": "I have created a new game where you can watch balls fight to the death.\n<a class=\"new-thing\" href=\"balls/index.html\">balls</a> is a game about balls with weapons fighting each other. I plan to add a campaign mode in the near future.\nI am also uploading highlights to YouTube, TikTok, Instagram and Twitter under @plaaoballs.\n<a class=\"new-thing\" href=\"https://www.youtube.com/@plaaoballs\">https://www.youtube.com/@plaaoballs</a>"
+    },
 ]
 
 changes = changes.sort((a,b) => b.ts-a.ts);

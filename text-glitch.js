@@ -56,6 +56,7 @@ aims = {
 	"16":">> go back",
 	"17":">> this isn't actually a game, really",
 	"18":">> peer into the soul of a machine",
+	"19":">> watch balls fight to the death",
 	"banner":"// \u00A0hello!\u00A0\u00A0 //"
 };
 
@@ -202,7 +203,7 @@ function ominous() {
 			"## [i need help...]"
 		][Math.floor(Math.random() * 10)];
 
-		if (!six_moused) {
+		if (!six_moused && document.getElementById("6")) {
 			clearInterval(evts["6"]);
 
 			document.getElementById("6").textContent = `## ..${" ".repeat(origs[6].length - 5)}`;

@@ -109,7 +109,7 @@ function get_a_ocean_slices() {
 	
 	for (var xr=209; xr>=0; xr--) {
 		var y = sum_all_waves_at_pos(xr) + 5;
-		console.log(y);
+		// console.log(y);
 		
 		// Returns a list of chars which can then be populated into the a_ocean.
 		for (var i=0; i<10; i++) {
