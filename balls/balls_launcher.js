@@ -276,6 +276,7 @@ function exit_battle(save_replay=true) {
         // console.log(board.tension);
     }
 
+    replaying = false;
     board = null;
     document.querySelector(".game-container").classList.add("popout");
     document.querySelector(".game-container").classList.remove("popin");
