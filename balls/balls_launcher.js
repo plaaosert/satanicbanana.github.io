@@ -515,8 +515,8 @@ function update_ballinfo(ballid) {
     }
 
     settings_elem.style.setProperty("--col", default_cols[ball_team].css());
+    info_a_parent_elem.style.setProperty("--col", default_cols[ball_team].lerp(Colour.white, 0.5).css());
     info_parent_elem.style.setProperty("--col", default_cols[ball_team].css());
-    info_a_parent_elem.style.setProperty("--col", default_cols[ball_team].css());
 }
 
 function update_awaken_showhide(ballid) {
@@ -748,6 +748,7 @@ function setup_match_search(num_candidates, settings) {
 
 function randomise_ballselect(ballid) {
     document.querySelector(`select[name='${ballid}']`).value = random_from_array(selectable_balls_for_random).name;
+    update_ballinfo(ballid);
 }
 
 function kill_confirmation_box() {
