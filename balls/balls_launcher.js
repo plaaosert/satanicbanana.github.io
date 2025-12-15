@@ -973,6 +973,7 @@ document.addEventListener("DOMContentLoaded", function() {
         update_replays_tab(true);
     } catch {
         console.log("Our replays fucked up. Its over");
+        replay_history = [];
     }
 })
 
