@@ -53,6 +53,8 @@ const REPLAY_HISTORY_SIZE = 50;
 
 let replaying = false;
 
+let readied_replay = null;
+
 document.addEventListener("DOMContentLoaded", async function() {
     await load_audio();
 });
@@ -302,8 +304,7 @@ function enter_battle() {
     render_watermark();
 }
 
-function load_replay(replay_as_text) {
-    // it might be a URL - if it is, pick out the "r" query parameter
+function parse_replay(replay_as_text) {
     let replay_url = null;
     try {
         replay_url = new URL(replay_as_text);
@@ -325,6 +326,13 @@ function load_replay(replay_as_text) {
     if (replay.game_version != GAME_VERSION) {
         alert(`This replay doesn't match the current game version (expected ${GAME_VERSION}, got ${replay.game_version})\n\nIt might still be fine, but it might also desync and be completely wrong. Who can tell?!\n\n(Maybe one day I'll have a better solution here...)`)
     }
+
+    return replay;
+}
+
+function load_replay(replay_as_text) {
+    // it might be a URL - if it is, pick out the "r" query parameter
+    let replay = parse_replay(replay_as_text);
 
     let framespeed = replay.framespeed;
     let seed = replay.seed;
@@ -566,9 +574,6 @@ function mod_simulation_speed(e, by) {
 }
 
 function reset_simulation_speed() {
-    if (!board)
-        return;
-
     game_speed_mult = 1;
     update_sim_speed_display();
 }
@@ -742,6 +747,48 @@ function setup_match_search(num_candidates, settings) {
 
 function randomise_ballselect(ballid) {
     document.querySelector(`select[name='${ballid}']`).value = random_from_array(selectable_balls_for_random).name;
+}
+
+function kill_confirmation_box() {
+    document.querySelector("#sandbox_load_replays").classList.add("nodisplay");
+}
+
+function load_readied_replay() {
+    load_replay(readied_replay);
+    readied_replay = null;
+    kill_confirmation_box();
+}
+
+function setup_load_menu(replay_as_text) {
+    // get the replay info, same thing as with the buttons
+    let parent_elem = document.querySelector("#replay_load_balls_list");
+    parent_elem.innerHTML = "";  // clear it
+
+    // structure is <span><img> <span>BallName LV X</span></span> like in replay buttons
+    let replay = parse_replay(replay_as_text);
+
+    replay.balls.forEach((ball, index) => {
+        let ball_str = replay.balls[index];
+        if (!ball_str) {
+            return;
+        }
+
+        let ball_class = selectable_balls_for_random.find(t => t?.name == ball_str);
+
+        let entry_span = document.createElement("span");
+
+        let img_icon = document.createElement("img");
+        let name_span = document.createElement("span");
+
+        img_icon.src = `img/icons/${ball_class.ball_name.toLowerCase()}.png`;
+        name_span.textContent = ` ${(`${ball_class.ball_name} LV ${replay.levels[index]+1} `)} `;
+        name_span.style.color = Colour.from_array(replay.cols[index]).css();
+
+        entry_span.appendChild(img_icon);
+        entry_span.appendChild(name_span);
+
+        parent_elem.appendChild(entry_span);
+    })
 }
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -957,13 +1004,13 @@ document.addEventListener("DOMContentLoaded", function() {
     let search_params = new URLSearchParams(window.location.search);
     let replay = search_params.get("r");
     if (replay) {
-        setTimeout(() => {
-            try {
-                load_replay(replay);
-            } catch (e) {
-                alert(`There was a problem parsing the replay!!\n\nError:\n${e}`);
-            }
-        }, 50)
+        try {
+            readied_replay = replay;
+            setup_load_menu(readied_replay);
+            document.querySelector("#sandbox_load_replays").classList.remove("nodisplay");
+        } catch (e) {
+            alert(`There was a problem parsing the replay!!\n\nError:\n${e}`);
+        }
     }
 
     // load stored replays

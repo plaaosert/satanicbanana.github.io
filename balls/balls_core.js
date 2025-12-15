@@ -1072,8 +1072,8 @@ function handle_resize(event) {
         canvas_y = rect.y;
     })
 
-    document.querySelector(".behind-canvases").style.width = canvas_width + "px";
-    document.querySelector(".behind-canvases").style.height = canvas_height + "px";
+    document.querySelectorAll(".behind-canvases").forEach(elem => { if (elem.id != "sandbox_load_replays") { elem.style.width = canvas_width + "px" } });
+    document.querySelectorAll(".behind-canvases").forEach(elem => { if (elem.id != "sandbox_load_replays") { elem.style.height = canvas_height + "px" } });
 
     document.querySelector(".everything-subcontainer").style.height = canvas_height + "px";
 

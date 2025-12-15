@@ -11,7 +11,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 
     <link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=02"/>
-	<link rel="stylesheet" type="text/css" href="balls.css?v=16"/>
+	<link rel="stylesheet" type="text/css" href="balls.css?v=17"/>
 </head>
 <body>
 	<div class="topbar">
@@ -206,6 +206,19 @@
                     <canvas class="game-canvas" id="game-canvas-front">
                         This canvas needs to be viewed to be displayed.
                     </canvas>
+
+                    <div id="sandbox_load_replays" class="sandbox-load-replays behind-canvases nodisplay">
+                        <span class="title">Loading a replay with the following balls:</span>
+                        <br>
+                        <span id="replay_load_balls_list">
+                            
+                        </span>
+                        <br>
+                        <div class="buttonrow">
+                            <button onclick="kill_confirmation_box()" style="font-size: 16px;">Cancel</button>
+                            <button onclick="load_readied_replay()" style="font-size: 16px;">Start</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -253,9 +266,9 @@
     <script src="../shared/js/helpers.js?v=04"></script>
 	<script src="../shared/js/canvas_helpers.js?v=03"></script>
 	
-    <script src="balls_core.js?v=16"></script>
-    <script src="balls_balls.js?v=19"></script>
-    <script src="balls_launcher.js?v=25"></script>
+    <script src="balls_core.js?v=17"></script>
+    <script src="balls_balls.js?v=20"></script>
+    <script src="balls_launcher.js?v=26"></script>
     
     <script src="balls_campaign.js?v=03"></script>
 

@@ -4,7 +4,7 @@
     initial-value: 1.0;
 }
 
-.nodisplay {
+.nodisplay, .behind-canvases.nodisplay {
   display: none;
 }
 
@@ -473,4 +473,29 @@ button.sandbox-ball-random {
   100% {
     background-color: #222;
   }
+}
+
+.sandbox-load-replays {
+  background-color: #111;
+
+  width: fit-content;
+  height: fit-content;
+
+  padding: 8px;
+  
+  margin: auto;
+
+  box-shadow:
+        0 0 0 2px #444,
+        0 0 0 4px #666,
+        0 0 0 8px #000;
+}
+
+.sandbox-load-replays .buttonrow {
+  flex-direction: row;
+}
+
+#replay_load_balls_list {
+  display: flex;
+  flex-direction: column;
 }
