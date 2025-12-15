@@ -22,6 +22,8 @@
   margin-left: 64px;
   margin-right: 64px;
 
+  width: calc(100vw - 128px);
+
   color: white;
 }
 
@@ -30,10 +32,24 @@
 
   flex-direction: row;
 
-  justify-content: center;
-  align-items: center;
+  justify-content: space-between;
+
+  width: 100%;
 
   color: white;
+}
+
+.everything-subcontainer>* {
+  flex-grow: 1;
+  flex-basis: 0;
+}
+
+.everything-subcontainer>.game-supercontainer {
+  flex-basis: unset;
+  flex-grow: unset;
+
+  margin-left: 24px;
+  margin-right: 24px;
 }
 
 .everything-container>* {
@@ -364,9 +380,9 @@ button:disabled {
 }
 
 button.green {
-  color: lime;
-  background-color: #020;
-  border-color: #010;
+  color: lime !important;
+  background-color: #020 !important;
+  border-color: #010 !important;
 }
 
 .speed-alert {
@@ -387,4 +403,74 @@ button.green {
 button.sandbox-ball-random {
   margin-left: 16px;
   font-size: 18px;
+}
+
+.sandbox.replaypanel {
+  display: flex;
+  flex-direction: column;
+
+  align-self: flex-start;
+
+  margin-left: 8px;
+
+  height: 100%;
+  overflow: auto;
+  scrollbar-width: none;
+}
+
+.sandbox.replaypanel button {
+  --fsz: 16px;
+
+  font-size: var(--fsz);
+
+  width: min-content;
+
+  animation: glow 1s ease-in forwards;
+}
+
+.sandbox.replaypanel .parent {
+  display: flex;
+  flex-direction: column;
+
+  width: fit-content;
+}
+
+.sandbox.replaypanel .first>button {
+  padding: 8px;
+}
+
+.sandbox.replaypanel .second>button {
+  width: 100%;
+}
+
+.sandbox.replaypanel>div {
+  margin-bottom: 8px;
+}
+
+.sandbox.replaypanel button>span {
+  display: block;
+  text-align: left;
+  white-space: pre;
+}
+
+.sandbox.replaypanel button>img {
+  width: var(--fsz);
+  height: var(--fsz);
+}
+
+.sandbox.replaypanel button .date {
+  font-weight: bold;
+}
+
+.sandbox.replaypanel button .duration {
+  margin-bottom: var(--fsz);
+}
+
+@keyframes glow {
+  0% {
+    background-color: #244;
+  }
+  100% {
+    background-color: #222;
+  }
 }

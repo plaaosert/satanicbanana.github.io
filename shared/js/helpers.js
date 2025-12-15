@@ -812,10 +812,13 @@ Colour.black = new Colour(0, 0, 0, 255);
 Colour.white = new Colour(255, 255, 255, 255);
 Colour.red = new Colour(255, 0, 0, 255);
 Colour.green = new Colour(0, 255, 0, 255);
+Colour.dgreen = new Colour(0, 128, 0, 255);
 Colour.blue = new Colour(0, 0, 255, 255);
 
 Colour.yellow = new Colour(255, 255, 0, 255);
 Colour.cyan = new Colour(0, 255, 255, 255);
 Colour.magenta = new Colour(255, 0, 255, 255);
+
+Colour.orange = new Colour(255, 165, 0, 255);
 
 Colour.empty = new Colour(0, 0, 0, 0);

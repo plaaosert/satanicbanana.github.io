@@ -55,8 +55,8 @@ function write_rotated_image(canvas, ctx, x, y, image, w, h, angle_rad) {
     }
 }
 
-function write_text(ctx, text, x, y, colour, font, fontsize, centered, stroke_w, stroke_style) {
-    ctx.font = `${fontsize}px ${font}`;
+function write_text(ctx, text, x, y, colour, font, fontsize, centered, stroke_w, stroke_style, modifiers) {
+    ctx.font = `${modifiers ?? ""} ${fontsize}px ${font}`;
     ctx.fillStyle = colour;
 
     let offset_x = 0;
@@ -78,7 +78,7 @@ function write_text(ctx, text, x, y, colour, font, fontsize, centered, stroke_w,
     ctx.fillText(text, x + offset_x, y + offset_y)
 }
 
-function write_pp_bordered_text(ctx, text, x, y, colour, font, fontsize, centered, radius, border_colour="black") {
+function write_pp_bordered_text(ctx, text, x, y, colour, font, fontsize, centered, radius, border_colour="black", modifiers) {
     let lb = -radius;
     let ub = radius+1;
 
@@ -88,7 +88,8 @@ function write_pp_bordered_text(ctx, text, x, y, colour, font, fontsize, centere
                 write_text(
                     ctx, text,
                     x + xt, y + yt,
-                    border_colour, font, fontsize, centered
+                    border_colour, font, fontsize, centered,
+                    null, null, modifiers
                 );
             }
         }
@@ -97,7 +98,8 @@ function write_pp_bordered_text(ctx, text, x, y, colour, font, fontsize, centere
     write_text(
         ctx, text,
         x + 0, y + 0,
-        colour, font, fontsize, centered
+        colour, font, fontsize, centered,
+        null, null, modifiers
     );
 }
 

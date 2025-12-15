@@ -46,6 +46,12 @@ let default_positions = [
 
 let last_winner = null;
 let last_board = null;
+let search_stored_replays = [];
+
+let replay_history = [];
+const REPLAY_HISTORY_SIZE = 50;
+
+let replaying = false;
 
 document.addEventListener("DOMContentLoaded", async function() {
     await load_audio();
@@ -69,17 +75,20 @@ function spawn_testing_balls() {
     board.balls[3]?.add_velocity(random_on_circle(random_float(0, 512 * 10, board.random), board.random));
 }
 
-function save_replay_button() {
+function save_replay_button(override_text, override_elem, override_return) {
     // copy the replay to the clipboard
-    navigator.clipboard.writeText(`${BASE_URL}?r=${last_replay}`).then(function() {
+    let elem = override_elem ? override_elem : document.getElementById("save_replay_button");
+    navigator.clipboard.writeText(
+        `${BASE_URL}?r=${override_text ? override_text : last_replay}`
+    ).then(function() {
 		console.log('Copied replay link to clipboard!');
 		
-		document.getElementById("save_replay_button").textContent = "Copied!"
-		document.getElementById("save_replay_button").classList.add("green");
+		elem.textContent = "Copied!"
+		elem.classList.add("green");
 		
 		setTimeout(function() {
-			document.getElementById("save_replay_button").textContent = "Copy last game's replay link"
-		document.getElementById("save_replay_button").classList.remove("green");
+			elem.textContent = override_return ? override_return : "Copy last game's replay link"
+		    elem.classList.remove("green");
 		}, 2500);
 	}, function(err) {
         console.error('Something went wrong: ', err);
@@ -98,11 +107,126 @@ function load_replay_button() {
     }
 }
 
+function add_to_replays_tab(tab, replay_entry, to_first=true) {
+    /*
+
+        Date
+        Duration
+        BallIcon (BallName)(in ball colour) [StarIcon Win](if win)
+        ...
+    */
+    let parent_elem = document.createElement("div");
+    let first_elem = document.createElement("div");
+    let second_elem = document.createElement("div");
+
+    parent_elem.classList.add("parent");
+    first_elem.classList.add("first");
+    second_elem.classList.add("second");
+
+    parent_elem.append(first_elem);
+    parent_elem.append(second_elem);
+
+    let main_elem = document.createElement("button");
+    
+    let date_span = document.createElement("span");
+    let duration_span = document.createElement("span");
+    
+    date_span.textContent = new Date(replay_entry.replay.time_recorded).toLocaleString();
+    duration_span.textContent = `Duration: ${replay_entry.replay.duration ? replay_entry.replay.duration.toFixed(1) : "?"}s`;
+
+    date_span.classList.add("date");
+    duration_span.classList.add("duration");
+
+    main_elem.appendChild(date_span);
+    main_elem.appendChild(duration_span);
+
+    replay_entry.winners.forEach((won, index) => {
+        let ball_str = replay_entry.replay.balls[index];
+        if (!ball_str) {
+            return;
+        }
+
+        let ball_class = selectable_balls_for_random.find(t => t?.name == ball_str);
+
+        let entry_span = document.createElement("span");
+
+        let img_icon = document.createElement("img");
+        let name_span = document.createElement("span");
+
+        img_icon.src = `img/icons/${ball_class.ball_name.toLowerCase()}.png`;
+        name_span.textContent = ` ${(`${ball_class.ball_name} LV ${replay_entry.replay.levels[index]+1} `).padEnd(23, "-")} `;
+        name_span.style.color = Colour.from_array(replay_entry.replay.cols[index]).css();
+
+        entry_span.appendChild(img_icon);
+        entry_span.appendChild(name_span);
+
+        if (won) {
+            let star_icon = document.createElement("img");
+            let star_span = document.createElement("span");
+
+            star_icon.src = `img/icons/star.png`;
+            star_span.style.color = Colour.from_array(replay_entry.replay.cols[index]).css();
+            star_span.textContent = ` Win!`;
+
+            entry_span.appendChild(star_icon);
+            entry_span.appendChild(star_span);
+        }
+
+        main_elem.appendChild(entry_span);
+    });
+
+    main_elem.addEventListener("click", () => {
+        load_replay(btoa(JSON.stringify(replay_entry.replay)));
+    })
+
+    first_elem.append(main_elem);
+
+    let copy_button = document.createElement("button");
+    let play_button = document.createElement("button");
+
+    copy_button.textContent = "Copy replay";
+    play_button.textContent = "Play replay";
+
+    copy_button.addEventListener("click", () => {
+        save_replay_button(btoa(JSON.stringify(replay_entry.replay)), copy_button, copy_button.textContent);
+    })
+
+    play_button.addEventListener("click", () => {
+        load_replay(btoa(JSON.stringify(replay_entry.replay)));
+    })
+
+    second_elem.append(copy_button);
+    // second_elem.append(play_button);
+
+    if (to_first) {
+        tab.prepend(parent_elem);
+    } else {
+        tab.append(parent_elem);
+    }
+}
+
+function update_replays_tab(refresh=false) {
+    let elem = document.getElementById("sandbox_replay_panel");
+
+    // if refresh, clear it and add all.
+    // else, add the one in index zero at the start, then chop off any after the max-length
+    if (refresh) {
+        elem.innerHTML = "";
+        replay_history.forEach(replay => add_to_replays_tab(elem, replay, false));
+    } else {
+        add_to_replays_tab(elem, replay_history[0]);
+    }
+
+    while (elem.childNodes.length > REPLAY_HISTORY_SIZE) {
+        elem.removeChild(elem.lastChild);
+    }
+}
+
 function exit_battle(save_replay=true) {
     if (!board)
         return;
 
-    if (board.forced_time_deltas != 0 && save_replay) {
+    if (!replaying && board.forced_time_deltas != 0 && save_replay) {
         // we might have a replay
         // replay needs:
         // - framespeed
@@ -111,6 +235,10 @@ function exit_battle(save_replay=true) {
         // that's it!
         // TODO also save colour and start positions...
         let replay = {
+            game_version: GAME_VERSION,
+            time_recorded: Date.now(),
+            duration: board.duration,
+
             framespeed: board.forced_time_deltas && Math.round(1000 / board.forced_time_deltas),
             balls: board.starting_balls,
             levels: board.starting_levels,
@@ -123,12 +251,27 @@ function exit_battle(save_replay=true) {
 
         let rps = board.remaining_players();
         let b = null;
+        let bs = [];
         if (rps.length >= 1) {
-            b = board.get_all_player_balls(rps[0]).filter(ball => ball.show_stats)[0];
+            bs = board.get_all_player_balls(rps[0]).filter(ball => ball.show_stats);
+            b = bs[0];
         }
 
         last_winner = b;
         last_board = board;
+
+        replay_history.unshift({
+            replay: replay,
+            tension: board.tension,
+            winners: board.starting_players.map(ps => rps.some(p => p.id == ps.id))
+        });
+
+        replay_history = replay_history.slice(0, REPLAY_HISTORY_SIZE);
+
+        update_replays_tab();
+        localStorage.setItem("balls_replay_history", JSON.stringify(replay_history));
+
+        // console.log(board.tension);
     }
 
     board = null;
@@ -179,6 +322,10 @@ function load_replay(replay_as_text) {
         throw Error("Replay doesn't have all necessary fields!");
     }
 
+    if (replay.game_version != GAME_VERSION) {
+        alert(`This replay doesn't match the current game version (expected ${GAME_VERSION}, got ${replay.game_version})\n\nIt might still be fine, but it might also desync and be completely wrong. Who can tell?!\n\n(Maybe one day I'll have a better solution here...)`)
+    }
+
     let framespeed = replay.framespeed;
     let seed = replay.seed;
 
@@ -214,6 +361,7 @@ function load_replay(replay_as_text) {
         }
     }
 
+    replaying = true;
     start_game(
         framespeed, seed,
         cols, positions,
@@ -310,7 +458,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
 
         board.balls.forEach(ball => ball.add_velocity(
             random_on_circle(
-                random_float(512 * 6, 512 * 12, board.random),
+                random_float(512 * 5, 512 * 10, board.random),
                 board.random)
             )
         );
@@ -326,7 +474,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
             render_victory_enabled = true;
         }
 
-        fullpause_timeout = searching ? 0 : 0.5;
+        fullpause_timeout = searching ? 0 : 1;
     }, 0);
 
     enter_battle();
@@ -412,9 +560,6 @@ function load_mod() {
 const MAX_SPEED_MULT = 256;
 const MIN_SPEED_MULT = 1 / 256;
 function mod_simulation_speed(e, by) {
-    if (!board)
-        return;
-
     game_speed_mult *= by;
     game_speed_mult = Math.max(MIN_SPEED_MULT, Math.min(MAX_SPEED_MULT, game_speed_mult));
     update_sim_speed_display();
@@ -444,13 +589,13 @@ function update_sim_speed_display(temporary_modifiers=1) {
     let elem = speed_display_elem;
     
     if (!board) {
-        elem.textContent = "- Paused -";
+        elem.textContent = `Paused (Speed x${game_speed_mult * temporary_modifiers})`;
         speed_alert_elem.classList.add("hidden");
         return;
     }
 
     if (game_paused) {
-        elem.textContent = "- Paused -";
+        elem.textContent = `Paused (Speed x${game_speed_mult * temporary_modifiers})`;
     } else {
         if (game_fps_catchup_modifier != 1) {
             elem.textContent = `Speed x${game_speed_mult * temporary_modifiers} (x${game_fps_catchup_modifier.toFixed(2)})`;
@@ -470,7 +615,8 @@ let selectable_balls = [
     BowBall, MagnumBall, NeedleBall,
     RailgunBall, PotionBall, GrenadeBall,
     GlassBall, HandBall, ChakramBall,
-    WandBall
+    WandBall, AxeBall, ShotgunBall,
+    SpearBall
 ]
 
 let banned_for_random = [
@@ -484,8 +630,9 @@ let render_victory_enabled = true;
 
 let user_interacted_with_fps_select = false;
 
-function setup_match_search_params(winning_team, survivor_hp_bounds, num_balls_survived, duration, randomise_balls) {
-    setup_match_search({
+function setup_match_search_params(num_candidates, tension_threshold, winning_team, survivor_hp_bounds, num_balls_survived, duration, randomise_balls) {
+    setup_match_search(num_candidates, {
+        tension_threshold: tension_threshold ?? null,
         winning_team: winning_team ?? null,
         survivor_hp_bounds: survivor_hp_bounds ?? null,
         num_balls_survived: num_balls_survived ?? null,
@@ -500,11 +647,12 @@ function cancel_match_search() {
     }
 
     searching = false;
+    muted = searching;
     last_board = null;
     clearInterval(repeater_interval);
 }
 
-function setup_match_search(settings) {
+function setup_match_search(num_candidates, settings) {
     /*
         {
             winning_team: int
@@ -515,8 +663,10 @@ function setup_match_search(settings) {
         }
     */
     searching = true;
+    muted = searching;
     
     last_board = null;
+    search_stored_replays = [];
 
     // set up a repeater interval to run games until we find one, then copy the replay
     repeater_interval = setInterval(() => {
@@ -540,8 +690,6 @@ function setup_match_search(settings) {
 
             let duration = last_board?.duration;
 
-            console.log(winning_team, lowest_survivor_hp, highest_survivor_hp, num_balls_survived, duration);
-
             let lb = null;
             let ub = null;
             if (settings.survivor_hp_bounds) {
@@ -549,29 +697,45 @@ function setup_match_search(settings) {
                 ub = settings.survivor_hp_bounds[1] ?? null;
             }
 
+            let tension = last_board?.tension;
+
             if (
+                last_board &&
+                (settings.tension_threshold === null || tension >= settings.tension_threshold) &&
                 (settings.winning_team === null || winning_team == settings.winning_team) &&
                 (ub === null || highest_survivor_hp <= ub) &&
                 (lb === null || lowest_survivor_hp >= lb) &&
                 (settings.num_balls_survived === null || num_balls_survived <= settings.num_balls_survived) &&
                 (settings.duration === null || duration <= settings.duration)
             ) {
-                // this is valid, so turn searching off
-                cancel_match_search();
-                let response = confirm("Found it!\n\nPlay now?");
-                console.log(last_replay);
-                if (response) {
-                    load_replay(last_replay);
-                }
-            } else {
-                // apply the randomisation
-                let rand = settings.randomise_balls ?? [];
-                rand.forEach(index => {
-                    randomise_ballselect(`ball${index+1}`);
-                })
+                // this is valid, so add to candidates list
+                search_stored_replays.push({tension: last_board?.tension, replay: last_replay});
+                console.log(`Found one with tension ${last_board?.tension?.toFixed(2)}`);
 
-                spawn_selected_balls();
+                if (search_stored_replays.length >= num_candidates) {
+                    let replay_picked = search_stored_replays.reduce((p, c) => {
+                        return p ? (c.tension > p.tension ? c : p) : c
+                    }, null)
+
+                    cancel_match_search();
+                    let response = confirm("Found it!\n\nPlay now?");
+                    console.log(`Tension: ${replay_picked.tension.toFixed(2)}`);
+                    console.log(replay_picked.replay);
+                    if (response) {
+                        load_replay(replay_picked.replay);
+                    }
+
+                    return;
+                }
             }
+
+            // apply the randomisation
+            let rand = settings.randomise_balls ?? [];
+            rand.forEach(index => {
+                randomise_ballselect(`ball${index+1}`);
+            })
+
+            spawn_selected_balls();
         }
     }, 100);
 }
@@ -783,6 +947,8 @@ document.addEventListener("DOMContentLoaded", function() {
     speed_alert_original = document.querySelector("#fps_original");
     speed_alert_actual = document.querySelector("#fps_user");
 
+    update_sim_speed_display();
+
     // document.querySelector("select[name='ball1']").value = "WandBall";
 
     // setTimeout(() => load_replay("eyJmcmFtZXNwZWVkIjoxNDQsImJhbGxzIjpbIk5lZWRsZUJhbGwiLCJOZWVkbGVCYWxsIiwiQ2hha3JhbUJhbGwiLCJDaGFrcmFtQmFsbCJdLCJsZXZlbHMiOlswLDAsMCwwXSwic2VlZCI6IjMzMjYxMTk3ODUxNjA1MDUifQ=="), 1000)
@@ -799,6 +965,15 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         }, 50)
     }
+
+    // load stored replays
+    let replay_history_str = localStorage.getItem("balls_replay_history");
+    try {
+        replay_history = JSON.parse(replay_history_str);
+        update_replays_tab(true);
+    } catch {
+        console.log("Our replays fucked up. Its over");
+    }
 })
 
 // TODO make levelling information exist somewhere - probably need to think about that when we come to RPG theming really
@@ -810,7 +985,7 @@ let force_fps = null;
 if (winrate_tracking)
     force_fps = 144;
 
-let muted = false;
+let muted = searching;
 
 let repeater_interval = null;
 let force_ball1 = null;

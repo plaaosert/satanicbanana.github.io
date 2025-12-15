@@ -1,5 +1,9 @@
 game_id = "balls";
 
+const GAME_VERSION = "15/12/2025";
+
+const AILMENT_CHARS = "➴☣";
+
 const layer_names = [
     "front",
     "debug_front",
@@ -25,6 +29,8 @@ const CANVAS_FONTS = "MS Gothic, Roboto Mono, monospace";
 
 let num_textures_loaded = 0;
 let num_textures_needed = 0;
+
+const make_damage_numbers = true;
 
 const entity_sprites = new Map([
     ["SORD", 1, "weapon/"],
@@ -95,6 +101,14 @@ const entity_sprites = new Map([
     ["wand_poison_barb", 1, "weapon/"],
     ["super_orb", 1, "weapon/"],
 
+    ["axe", 1, "weapon/"],
+    ["axe_projectile", 1, "weapon/"],
+
+    ["shotgun", 1, "weapon/"],
+
+    ["spear", 1, "weapon/"],
+    ["spear_projectile", 1, "weapon/"],
+
     ["explosion", 16, "explosion/"],  // Game Maker Classic
 
     ["lightning", 7, "lightning/"],
@@ -152,8 +166,8 @@ let canvas_y = 0;
 
 let mouse_position = new Vector2(0, 0);
 
-const PHYS_GRANULARITY = 8;
-const COLL_GRANULARITY = PHYS_GRANULARITY / 4;  // COLL_GRANULARITY => do collision checks every N physics steps
+const PHYS_GRANULARITY = 2;
+const COLL_GRANULARITY = PHYS_GRANULARITY / 2;  // COLL_GRANULARITY => do collision checks every N physics steps
 const COLLS_PER_FRAME = PHYS_GRANULARITY / COLL_GRANULARITY;
 const DEFAULT_BALL_RESTITUTION = 1;
 const DEFAULT_BALL_FRICTION = 1;
@@ -287,6 +301,39 @@ class Particle {
     }
 }
 
+class DamageNumberParticle extends Particle {
+    constructor(position, size, number, col, inertia_force, board, text_size) {
+        super(position, 0, size, [number], 0, 2, false);
+
+        this.base_col = col;
+        this.text_col = col;
+        this.text_border_col = this.base_col.lerp(Colour.black, 0.5);
+
+        this.text_size = text_size;
+        this.text_modifiers = "";
+
+        this.velocity = inertia_force.mul(0.2);
+        this.velocity = this.velocity.add(random_on_circle(1000, board.random).add(new Vector2(0, random_float(-2000, -3000, board.random))));
+        this.gravity = board.gravity.mul(0.5);
+        
+        this.flash_period = 0.1;
+    }
+
+    pass_time(time_delta) {
+        this.lifetime += time_delta;
+        
+        this.position = this.position.add(this.velocity.mul(time_delta));
+        this.velocity = this.velocity.add(this.gravity.mul(time_delta));
+
+        let lifetime_mod = this.lifetime % this.flash_period;
+        if (lifetime_mod > this.flash_period/2) {
+            this.text_col = this.base_col;
+        } else {
+            this.text_col = Colour.white.lerp(this.base_col, this.lifetime / this.duration);
+        }
+    }
+}
+
 class Timer {
     static id_inc = 0;
 
@@ -398,8 +445,116 @@ class Board {
         this.starting_balls = null;
         this.starting_levels = null;
         this.starting_players = null;
+
+        this.tension_loss_from_parry_time = 1  // for each second since last parry
+        this.tension_loss_from_hit_time = 0.5  // for each second since last hit
+        this.tension_loss_from_total_hp = 0.01 // for each point of hp remaining
+        this.tension_gain_from_missing_hp = 0.003 // for each missing point of hp
+        this.tension_gain_per_damage = 1 // on hit, per hp lost by either ball
+        this.tension_gain_per_damage_multiplier_for_missing_hp = 3; // multiply by up to X for mising hp
+        this.tension_gain_per_damage_multiplier_for_hp_difference = 3;
+        this.tension_projectile_parry_time_per_damage = 10; // recover 1/16 of parry time per damage of projectile
+
+        this.tension = 0;
+        this.time_since_parry = 0;
+        this.time_since_hit = 0;
     }
     
+    register_hit(by, on) {
+        this.time_since_hit = 0;
+    }
+
+    register_parry(by, on) {
+        this.time_since_parry = 0;
+    }
+
+    register_projectile_parry(by, on, projectile) {
+        let dmg = projectile.damage ?? 1;
+
+        this.time_since_parry -= this.time_since_parry * Math.min(1, dmg / this.tension_projectile_parry_time_per_damage);
+    }
+
+    register_hp_loss(by, on, amt) {
+        let proportion_missing = 1 - (on.hp / on.max_hp);
+        let proportion_other = proportion_missing;
+        if (by?.hp) {
+            proportion_other = 1 - (by.hp / by.max_hp);
+        }
+
+        // get the difference between proportions and add it to the multiplier
+        let proportion_difference = proportion_missing - proportion_other;
+        
+        let multiplier = proportion_missing * this.tension_gain_per_damage_multiplier_for_missing_hp;
+        multiplier -= proportion_difference * this.tension_gain_per_damage_multiplier_for_hp_difference;
+        
+        let tension_to_add = this.tension_gain_per_damage * multiplier * amt;
+        
+        this.tension += tension_to_add;
+
+        // do damage numbers
+        if (make_damage_numbers && by instanceof Ball && amt > 0.05 && on.show_stats) {
+            let size = 14;
+            if (amt >= 8) {
+                size = 16;
+                if (amt >= 16) {
+                    size = 18;
+                    if (amt >= 32) {
+                        size = 20;
+                    }
+                }
+            }
+
+            let part = new DamageNumberParticle(
+                on.position, 1, (-amt).toFixed(1), on.colour, on.velocity, this, size
+            );
+
+            this.spawn_particle(part, on.position);
+        }
+    }
+
+    register_rupture(by, on, amt) {
+        if (make_damage_numbers && by instanceof Ball && amt > 0.05 && on.show_stats) {
+            let size = 14;
+            if (amt >= 8) {
+                size = 16;
+                if (amt >= 16) {
+                    size = 18;
+                    if (amt >= 32) {
+                        size = 20;
+                    }
+                }
+            }
+
+            let part = new DamageNumberParticle(
+                on.position, 1, `${AILMENT_CHARS[0]} ${amt.toFixed(1)}`, on.colour, on.velocity, this, size
+            );
+
+            this.spawn_particle(part, on.position);
+        }
+    }
+
+    register_poison(by, on, amt, dur) {
+        if (make_damage_numbers && by instanceof Ball && amt > 0.05 && dur > 0.05 && on.show_stats) {
+            let size = 14;
+            let final_amt = amt * dur;
+            if (final_amt >= 8) {
+                size = 16;
+                if (final_amt >= 16) {
+                    size = 18;
+                    if (final_amt >= 32) {
+                        size = 20;
+                    }
+                }
+            }
+
+            let part = new DamageNumberParticle(
+                on.position, 1, `${AILMENT_CHARS[1]} ${amt.toFixed(1)} | ${dur.toFixed(1)}s`, on.colour, on.velocity, this, size
+            );
+
+            this.spawn_particle(part, on.position);
+        }
+    }
+
     set_random_seed(seed) {
         this.random_seed = seed;
         this.random = get_seeded_randomiser(seed);
@@ -455,6 +610,8 @@ class Board {
 
         ball.board = this;
 
+        ball.late_setup();
+
         return ball;
     }
 
@@ -462,6 +619,25 @@ class Board {
         this.balls.splice(
             this.balls.findIndex(b => b.id == ball.id), 1
         )
+    }
+
+    tension_step(time_delta) {
+        this.tension -= this.tension_loss_from_parry_time * this.time_since_parry * time_delta;
+        this.tension -= this.tension_loss_from_hit_time * this.time_since_hit * time_delta;
+        
+        let relevant_balls = this.balls.filter(ball => ball.show_stats);
+        let total_ball_hp = relevant_balls.reduce((p, c) => {
+            return p + c.hp
+        }, 0); // only counting balls that matter
+        this.tension -= total_ball_hp * this.tension_loss_from_total_hp * time_delta;
+
+        let total_missing_hp = relevant_balls.reduce((p, c) => {
+            return p + (c.max_hp - c.hp)
+        }, 0); // only counting balls that matter
+        this.tension += total_missing_hp * this.tension_gain_from_missing_hp * time_delta;
+
+        this.time_since_parry += time_delta;
+        this.time_since_hit += time_delta;
     }
 
     timers_step(time_delta) {
@@ -899,6 +1075,8 @@ function handle_resize(event) {
     document.querySelector(".behind-canvases").style.width = canvas_width + "px";
     document.querySelector(".behind-canvases").style.height = canvas_height + "px";
 
+    document.querySelector(".everything-subcontainer").style.height = canvas_height + "px";
+
     layers.bg3.ctx.fillStyle = "#000"
     layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height)
 
@@ -1119,12 +1297,23 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
 
         particle_screen_pos = particle_screen_pos.add(new Vector2(-siz, -siz).mul(0));
 
-        write_rotated_image(
-            layers.fg1.canvas, layers.fg1.ctx,
-            particle_screen_pos.x, particle_screen_pos.y,
-            particle.sprites[particle.cur_frame],
-            siz, siz, particle.rotation_angle
-        );
+        let sprite = particle.sprites[particle.cur_frame];
+
+        if (typeof sprite === "string") {
+            write_pp_bordered_text(
+                layers.fg1.ctx, sprite,
+                particle_screen_pos.x, particle_screen_pos.y,
+                particle.text_col.css(), CANVAS_FONTS, (particle.text_size * particle.size) / PARTICLE_SIZE_MULTIPLIER,
+                true, 1, particle.text_border_col.css(), particle.text_modifiers
+            );
+        } else {
+            write_rotated_image(
+                layers.fg1.canvas, layers.fg1.ctx,
+                particle_screen_pos.x, particle_screen_pos.y,
+                sprite,
+                siz, siz, particle.rotation_angle
+            );
+        }
     })
 
     // then the projectiles. put them on fg3, same as weapons
@@ -1268,12 +1457,12 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
             // now draw the weapons
             // weapon needs to be drawn at an offset from the ball (radius to the right)
             // with that offset rotated by the angle as well
-            ball.weapon_data.forEach(weapon => {
+            ball.weapon_data.forEach((weapon, index) => {
                 if (weapon.size_multiplier <= 0) {
                     return;
                 }
 
-                let offset = ball.get_weapon_offset(weapon);
+                let offset = ball.get_weapon_offset(index);
 
                 let siz = weapon.size_multiplier * screen_scaling_factor * 128;
                 let pos = ball.position.add(offset).mul(screen_scaling_factor);
@@ -1286,8 +1475,9 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
                     // render the collision boxes on debug_back as green circles
                     // collision boxes are based on the original 128x128 sizing
                     // so get the offset, then add the collision pos offset, then draw that
-                    weapon.hitboxes.forEach(hitbox => {
-                        let hitbox_offset = offset.add(ball.get_hitbox_offset(weapon, hitbox));
+                    let hitboxes_offsets = ball.get_hitboxes_offsets(index);
+                    weapon.hitboxes.forEach((hitbox, index) => {
+                        let hitbox_offset = offset.add(hitboxes_offsets[index]);
 
                         let hitbox_screen_pos = ball.position.add(hitbox_offset).mul(screen_scaling_factor);
                         let w2 = w / 8;
@@ -1368,13 +1558,13 @@ function render_descriptions(board) {
             
             if (ball.poison_duration > 0) {
                 write_text(
-                    layers.ui2.ctx, `☣ ${ball.poison_intensity.toFixed(2).padEnd(5)} | ${ball.poison_duration.toFixed(1)}s`, l[0], l[1] + 12 + 12, ball.colour.css(), CANVAS_FONTS, 12
+                    layers.ui2.ctx, `${AILMENT_CHARS[1]} ${ball.poison_intensity.toFixed(2).padEnd(5)} | ${ball.poison_duration.toFixed(1)}`, l[0], l[1] + 12 + 12, ball.colour.css(), CANVAS_FONTS, 12
                 )
             }
 
             if (ball.rupture_intensity >= 0.01) {
                 write_text(
-                    layers.ui2.ctx, `➴ ${ball.rupture_intensity.toFixed(2).padEnd(5)}`, l[0] + 128, l[1] + 12 + 12, ball.colour.css(), CANVAS_FONTS, 12
+                    layers.ui2.ctx, `${AILMENT_CHARS[0]} ${ball.rupture_intensity.toFixed(2).padEnd(5)}`, l[0] + 128, l[1] + 12 + 12, ball.colour.css(), CANVAS_FONTS, 12
                 )
             }
 
@@ -1423,7 +1613,7 @@ function game_loop() {
         render_descriptions(board);
     }
 
-    // render_diagnostics(board);
+    render_diagnostics(board);
     
     let render_end_time = Date.now();
 
@@ -1518,6 +1708,8 @@ function game_loop() {
 
                     // if multiple weapons collide, the first one takes priority
                     let hitstop = 0;
+
+                    board.tension_step(coll_game_delta_time);
 
                     // triggers
                     board.timers_step(coll_game_delta_time);
@@ -1625,8 +1817,8 @@ function game_loop() {
                                     // get a list of the weapon's hitboxes
                                     let source_weapon = ball.weapon_data[parry_weapon_index];
 
-                                    let weapon_offset = ball.get_weapon_offset(source_weapon);
-                                    let hitboxes_offsets = ball.get_hitboxes_offsets(source_weapon);
+                                    let weapon_offset = ball.get_weapon_offset(parry_weapon_index);
+                                    let hitboxes_offsets = ball.get_hitboxes_offsets(parry_weapon_index);
 
                                     let closest_weapon_hitbox_dist = Number.POSITIVE_INFINITY;
                                     hitboxes_offsets.forEach((offset, index) => {
@@ -1680,6 +1872,8 @@ function game_loop() {
                         }
                     });
 
+                    let impact_sounds = 0;
+
                     // hitting (weapon on ball)
                     board.balls.forEach(ball => {
                         if (ball.skip_physics)
@@ -1702,12 +1896,18 @@ function game_loop() {
                                         ball.last_damage_source = other;
                                         
                                         if (!result.snd) {
-                                            if (result.dmg >= 8) {
-                                                play_audio("impact_heavy");
-                                            } else {
-                                                play_audio("impact");
+                                            if (impact_sounds < 4) {
+                                                if (result.dmg >= 8) {
+                                                    impact_sounds++;
+                                                    play_audio("impact_heavy");
+                                                } else {
+                                                    impact_sounds++;
+                                                    play_audio("impact");
+                                                }
                                             }
                                         } else {
+                                            // always play special impact sounds
+                                            impact_sounds++;
                                             play_audio(result.snd);
                                         }
 
@@ -1750,7 +1950,10 @@ function game_loop() {
                                 ball.last_damage_source = projectile.source;
 
                                 if (!result.mute) {
-                                    play_audio("impact");
+                                    if (impact_sounds < 4) {
+                                        impact_sounds++;
+                                        play_audio("impact");
+                                    }
                                 }
 
                                 hitstop = Math.max(hitstop, result.hitstop ?? 0);
@@ -1791,7 +1994,7 @@ function game_loop() {
 
                     // if the board duration is past the max duration, deal 5dps to all balls
                     if (board.duration > max_game_duration) {
-                        board.balls.forEach(ball => ball.lose_hp(5 * coll_game_delta_time));
+                        board.balls.forEach(ball => ball.lose_hp(5 * coll_game_delta_time, "endgame"));
                     }
 
                     // cull any dead balls
@@ -1870,6 +2073,44 @@ function game_loop() {
                             } else {
                                 displayelement.textContent = (win_matrix.map(t => t.map(v => v == 0 ? "-" : v).join("\t")).join("\n"));
                             }
+
+                            // to get wins of ball, get row
+                            // to get losses, get col
+                            let html = "";
+                            selectable_balls_for_random.forEach((classobj, index) => {
+                                let wins = win_matrix[index].reduce((p,c) => p+c, 0);
+                                let losses = win_matrix.map(t => t[index]).reduce((p,c) => p+c, 0);;
+                                let total = wins + losses;
+                                let winrate = wins / total;
+
+                                let lerp_to = winrate > 0.5 ? Colour.blue : Colour.red;
+                                let lerp_amt = Math.min(1, Math.max(Math.abs(winrate-0.5)-0.02, 0) * 20);
+
+                                html += `${classobj.name.padEnd(16)}${wins.toFixed(0).padStart(4)} / ${total.toFixed(0).padEnd(8)}<span style="background-color: ${Colour.dgreen.lerp(lerp_to, lerp_amt).css()}">${isNaN(winrate) ? "   -   " : ((winrate * 100).toFixed(2)+"%").padEnd(8)}</span><br>`;
+                            });
+
+                            document.querySelector("#game_winrates").innerHTML = html;
+
+                            let html2 = "";
+
+                            selectable_balls_for_random.forEach((class1, index1) => {
+                                selectable_balls_for_random.forEach((class2, index2) => {
+                                    // class1 wr vs class2
+                                    let wins = win_matrix[index1][index2];
+                                    let losses = win_matrix[index2][index1];
+                                    let total = wins + losses;
+                                    let winrate = wins / total;
+
+                                    let lerp_to = winrate > 0.5 ? Colour.blue : Colour.red;
+                                    let lerp_amt = Math.min(1, Math.max(Math.abs(winrate-0.5)-0.1, 0) * 5);
+
+                                    html2 += `<span style="background-color: ${Colour.dgreen.lerp(lerp_to, lerp_amt).css()}"> ${isNaN(winrate) ? "   -   " : ((winrate * 100).toFixed(2)+"%").padEnd(7)}</span>`;
+                                })
+
+                                html2 += "<br>";
+                            });
+
+                            document.querySelector("#game_winrates_split").innerHTML = html2;
                         }
                     }
                     
