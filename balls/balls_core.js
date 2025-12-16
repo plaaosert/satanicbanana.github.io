@@ -64,6 +64,14 @@ const entity_sprites = new Map([
     ["grenade", 1, "weapon/"],
     ["grenade_weapon", 1, "weapon/"],
 
+    ["grenade_blao", 1, "weapon/"],
+    ["grenade_weapon_blao", 1, "weapon/"],
+    ["explosion_bulao_3", 13, "explosion_bulao_3/"],
+
+    ["grenade_bao", 1, "weapon/"],
+    ["grenade_weapon_bao", 1, "weapon/"],
+    ["explosion_bao", 13, "explosion_bao/"],
+
     ["glass", 1, "weapon/"],
     ["glass_angry", 1, "weapon/"],
 

@@ -416,6 +416,14 @@ button.green {
   margin-right: 2vmin;
 }
 
+.sandbox-ball-select {
+  margin-right: 2vmin;
+}
+
+.sandbox-skin-select {
+  width: 12vmin;
+}
+
 button.sandbox-ball-random {
   margin-left: 2vmin;
 

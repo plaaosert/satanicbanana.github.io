@@ -11,7 +11,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=0.1, user-scalable=yes" />
 
     <link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=02"/>
-	<link rel="stylesheet" type="text/css" href="balls.css?v=25"/>
+	<link rel="stylesheet" type="text/css" href="balls.css?v=26"/>
 </head>
 <body>
 	<div class="topbar">
@@ -45,10 +45,11 @@
                 <div class="game-container" id="game-container" style="display: none;">
                     <div class="sandbox-menu behind-canvases withborder">
                         <div id="ball1_settings" class="row ballsettings" style="--col: rgb(255, 0, 0)">
-                            <select class="sandbox-team-select" onchange="update_ballinfo('ball1')" name="ball1_team">
+                            <select class="sandbox-team-select" onchange="update_ballinfo('ball1', true)" name="ball1_team">
 
                             </select>
                             <select class="sandbox-ball-select" onchange="update_ballinfo('ball1')" name="ball1"></select>
+                            <select class="sandbox-skin-select" name="ball1_skin"></select>
                             <button class="sandbox-ball-random" onclick="randomise_ballselect('ball1')">Random</button>
                             <div style="flex-grow: 1;" class="rows">
                                 <div class="slidecontainer">
@@ -65,10 +66,11 @@
                         </div>
 
                         <div id="ball2_settings" class="row ballsettings" style="--col: rgb(255, 255, 0)">
-                            <select class="sandbox-team-select" onchange="update_ballinfo('ball2')" name="ball2_team" select>
+                            <select class="sandbox-team-select" onchange="update_ballinfo('ball2', true)" name="ball2_team" select>
 
                             </select>
                             <select class="sandbox-ball-select" onchange="update_ballinfo('ball2')" name="ball2"></select>
+                            <select class="sandbox-skin-select" name="ball2_skin"></select>
                             <button class="sandbox-ball-random" onclick="randomise_ballselect('ball2')">Random</button>
                             <div style="flex-grow: 1;" class="rows">
                                 <div class="slidecontainer">
@@ -85,10 +87,11 @@
                         </div>
 
                         <div id="ball3_settings" class="row ballsettings" style="--col: rgb(0, 255, 0)">
-                            <select class="sandbox-team-select" onchange="update_ballinfo('ball3')" name="ball3_team">
+                            <select class="sandbox-team-select" onchange="update_ballinfo('ball3', true)" name="ball3_team">
                                 
                             </select>
                             <select class="sandbox-ball-select" onchange="update_ballinfo('ball3')" name="ball3"></select>
+                            <select class="sandbox-skin-select" name="ball3_skin"></select>
                             <button class="sandbox-ball-random" onclick="randomise_ballselect('ball3')">Random</button>
                             <div style="flex-grow: 1;" class="rows">
                                 <div class="slidecontainer">
@@ -105,10 +108,11 @@
                         </div>
 
                         <div id="ball4_settings" class="row ballsettings" style="--col: rgb(0, 255, 255)">
-                            <select class="sandbox-team-select" onchange="update_ballinfo('ball4')" name="ball4_team">
+                            <select class="sandbox-team-select" onchange="update_ballinfo('ball4', true)" name="ball4_team">
 
                             </select>
                             <select class="sandbox-ball-select" onchange="update_ballinfo('ball4')" name="ball4"></select>
+                            <select class="sandbox-skin-select" name="ball4_skin"></select>
                             <button class="sandbox-ball-random" onclick="randomise_ballselect('ball4')">Random</button>
                             <div style="flex-grow: 1;" class="rows">
                                 <div class="slidecontainer">
@@ -265,12 +269,12 @@
 		<p style="font-size: 2vmin"><a class="right-text" style="bottom: 16px; color:#f20; font-size: 2vmin" href="../index.html" > << go back >> </a></p>
 	</div>
 	
-    <script src="../shared/js/helpers.js?v=04"></script>
+    <script src="../shared/js/helpers.js?v=05"></script>
 	<script src="../shared/js/canvas_helpers.js?v=03"></script>
 	
-    <script src="balls_core.js?v=21"></script>
-    <script src="balls_balls.js?v=24"></script>
-    <script src="balls_launcher.js?v=33"></script>
+    <script src="balls_core.js?v=22"></script>
+    <script src="balls_balls.js?v=25"></script>
+    <script src="balls_launcher.js?v=34"></script>
     
     <script src="balls_campaign.js?v=03"></script>
 

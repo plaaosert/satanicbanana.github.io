@@ -101,6 +101,12 @@ class WeaponBall extends Ball {
         this.cache_hitboxes_offsets();
     }
 
+    set_skin(skin_name) {
+        // do nothing
+        // other balls will implement skins as necessary
+        // mostly it will replace the weapon sprite and maybe some particle effects
+    }
+
     get_ailment_hp_loss() {
         // returns the amount of HP that will be lost to ailments
         return {
@@ -1764,6 +1770,8 @@ class PotionBall extends WeaponBall {
 class GrenadeBall extends WeaponBall {
     static ball_name = "Grenade";
 
+    static AVAILABLE_SKINS = ["bao", "blao"];
+
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
@@ -1778,6 +1786,9 @@ class GrenadeBall extends WeaponBall {
                 {pos: new Vector2(28, 56), radius: 14},
             ]),
         ];
+
+        this.grenade_sprite = "grenade";
+        this.grenade_explosion_sprite = "explosion_grenade";
 
         this.firing_offsets = [
             new Vector2(48, 0)
@@ -1796,6 +1807,26 @@ class GrenadeBall extends WeaponBall {
 
         this.shot_cooldown = this.shot_cooldown_max;
         this.self_grenade_reduction = 0.7;
+    }
+
+    set_skin(skin_name) {
+        switch (skin_name) {
+            case "blao": {
+                this.weapon_data[0].sprite = "grenade_weapon_blao";
+                this.grenade_sprite = "grenade_blao";
+                this.grenade_explosion_sprite = "explosion_bulao_3";
+
+                break;
+            }
+
+            case "bao": {
+                this.weapon_data[0].sprite = "grenade_weapon_bao";
+                this.grenade_sprite = "grenade_bao";
+                this.grenade_explosion_sprite = "explosion_bao";
+
+                break;
+            }
+        }
     }
 
     weapon_step(board, time_delta) {
@@ -1846,7 +1877,8 @@ class GrenadeBall extends WeaponBall {
             this.board,
             this.mass * 0.4, this.radius * 0.4, this.colour, this.bounce_factor,
             this.friction_factor, this.player, this.level,
-            this.grenade_damage_base, this.grenade_fuse
+            this.grenade_damage_base, this.grenade_fuse,
+            this.grenade_sprite, this.grenade_explosion_sprite
         );
 
         new_ball.apply_invuln(BALL_INVULN_DURATION);
@@ -1858,7 +1890,7 @@ class GrenadeBall extends WeaponBall {
 
         new_ball.parent = this;
 
-        let part = new Particle(new_ball.position, 0, 1, entity_sprites.get("grenade"), 0, 999999);
+        let part = new Particle(new_ball.position, 0, 1, entity_sprites.get(this.grenade_sprite), 0, 999999);
         this.board?.spawn_particle(part, new_ball.position);
         new_ball.linked_particle = part;
     }
@@ -1896,7 +1928,7 @@ class GrenadeBall extends WeaponBall {
 class GrenadeProjectileBall extends WeaponBall {
     static ball_name = "Grenade Projectile";
 
-    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, explosion_damage, fuse) {
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, explosion_damage, fuse, sprite, explosion_sprite) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, false);
 
         this.name = "Grenade Projectile";
@@ -1918,6 +1950,9 @@ class GrenadeProjectileBall extends WeaponBall {
         this.linked_particle = null;
 
         this.display = false;
+
+        this.sprite = sprite;
+        this.explosion_sprite = explosion_sprite;
 
         this.rotation_speed = random_float(270, 540, this.board.random);
     }
@@ -1956,7 +1991,8 @@ class GrenadeProjectileBall extends WeaponBall {
 
         let proj = new GrenadeExplosionProjectile(
             this.board,
-            this.parent, 0, expl_position, this.parent.grenade_damage_base, 2
+            this.parent, 0, expl_position, this.parent.grenade_damage_base, 2,
+            this.explosion_sprite
         )
 
         play_audio("explosion2");
@@ -4498,10 +4534,10 @@ class PotionBottleProjectile extends Projectile {
 }
 
 class GrenadeExplosionProjectile extends Projectile {
-    constructor(board, source, source_weapon_index, position, damage, size) {
+    constructor(board, source, source_weapon_index, position, damage, size, sprite_override="explosion_grenade") {
         super(board, source, source_weapon_index, position, damage, size, new Vector2(1, 0), 0);
 
-        this.sprites = entity_sprites.get("explosion_grenade");
+        this.sprites = entity_sprites.get(sprite_override);
         this.framecount = this.sprites.length;
         this.sprite = this.sprites[0];
 

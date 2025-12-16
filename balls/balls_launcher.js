@@ -246,6 +246,8 @@ function exit_battle(save_replay=true) {
             levels: board.starting_levels,
             players: board.starting_players,
             cols: board.starting_cols,
+            skins: board.starting_skins,
+
             seed: board.random_seed,
         }
 
@@ -370,12 +372,21 @@ function load_replay(replay_as_text) {
         }
     }
 
+    let skins = [];
+    if (replay.skins) {
+        skins = replay.skins;
+    } else {
+        for (let i=0; i<ball_classes.length; i++) {
+            skins.push("Default");
+        }
+    }
+
     replaying = true;
     start_game(
         framespeed, seed,
         cols, positions,
         ball_classes, ball_levels,
-        players
+        players, skins
     );
 }
 
@@ -422,15 +433,21 @@ function spawn_selected_balls() {
         })
     }
 
+    let skins = [];
+    for (let i=0; i<positions.length; i++) {
+        let skin = document.querySelector(`select[name='ball${i+1}_skin']`).value;
+        skins.push(skin);
+    }
+
     start_game(
         framespeed, seed,
         cols, positions,
         ball_classes, ball_levels,
-        players
+        players, skins
     );
 }
 
-function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels, players) {
+function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels, players, skins) {
     setTimeout(() => {
         board = new Board(new Vector2(512 * 16, 512 * 16));
 
@@ -454,6 +471,9 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
                 ball.randomise_weapon_rotations();
 
                 board.spawn_ball(ball, positions[index])
+                
+                ball.set_skin(skins[index]);
+                
                 balls.push(ball_proto);
             }
         })
@@ -464,6 +484,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
         board.starting_levels = ball_levels;
         board.starting_players = players;
         board.starting_cols = cols.map(c => c.data);
+        board.starting_skins = skins;
 
         board.balls.forEach(ball => ball.add_velocity(
             random_on_circle(
@@ -489,7 +510,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
     enter_battle();
 }
 
-function update_ballinfo(ballid) {
+function update_ballinfo(ballid, save_skin=false) {
     let ball_team = document.querySelector(`select[name='${ballid}_team']`).selectedIndex;
 
     let ball_classname = document.querySelector(`select[name='${ballid}']`).value;
@@ -502,10 +523,15 @@ function update_ballinfo(ballid) {
     let info_elem = info_parent_elem.querySelector(`span`);
     let info_a_elem = info_a_parent_elem.querySelector(`span`);
 
+    let skins = [];
+    let skins_elem = document.querySelector(`select[name=${ballid}_skin]`);
+
     if (ball_proto) {
         let testball = new ball_proto(
             {random: Math.random}, 1, 512, Colour.white, null, null, {}, 1, false
         );
+
+        skins = ["Default skin", ...(ball_proto.AVAILABLE_SKINS ?? [])];
 
         info_elem.textContent = testball.description_brief;
         info_a_elem.textContent = testball.max_level_description;
@@ -514,9 +540,26 @@ function update_ballinfo(ballid) {
         info_a_elem.textContent = "-";
     }
 
+    let saved_skin = 0;
+    if (save_skin) {
+        saved_skin = skins_elem.selectedIndex;
+    }
+
+    skins_elem.options.length = 0;
+    if (skins.length > 0) {
+        skins.forEach(skin => {
+            skins_elem.options.add(new Option(skin));
+        })
+    } else {
+        skins_elem.options.add(new Option("-"));
+    }
+
+    skins_elem.selectedIndex = saved_skin;
+
     settings_elem.style.setProperty("--col", default_cols[ball_team].css());
     info_a_parent_elem.style.setProperty("--col", default_cols[ball_team].lerp(Colour.white, 0.5).css());
     info_parent_elem.style.setProperty("--col", default_cols[ball_team].css());
+    skins_elem.style.setProperty("--col", default_cols[ball_team].css());
 }
 
 function update_awaken_showhide(ballid) {
