@@ -1199,11 +1199,11 @@ function render_victory(board, time_until_end) {
     if (!b) {
         // draw
         if (t > 3) {
-            write_pp_bordered_text(ctx, "DRAW", canvas_width/2, 256, "white", CANVAS_FONTS, 144, true, 2, "black");
+            write_pp_bordered_text(ctx, "DRAW", canvas_width/2, 256, "white", CANVAS_FONTS, 128, true, 2, "black");
         }
     } else {
         if (t > 2) {
-            write_pp_bordered_text(ctx, "VICTORY", canvas_width/2, 256, "white", CANVAS_FONTS, 144, true, 2, "black");
+            write_pp_bordered_text(ctx, "VICTORY", canvas_width/2, 256, "white", CANVAS_FONTS, 128, true, 2, "black");
         }
 
         if (t > 3) {
