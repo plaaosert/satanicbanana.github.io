@@ -477,6 +477,10 @@ class Board {
     }
 
     register_hp_loss(by, on, amt) {
+        if (!on.show_stats) {
+            return; // dont care about adds
+        }
+
         let proportion_missing = 1 - (on.hp / on.max_hp);
         let proportion_other = proportion_missing;
         if (by?.hp) {

@@ -1568,6 +1568,9 @@ class RailgunBall extends WeaponBall {
 class PotionBall extends WeaponBall {
     static ball_name = "Potion";
 
+    static potion_names = ["Rupture", "Poison", "Pure damage", "Time stop"];
+    static potion_cols = [Colour.red, Colour.green, new Colour(0, 64, 255, 255), Colour.from_hex("#FF84F8")];
+
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
@@ -1618,6 +1621,7 @@ class PotionBall extends WeaponBall {
         this.shot_cooldowns = [0, 0, 0, 0].map(_ => random_float(...this.shot_cooldown_max_range, this.board.random));
         this.weapon_regeneration_times = [0,0,0,0];
         this.max_weapon_regeneration_time = 1.6;
+        this.potions_smashed = [false, false, false, false];
         this.potion_smash_penalty = 5;
 
         this.duration_mult = 1.2 + (0.0125 * this.level);
@@ -1674,6 +1678,8 @@ class PotionBall extends WeaponBall {
     
         this.weapon_data[index].hitboxes = [];
 
+        this.potions_smashed[index] = smashed;
+
         this.cache_weapon_offsets();
         this.cache_hitboxes_offsets();
     }
@@ -1715,11 +1721,43 @@ class PotionBall extends WeaponBall {
         write_text(
             ctx, `Potion impact damage: ${this.potion_impact_damage.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
         )
+
+        let num = 3;
         if (this.level >= AWAKEN_LEVEL) {
+            num = 4;
             write_text(
-                ctx, `Gains another potion that freezes time.`, x_anchor, y_anchor + 12, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+                ctx, `Gains another potion that freezes time.`, x_anchor, y_anchor + 12 + (12 * 4), this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
             )
         }
+
+        for (let i=0; i<num; i++) {
+            // col if ready, grey if not - strikethrough if smashed
+            let potion_exists = this.weapon_data[i].size_multiplier > 0
+            let col = potion_exists ? PotionBall.potion_cols[i].css() : (this.potions_smashed[i] ? "#333" : "#666")
+            write_text(
+                ctx, PotionBall.potion_names[i], x_anchor,
+                y_anchor + 12 + (12 * i),
+                col, CANVAS_FONTS, 12
+            )
+
+            if (!potion_exists) {
+                if (this.potions_smashed[i]) {
+                    write_text(
+                        ctx, "-".repeat(PotionBall.potion_names[i].length), x_anchor,
+                        y_anchor + 12 + (12 * i),
+                        col, CANVAS_FONTS, 12
+                    )
+                }
+
+                // then write the respawn delay
+                write_text(
+                    ctx, `${this.weapon_regeneration_times[i].toFixed(1)}s`,
+                    x_anchor + 128,
+                    y_anchor + 12 + (12 * i),
+                    "#888", CANVAS_FONTS, 12
+                )
+            }
+        };
     }
 }
 
@@ -3459,7 +3497,8 @@ class AxeBall extends WeaponBall {
 
         this.lunge_cooldowns_max = [2 - (0.01 * level), 4 - (0.02 * level)];
         this.lunge_cooldown = random_float(...this.lunge_cooldowns_max, this.board.random);
-    
+        this.last_lunge_cooldown = this.lunge_cooldown;
+
         this.lunge_velocity_share = 1;
 
         this.lunge_swing_accel_amt = deg2rad(360 * 480);
@@ -3502,6 +3541,8 @@ class AxeBall extends WeaponBall {
         this.lunge_cooldown -= time_delta;
         if (this.lunge_cooldown <= 0) {
             this.lunge_cooldown = random_float(...this.lunge_cooldowns_max, this.board.random);
+            this.last_lunge_cooldown = this.lunge_cooldown;
+
             this.lunge_swing_delay = this.lunge_swing_delay_max;
             this.lunge_movement();
 
@@ -3565,9 +3606,12 @@ class AxeBall extends WeaponBall {
         write_text(
             ctx, `Rotation speed: ${this.speed_cur.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
         )
+        write_text(
+            ctx, `Lunge cooldown: ${this.lunge_cooldown.toFixed(1)}s [${"#".repeat((this.lunge_cooldown / this.last_lunge_cooldown) * 12).padEnd(12)}]`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
+        )
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Projectile damage: ${this.projectile_damage.toFixed(2)}`, x_anchor, y_anchor + 24, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+                ctx, `Projectile damage: ${this.projectile_damage.toFixed(2)}`, x_anchor, y_anchor + 36, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
             )
         }
     }
@@ -3823,27 +3867,27 @@ class SpearBall extends WeaponBall {
             ctx, `Spear thrown damage: ${this.proj_damage_base.toFixed(2)}`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
         )
         write_text(
-            ctx, `Spears: ${this.weapon_data.length}`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 10
+            ctx, `Spears: ${this.weapon_data.length.toString().padEnd(2)} - instant replenish on hit`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
         )
         
         let timeout = (this.spear_replenish_delay_max);
         let timeleft = (this.spear_replenish_delay);
         write_text(
-            ctx, `Time until next spear: ${timeleft.toFixed(1)}s / ${timeout.toFixed(1)}s`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 10
+            ctx, `Time until next spear: ${timeleft.toFixed(1)}s / ${timeout.toFixed(1)}s`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 12
         )
         let bar_l = 32;
         let prop = timeleft / timeout;
         let empties = Math.max(0, Math.min(bar_l, Math.ceil(prop * bar_l)));
         write_text(
-            ctx, `[${"#".repeat(bar_l - empties)}${" ".repeat(empties)}]`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 10
+            ctx, `[${"#".repeat(bar_l - empties)}${" ".repeat(empties)}]`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 12
         )
 
         if (this.level >= AWAKEN_LEVEL) {
             write_text(
-                ctx, `Replenish a spear immediately if empty.`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+                ctx, `Replenish a spear immediately if empty.`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
             )
             write_text(
-                ctx, `Replenish two spears at once.`, x_anchor, y_anchor + 72, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+                ctx, `Replenish two spears at once.`, x_anchor, y_anchor + 72, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
             )
         }
     }
