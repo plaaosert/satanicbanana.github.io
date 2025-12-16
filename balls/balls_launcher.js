@@ -794,7 +794,12 @@ function setup_load_menu(replay_as_text) {
 }
 
 function is_valid_viewport() {
-    return window.innerHeight >= 919 || window.innerWidth > screen.availWidth;
+    // check we have enough content size AND we're not on mobile (or on desktop mode in mobile)
+    return window.innerHeight >= 919 && (!on_mobile() || window.innerWidth > screen.availWidth);
+}
+
+function on_mobile() {
+    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
 
 document.addEventListener("DOMContentLoaded", function() {
