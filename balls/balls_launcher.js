@@ -793,6 +793,10 @@ function setup_load_menu(replay_as_text) {
     })
 }
 
+function is_valid_viewport() {
+    return window.innerHeight >= 919 || window.innerWidth > screen.availWidth;
+}
+
 document.addEventListener("DOMContentLoaded", function() {
     get_canvases();
 

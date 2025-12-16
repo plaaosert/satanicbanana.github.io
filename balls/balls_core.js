@@ -1080,6 +1080,13 @@ function handle_resize(event) {
     layers.bg3.ctx.fillStyle = "#000"
     layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height)
 
+    // show the big scary blocker screen if viewport is bad
+    if (is_valid_viewport()) {
+        document.querySelector("#desktop_mode_prompt").classList.add("nodisplay");
+    } else {
+        document.querySelector("#desktop_mode_prompt").classList.remove("nodisplay");
+    }
+
     //refresh_wtsp_stwp();
 
     // layers.bg2.ctx.drawImage(
