@@ -1037,8 +1037,10 @@ function get_canvases() {
 function handle_resize(event) {
     let canvas_smallest = Math.min(vh(100) - 128, vw(100) - 128);
 
-    canvas_height = canvas_smallest;
-    canvas_width = canvas_smallest;
+    canvas_base_size = 599;
+
+    canvas_height = canvas_base_size;
+    canvas_width = canvas_base_size;
 
     const DPR = window.devicePixelRatio ?? 1;
 
@@ -1046,8 +1048,8 @@ function handle_resize(event) {
         let canvas = layers[k].canvas;
         let ctx = layers[k].ctx;
 
-        canvas.style.width = canvas_width + "px";
-        canvas.style.height = canvas_height + "px";
+        canvas.style.width = canvas_smallest + "px";
+        canvas.style.height = canvas_smallest + "px";
     
         // might work, might not
         ctx.canvas.width = canvas_width * DPR;
@@ -1072,16 +1074,16 @@ function handle_resize(event) {
         canvas_y = rect.y;
     })
 
-    document.querySelectorAll(".behind-canvases").forEach(elem => { if (elem.id != "sandbox_load_replays") { elem.style.width = canvas_width + "px" } });
-    document.querySelectorAll(".behind-canvases").forEach(elem => { if (elem.id != "sandbox_load_replays") { elem.style.height = canvas_height + "px" } });
+    document.querySelectorAll(".behind-canvases").forEach(elem => { if (elem.id != "sandbox_load_replays") { elem.style.width = canvas_smallest + "px" } });
+    document.querySelectorAll(".behind-canvases").forEach(elem => { if (elem.id != "sandbox_load_replays") { elem.style.height = canvas_smallest + "px" } });
 
-    document.querySelector(".everything-subcontainer").style.height = canvas_height + "px";
+    document.querySelector(".everything-subcontainer").style.height = canvas_smallest + "px";
 
     layers.bg3.ctx.fillStyle = "#000"
     layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height)
 
     // show the big scary blocker screen if viewport is bad
-    if (is_valid_viewport()) {
+    if (true || is_valid_viewport()) {
         document.querySelector("#desktop_mode_prompt").classList.add("nodisplay");
     } else {
         document.querySelector("#desktop_mode_prompt").classList.remove("nodisplay");

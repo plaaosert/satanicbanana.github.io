@@ -142,6 +142,8 @@
 
 .ballsettings {
   margin-bottom: 8px;
+
+  font-size: 2vh;
 }
 
 .rows {
@@ -166,7 +168,8 @@
 
   font-family: "MS Gothic", "terminus", "nec_apc";
 
-  height: 24px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 .behind-canvases .inputbox {
