@@ -3310,7 +3310,11 @@ class WandBlackBall extends WeaponBall {
     die() {
         this.linked_particle.lifetime = Number.POSITIVE_INFINITY;
 
-        // TODO add a "pop" particle effect when this goes away
+        this.board.spawn_particle(new Particle(
+            this.position, 0, 0.75, entity_sprites.get("explosion_small"), 12, 3, false
+        ), this.position);
+
+        // TODO sound
 
         return {skip_default_explosion: true};
     }
@@ -3411,7 +3415,11 @@ class WandGreenBall extends WeaponBall {
     die() {
         this.linked_particle.lifetime = Number.POSITIVE_INFINITY;
 
-        // TODO add a "pop" particle effect when this goes away
+        this.board.spawn_particle(new Particle(
+            this.position, 0, 0.35, entity_sprites.get("explosion_small"), 24, 3, false
+        ), this.position);
+
+        // TODO sound
 
         return {skip_default_explosion: true};
     }

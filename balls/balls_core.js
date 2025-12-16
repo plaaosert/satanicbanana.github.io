@@ -116,6 +116,8 @@ const entity_sprites = new Map([
     ["explosion_grenade", 16, "explosion_grenade/"],  // Game Maker Classic
 
     ["explosion3", 8, "explosion3/"],  // Sonic Rush Adventure
+
+    ["explosion_small", 10, "explosion_small/"],  // Sonic Rush Adventure
 ].map((v, i) => {
     let ts = [];
 
@@ -1035,9 +1037,13 @@ function get_canvases() {
 }
 
 function handle_resize(event) {
-    let canvas_smallest = Math.min(vh(100) - 128, vw(100) - 128);
+    // 8 for topbar, 16 for bottombar, 8 for top span item
+    let canvas_smallest = Math.min(vh(100 - 8 - 8 - 16, true), vw(100) - 128);
 
-    canvas_base_size = 599;
+    // size on a 1920x1080p monitor on chrome because my
+    // personal experience is more important than all of yalls.
+    // i would apologise but im not sorry
+    canvas_base_size = 625;
 
     canvas_height = canvas_base_size;
     canvas_width = canvas_base_size;

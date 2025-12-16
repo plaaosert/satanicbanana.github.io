@@ -8,10 +8,10 @@
     <meta content="https://plaao.net" property="og:url" />
     <meta content="https://plaao.net/bej/green_funny.png" property="og:image" />
     <meta content="#cccccc" data-react-helmet="true" name="theme-color" />
-	<meta name="viewport" content="width=device-width, initial-scale=0.1, user-scalable=no" />
+	<meta name="viewport" content="width=device-width, initial-scale=0.1, user-scalable=yes" />
 
     <link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=02"/>
-	<link rel="stylesheet" type="text/css" href="balls.css?v=21"/>
+	<link rel="stylesheet" type="text/css" href="balls.css?v=23"/>
 </head>
 <body>
 	<div class="topbar">
@@ -54,7 +54,7 @@
                                 <div class="slidecontainer">
                                     <input type="range" min="1" max="100" value="1" class="slider" id="ball1_level" oninput="update_awaken_showhide('ball1')">
                                 </div>
-                                <span style="font-size: 1vmax;">Level <span id="ball1_level_number">1</span></span>
+                                <span class="ball-level-number">Level <span id="ball1_level_number">1</span></span>
                             </div>
                         </div>
                         <div class="row ballinfo" id="ball1_info" style="--col: rgb(255, 0, 0)">
@@ -74,7 +74,7 @@
                                 <div class="slidecontainer">
                                     <input type="range" min="1" max="100" value="1" class="slider" id="ball2_level" oninput="update_awaken_showhide('ball2')">
                                 </div>
-                                <span style="font-size: 1vmax;">Level <span id="ball2_level_number">1</span></span>
+                                <span class="ball-level-number">Level <span id="ball2_level_number">1</span></span>
                             </div>
                         </div>
                         <div class="row ballinfo" id="ball2_info" style="--col: rgb(255, 255, 0)">
@@ -94,7 +94,7 @@
                                 <div class="slidecontainer">
                                     <input type="range" min="1" max="100" value="1" class="slider" id="ball3_level" oninput="update_awaken_showhide('ball3')">
                                 </div>
-                                <span style="font-size: 1vmax;">Level <span id="ball3_level_number">1</span></span>
+                                <span class="ball-level-number">Level <span id="ball3_level_number">1</span></span>
                             </div>
                         </div>
                         <div class="row ballinfo" id="ball3_info" style="--col: rgb(0, 255, 0)">
@@ -114,7 +114,7 @@
                                 <div class="slidecontainer">
                                     <input type="range" min="1" max="100" value="1" class="slider" id="ball4_level" oninput="update_awaken_showhide('ball4')">
                                 </div>
-                                <span style="font-size: 1vmax;">Level <span id="ball4_level_number">1</span></span>
+                                <span class="ball-level-number">Level <span id="ball4_level_number">1</span></span>
                             </div>
                         </div>
                         <div class="row ballinfo" id="ball4_info" style="--col: rgb(0, 255, 255)">
@@ -124,9 +124,9 @@
                             <span>Scrimblo gumblo</p>
                         </div>
 
-                        <div class="row spacing">
+                        <div class="row spacing sandbox-global-controls">
                             <!-- <button style="font-size: 20px;" onclick="">???</button> -->
-                            <span style="font-size: 1.25vmax;">Frame speed:</span>
+                            <span class="frame-speed-span">Frame speed:</span>
                             <select id="fps-select" onclick="user_interacted_with_fps_select=true;" onchange="user_interacted_with_fps_select=true;">
                                 <option>1/60</option>
                                 <option>1/90</option>
@@ -136,15 +136,15 @@
                                 <option>1/480</option>
                                 <option>Realtime (no replay)</option>
                             </select>
-                            <button style="font-size: 1.4vmax;" onclick="replaying=false; spawn_selected_balls()">Start</button>
-                            <button style="font-size: 1.4vmax;" onclick="load_replay_button()">Load replay</button>
+                            <button onclick="replaying=false; spawn_selected_balls()">Start</button>
+                            <button onclick="load_replay_button()">Load replay</button>
                             <!-- <button style="font-size: 20px;" onclick="document.querySelector('#modding_frame').classList.toggle('hidden')">"Modding" -></button> -->
                         </div>
-                        <div class="columns" style="margin-top: 4px">
-                            <input type="text" class="inputbox" style="width: 50%; height: 1.25vmax; font-size: 1.1vmax; margin-top: 4px;" id="sandbox-random-seed" placeholder="Seed (leave blank for random...)">
-                            <button id="save_replay_button" style="font-size: 1vmax; margin-left: 8px; width: 18vmax;" disabled onclick="save_replay_button()">Copy last game's replay link</button>
+                        <div class="columns" style="margin-top: 0.5vmin">
+                            <input type="text" class="inputbox" id="sandbox-random-seed" placeholder="Seed (leave blank for random...)">
+                            <button id="save_replay_button" disabled onclick="save_replay_button()">Copy last game's replay link</button>
                         </div>
-                        <span style="margin-top: 4px; padding-left:8px; padding-right:8px; color:#bbb;">Use a frame speed closest to the refresh rate of your screen, or "Realtime" if you don't care about replays. When loading replays, this is set automatically - use speed controls if needed.</span>
+                        <span style="margin-top: 0.5vmin; padding-left:1vmin; padding-right:1vmin; color:#bbb;">Use a frame speed closest to the refresh rate of your screen, or "Realtime" if you don't care about replays. When loading replays, this is set automatically - use speed controls if needed.</span>
                     </div>
 
                     <div class="campaign behind-canvases hidden">
@@ -207,7 +207,7 @@
                         This canvas needs to be viewed to be displayed.
                     </canvas>
 
-                        <div id="sandbox_load_replays" class="sandbox-load-replays behind-canvases nodisplay">
+                    <div id="sandbox_load_replays" class="sandbox-load-replays behind-canvases nodisplay">
                         <span class="title">Loading a replay with the following balls:</span>
                         <br>
                         <span id="replay_load_balls_list">
@@ -215,8 +215,8 @@
                         </span>
                         <br>
                         <div class="buttonrow">
-                            <button onclick="kill_confirmation_box()" style="font-size: 1.5vmax;">Cancel</button>
-                            <button onclick="load_readied_replay()" style="font-size: 1.5vmax;">Start</button>
+                            <button onclick="kill_confirmation_box()">Cancel</button>
+                            <button onclick="load_readied_replay()">Start</button>
                         </div>
                     </div>
                 </div>
@@ -240,17 +240,19 @@
                     <br>
                     <span id="mod-balls-to-add">-</span>
                     <br><br>
-                    <button style="font-size: 2.2vmax;" onclick="load_mod()">Send it</button>
+                    <button style="font-size: 2.2vmin;" onclick="load_mod()">Send it</button>
                 </div>
             </div>
         </div>
 
-        <div class="sandbox-speed-buttons">
-            <span class="speed-control button" onclick="mod_simulation_speed(event, 0.5)">-</span>
-            <span class="speed-control label" onclick="toggle_pause_simulation();" ondblclick="reset_simulation_speed()" id="speed_display">- Paused -</span>
-            <span class="speed-control button" onclick="mod_simulation_speed(event, 2)">+</span>
+        <div class="bottomcontainer">
+            <div class="sandbox-speed-buttons">
+                <span class="speed-control button" onclick="mod_simulation_speed(event, 0.5)">-</span>
+                <span class="speed-control label" onclick="toggle_pause_simulation();" ondblclick="reset_simulation_speed()" id="speed_display">- Paused -</span>
+                <span class="speed-control button" onclick="mod_simulation_speed(event, 2)">+</span>
+            </div>
+            <p class="speed-alert hidden" id="speed_alert_main">This game is running at <span class="alert-item" id="fps_original">144fps</span> but you seem to be rendering at <span class="alert-item" id="fps_user">60fps</span>.<br>Speed has been adjusted to compensate.</p>
         </div>
-        <p class="speed-alert hidden" id="speed_alert_main">This game is running at <span class="alert-item" id="fps_original">144fps</span> but you seem to be rendering at <span class="alert-item" id="fps_user">60fps</span>.<br>Speed has been adjusted to compensate.</p>
     </div>
 
 	<div class="bottombar" id="normal-bottombar">
@@ -266,9 +268,9 @@
     <script src="../shared/js/helpers.js?v=04"></script>
 	<script src="../shared/js/canvas_helpers.js?v=03"></script>
 	
-    <script src="balls_core.js?v=19"></script>
-    <script src="balls_balls.js?v=22"></script>
-    <script src="balls_launcher.js?v=31"></script>
+    <script src="balls_core.js?v=20"></script>
+    <script src="balls_balls.js?v=23"></script>
+    <script src="balls_launcher.js?v=32"></script>
     
     <script src="balls_campaign.js?v=03"></script>
 
