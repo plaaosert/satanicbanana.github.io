@@ -71,6 +71,15 @@ const entity_sprites = new Map([
     ["potion4_weapon", 1, "weapon/"],
     ["puddle4", 1, "weapon/"],
 
+    ["potion1_ornate", 1, "weapon/"],
+    ["potion1_weapon_ornate", 1, "weapon/"],
+    ["potion2_ornate", 1, "weapon/"],
+    ["potion2_weapon_ornate", 1, "weapon/"],
+    ["potion3_ornate", 1, "weapon/"],
+    ["potion3_weapon_ornate", 1, "weapon/"],
+    ["potion4_ornate", 1, "weapon/"],
+    ["potion4_weapon_ornate", 1, "weapon/"],
+
     ["grenade", 1, "weapon/"],
     ["grenade_weapon", 1, "weapon/"],
 

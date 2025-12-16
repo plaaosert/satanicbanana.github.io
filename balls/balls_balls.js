@@ -777,6 +777,9 @@ class HammerBall extends WeaponBall {
         switch (skin_name) {
             case "Squeaky": {
                 this.weapon_data[0].sprite = "hamer_squeaky";
+                if (this.weapon_data[1]) {
+                    this.weapon_data[1].sprite = "hamer_squeaky";
+                }
 
                 break;
             }
@@ -1672,6 +1675,8 @@ class RailgunBall extends WeaponBall {
 class PotionBall extends WeaponBall {
     static ball_name = "Potion";
 
+    static AVAILABLE_SKINS = ["Ornate"];
+
     static potion_names = ["Rupture", "Poison", "Pure damage", "Time stop"];
     static potion_cols = [Colour.red, Colour.green, new Colour(0, 64, 255, 255), Colour.from_hex("#FF84F8")];
 
@@ -1729,6 +1734,21 @@ class PotionBall extends WeaponBall {
         this.potion_smash_penalty = 5;
 
         this.duration_mult = 1.2 + (0.0125 * this.level);
+
+        this.sprite_suffix = "";
+    }
+
+    set_skin(skin_name) {
+        super.set_skin(skin_name);
+
+        switch (skin_name) {
+            case "Ornate": {
+                this.weapon_data.forEach(w => w.sprite += "_ornate");
+                this.sprite_suffix = "_ornate";
+
+                break;
+            }
+        }
     }
 
     weapon_step(board, time_delta) {
@@ -1756,7 +1776,8 @@ class PotionBall extends WeaponBall {
                             this.board,
                             this, i, fire_pos, this.potion_impact_damage, 1,
                             new Vector2(1, 0).rotate(this.weapon_data[i].angle),
-                            random_int(6000, 10000, this.board.random), board.gravity, i, this.duration_mult
+                            random_int(6000, 10000, this.board.random), board.gravity, i, this.duration_mult,
+                            this.sprite_suffix
                         ), fire_pos
                     )
                     
@@ -4642,14 +4663,14 @@ class PotionPuddleProjectile extends Projectile {
 }
 
 class PotionBottleProjectile extends Projectile {
-    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, gravity, effect_index, duration_mult) {
+    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, gravity, effect_index, duration_mult, sprite_suffix="") {
         super(board, source, source_weapon_index, position, damage, size, direction, speed);
 
         this.gravity = gravity;
         this.proj_velocity = this.direction.mul(this.speed);
         this.effect_index = effect_index;
 
-        this.sprite = `potion${effect_index+1}`
+        this.sprite = `potion${effect_index+1}${sprite_suffix}`;
 
         this.set_hitboxes([
             {pos: new Vector2(0, 0), radius: 16},
