@@ -1534,12 +1534,18 @@ class RailgunBall extends WeaponBall {
         switch (skin_name) {
             case "Chicken": {
                 this.weapon_data[0].sprite = "railgun_chicken";
+                if (this.weapon_data[1]) {
+                    this.weapon_data[1].sprite = "railgun_chicken";
+                }
 
                 break;
             }
 
             case "Soaker": {
                 this.weapon_data[0].sprite = "railgun_soaker";
+                if (this.weapon_data[1]) {
+                    this.weapon_data[1].sprite = "railgun_soaker";
+                }
 
                 break;
             }
@@ -3074,6 +3080,8 @@ class ChakramBall extends WeaponBall {
 class WandBall extends WeaponBall {
     static ball_name = "Wand";
 
+    static AVAILABLE_SKINS = ["Whimsy"];
+
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
@@ -3148,6 +3156,21 @@ class WandBall extends WeaponBall {
             this.chain_lightning_chain_chance = 0.3;
             this.black_ball_damage = 12;
         }
+
+        this.sprite_suffix = "";
+    }
+
+    set_skin(skin_name) {
+        super.set_skin(skin_name);
+
+        switch (skin_name) {
+            case "Whimsy": {
+                this.weapon_data[0].sprite = "wand_black_whimsy";
+                this.sprite_suffix = "_whimsy";
+
+                break;
+            }
+        }
     }
 
     pick_next_spell() {
@@ -3172,6 +3195,8 @@ class WandBall extends WeaponBall {
         } else {
             this.weapon_data[0].sprite = `wand_${this.current_spell}`;
         }
+
+        this.weapon_data[0].sprite += this.sprite_suffix;
 
         this.cast_flash_timeout -= time_delta;
         this.cast_delay -= time_delta;

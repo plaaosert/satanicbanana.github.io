@@ -82,7 +82,7 @@ const entity_sprites = new Map([
 
     ["grenade_bomb", 1, "weapon/"],
     ["grenade_weapon_bomb", 1, "weapon/"],
-    
+
     ["glass", 1, "weapon/"],
     ["glass_angry", 1, "weapon/"],
 
@@ -114,6 +114,13 @@ const entity_sprites = new Map([
     ["wand_magenta", 1, "weapon/"],
     ["wand_red", 1, "weapon/"],
     ["wand_white", 1, "weapon/"],
+
+    ["wand_black_whimsy", 1, "weapon/"],
+    ["wand_cyan_whimsy", 1, "weapon/"],
+    ["wand_green_whimsy", 1, "weapon/"],
+    ["wand_magenta_whimsy", 1, "weapon/"],
+    ["wand_red_whimsy", 1, "weapon/"],
+    ["wand_white_whimsy", 1, "weapon/"],
 
     ["wand_fireball", 1, "weapon/"],
     ["wand_icicle", 1, "weapon/"],
