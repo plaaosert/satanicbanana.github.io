@@ -90,6 +90,10 @@ class WeaponBall extends Ball {
 
         this.cached_weapon_offsets = [];
         this.cached_hitboxes_offsets = [];
+
+        this.skin_name = "Default";
+        this.custom_parry_sound = "";
+        this.custom_projectile_parry_sound = "";
     }
 
     late_setup() {
@@ -105,6 +109,7 @@ class WeaponBall extends Ball {
         // do nothing
         // other balls will implement skins as necessary
         // mostly it will replace the weapon sprite and maybe some particle effects
+        this.skin_name = skin_name;
     }
 
     get_ailment_hp_loss() {
@@ -816,6 +821,8 @@ class HammerBall extends WeaponBall {
 class SordBall extends WeaponBall {
     static ball_name = "SORD";
 
+    static AVAILABLE_SKINS = ["Lightning", "Iron", "Faithful", "RAM"];
+
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
@@ -840,19 +847,62 @@ class SordBall extends WeaponBall {
         this.speed_base = 135 + (4.5 * level);
     }
 
+    set_skin(skin_name) {
+        super.set_skin(skin_name);
+
+        switch (skin_name) {
+            case "Lightning": {
+                this.weapon_data[0].sprite = "SORD_lightning";
+                // TODO lightning particle effects are in order once i finally add hit location detection
+
+                break;
+            }
+
+            case "Iron": {
+                this.weapon_data[0].sprite = "SORD_berserk";
+                this.custom_parry_sound = "CLANG";
+
+                break;
+            }
+
+            case "Faithful": {
+                this.weapon_data[0].sprite = "SORD_faithful";
+                this.custom_parry_sound = "parry_shitty";
+                this.custom_projectile_parry_sound = "parry_shitty";
+
+                break;
+            }
+
+            case "RAM": {
+                this.weapon_data[0].sprite = "SORD_ram";
+
+                break;
+            }
+        }
+    }
+
     weapon_step(board, time_delta) {
         // rotate the weapon
         this.rotate_weapon(0, this.speed_base * time_delta);
     }
 
     hit_other(other, with_weapon_index) {
-        let result = super.hit_other(other, with_weapon_index, this.damage_base);
+        let dmg = this.damage_base;
+        let result = super.hit_other(other, with_weapon_index, dmg);
 
         this.damage_base += 0.5 * (1 + (this.level * 0.0175));
         this.speed_base += (60 / 4) * (1 + (this.level * 0.015));
 
         if (this.level >= AWAKEN_LEVEL) {
             this.weapon_data[0].size_multiplier += 0.04 * 16;
+        }
+
+        if (this.skin_name == "Faithful") {
+            result.snd = "impact_shitty";
+        }
+
+        if (this.skin_name == "RAM") {
+            result.snd = dmg >= 8 ? "impact_heavy_8bit" : "impact_8bit";
         }
 
         return result;
@@ -1434,6 +1484,8 @@ class NeedleBall extends WeaponBall {
 class RailgunBall extends WeaponBall {
     static ball_name = "Railgun";
 
+    static AVAILABLE_SKINS = ["Chicken", "Soaker"];
+
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
@@ -1474,6 +1526,24 @@ class RailgunBall extends WeaponBall {
         this.shot_cooldown = this.shot_cooldown_max;
 
         this.hit_decay = 0;
+    }
+
+    set_skin(skin_name) {
+        super.set_skin(skin_name);
+
+        switch (skin_name) {
+            case "Chicken": {
+                this.weapon_data[0].sprite = "railgun_chicken";
+
+                break;
+            }
+
+            case "Soaker": {
+                this.weapon_data[0].sprite = "railgun_soaker";
+
+                break;
+            }
+        }
     }
 
     weapon_step(board, time_delta) {
@@ -1520,6 +1590,10 @@ class RailgunBall extends WeaponBall {
                 )
             } else {
 
+            }
+
+            if (this.skin_name == "Chicken") {
+                play_audio("chicken");
             }
         }
     }
@@ -1770,7 +1844,7 @@ class PotionBall extends WeaponBall {
 class GrenadeBall extends WeaponBall {
     static ball_name = "Grenade";
 
-    static AVAILABLE_SKINS = ["bao", "blao"];
+    static AVAILABLE_SKINS = ["bao", "blao", "Nostalgic"];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
@@ -1810,6 +1884,8 @@ class GrenadeBall extends WeaponBall {
     }
 
     set_skin(skin_name) {
+        super.set_skin(skin_name);
+
         switch (skin_name) {
             case "blao": {
                 this.weapon_data[0].sprite = "grenade_weapon_blao";
@@ -1823,6 +1899,13 @@ class GrenadeBall extends WeaponBall {
                 this.weapon_data[0].sprite = "grenade_weapon_bao";
                 this.grenade_sprite = "grenade_bao";
                 this.grenade_explosion_sprite = "explosion_bao";
+
+                break;
+            }
+
+            case "Nostalgic": {
+                this.weapon_data[0].sprite = "grenade_weapon_bomb";
+                this.grenade_sprite = "grenade_bomb";
 
                 break;
             }
@@ -3502,6 +3585,8 @@ class WandGreenBall extends WeaponBall {
 class AxeBall extends WeaponBall {
     static ball_name = "Axe";
 
+    static AVAILABLE_SKINS = ["Reaper"];
+
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
@@ -3550,6 +3635,19 @@ class AxeBall extends WeaponBall {
         this.projectile_delay = null;
         this.projectile_damage = 8;
         this.projectile_speed = 9000;
+    }
+
+    set_skin(skin_name) {
+        super.set_skin(skin_name);
+
+        switch (skin_name) {
+            case "Reaper": {
+                this.weapon_data[0].sprite = "axe_scythe";
+                // TODO this should have a ghost afterimage
+
+                break;
+            }
+        }
     }
 
     lunge_movement() {

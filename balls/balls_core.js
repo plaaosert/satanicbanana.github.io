@@ -34,6 +34,11 @@ const make_damage_numbers = true;
 
 const entity_sprites = new Map([
     ["SORD", 1, "weapon/"],
+    ["SORD_lightning", 1, "weapon/"],
+    ["SORD_berserk", 1, "weapon/"],
+    ["SORD_faithful", 1, "weapon/"],
+    ["SORD_ram", 1, "weapon/"],
+
     ["hamer", 1, "weapon/"],
     ["dagger", 1, "weapon/"],
     ["pellet", 1, "weapon/"],
@@ -41,7 +46,10 @@ const entity_sprites = new Map([
     ["arrow", 1, "weapon/"],
     
     ["gun", 1, "weapon/"],
+
     ["railgun", 1, "weapon/"],
+    ["railgun_chicken", 1, "weapon/"],
+    ["railgun_soaker", 1, "weapon/"],
 
     ["needle", 1, "weapon/"],
     
@@ -72,6 +80,9 @@ const entity_sprites = new Map([
     ["grenade_weapon_bao", 1, "weapon/"],
     ["explosion_bao", 13, "explosion_bao/"],
 
+    ["grenade_bomb", 1, "weapon/"],
+    ["grenade_weapon_bomb", 1, "weapon/"],
+    
     ["glass", 1, "weapon/"],
     ["glass_angry", 1, "weapon/"],
 
@@ -111,6 +122,7 @@ const entity_sprites = new Map([
 
     ["axe", 1, "weapon/"],
     ["axe_projectile", 1, "weapon/"],
+    ["axe_scythe", 1, "weapon/"],
 
     ["shotgun", 1, "weapon/"],
 
@@ -245,8 +257,18 @@ async function load_audio() {
     audio.set("grab", await load_audio_item("snd/grab.mp3"));
     // dragon ball z (explosion.wav)
     audio.set("wall_smash", await load_audio_item("snd/wall_smash.mp3"));
-    // dog theme (temp)
+    // heat haze shadow from tekken 7
     audio.set("unarmed_theme", await load_audio_from_url("https://scrimblo.foundation/uploads/heat_haze_shadow.mp3"))
+    // berserk (2016)
+    audio.set("CLANG", await load_audio_item("snd/CLANG.mp3"));
+    // edited versions of the originals
+    audio.set("impact_shitty", await load_audio_item('snd/impact_shitty.mp3'));
+    audio.set("parry_shitty", await load_audio_item('snd/parry_shitty.mp3'));
+    // edited from https://www.youtube.com/watch?v=lMQGioXwbnI
+    audio.set("chicken", await load_audio_item('snd/chicken.mp3'));
+    // https://pixabay.com/sound-effects/retro-hurt-1-236672/
+    audio.set("impact_8bit", await load_audio_item('snd/impact_8bit.mp3'));
+    audio.set("impact_heavy_8bit", await load_audio_item('snd/impact_heavy_8bit.mp3'));
 }
 
 function play_audio(name) {
@@ -1805,7 +1827,15 @@ function game_loop() {
                                         ball.apply_invuln(BALL_INVULN_DURATION);
                                         other.apply_invuln(BALL_INVULN_DURATION);
 
-                                        play_audio("parry");
+                                        // if either ball has a custom parry sound, use that - if both do, use the first
+                                        if (ball.custom_parry_sound || other.custom_parry_sound) {
+                                            let snd = ball.custom_parry_sound || other.custom_parry_sound;
+                                            if (snd) {
+                                                play_audio(snd);
+                                            }
+                                        } else {
+                                            play_audio("parry");
+                                        }
                                     }
                                 }
                             });
@@ -1895,7 +1925,11 @@ function game_loop() {
                         })
 
                         if (play_parried_audio) {
-                            play_audio("parry2");
+                            if (ball.custom_projectile_parry_sound) {
+                                play_audio(ball.custom_projectile_parry_sound);
+                            } else {
+                                play_audio("parry2");
+                            }
                         }
                     });
 
