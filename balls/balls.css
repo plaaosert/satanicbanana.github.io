@@ -119,21 +119,16 @@
 }
 
 .row.ballinfo span {
-  height: 36px;
+  height: 3vmax;
 
-  font-size: 12px;
+  font-size: 0.95vmax;
 
   text-align: center;
 }
 
 .row.ballinfo.ainfo span {
-  margin-top: 16px;
-
-  height: 36px;
-
-  font-size: 12px;
-
-  text-align: center;
+  margin-top: 0.25vmax;
+  margin-bottom: 0.25vmax;
 }
 
 .row.ballinfo *, .row.ballsettings * {
@@ -143,7 +138,7 @@
 .ballsettings {
   margin-bottom: 8px;
 
-  font-size: 2vh;
+  font-size: 0.95vmax;
 }
 
 .rows {
@@ -229,7 +224,7 @@ button:disabled {
   margin-left: 16px;
   margin-right: 16px;
 
-  --s: 8px;
+  --s: 0.5vmax;
 
   width: calc(100% - 32px);
 }
@@ -351,6 +346,14 @@ button:disabled {
   padding: 8px;
 }
 
+.sandbox-menu {
+  font-size: 0.95vmax;
+}
+
+#fps-select {
+  font-size: 1.25vmax;
+}
+
 .sandbox-speed-buttons {
   padding-top: 16px;
 
@@ -366,8 +369,8 @@ button:disabled {
 }
 
 .speed-control.button {
-  width: 24px;
-  height: 24px;
+  width: 2vmax;
+  height: 2vmax;
 
   align-self: unset;
 
@@ -376,7 +379,8 @@ button:disabled {
 }
 
 .speed-control.label {
-  width: 192px;
+  width: 15vmax;
+  font-size: 1.25vmax;
 
   display: flex; 
   justify-content: center;
@@ -389,7 +393,7 @@ button.green {
 }
 
 .speed-alert {
-  font-size: 12px;
+  font-size: 0.95vmax;
 
   margin-top: 8px;
   text-align: center;
@@ -405,7 +409,7 @@ button.green {
 
 button.sandbox-ball-random {
   margin-left: 16px;
-  font-size: 18px;
+  font-size: 1.4vmax;
 }
 
 .sandbox.replaypanel {
@@ -421,8 +425,12 @@ button.sandbox-ball-random {
   scrollbar-width: none;
 }
 
+.sandbox-ball-select, .sandbox-team-select {
+  font-size: 1vmax;
+}
+
 .sandbox.replaypanel button {
-  --fsz: 16px;
+  --fsz: 1.25vmax;
 
   font-size: var(--fsz);
 
@@ -520,7 +528,7 @@ button.sandbox-ball-random {
 
   color: white;
 
-  font-size: 2vh;
+  font-size: 2vmax;
 
   padding: 32px;
 }

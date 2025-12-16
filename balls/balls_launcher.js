@@ -795,7 +795,7 @@ function setup_load_menu(replay_as_text) {
 
 function is_valid_viewport() {
     // check we have enough content size AND we're not on mobile (or on desktop mode in mobile)
-    return window.innerHeight >= 919 && (!on_mobile() || window.innerWidth > screen.availWidth);
+    return (window.innerHeight >= 919 && window.innerWidth >= 640) && (!on_mobile() || window.innerWidth > screen.availWidth);
 }
 
 function on_mobile() {

@@ -11,7 +11,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=0.1, user-scalable=no" />
 
     <link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=02"/>
-	<link rel="stylesheet" type="text/css" href="balls.css?v=19"/>
+	<link rel="stylesheet" type="text/css" href="balls.css?v=21"/>
 </head>
 <body>
 	<div class="topbar">
@@ -54,7 +54,7 @@
                                 <div class="slidecontainer">
                                     <input type="range" min="1" max="100" value="1" class="slider" id="ball1_level" oninput="update_awaken_showhide('ball1')">
                                 </div>
-                                <span style="font-size: 12px;">Level <span id="ball1_level_number">1</span></span>
+                                <span style="font-size: 1vmax;">Level <span id="ball1_level_number">1</span></span>
                             </div>
                         </div>
                         <div class="row ballinfo" id="ball1_info" style="--col: rgb(255, 0, 0)">
@@ -74,7 +74,7 @@
                                 <div class="slidecontainer">
                                     <input type="range" min="1" max="100" value="1" class="slider" id="ball2_level" oninput="update_awaken_showhide('ball2')">
                                 </div>
-                                <span style="font-size: 12px;">Level <span id="ball2_level_number">1</span></span>
+                                <span style="font-size: 1vmax;">Level <span id="ball2_level_number">1</span></span>
                             </div>
                         </div>
                         <div class="row ballinfo" id="ball2_info" style="--col: rgb(255, 255, 0)">
@@ -94,7 +94,7 @@
                                 <div class="slidecontainer">
                                     <input type="range" min="1" max="100" value="1" class="slider" id="ball3_level" oninput="update_awaken_showhide('ball3')">
                                 </div>
-                                <span style="font-size: 12px;">Level <span id="ball3_level_number">1</span></span>
+                                <span style="font-size: 1vmax;">Level <span id="ball3_level_number">1</span></span>
                             </div>
                         </div>
                         <div class="row ballinfo" id="ball3_info" style="--col: rgb(0, 255, 0)">
@@ -114,7 +114,7 @@
                                 <div class="slidecontainer">
                                     <input type="range" min="1" max="100" value="1" class="slider" id="ball4_level" oninput="update_awaken_showhide('ball4')">
                                 </div>
-                                <span style="font-size: 12px;">Level <span id="ball4_level_number">1</span></span>
+                                <span style="font-size: 1vmax;">Level <span id="ball4_level_number">1</span></span>
                             </div>
                         </div>
                         <div class="row ballinfo" id="ball4_info" style="--col: rgb(0, 255, 255)">
@@ -126,7 +126,7 @@
 
                         <div class="row spacing">
                             <!-- <button style="font-size: 20px;" onclick="">???</button> -->
-                            <span>Frame speed:</span>
+                            <span style="font-size: 1.25vmax;">Frame speed:</span>
                             <select id="fps-select" onclick="user_interacted_with_fps_select=true;" onchange="user_interacted_with_fps_select=true;">
                                 <option>1/60</option>
                                 <option>1/90</option>
@@ -136,15 +136,15 @@
                                 <option>1/480</option>
                                 <option>Realtime (no replay)</option>
                             </select>
-                            <button style="font-size: 20px;" onclick="replaying=false; spawn_selected_balls()">Start</button>
-                            <button style="font-size: 20px;" onclick="load_replay_button()">Load replay</button>
+                            <button style="font-size: 1.4vmax;" onclick="replaying=false; spawn_selected_balls()">Start</button>
+                            <button style="font-size: 1.4vmax;" onclick="load_replay_button()">Load replay</button>
                             <!-- <button style="font-size: 20px;" onclick="document.querySelector('#modding_frame').classList.toggle('hidden')">"Modding" -></button> -->
                         </div>
                         <div class="columns" style="margin-top: 4px">
-                            <input type="text" class="inputbox" style="width: 50%; height: 14px; margin-top: 4px;" id="sandbox-random-seed" placeholder="Seed (leave blank for random...)">
-                            <button id="save_replay_button" style="font-size: 14px; margin-left: 8px; width: 224px;" disabled onclick="save_replay_button()">Copy last game's replay link</button>
+                            <input type="text" class="inputbox" style="width: 50%; height: 1.25vmax; font-size: 1.1vmax; margin-top: 4px;" id="sandbox-random-seed" placeholder="Seed (leave blank for random...)">
+                            <button id="save_replay_button" style="font-size: 1vmax; margin-left: 8px; width: 18vmax;" disabled onclick="save_replay_button()">Copy last game's replay link</button>
                         </div>
-                        <span style="margin-top: 4px; padding-left:8px; padding-right:8px; color:#bbb; font-size: 12px;">Use a frame speed closest to the refresh rate of your monitor, or "Realtime" if you don't care about replays. When loading replays, this is set automatically - use speed controls if needed.</span>
+                        <span style="margin-top: 4px; padding-left:8px; padding-right:8px; color:#bbb;">Use a frame speed closest to the refresh rate of your screen, or "Realtime" if you don't care about replays. When loading replays, this is set automatically - use speed controls if needed.</span>
                     </div>
 
                     <div class="campaign behind-canvases hidden">
@@ -207,7 +207,7 @@
                         This canvas needs to be viewed to be displayed.
                     </canvas>
 
-                    <div id="sandbox_load_replays" class="sandbox-load-replays behind-canvases nodisplay">
+                        <div id="sandbox_load_replays" class="sandbox-load-replays behind-canvases nodisplay">
                         <span class="title">Loading a replay with the following balls:</span>
                         <br>
                         <span id="replay_load_balls_list">
@@ -215,8 +215,8 @@
                         </span>
                         <br>
                         <div class="buttonrow">
-                            <button onclick="kill_confirmation_box()" style="font-size: 16px;">Cancel</button>
-                            <button onclick="load_readied_replay()" style="font-size: 16px;">Start</button>
+                            <button onclick="kill_confirmation_box()" style="font-size: 1.5vmax;">Cancel</button>
+                            <button onclick="load_readied_replay()" style="font-size: 1.5vmax;">Start</button>
                         </div>
                     </div>
                 </div>
@@ -240,7 +240,7 @@
                     <br>
                     <span id="mod-balls-to-add">-</span>
                     <br><br>
-                    <button style="font-size: 20px;" onclick="load_mod()">Send it</button>
+                    <button style="font-size: 2.2vmax;" onclick="load_mod()">Send it</button>
                 </div>
             </div>
         </div>
@@ -254,21 +254,21 @@
     </div>
 
 	<div class="bottombar" id="normal-bottombar">
-		<a class="left-text" style="font-size: 3vmin; bottom: 16px; left: 16px" href=".">balls v1.0 | balls<br>
+		<a class="left-text" style="font-size: 3vmin; bottom: 16px; left: 16px" href=".">balls v1.0 | balls - best experienced in desktop!<br>
             <!--
 			<span class="white" style="font-size: 2vmin;">fonts by VileR <a style="position: relative; bottom: 0px; top: 0px; left: 0px;" href="https://int10h.org/oldschool-pc-fonts/">https://int10h.org/oldschool-pc-fonts/</a>. subject to CC-SA 4.0</span>
             -->
         </a>
-		<p class="right-text" style="bottom:30px; font-size: 2vmin; color:#ccc;">if you need help, contact me on discord at <b style="color: #0cf">@plaaosert</b> -- after some demand <a style="position: unset; color: lime" href="https://ko-fi.com/plaao">here is my ko-fi</a></p>
-		<p style="font-size: 2vmin"><a class="right-text" style="color:#f20; font-size: 2vmin" href="../index.html" > << go back >> </a></p>
+		<p class="right-text" style="bottom:40px; font-size: 2vmin; color:#ccc;">if you need help, contact me on discord at <b style="color: #0cf">@plaaosert</b> -- after some demand <a style="position: unset; color: lime" href="https://ko-fi.com/plaao">here is my ko-fi</a></p>
+		<p style="font-size: 2vmin"><a class="right-text" style="bottom: 16px; color:#f20; font-size: 2vmin" href="../index.html" > << go back >> </a></p>
 	</div>
 	
     <script src="../shared/js/helpers.js?v=04"></script>
 	<script src="../shared/js/canvas_helpers.js?v=03"></script>
 	
-    <script src="balls_core.js?v=18"></script>
-    <script src="balls_balls.js?v=21"></script>
-    <script src="balls_launcher.js?v=30"></script>
+    <script src="balls_core.js?v=19"></script>
+    <script src="balls_balls.js?v=22"></script>
+    <script src="balls_launcher.js?v=31"></script>
     
     <script src="balls_campaign.js?v=03"></script>
 
