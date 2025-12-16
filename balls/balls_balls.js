@@ -736,6 +736,8 @@ class UnarmedBall extends WeaponBall {
 class HammerBall extends WeaponBall {
     static ball_name = "Hammer";
 
+    static AVAILABLE_SKINS = ["Squeaky"];
+
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
@@ -769,6 +771,18 @@ class HammerBall extends WeaponBall {
         this.speed_base = 90;
     }
 
+    set_skin(skin_name) {
+        super.set_skin(skin_name);
+
+        switch (skin_name) {
+            case "Squeaky": {
+                this.weapon_data[0].sprite = "hamer_squeaky";
+
+                break;
+            }
+        }
+    }
+
     weapon_step(board, time_delta) {
         // rotate the weapon
         this.rotate_weapon(0, this.speed_base * time_delta);
@@ -793,6 +807,10 @@ class HammerBall extends WeaponBall {
         other.set_velocity(new_other_velocity);
 
         other.apply_invuln(BALL_INVULN_DURATION * 2);
+
+        if (this.skin_name == "Squeaky") {
+            result.snd = "impact_squeak";
+        }
 
         return result;
     }
@@ -2095,6 +2113,8 @@ class GrenadeProjectileBall extends WeaponBall {
 class GlassBall extends WeaponBall {
     static ball_name = "Glass";
 
+    static AVAILABLE_SKINS = ["Papercut"];
+
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
@@ -2122,6 +2142,21 @@ class GlassBall extends WeaponBall {
         this.charge_threshold = 100;
 
         this.vorpal_mult = 12;
+
+        this.skin_suffix = "";
+    }
+
+    set_skin(skin_name) {
+        super.set_skin(skin_name);
+
+        switch (skin_name) {
+            case "Papercut": {
+                this.weapon_data[0].sprite = "glass_paper";
+                this.skin_suffix = "_paper";
+
+                break;
+            }
+        }
     }
 
     weapon_step(board, time_delta) {
@@ -2134,6 +2169,8 @@ class GlassBall extends WeaponBall {
         } else {
             this.weapon_data[0].sprite = "glass";
         }
+    
+        this.weapon_data[0].sprite += this.skin_suffix;
     }
 
     hit_other(other, with_weapon_index) {
@@ -2146,6 +2183,10 @@ class GlassBall extends WeaponBall {
             result = super.hit_other(other, with_weapon_index, 0);
             this.charge += other.rupture_intensity * 14;
             this.apply_rupture(other, this.damage_base)
+
+            if (this.skin_name == "Papercut") {
+                result.snd = "impact_paper";
+            }
         }
 
         if (this.level >= AWAKEN_LEVEL) {

@@ -40,6 +40,8 @@ const entity_sprites = new Map([
     ["SORD_ram", 1, "weapon/"],
 
     ["hamer", 1, "weapon/"],
+    ["hamer_squeaky", 1, "weapon/"],
+
     ["dagger", 1, "weapon/"],
     ["pellet", 1, "weapon/"],
     ["bow", 1, "weapon/"],
@@ -85,6 +87,9 @@ const entity_sprites = new Map([
 
     ["glass", 1, "weapon/"],
     ["glass_angry", 1, "weapon/"],
+
+    ["glass_paper", 1, "weapon/"],
+    ["glass_angry_paper", 1, "weapon/"],
 
     ["hand_neutral", 1, "weapon/hands/"],
     ["hand_open", 1, "weapon/hands/"],
@@ -276,6 +281,12 @@ async function load_audio() {
     // https://pixabay.com/sound-effects/retro-hurt-1-236672/
     audio.set("impact_8bit", await load_audio_item('snd/impact_8bit.mp3'));
     audio.set("impact_heavy_8bit", await load_audio_item('snd/impact_heavy_8bit.mp3'));
+    // https://freesound.org/people/Breviceps/sounds/468443/
+    audio.set("impact_squeak", await load_audio_item('snd/impact_squeak.mp3'));
+    
+    // i have no idea (ask vitawrap)
+    audio.set("impact_paper", await load_audio_item('snd/impact_paper.mp3'));
+    
 }
 
 function play_audio(name) {
