@@ -148,7 +148,7 @@ function add_to_replays_tab(tab, replay_entry, to_first=true) {
             return;
         }
 
-        let ball_class = selectable_balls_for_random.find(t => t?.name == ball_str);
+        let ball_class = selectable_balls.find(t => t?.name == ball_str);
 
         let entry_span = document.createElement("span");
 
@@ -818,7 +818,7 @@ function setup_load_menu(replay_as_text) {
             return;
         }
 
-        let ball_class = selectable_balls_for_random.find(t => t?.name == ball_str);
+        let ball_class = selectable_balls.find(t => t?.name == ball_str);
 
         let entry_span = document.createElement("span");
 

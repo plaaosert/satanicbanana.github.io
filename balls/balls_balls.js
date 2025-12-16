@@ -484,7 +484,7 @@ class WeaponBall extends Ball {
 
 class DummyBall extends WeaponBall {
     // transforms into unarmedball when it takes a hit
-    static ball_name = "Dummy";
+    static ball_name = "No Weapon";
     
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
