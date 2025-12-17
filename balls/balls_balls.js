@@ -94,6 +94,24 @@ class WeaponBall extends Ball {
         this.skin_name = "Default";
         this.custom_parry_sound = "";
         this.custom_projectile_parry_sound = "";
+
+        this.description_line_num = 0;
+        this.description_line_spacing = 12;
+
+        this.saved_ctx = null;
+        this.saved_x_anchor = 0;
+        this.saved_y_anchor = 0;
+
+        this.alt_colour = null;
+        this.border_colour = null;
+        this.border_alt_colour = null;
+        this.update_col_datas();
+
+        this.alt_flash_freq = 1;
+        this.alt_flash_dur = 0.2;
+        this.render_alt = false;
+
+        this.border_siz = 1;
     }
 
     late_setup() {
@@ -105,11 +123,75 @@ class WeaponBall extends Ball {
         this.cache_hitboxes_offsets();
     }
 
+    set_colour(to_col) {
+        this.colour = to_col;
+    }
+
+    update_col_datas() {
+        this.alt_colour = this.colour.lerp(Colour.white, 0);
+        this.border_colour = this.colour.lerp(Colour.black, 0.85);
+        this.border_alt_colour = this.alt_colour.lerp(Colour.black, 0.85);
+    }
+
     set_skin(skin_name) {
         // do nothing
         // other balls will implement skins as necessary
         // mostly it will replace the weapon sprite and maybe some particle effects
         this.skin_name = skin_name;
+    }
+
+    start_writing_desc(ctx, x_anchor, y_anchor) {
+        this.description_line_num = 0;
+
+        this.saved_ctx = ctx;
+        this.saved_x_anchor = x_anchor;
+        this.saved_y_anchor = y_anchor;
+    }
+
+    get_current_col() {
+        return this.render_alt ? this.colour : this.alt_colour;
+    }
+
+    get_current_border_col() {
+        return this.render_alt ? this.border_colour : this.border_alt_colour;
+    }
+
+    write_desc_line(text, awakened, fontsiz=null, custom_col=null, previous_line=false, x_offset=0) {
+        if (previous_line) {
+            this.description_line_num--;
+        }
+        
+        let ball_col = this.get_current_col();
+
+        let col = custom_col ?? (awakened ? ball_col.lerp(Colour.white, 0.5).css() : ball_col.css());
+
+        let siz = fontsiz ?? 12;
+        let xpos = this.saved_x_anchor + x_offset;
+        let ypos = this.saved_y_anchor + (
+            this.description_line_num * this.description_line_spacing
+        );
+        let ctx = this.saved_ctx;
+        let txt = text;
+        let fnt = CANVAS_FONTS;
+
+        if (this.border_siz == 0) {
+            write_text(
+                ctx, txt, xpos, ypos, col, fnt, siz
+            );
+        } else {
+            let border_col = "";
+            if (custom_col) {
+                border_col = this.get_current_border_col().css();
+            } else {
+                border_col = this.get_current_border_col().css();
+            }
+
+            write_pp_bordered_text(
+                ctx, txt, xpos, ypos, col, fnt, siz, false, this.border_siz, border_col
+            );
+        }
+
+        this.description_line_num++;
     }
 
     get_ailment_hp_loss() {
@@ -193,6 +275,10 @@ class WeaponBall extends Ball {
         // just to cache every physics step
         this.cache_weapon_offsets();
         this.cache_hitboxes_offsets();
+
+        // do alt-colour stuff to hopefully improve compression
+        let lifetime_mod = this.lifetime % this.alt_flash_freq;
+        this.render_alt = lifetime_mod < this.alt_flash_dur;
     }
 
     weapon_step(board, time_delta) {
@@ -473,11 +559,14 @@ class WeaponBall extends Ball {
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx, "This thing has no stats", x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            "This thing has no stats"
         )
-        write_text(
-            ctx, "im serious", x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+
+        this.write_desc_line(
+            "im serious"
         )
     }
 }
@@ -524,7 +613,7 @@ class DummyBall extends WeaponBall {
                         this.board.random
                     )
                 ))
-                this.colour = this.original_colour.lerp(Colour.white, Math.max(0, (this.shake_current - this.shake_flash_start) / this.shake_flash_duration))
+                this.set_colour(this.original_colour.lerp(Colour.white, Math.max(0, (this.shake_current - this.shake_flash_start) / this.shake_flash_duration)));
             } else {
                 // replace this ball with UnarmedBall
                 this.child = new UnarmedBall(
@@ -599,15 +688,18 @@ class DummyBall extends WeaponBall {
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx, "This thing has no stats", x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            "This thing has no stats"
         )
-        write_text(
-            ctx, "im serious", x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+
+        this.write_desc_line(
+            "im serious"
         )
         if (this.level >= AWAKEN_LEVEL) {
-            write_text(
-                ctx, `Or does it...?`, x_anchor, y_anchor + 24, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+            this.write_desc_line(
+                `Or does it...?`, true
             )
         }
     }
@@ -718,17 +810,19 @@ class UnarmedBall extends WeaponBall {
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx, "It's all over.", x_anchor, y_anchor, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            "It's all over.", true
         )
-        write_text(
-            ctx, `Intensity: ${this.intensity.toFixed(0)}`, x_anchor, y_anchor + 12, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Intensity: ${this.intensity.toFixed(0)}`, true
         )
-        write_text(
-            ctx, `Damage: ${this.damage_final.toFixed(2)}`, x_anchor, y_anchor + 24, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Damage: ${this.damage_final.toFixed(2)}`, true
         )
-        write_text(
-            ctx, `Defense: ${(this.defense_final).toFixed(2)}`, x_anchor, y_anchor + 36, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Defense: ${(this.defense_final).toFixed(2)}`, true
         )
     }
 }
@@ -872,21 +966,23 @@ class HammerBall extends WeaponBall {
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx, `Damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Damage: ${this.damage_base.toFixed(2)}`
         )
-        write_text(
-            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`
         )
-        write_text(
-            ctx, "Knocks enemies back when striking them.", x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            "Knocks enemies back when striking them."
         )
         if (this.level >= AWAKEN_LEVEL) {
-            write_text(
-                ctx, `Second hammer damage: ${(this.damage_base / 2).toFixed(2)}`, x_anchor, y_anchor + 36, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+            this.write_desc_line(
+                `Second hammer damage: ${(this.damage_base / 2).toFixed(2)}`, true
             )
-            write_text(
-                ctx, `Second hammer rotation speed: ${(this.speed_base * 1.6).toFixed(0)} deg/s`, x_anchor, y_anchor + 48, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+            this.write_desc_line(
+                `Second hammer rotation speed: ${(this.speed_base * 1.6).toFixed(0)} deg/s`, true
             )
         }
     }
@@ -983,18 +1079,20 @@ class SordBall extends WeaponBall {
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx, `Damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Damage: ${this.damage_base.toFixed(2)}`
         )
-        write_text(
-            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`
         )
-        write_text(
-            ctx, `Hits harder and rotates faster every strike.`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 10
+        this.write_desc_line(
+            `Hits harder and rotates faster every strike.`, false, 10
         )
         if (this.level >= AWAKEN_LEVEL) {
-            write_text(
-                ctx, `Size multiplier: ${(this.weapon_data[0].size_multiplier / 16).toFixed(2)}`, x_anchor, y_anchor + 36, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+            this.write_desc_line(
+                `Size multiplier: ${(this.weapon_data[0].size_multiplier / 16).toFixed(2)}`, true
             )
         }
     }
@@ -1101,24 +1199,26 @@ class DaggerBall extends WeaponBall {
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx, `Damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Damage: ${this.damage_base.toFixed(2)}`
         )
-        write_text(
-            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`
         )
-        write_text(
-            ctx, `Bonus decay time: ${this.hit_decay_max.toFixed(1)}`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Bonus decay time: ${this.hit_decay_max.toFixed(1)}`
         )
-        write_text(
-            ctx, `Faster rotation speed (x2) and damage (x1.5)`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 10
+        this.write_desc_line(
+            `Faster rotation speed (x2) and damage (x1.5)`, false, 10
         )
-        write_text(
-            ctx, `every strike. Bonus decays when not striking.`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 10
+        this.write_desc_line(
+            `every strike. Bonus decays when not striking.`, false, 10
         )
         if (this.level >= AWAKEN_LEVEL) {
-            write_text(
-                ctx, `Projectiles/s: ${(this.speed_base >= 1000 ? 1 / this.projectiles_cooldown_max : 0).toFixed(1)}`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+            this.write_desc_line(
+                `Projectiles/s: ${(this.speed_base >= 1000 ? 1 / this.projectiles_cooldown_max : 0).toFixed(1)}`, true
             )
         }
     }
@@ -1233,30 +1333,32 @@ class BowBall extends WeaponBall {
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx, `Arrow damage: ${this.proj_damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Arrow damage: ${this.proj_damage_base.toFixed(2)}`
         )
-        write_text(
-            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`
         )
-        write_text(
-            ctx, `Multishot: ${this.multishots_max}`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 10
+        this.write_desc_line(
+            `Multishot: ${this.multishots_max}`
         )
-        write_text(
-            ctx, `Arrow size: ${this.arrow_size_mult.toFixed(3)}`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 10
+        this.write_desc_line(
+            `Arrow size: ${this.arrow_size_mult.toFixed(3)}x`
         )
-        write_text(
-            ctx, `Arrow speed: ${this.arrow_speed}`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 10
+        this.write_desc_line(
+            `Arrow speed: ${this.arrow_speed}`
         )
-        write_text(
-            ctx, `Multishot + damage increases with successful hits.`, x_anchor, y_anchor + 60, this.colour.css(), CANVAS_FONTS, 10
+        this.write_desc_line(
+            `Multishot + damage increases with successful hits.`, false, 10
         )
-        write_text(
-            ctx, `Has a weak melee attack: 2 damage.`, x_anchor, y_anchor + 72, this.colour.css(), CANVAS_FONTS, 10
+        this.write_desc_line(
+            `Has a weak melee attack: 2 damage.`, false, 10
         )
         if (this.level >= AWAKEN_LEVEL) {
-            write_text(
-                ctx, `Shoots an additional arrow every shot.`, x_anchor, y_anchor + 84, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+            this.write_desc_line(
+                `Shoots an additional arrow every shot.`, true, 10
             )
         }
     }
@@ -1379,27 +1481,29 @@ class MagnumBall extends WeaponBall {
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx, `Bullet damage: ${this.proj_damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Bullet damage: ${this.proj_damage_base.toFixed(2)}`
         )
-        write_text(
-            ctx, `Gun rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Gun rotation speed: ${this.speed_base.toFixed(0)} deg/s`
         )
-        write_text(
-            ctx, `Coin damage: ${this.coin_damage_base.toFixed(2)}`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Coin damage: ${this.coin_damage_base.toFixed(2)}`
         )
-        write_text(
-            ctx, `Coin rotation speed: ${(this.speed_base * 2.5).toFixed(0)} deg/s`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Coin rotation speed: ${(this.speed_base * 2.5).toFixed(0)} deg/s`
         )
-        write_text(
-            ctx, `Shots ricochet off coins for double damage.`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 10
+        this.write_desc_line(
+            `Shots ricochet off coins for double damage.`, false, 10
         )
-        write_text(
-            ctx, `Ricochet shots can't be parried.`, x_anchor, y_anchor + 60, this.colour.css(), CANVAS_FONTS, 10
+        this.write_desc_line(
+            `Ricochet shots can't be parried.`, false, 10
         )
         if (this.level >= AWAKEN_LEVEL) {
-            write_text(
-                ctx, `Has an additional coin thrower.`, x_anchor, y_anchor + 72, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+            this.write_desc_line(
+                `Has an additional coin thrower.`, true
             )
         }
     }
@@ -1529,27 +1633,29 @@ class NeedleBall extends WeaponBall {
     // }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx, `Damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Damage: ${this.damage_base.toFixed(2)}`
         )
-        write_text(
-            ctx, `${this.level >= AWAKEN_LEVEL ? "Poison" : "Rupture"} per hit: ${this.rupture_base.toFixed(1)}`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `${this.level >= AWAKEN_LEVEL ? "Poison" : "Rupture"} per hit: ${this.rupture_base.toFixed(1)}`
         )
-        write_text(
-            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`
         )
-        write_text(
-            ctx, `Copy chance: ${(this.split_chance * 100).toFixed(0)}%`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Copy chance: ${(this.split_chance * 100).toFixed(0)}%`
         )
-        write_text(
-            ctx, `Copy HP ratio: ${(this.split_ratio * 100).toFixed(1)}%`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Copy HP ratio: ${(this.split_ratio * 100).toFixed(1)}%`
         )
-        write_text(
-            ctx, `Split HP loss reduction: ${(this.split_hp_save * 100).toFixed(0)}%`, x_anchor, y_anchor + 60, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Split HP loss reduction: ${(this.split_hp_save * 100).toFixed(0)}%`
         )
         if (this.level >= AWAKEN_LEVEL) {
-            write_text(
-                ctx, `Applies poison instead of rupture.`, x_anchor, y_anchor + 72, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+            this.write_desc_line(
+                `Applies poison instead of rupture.`, true
             )
         }
     }
@@ -1705,21 +1811,23 @@ class RailgunBall extends WeaponBall {
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx, `Bullet damage: ${this.proj_damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Bullet damage: ${this.proj_damage_base.toFixed(2)}`
         )
-        write_text(
-            ctx, `Gun rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Gun rotation speed: ${this.speed_base.toFixed(0)} deg/s`
         )
-        write_text(
-            ctx, `On shot hit or parry, rotation speed increases,`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 10
+        this.write_desc_line(
+            `On shot hit or parry, rotation speed increases,`, false, 10
         )
-        write_text(
-            ctx, `and quickly fire another shot.`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 10
+        this.write_desc_line(
+            `and quickly fire another shot.`, false, 10
         )
         if (this.level >= AWAKEN_LEVEL) {
-            write_text(
-                ctx, `Has two railguns that mirror positions.`, x_anchor, y_anchor + 48, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+            this.write_desc_line(
+                `Has two railguns that mirror positions.`, true
             )
         }
     }
@@ -1731,7 +1839,7 @@ class PotionBall extends WeaponBall {
     static AVAILABLE_SKINS = ["Ornate"];
 
     static potion_names = ["Rupture", "Poison", "Pure damage", "Time stop"];
-    static potion_cols = [Colour.red, Colour.green, new Colour(0, 64, 255, 255), Colour.from_hex("#FF84F8")];
+    static potion_cols = [Colour.red, Colour.green, new Colour(0, 96, 255, 255), Colour.from_hex("#FF84F8")];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
@@ -1896,46 +2004,44 @@ class PotionBall extends WeaponBall {
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx, `Potion impact damage: ${this.potion_impact_damage.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Potion impact damage: ${this.potion_impact_damage.toFixed(2)}`
         )
 
         let num = 3;
         if (this.level >= AWAKEN_LEVEL) {
             num = 4;
-            write_text(
-                ctx, `Gains another potion that freezes time.`, x_anchor, y_anchor + 12 + (12 * 4), this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
-            )
         }
 
         for (let i=0; i<num; i++) {
             // col if ready, grey if not - strikethrough if smashed
             let potion_exists = this.weapon_data[i].size_multiplier > 0
             let col = potion_exists ? PotionBall.potion_cols[i].css() : (this.potions_smashed[i] ? "#333" : "#666")
-            write_text(
-                ctx, PotionBall.potion_names[i], x_anchor,
-                y_anchor + 12 + (12 * i),
-                col, CANVAS_FONTS, 12
+            this.write_desc_line(
+                PotionBall.potion_names[i], false, null, col
             )
 
             if (!potion_exists) {
                 if (this.potions_smashed[i]) {
-                    write_text(
-                        ctx, "-".repeat(PotionBall.potion_names[i].length), x_anchor,
-                        y_anchor + 12 + (12 * i),
-                        col, CANVAS_FONTS, 12
+                    this.write_desc_line(
+                        "-".repeat(PotionBall.potion_names[i].length), false, null, col, true
                     )
                 }
 
                 // then write the respawn delay
-                write_text(
-                    ctx, `${this.weapon_regeneration_times[i].toFixed(1)}s`,
-                    x_anchor + 128,
-                    y_anchor + 12 + (12 * i),
-                    "#888", CANVAS_FONTS, 12
+                this.write_desc_line(
+                    `${this.weapon_regeneration_times[i].toFixed(1)}s`, false, null, "#888", true, 128
                 )
             }
-        };
+        }
+
+        if (this.level >= AWAKEN_LEVEL) {
+            this.write_desc_line(
+                `Gains another potion that freezes time.`, true
+            )
+        }
     }
 }
 
@@ -2077,31 +2183,26 @@ class GrenadeBall extends WeaponBall {
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx, `Strike damage: ${this.damage_base.toFixed(0)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
-        )
-        write_text(
-            ctx, `Grenade damage: ${this.grenade_damage_base.toFixed(0)}`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
-        )
-        if (this.level >= AWAKEN_LEVEL) {
-            write_text(
-                ctx, `Grenade fuse: ${this.grenade_fuse}s`, x_anchor, y_anchor + 24, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
-            )
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
 
-            write_text(
-                ctx, `Grenades/s: ${(1 / this.shot_cooldown_max).toFixed(2)}`, x_anchor, y_anchor + 48, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
-            )
-        } else {
-            write_text(
-                ctx, `Grenade fuse: ${this.grenade_fuse}s`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
-            )
+        this.write_desc_line(
+            `Strike damage: ${this.damage_base.toFixed(0)}`
+        )
+        this.write_desc_line(
+            `Grenade damage: ${this.grenade_damage_base.toFixed(0)}`
+        )
 
-            write_text(
-                ctx, `Grenades/s: ${(1 / this.shot_cooldown_max).toFixed(2)}`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 12
-            )
-        }
-        write_text(
-            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 12
+        let awakened = this.level >= AWAKEN_LEVEL;
+        this.write_desc_line(
+            `Grenade fuse: ${this.grenade_fuse}s`, awakened
+        )
+
+        this.write_desc_line(
+            `Grenades/s: ${(1 / this.shot_cooldown_max).toFixed(2)}`, awakened
+        )
+
+        this.write_desc_line(
+            `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`
         )
     }
 }
@@ -2271,33 +2372,41 @@ class GlassBall extends WeaponBall {
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx, `Rupture per hit: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Rupture per hit: ${this.damage_base.toFixed(2)}`
         )
-        write_text(
-            ctx, `Vorpal strike damage: ${(this.damage_base * this.vorpal_mult).toFixed(0)}`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Vorpal strike damage: ${(this.damage_base * this.vorpal_mult).toFixed(0)}`
         )
-        write_text(
-            ctx, `Charge: ${this.charge.toFixed(0)}`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Charge: ${this.charge.toFixed(0)}`
         )
         if (this.charge >= this.charge_threshold) {
-            write_text(
-                ctx, `[${"!".repeat(20)}]`, x_anchor + 96, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
+            this.write_desc_line(
+                `[${"!".repeat(20)}]`,
+                false, 12, null, true, 96
             )
         } else {
-            write_text(
-                ctx, `[${">".repeat(Math.floor(20 * (this.charge / this.charge_threshold)))}${" ".repeat(20 - Math.floor(20 * (this.charge / this.charge_threshold)))}]`, x_anchor + 96, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
+            this.write_desc_line(
+                `[${">".repeat(
+                    Math.floor(20 * (this.charge / this.charge_threshold))
+                )}${" ".repeat(
+                    20 - Math.floor(20 * (this.charge / this.charge_threshold))
+                )}]`,
+                false, 12, null, true, 96
             )
         }
-        write_text(
-            ctx, `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`
         )
-        write_text(
-            ctx, `Normal strikes apply rupture instead of damage.`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 10
+        this.write_desc_line(
+            `Normal strikes apply rupture instead of damage.`, true, 10
         )
         if (this.level >= AWAKEN_LEVEL) {
-            write_text(
-                ctx, `Multiplies rupture by 2x after each hit.`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+            this.write_desc_line(
+                `Multiplies rupture by 2x after each hit.`, true, 10
             )
         }
     }
@@ -2996,42 +3105,44 @@ class HandBall extends WeaponBall {
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx, `The hand.   `, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `The hand.   `
         )
         this.hands_sprites.forEach((s, i) => {
-            write_text(
-                ctx, HandBall.emojis[s], (12 * 6) + (i * 12) + x_anchor, y_anchor, s == "hand_tired" ? "gray" : this.colour.css(), CANVAS_FONTS, 12
+            this.write_desc_line(
+                HandBall.emojis[s], false, null, s == "hand_tired" ? "gray" : null, true, (12 * 6) + (i * 12)
             )
         })
 
-        write_text(
-            ctx, `Punch damage: ${this.punch_damage.toFixed(2)}`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Punch damage: ${this.punch_damage.toFixed(2)}`
         )
-        write_text(
-            ctx, `Grab damage: ${this.grab_damage_initial.toFixed(2)} + ${this.grab_damage_impact.toFixed(2)}`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Grab damage: ${this.grab_damage_initial.toFixed(2)} + ${this.grab_damage_impact.toFixed(2)}`
         )
         if (this.level >= AWAKEN_LEVEL) {
-            write_text(
-                ctx, `Hands: ${this.hands_sprites.length}`, x_anchor, y_anchor + 36, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+            this.write_desc_line(
+                `Hands: ${this.hands_sprites.length}`, true, 12
             )
             let timeout = (this.hand_sprout_base * compat_pow(2, this.hands_sprites.length));
             let timeleft = (this.hand_sprout_base * compat_pow(2, this.hands_sprites.length)) - this.hand_sprout_timeout
-            write_text(
-                ctx, `Time until next hand: ${timeleft.toFixed(1)}s / ${timeout.toFixed(1)}s`, x_anchor, y_anchor + 48, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+            this.write_desc_line(
+                `Time until next hand: ${timeleft.toFixed(1)}s / ${timeout.toFixed(1)}s`, true, 10
             )
             let bar_l = 32;
             let prop = timeleft / timeout;
             let empties = Math.max(0, Math.min(bar_l, Math.ceil(prop * bar_l)));
-            write_text(
-                ctx, `[${"#".repeat(bar_l - empties)}${" ".repeat(empties)}]`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+            this.write_desc_line(
+                `[${"#".repeat(bar_l - empties)}${" ".repeat(empties)}]`, true, 10
             )
         } else {
-            write_text(
-                ctx, `Parry tiredness duration: ${this.post_block_cooldown.toFixed(2)}s`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 12
+            this.write_desc_line(
+                `Parry tiredness duration: ${this.post_block_cooldown.toFixed(2)}s`
             )
-            write_text(
-                ctx, `Throw tiredness duration: ${this.post_grab_cooldown.toFixed(2)}s`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 12
+            this.write_desc_line(
+                `Throw tiredness duration: ${this.post_grab_cooldown.toFixed(2)}s`
             )
         }
     }
@@ -3076,6 +3187,9 @@ class ChakramBall extends WeaponBall {
 
         this.throw_windup_max = 1.5;
         this.throw_windup = this.throw_windup_max;
+
+        this.last_throw_cooldown = this.throw_cooldown;
+        this.linked_projectile = null;
 
         this.mode = "idle";
         this.weapon_reversed = false;
@@ -3134,6 +3248,8 @@ class ChakramBall extends WeaponBall {
                 this.throw_cooldown -= time_delta;
                 if (this.throw_cooldown <= 0) {
                     this.throw_cooldown = random_float(...this.throw_cooldown_max, this.board.random);
+                    this.last_throw_cooldown = this.throw_cooldown;
+
                     this.throw_windup = this.throw_windup_max;
                     this.mode = "windup";
                     this.weapon_data[0].reverse();
@@ -3156,6 +3272,8 @@ class ChakramBall extends WeaponBall {
                     board.spawn_projectile(proj, pos);
                     
                     this.mode = "thrown";
+
+                    this.linked_projectile = proj;
                     
                     this.weapon_reversed = this.weapon_data[0].reversed;
                     this.weapon_data = [];
@@ -3194,18 +3312,38 @@ class ChakramBall extends WeaponBall {
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx, `Chakram impact damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Chakram impact damage: ${this.damage_base.toFixed(2)}`
         )
-        write_text(
-            ctx, `Chakram thrown damage: ${this.chakram_damage_base.toFixed(2)}`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Chakram thrown damage: ${this.chakram_damage_base.toFixed(2)}`
         )
-        write_text(
-            ctx, `Chakram orbit duration: ${this.chakram_orbit_time.toFixed(3)}s`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Chakram orbit duration: ${this.chakram_orbit_time.toFixed(3)}s`
         )
+
+        if (this.mode == "idle") {
+            this.write_desc_line(
+                `Chakram: held    (${this.throw_cooldown.toFixed(1)}s) [${"#".repeat(Math.ceil((this.throw_cooldown / this.last_throw_cooldown) * 12)).padEnd(12)}]`
+            )
+        } else {
+            if (this.mode == "thrown") {
+                let timeleft = this.linked_projectile.rotation_time - this.linked_projectile.lifetime;
+                this.write_desc_line(
+                    `Chakram: thrown! (${timeleft.toFixed(1)}s) [${"!".repeat(Math.ceil((timeleft / this.linked_projectile.rotation_time) * 12)).padEnd(12)}]`
+                )
+            } else {
+                this.write_desc_line(
+                    `Chakram: throwing...`
+                )
+            }
+        }
+
         if (this.level >= AWAKEN_LEVEL) {
-            write_text(
-                ctx, `Chakram rupture on hit: ${this.chakram_damage_base.toFixed(2)}`, x_anchor, y_anchor + 36, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+            this.write_desc_line(
+                `Chakram rupture on hit: ${this.chakram_damage_base.toFixed(2)}`, true
             )
         }
     }
@@ -3498,47 +3636,44 @@ class WandBall extends WeaponBall {
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx,
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
             `${this.current_spell == "cyan" ? " - " : ""}Icicle: ${this.icicle_damage.toFixed(2)}dmg, ${1 + (this.additional_icicle_count * 2)} icicles`,
-            x_anchor, y_anchor,
-            this.current_spell == "cyan" ? "cyan" : "grey", CANVAS_FONTS, 12
+            false, null,
+            this.current_spell == "cyan" ? "cyan" : "grey"
         )
 
-        write_text(
-            ctx,
+        this.write_desc_line(
             `${this.current_spell == "red" ? " - " : ""}Fireball: ${this.fireball_damage.toFixed(2)}dmg (hit + explosion), ${this.fireball_size_mult}x size`,
-            x_anchor, y_anchor + 12,
-            this.current_spell == "red" ? "red" : "grey", CANVAS_FONTS, 10
+            false, 10,
+            this.current_spell == "red" ? "red" : "grey"
         )
 
-        write_text(
-            ctx,
+        this.write_desc_line(
             `${this.current_spell == "green" ? " - " : ""}Poison: ${this.poison_barb_count} barbs, ${this.poison_barb_intensity} poison for ${this.poison_barb_duration}s, ${this.poison_barb_hp} hit(s)`,
-            x_anchor, y_anchor + 24,
-            this.current_spell == "green" ? "green" : "grey", CANVAS_FONTS, 10
+            false, 10,
+            this.current_spell == "green" ? "green" : "grey"
         )
 
-        write_text(
-            ctx,
+        this.write_desc_line(
             `${this.current_spell == "magenta" ? " - " : ""}Lightning: ${this.chain_lightning_damage.toFixed(2)}dmg, ${(this.chain_lightning_chain_chance * 100).toFixed(0)}% chain chance`,
-            x_anchor, y_anchor + 36,
-            this.current_spell == "magenta" ? "magenta" : "grey", CANVAS_FONTS, 12
+            false, null,
+            this.current_spell == "magenta" ? "magenta" : "grey"
         )
 
-        write_text(
-            ctx,
+        this.write_desc_line(
             `${this.current_spell == "black" ? " - " : ""}Ball: ${this.black_ball_damage.toFixed(2)}dmg, ${this.black_ball_duration}s duration`,
-            x_anchor, y_anchor + 48,
-            this.current_spell == "white" ? "white" : "grey", CANVAS_FONTS, 12
+            false, null,
+            this.current_spell == "white" ? "white" : "grey"
         )
 
         if (this.level >= AWAKEN_LEVEL) {
-            write_text(
-                ctx, `More icicles, larger fireball, barbs hit twice,`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+            this.write_desc_line(
+                `More icicles, larger fireball, barbs hit twice,`, true, 10
             )
-            write_text(
-                ctx, `more lightning chains, more damaging black ball.`, x_anchor, y_anchor + 72, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 10
+            this.write_desc_line(
+                `more lightning chains, more damaging black ball.`, true, 10
             )
         }
     }
@@ -3833,7 +3968,6 @@ class AxeBall extends WeaponBall {
     }
 
     weapon_step(board, time_delta) {
-        this.reversed = false;
         this.weapon_data[0].reversed = false;
 
         // rotate the weapon
@@ -3899,18 +4033,20 @@ class AxeBall extends WeaponBall {
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx, `Damage: ${this.damage.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Damage: ${this.damage.toFixed(1).padEnd(5)} |${">".repeat(Math.floor(this.damage / 2))}`
         )
-        write_text(
-            ctx, `Rotation speed: ${this.speed_cur.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Rotation speed: ${this.speed_cur.toFixed(0)} deg/s`
         )
-        write_text(
-            ctx, `Lunge cooldown: ${this.lunge_cooldown.toFixed(1)}s [${"#".repeat((this.lunge_cooldown / this.last_lunge_cooldown) * 12).padEnd(12)}]`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Lunge cooldown: ${this.lunge_cooldown.toFixed(1)}s [${"#".repeat(Math.ceil((this.lunge_cooldown / this.last_lunge_cooldown) * 12)).padEnd(12)}]`
         )
         if (this.level >= AWAKEN_LEVEL) {
-            write_text(
-                ctx, `Projectile damage: ${this.projectile_damage.toFixed(2)}`, x_anchor, y_anchor + 36, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+            this.write_desc_line(
+                `Projectile damage: ${this.projectile_damage.toFixed(2)}`, true
             )
         }
     }
@@ -3923,7 +4059,7 @@ class ShotgunBall extends WeaponBall {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "Shotgun";
-        this.description_brief = "Shoots a shotgun that fires high-spread bullets which cannot be parried.";
+        this.description_brief = "Shoots a shotgun that fires high-spread bullets which cannot be parried. Each shot knocks back the shooter.";
         this.level_description = "Increases bullet damage.";
         this.max_level_description = "Shoots twice as many bullets.";
         this.quote = "...Target eliminated.";
@@ -4015,21 +4151,22 @@ class ShotgunBall extends WeaponBall {
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx, `Bullet damage: ${this.proj_damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Bullet damage: ${this.proj_damage_base.toFixed(2)}`
         )
-        write_text(
-            ctx, `Gun rotation speed: ${this.speed_base.toFixed(0)} deg/s`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Gun rotation speed: ${this.speed_base.toFixed(0)} deg/s`
         )
-        if (this.level >= AWAKEN_LEVEL) {
-            write_text(
-                ctx, `Bullet count: ${this.num_bullets}`, x_anchor, y_anchor + 24, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
-            )
-        } else {
-            write_text(
-                ctx, `Bullet count: ${this.num_bullets}`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
-            )
-        }
+        this.write_desc_line(
+            `Significant knockback on each shot.`
+        )
+
+        let awakened = this.level >= AWAKEN_LEVEL
+        this.write_desc_line(
+            `Bullet count: ${this.num_bullets}`, awakened
+        )
     }
 }
 
@@ -4159,34 +4296,36 @@ class SpearBall extends WeaponBall {
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
-        write_text(
-            ctx, `Spear melee damage: ${this.damage_base.toFixed(2)}`, x_anchor, y_anchor, this.colour.css(), CANVAS_FONTS, 12
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Spear melee damage: ${this.damage_base.toFixed(2)}`
         )
-        write_text(
-            ctx, `Spear thrown damage: ${this.proj_damage_base.toFixed(2)}`, x_anchor, y_anchor + 12, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Spear thrown damage: ${this.proj_damage_base.toFixed(2)}`
         )
-        write_text(
-            ctx, `Spears: ${this.weapon_data.length.toString().padEnd(2)} - instant replenish on hit`, x_anchor, y_anchor + 24, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Spears: ${this.weapon_data.length.toString().padEnd(2)} - instant replenish on hit`
         )
         
         let timeout = (this.spear_replenish_delay_max);
         let timeleft = (this.spear_replenish_delay);
-        write_text(
-            ctx, `Time until next spear: ${timeleft.toFixed(1)}s / ${timeout.toFixed(1)}s`, x_anchor, y_anchor + 36, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `Time until next spear: ${timeleft.toFixed(1)}s / ${timeout.toFixed(1)}s`
         )
         let bar_l = 32;
         let prop = timeleft / timeout;
         let empties = Math.max(0, Math.min(bar_l, Math.ceil(prop * bar_l)));
-        write_text(
-            ctx, `[${"#".repeat(bar_l - empties)}${" ".repeat(empties)}]`, x_anchor, y_anchor + 48, this.colour.css(), CANVAS_FONTS, 12
+        this.write_desc_line(
+            `[${"#".repeat(bar_l - empties)}${" ".repeat(empties)}]`
         )
 
         if (this.level >= AWAKEN_LEVEL) {
-            write_text(
-                ctx, `Replenish a spear immediately if empty.`, x_anchor, y_anchor + 60, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+            this.write_desc_line(
+                `Replenish a spear immediately if empty.`, true
             )
-            write_text(
-                ctx, `Replenish two spears at once.`, x_anchor, y_anchor + 72, this.colour.lerp(Colour.white, 0.5).css(), CANVAS_FONTS, 12
+            this.write_desc_line(
+                `Replenish two spears at once.`, true
             )
         }
     }

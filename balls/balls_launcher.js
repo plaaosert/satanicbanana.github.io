@@ -7,7 +7,7 @@ let fps_checks = [
 ]
 
 let default_cols = [
-    new Colour(255, 16, 16, 255),
+    new Colour(255, 32, 32, 255),
     Colour.yellow,
     Colour.green,
     Colour.cyan,
@@ -886,12 +886,12 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    handle_resize();
-
     let interval = setInterval(function() {
         if (num_textures_loaded >= num_textures_needed) {
             document.getElementById("game-container").style.display = "";
             clearInterval(interval);
+            
+            handle_resize();
             game_loop();
         }
     }, 50)

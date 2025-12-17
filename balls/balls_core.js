@@ -374,7 +374,7 @@ class DamageNumberParticle extends Particle {
 
         this.base_col = col;
         this.text_col = col;
-        this.text_border_col = this.base_col.lerp(Colour.black, 0.5);
+        this.text_border_col = this.base_col.lerp(Colour.black, 0.6);
 
         this.text_size = text_size;
         this.text_modifiers = "";
@@ -633,9 +633,17 @@ class Board {
                 }
             }
 
-            let part = new DamageNumberParticle(
-                on.position, 1, (-amt).toFixed(1), on.colour, on.velocity, this, size
-            );
+            let part = null;
+            if (on.id == by.id) {
+                // self-damage
+                part = new DamageNumberParticle(
+                    on.position, 1, `✶ ${(-amt).toFixed(1)}`, on.colour, on.velocity, this, size
+                );
+            } else {
+                part = new DamageNumberParticle(
+                    on.position, 1, (-amt).toFixed(1), on.colour, on.velocity, this, size
+                );
+            }
 
             this.spawn_particle(part, on.position);
         }
@@ -1572,7 +1580,7 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
             ctx.beginPath();
             ctx.arc(ball_screen_pos.x, ball_screen_pos.y, Math.max(0, (ball.radius * screen_scaling_factor) - (w/2)), 0, 2 * Math.PI, false);
             
-            let ball_col = ball.colour
+            let ball_col = ball.colour;
             if (ball.invuln_duration > 0 && ball.last_hit == 0) {
                 ball_col = ball_col.lerp(Colour.black, 0.75);
             }
@@ -1661,8 +1669,14 @@ function render_descriptions(board) {
         filtered_balls.forEach((ball, index) => {
             let l = layout[index];
 
-            write_text(
-                layers.ui2.ctx, `${ball.name}  LV ${ball instanceof UnarmedBall ? "???" : ball.level+1}`, l[0], l[1], ball.colour.css(), CANVAS_FONTS, 16
+            let ball_col = ball.get_current_col().css();
+            let ball_border_col = ball.get_current_border_col().css();
+
+            write_pp_bordered_text(
+                layers.ui2.ctx,
+                `${ball.name}  LV ${ball instanceof UnarmedBall ? "???" : ball.level+1}`,
+                l[0], l[1], ball_col, CANVAS_FONTS, 16,
+                false, 1, ball_border_col
             )
 
             let hp = Math.max(0, Math.min(100, ball.hp));
@@ -1694,19 +1708,28 @@ function render_descriptions(board) {
             )
             */
 
-            write_text(
-                layers.ui2.ctx, `[${str}]`, l[0], l[1] + 12, ball.colour.css(), CANVAS_FONTS, 9
+            write_pp_bordered_text(
+                layers.ui2.ctx,
+                `[${str}]`,
+                l[0], l[1] + 12, ball_col, CANVAS_FONTS, 9,
+                false, 1, ball_border_col
             )
             
             if (ball.poison_duration > 0) {
-                write_text(
-                    layers.ui2.ctx, `${AILMENT_CHARS[1]} ${ball.poison_intensity.toFixed(2).padEnd(5)} | ${ball.poison_duration.toFixed(1)}`, l[0], l[1] + 12 + 12, ball.colour.css(), CANVAS_FONTS, 12
+                write_pp_bordered_text(
+                    layers.ui2.ctx,
+                    `${AILMENT_CHARS[1]} ${ball.poison_intensity.toFixed(2).padEnd(5)} | ${ball.poison_duration.toFixed(1)}s`,
+                    l[0], l[1] + 12 + 12, ball_col, CANVAS_FONTS, 12,
+                    false, 1, ball_border_col
                 )
             }
 
             if (ball.rupture_intensity >= 0.01) {
-                write_text(
-                    layers.ui2.ctx, `${AILMENT_CHARS[0]} ${ball.rupture_intensity.toFixed(2).padEnd(5)}`, l[0] + 128, l[1] + 12 + 12, ball.colour.css(), CANVAS_FONTS, 12
+                write_pp_bordered_text(
+                    layers.ui2.ctx,
+                    `${AILMENT_CHARS[0]} ${ball.rupture_intensity.toFixed(2).padEnd(5)}`,
+                    l[0] + 128, l[1] + 12 + 12, ball_col, CANVAS_FONTS, 12,
+                    false, 1, ball_border_col
                 )
             }
 
