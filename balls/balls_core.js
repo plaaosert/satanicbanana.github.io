@@ -41,6 +41,9 @@ const entity_sprites = new Map([
 
     ["hamer", 1, "weapon/"],
     ["hamer_squeaky", 1, "weapon/"],
+    ["hamer_mogul", 1, "weapon/"],
+    ["money_particle", 10, "money/"],
+    ["money_particle_r", 10, "money_r/"],
 
     ["dagger", 1, "weapon/"],
     ["pellet", 1, "weapon/"],
@@ -122,6 +125,10 @@ const entity_sprites = new Map([
     ["chakram_weapon", 1, "weapon/"],
     ["chakram_projectile", 1, "weapon/"],
 
+    ["chakram_fidget", 1, "weapon/"],
+    ["chakram_weapon_fidget", 1, "weapon/"],
+    ["chakram_projectile_fidget", 1, "weapon/"],
+
     ["wand_black", 1, "weapon/"],
     ["wand_cyan", 1, "weapon/"],
     ["wand_green", 1, "weapon/"],
@@ -144,6 +151,7 @@ const entity_sprites = new Map([
     ["axe", 1, "weapon/"],
     ["axe_projectile", 1, "weapon/"],
     ["axe_scythe", 1, "weapon/"],
+    ["axe_ancient", 1, "weapon/"],
 
     ["shotgun", 1, "weapon/"],
 
@@ -389,6 +397,64 @@ class DamageNumberParticle extends Particle {
             this.text_col = this.base_col;
         } else {
             this.text_col = Colour.white.lerp(this.base_col, this.lifetime / this.duration);
+        }
+    }
+}
+
+class HammerMogulMoneyParticle extends Particle {
+    constructor(position, size, velocity, board) {
+        super(position, 0, size, [], 0, 30, false);
+
+        this.velocity = velocity;
+        this.flipped = this.velocity.x > 0;
+        this.suffix = this.flipped ? "_r" : "";
+
+        this.sprite_list = entity_sprites.get("money_particle" + this.suffix);
+
+        this.sprites = [this.sprite_list[0]];
+        this.framecount = 1;
+
+        this.gravity = board.gravity.mul(0.5);
+        this.friction = 3500;
+
+        this.fall_breakpoints = [
+            -2400, -800, 0, 400, 800
+        ]
+
+        this.in_starting_anim = true;
+        this.frame_granular = 0;
+    }
+
+    pass_time(time_delta) {
+        this.lifetime += time_delta;
+        
+        this.position = this.position.add(this.velocity.mul(time_delta));
+        this.velocity = this.velocity.add(this.gravity.mul(time_delta));
+        this.velocity.y = Math.sign(this.velocity.y) * Math.max(0, Math.abs(this.velocity.y) - (this.friction * time_delta));
+    
+        if (this.in_starting_anim) {
+            let sprite_n = 0;
+            for (let i=0; i<this.fall_breakpoints.length; i++) {
+                if (this.velocity.y > this.fall_breakpoints[i]) {
+                    sprite_n++;
+                } else {
+                    break;
+                }
+            }
+            if (sprite_n >= 5) {
+                this.in_starting_anim = false;
+            }
+
+            this.sprites = [this.sprite_list[sprite_n]];
+        } else {
+            // animate it moving from left to right
+            this.frame_granular += time_delta * 3.5;
+            
+            this.frame_granular = this.frame_granular % 8;
+
+            let frame_actual = 4 - Math.abs(Math.floor(this.frame_granular) - 4);
+
+            this.sprites = [this.sprite_list[5 + frame_actual]];
         }
     }
 }

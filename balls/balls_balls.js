@@ -736,7 +736,7 @@ class UnarmedBall extends WeaponBall {
 class HammerBall extends WeaponBall {
     static ball_name = "Hammer";
 
-    static AVAILABLE_SKINS = ["Squeaky"];
+    static AVAILABLE_SKINS = ["Squeaky", "Mogul"];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
@@ -783,6 +783,15 @@ class HammerBall extends WeaponBall {
 
                 break;
             }
+
+            case "Mogul": {
+                this.weapon_data[0].sprite = "hamer_mogul";
+                if (this.weapon_data[1]) {
+                    this.weapon_data[1].sprite = "hamer_mogul";
+                }
+
+                break;
+            }
         }
     }
 
@@ -790,6 +799,21 @@ class HammerBall extends WeaponBall {
         // rotate the weapon
         this.rotate_weapon(0, this.speed_base * time_delta);
         this.rotate_weapon(1, this.speed_base * 1.6 * time_delta);
+    }
+
+    spawn_monies(times, with_weapon_index) {
+        let size = this.weapon_data[with_weapon_index].size_multiplier / WEAPON_SIZE_MULTIPLIER;
+
+        for (let i=0; i<times; i++) {
+            let pos = this.position.add(this.get_hitboxes_offsets(with_weapon_index)[random_int(0, 5)]).add(this.get_weapon_offset(with_weapon_index));
+            let part = new HammerMogulMoneyParticle(
+                pos, size,
+                random_on_circle(750).add(new Vector2(0, random_float(-6000, -8000))),
+                this.board
+            )
+
+            this.board.spawn_particle(part, pos);
+        }
     }
 
     hit_other(other, with_weapon_index) {
@@ -815,7 +839,36 @@ class HammerBall extends WeaponBall {
             result.snd = "impact_squeak";
         }
 
+        if (this.skin_name == "Mogul") {
+            // make 4-8 monies on hit
+            // don't want it to affect randomness, so it's not board.random
+            let times = random_int(4, 9);
+            this.spawn_monies(times, with_weapon_index);
+        }
+
         return result;
+    }
+
+    parry_weapon(with_weapon_index, other_ball, other_weapon_id) {
+        super.parry_weapon(with_weapon_index, other_ball, other_weapon_id);
+        
+        if (this.skin_name == "Mogul") {
+            // make 1-3 monies on hit
+            // don't want it to affect randomness, so it's not board.random
+            let times = random_int(1, 4);
+            this.spawn_monies(times, with_weapon_index);
+        }
+    }
+
+    parry_projectile(with_weapon_index, projectile) {
+        super.parry_projectile(with_weapon_index, projectile);
+        
+        if (this.skin_name == "Mogul") {
+            // make 1-3 monies on hit
+            // don't want it to affect randomness, so it's not board.random
+            let times = random_int(1, 4);
+            this.spawn_monies(times, with_weapon_index);
+        }
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
@@ -2986,6 +3039,8 @@ class HandBall extends WeaponBall {
 
 class ChakramBall extends WeaponBall {
     static ball_name = "Chakram";
+    
+    static AVAILABLE_SKINS = ["Fidget"];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
@@ -2997,6 +3052,9 @@ class ChakramBall extends WeaponBall {
         this.quote = "它叫手里剑我一直在说";
 
         this.weapon_data = [];
+        
+        this.sprite_suffix = "";
+
         this.reset_weapons();
 
         // weapon is rotated -45deg
@@ -3022,10 +3080,23 @@ class ChakramBall extends WeaponBall {
         this.mode = "idle";
         this.weapon_reversed = false;
     }
+        
+    set_skin(skin_name) {
+        super.set_skin(skin_name);
+
+        switch (skin_name) {
+            case "Fidget": {
+                this.sprite_suffix = "_fidget";
+                this.weapon_data[0].sprite += this.sprite_suffix;
+
+                break;
+            }
+        }
+    }
 
     reset_weapons() {
         this.weapon_data = [
-            new BallWeapon(1, "chakram_weapon", [
+            new BallWeapon(1, "chakram_weapon" + this.sprite_suffix, [
                 // {pos: new Vector2(52, 64), radius: 18},
 
                 // {pos: new Vector2(52-16, 64-16), radius: 10},
@@ -3078,7 +3149,8 @@ class ChakramBall extends WeaponBall {
                         this.board,
                         this, 0, pos, this.chakram_damage_base,
                         1, this.weapon_data[0].angle, this.chakram_rotation_speed * (this.reversed ^ this.weapon_data[0].reversed ? -1 : 1),
-                        this.chakram_orbit_time, this.chakram_min_dist, this.chakram_max_dist
+                        this.chakram_orbit_time, this.chakram_min_dist, this.chakram_max_dist,
+                        this.sprite_suffix
                     );
 
                     board.spawn_projectile(proj, pos);
@@ -3672,7 +3744,7 @@ class WandGreenBall extends WeaponBall {
 class AxeBall extends WeaponBall {
     static ball_name = "Axe";
 
-    static AVAILABLE_SKINS = ["Reaper"];
+    static AVAILABLE_SKINS = ["Reaper", "Ancient"];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
@@ -3731,6 +3803,12 @@ class AxeBall extends WeaponBall {
             case "Reaper": {
                 this.weapon_data[0].sprite = "axe_scythe";
                 // TODO this should have a ghost afterimage
+
+                break;
+            }
+
+            case "Ancient": {
+                this.weapon_data[0].sprite = "axe_ancient";
 
                 break;
             }
@@ -4800,10 +4878,10 @@ class GrenadeExplosionProjectile extends Projectile {
 class ChakramProjectile extends Projectile {
     // orbits around thrower, going from origin distance to max distance then back to origin
     // before vanishing again and re-enabling the weapon on the ball
-    constructor(board, source, source_weapon_index, position, damage, size, initial_angle, rotation_speed, rotation_time, min_dist, max_dist) {
+    constructor(board, source, source_weapon_index, position, damage, size, initial_angle, rotation_speed, rotation_time, min_dist, max_dist, sprite_suffix="") {
         super(board, source, source_weapon_index, position, damage, size, new Vector2(1, 0), 0);
 
-        this.sprite = `chakram_projectile`
+        this.sprite = `chakram_projectile${sprite_suffix}`
 
         this.set_hitboxes([
             {pos: new Vector2(0, 0), radius: 48},
@@ -4824,8 +4902,10 @@ class ChakramProjectile extends Projectile {
         this.sprite_angle_change_speed = 1440;
 
         this.hitstop = 0;
+
+        this.sprite_suffix = sprite_suffix;
     }
-    
+
     physics_step(time_delta) {
         this.hitstop -= time_delta;
         let delta_time = time_delta;
@@ -4853,7 +4933,8 @@ class ChakramProjectile extends Projectile {
         let dist_lerp_amt = 2 * (0.5 - Math.abs(lifetime_proportion - 0.5));
         
         this.sprite = dist_lerp_amt < 0.1 ? `chakram` : `chakram_projectile`;
-        
+        this.sprite += this.sprite_suffix;
+
         let dist = lerp(this.min_dist, this.max_dist, dist_lerp_amt);
         let newpos = new Vector2(dist, 0).rotate(this.cur_angle).add(this.source.position);
 
