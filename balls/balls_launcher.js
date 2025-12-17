@@ -7,7 +7,7 @@ let fps_checks = [
 ]
 
 let default_cols = [
-    Colour.red,
+    new Colour(255, 16, 16, 255),
     Colour.yellow,
     Colour.green,
     Colour.cyan,

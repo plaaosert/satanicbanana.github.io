@@ -418,7 +418,7 @@ class HammerMogulMoneyParticle extends Particle {
         this.friction = 3500;
 
         this.fall_breakpoints = [
-            -2400, -800, 0, 400, 800
+            -3000, -1200, 0, 400, 700
         ]
 
         this.in_starting_anim = true;
