@@ -307,32 +307,6 @@ function enter_battle() {
     render_watermark();
 }
 
-function parse_replay(replay_as_text) {
-    let replay_url = null;
-    try {
-        replay_url = new URL(replay_as_text);
-    } catch {};
-
-    let replay_text = replay_as_text;
-    if (replay_url) {
-        replay_text = new URLSearchParams(replay_url.search).get("r");
-        if (!replay_text) {
-            throw Error("Replay looks like a URL but doesn't have the necessary 'r' parameter");
-        }
-    }
-    let replay = JSON.parse(atob(replay_text));
-
-    if (!(replay.framespeed && replay.seed && replay.balls)) {
-        throw Error("Replay doesn't have all necessary fields!");
-    }
-
-    if (replay.game_version != GAME_VERSION) {
-        alert(`This replay doesn't match the current game version (expected ${GAME_VERSION}, got ${replay.game_version})\n\nIt might still be fine, but it might also desync and be completely wrong. Who can tell?!\n\n(Maybe one day I'll have a better solution here...)`)
-    }
-
-    return replay;
-}
-
 function load_replay(replay_as_text) {
     // it might be a URL - if it is, pick out the "r" query parameter
     let replay = parse_replay(replay_as_text);
@@ -657,16 +631,6 @@ function update_sim_speed_display(temporary_modifiers=1) {
         }
     }
 }
-
-let selectable_balls = [
-    DummyBall,
-    HammerBall, SordBall, DaggerBall,
-    BowBall, MagnumBall, NeedleBall,
-    RailgunBall, PotionBall, GrenadeBall,
-    GlassBall, HandBall, ChakramBall,
-    WandBall, AxeBall, ShotgunBall,
-    SpearBall
-]
 
 let banned_for_random = [
     DummyBall, /* HandBall */
