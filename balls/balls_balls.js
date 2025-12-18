@@ -102,6 +102,7 @@ class WeaponBall extends Ball {
         this.saved_x_anchor = 0;
         this.saved_y_anchor = 0;
 
+        this.desc_colour = null;
         this.alt_colour = null;
         this.border_colour = null;
         this.border_alt_colour = null;
@@ -128,9 +129,11 @@ class WeaponBall extends Ball {
     }
 
     update_col_datas() {
-        this.alt_colour = this.colour.lerp(Colour.white, 0);
-        this.border_colour = this.colour.lerp(Colour.black, 0.85);
-        this.border_alt_colour = this.alt_colour.lerp(Colour.black, 0.85);
+        this.desc_colour = this.colour.lerp(Colour.white, 0.2);
+        this.alt_colour = this.colour.lerp(Colour.white, 0.2);
+
+        this.border_colour = this.colour.lerp(Colour.black, 0.9);
+        this.border_alt_colour = this.alt_colour.lerp(Colour.black, 0.9);
     }
 
     set_skin(skin_name) {
@@ -148,8 +151,12 @@ class WeaponBall extends Ball {
         this.saved_y_anchor = y_anchor;
     }
 
+    get_current_desc_col() {
+        return this.render_alt ? this.desc_colour : this.alt_colour;
+    }
+
     get_current_col() {
-        return this.render_alt ? this.colour : this.alt_colour;
+        return this.colour;
     }
 
     get_current_border_col() {
@@ -161,7 +168,7 @@ class WeaponBall extends Ball {
             this.description_line_num--;
         }
         
-        let ball_col = this.get_current_col();
+        let ball_col = this.get_current_desc_col();
 
         let col = custom_col ?? (awakened ? ball_col.lerp(Colour.white, 0.5).css() : ball_col.css());
 
@@ -2190,6 +2197,9 @@ class GrenadeBall extends WeaponBall {
         )
         this.write_desc_line(
             `Grenade damage: ${this.grenade_damage_base.toFixed(0)}`
+        )
+        this.write_desc_line(
+            `Grenade self-damage reduction: ${(this.self_grenade_reduction * 100).toFixed(0)}%`
         )
 
         let awakened = this.level >= AWAKEN_LEVEL;

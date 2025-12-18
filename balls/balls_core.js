@@ -621,7 +621,7 @@ class Board {
         this.tension += tension_to_add;
 
         // do damage numbers
-        if (make_damage_numbers && by instanceof Ball && amt > 0.05 && on.show_stats) {
+        if (make_damage_numbers && by instanceof Ball && amt > 0.15 && on.show_stats) {
             let size = 14;
             if (amt >= 8) {
                 size = 16;
@@ -637,11 +637,11 @@ class Board {
             if (on.id == by.id) {
                 // self-damage
                 part = new DamageNumberParticle(
-                    on.position, 1, `✶ ${(-amt).toFixed(1)}`, on.colour, on.velocity, this, size
+                    on.position, 1, `✶ ${(-amt).toFixed(1)}`, on.get_current_desc_col(), on.velocity, this, size
                 );
             } else {
                 part = new DamageNumberParticle(
-                    on.position, 1, (-amt).toFixed(1), on.colour, on.velocity, this, size
+                    on.position, 1, (-amt).toFixed(1), on.get_current_desc_col(), on.velocity, this, size
                 );
             }
 
@@ -650,7 +650,7 @@ class Board {
     }
 
     register_rupture(by, on, amt) {
-        if (make_damage_numbers && by instanceof Ball && amt > 0.05 && on.show_stats) {
+        if (make_damage_numbers && by instanceof Ball && amt > 0.15 && on.show_stats) {
             let size = 14;
             if (amt >= 8) {
                 size = 16;
@@ -663,7 +663,7 @@ class Board {
             }
 
             let part = new DamageNumberParticle(
-                on.position, 1, `${AILMENT_CHARS[0]} ${amt.toFixed(1)}`, on.colour, on.velocity, this, size
+                on.position, 1, `${AILMENT_CHARS[0]} ${amt.toFixed(1)}`, on.get_current_desc_col(), on.velocity, this, size
             );
 
             this.spawn_particle(part, on.position);
@@ -671,7 +671,7 @@ class Board {
     }
 
     register_poison(by, on, amt, dur) {
-        if (make_damage_numbers && by instanceof Ball && amt > 0.05 && dur > 0.05 && on.show_stats) {
+        if (make_damage_numbers && by instanceof Ball && amt > 0.15 && dur > 0.15 && on.show_stats) {
             let size = 14;
             let final_amt = amt * dur;
             if (final_amt >= 8) {
@@ -685,7 +685,7 @@ class Board {
             }
 
             let part = new DamageNumberParticle(
-                on.position, 1, `${AILMENT_CHARS[1]} ${amt.toFixed(1)} | ${dur.toFixed(1)}s`, on.colour, on.velocity, this, size
+                on.position, 1, `${AILMENT_CHARS[1]} ${amt.toFixed(1)} | ${dur.toFixed(1)}s`, on.get_current_desc_col(), on.velocity, this, size
             );
 
             this.spawn_particle(part, on.position);
@@ -1311,11 +1311,11 @@ function render_diagnostics(board) {
     board.balls.forEach((ball, index) => {
         let t = board_d_y + (36 * index);
         write_text(
-            layers.debug_front.ctx, `ball ${index} invuln | ` + "#".repeat(Math.max(0, Math.floor(Math.min(128, ball.invuln_duration * 200)))), 10, t, ball.invuln_duration > 0 ? ball.colour.css() : "gray", CANVAS_FONTS, 9
+            layers.debug_front.ctx, `ball ${index} invuln | ` + "#".repeat(Math.max(0, Math.floor(Math.min(128, ball.invuln_duration * 200)))), 10, t, ball.invuln_duration > 0 ? ball.get_current_desc_col().css() : "gray", CANVAS_FONTS, 9
         )
 
         write_text(
-            layers.debug_front.ctx, `      hitstop | ` + "#".repeat(Math.max(0, Math.floor(Math.min(128, ball.hitstop * 200)))), 10, t + 12, ball.hitstop > 0 ? ball.colour.css() : "gray", CANVAS_FONTS, 9
+            layers.debug_front.ctx, `      hitstop | ` + "#".repeat(Math.max(0, Math.floor(Math.min(128, ball.hitstop * 200)))), 10, t + 12, ball.hitstop > 0 ? ball.get_current_desc_col().css() : "gray", CANVAS_FONTS, 9
         )
     });
 }
@@ -1367,7 +1367,7 @@ function render_victory(board, time_until_end) {
                 }
             }
 
-            write_pp_bordered_text(ctx, `${b.name}${bs.length > 1 ? ` +${bs.length-1}`: ""}`, canvas_width/2, 256 + 72, b.colour.css(), CANVAS_FONTS, 72, true, 2, "black");
+            write_pp_bordered_text(ctx, `${b.name}${bs.length > 1 ? ` +${bs.length-1}`: ""}`, canvas_width/2, 256 + 72, b.get_current_col().css(), CANVAS_FONTS, 72, true, 2, "black");
         }
 
         if (t > 4.25) {
@@ -1376,33 +1376,9 @@ function render_victory(board, time_until_end) {
                 write_pp_bordered_text(
                     ctx, (i == 0 ? "\"" : "") + q + (i >= quote.length-1 ? "\"" : ""),
                     canvas_width/2, 256 + 72 + 36 + (16 * i),
-                    b.colour.css(), CANVAS_FONTS, 16, true, 2, "black"
+                    b.get_current_desc_col().css(), CANVAS_FONTS, 16, true, 2, "black"
                 )
             });
-
-            /*
-            for (let x=-2; x<3; x++) {
-                for (let y=-2; y<3; y++) {
-                    if (!(x==y && x==0)) {
-                        quote.forEach((q, i) => {
-                            write_text(
-                                ctx, (i == 0 ? "\"" : "") + q + (i >= quote.length-1 ? "\"" : ""),
-                                canvas_width/2 + x, 256 + 72 + 36 + (16 * i) + y,
-                                "black", CANVAS_FONTS, 16, true
-                            );
-                        })
-                    }
-                }
-            }
-
-            quote.forEach((q, i) => {
-                write_text(
-                    ctx, (i == 0 ? "\"" : "") + q + (i >= quote.length-1 ? "\"" : ""),
-                    canvas_width/2 + 0, 256 + 72 + 36 + (16 * i) + 0,
-                    b.colour.css(), CANVAS_FONTS, 16, true
-                );
-            })
-            */
         }
     }
 }
@@ -1580,7 +1556,7 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
             ctx.beginPath();
             ctx.arc(ball_screen_pos.x, ball_screen_pos.y, Math.max(0, (ball.radius * screen_scaling_factor) - (w/2)), 0, 2 * Math.PI, false);
             
-            let ball_col = ball.colour;
+            let ball_col = ball.get_current_col();
             if (ball.invuln_duration > 0 && ball.last_hit == 0) {
                 ball_col = ball_col.lerp(Colour.black, 0.75);
             }
@@ -1588,7 +1564,7 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
             ctx.fillStyle = ball_col.css();
             ctx.fill();
             ctx.lineWidth = w;
-            ctx.strokeStyle = ball.colour.lerp(Colour.white, 0.75).css();
+            ctx.strokeStyle = ball_col.lerp(Colour.white, 0.75).css();
             ctx.stroke();
 
             let hp = Math.max(0, ball.hp);
@@ -1669,7 +1645,7 @@ function render_descriptions(board) {
         filtered_balls.forEach((ball, index) => {
             let l = layout[index];
 
-            let ball_col = ball.get_current_col().css();
+            let ball_col = ball.get_current_desc_col().css();
             let ball_border_col = ball.get_current_border_col().css();
 
             write_pp_bordered_text(
@@ -1701,12 +1677,6 @@ function render_descriptions(board) {
             // (so need to ceil pretty much all the hp)
             // (but this causes the issue of making ailments take up too much space on the bar)
             str = "#".repeat(Math.ceil(hp_segments + rupture_segments + poison_segments)) + " ".repeat(Math.floor(empty_segments));
-
-            /*
-            write_text(
-                layers.ui2.ctx, `[${"#".repeat(Math.ceil(hp * 0.4))}${" ".repeat(Math.floor((100 - hp) * 0.4))}]`, l[0], l[1] + 12, ball.colour.css(), CANVAS_FONTS, 9
-            )
-            */
 
             write_pp_bordered_text(
                 layers.ui2.ctx,
