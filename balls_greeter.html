@@ -1,0 +1,210 @@
+<html>
+    <head>
+        <title>Hello!</title>
+        <style>
+            @font-face {
+                font-family: "nec_apc";
+                src: url("https://plaao.net/shared/fonts/Web437_NEC_APC3_8x16.woff") format("woff");
+                font-weight: normal;
+                font-style: normal;
+            }
+
+            @font-face {
+                font-family: "terminus";
+                src: url("https://plaao.net/shared/fonts/Terminus.woff") format("woff");
+                font-weight: normal;
+                font-style: normal;
+            }
+
+            body {
+                color: white;
+                background-color: black;
+
+                font-family: "MS Gothic", "terminus", "nec_apc";
+                font-size: 2vmin;
+            }
+
+            .content-container {
+                margin-top: 4vmin;
+                margin-left: auto;
+                margin-right: auto;
+
+                width: 50%;
+
+                display: flex;
+                flex-direction: column;
+
+                justify-content: center;
+                align-items: center;
+
+                white-space: wrap;
+                text-align: center;
+            }
+
+            .main-title {
+                font-size: 6vmin;
+                font-weight: bold;
+
+                margin-bottom: 2vmin;
+            }
+
+            .main-subtitle {
+                font-size: 2vmin;
+                margin-bottom: 1vmin;
+            }
+
+            .links .link {
+                border: 1px solid white;
+                background-color: #020;
+
+                display: flex;
+                flex-direction: row;
+
+                padding: 1vmin;
+
+                margin-top: 2vmin;
+                margin-bottom: 2vmin;
+            }
+
+            .links .link:hover {
+                background-color: #060;
+            }
+
+            .links .link.down {
+                background-color: black;
+            }
+
+            .links .link.dangerous {
+                border: 1px solid white;
+                background-color: #200;
+
+                display: flex;
+                flex-direction: row;
+
+                padding: 1vmin;
+            }
+
+            .links .link.dangerous:hover {
+                background-color: #600;
+            }
+
+            .links .link.dangerous.down {
+                background-color: black;
+            }
+
+            .links .link .text {
+                display: flex;
+                flex-direction: column;
+
+                text-align: left;
+            }
+
+            .links .link img {
+                border: 1px solid white;
+                background-color: black;
+
+                width: 4vmin;
+
+                margin-right: 1vmin;
+
+                padding: 0.5vmin;
+            }
+
+            .links .link a {
+                color: greenyellow;
+                font-size: 2vmin;
+            }
+
+            .links .link.dangerous a {
+                color: coral;
+            }
+
+            .links .link .desc {
+                margin-top: 0.5vmin;
+
+                font-size: 1.5vmin;
+                color: #aaa;
+            }
+
+            .footer {
+                margin-top: 2vmin;
+                font-size: 1.5vmin;
+                color: #888;
+            }
+
+            .highlight {
+                color: #0ff;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="content-container">
+            <script>
+                document.addEventListener("DOMContentLoaded", () => {
+                    document.querySelectorAll(".link").forEach(elem => {
+                        let a_elem = elem.querySelector("a");
+
+                        let link = a_elem.href;
+
+                        let fn = () => { a_elem.click() };
+                        let fn2 = () => { elem.classList.add("down") };
+                        let fn3 = () => { elem.classList.remove("down") };
+
+                        elem.addEventListener("touchstart", fn2);
+                        elem.addEventListener("mousedown", fn2);
+
+                        elem.addEventListener("touchend", fn3);
+                        elem.addEventListener("mouseleave", fn3);
+                        
+                        elem.addEventListener("click", fn);
+                    })
+                })
+            </script>
+
+            <span class="main-title">Hello!</span>
+            <span class="main-subtitle">You're probably here because you clicked on my profile link on a @plaaoballs account.</span>
+            <span class="main-subtitle">I typically go by <span class="highlight">plaaosert</span>, or <span class="highlight">plaao</span>.</span>
+            <span class="main-subtitle">This is my site, where I post all manner of weird and wonderful things... take a look around if you like.</span>
+            
+            <div class="links">
+                <div class="link">
+                    <img src="favicon.ico">
+                    <div class="text">
+                        <a href="https://plaao.net">plaao.net</a>
+                        <span class="desc">My main homepage</span>
+                    </div>
+                </div>
+                <div class="link">
+                    <img src="bej/green_funny.png">
+                    <div class="text">
+                        <a href="https://plaao.net/gameslist.html">Games list</a>
+                        <span class="desc">A list of links to my webgames</span>
+                    </div>
+                </div>
+                <div class="link">
+                    <img src="looter/sprites/chests/big.png">
+                    <div class="text">
+                        <a href="https://plaao.net/bio.html">Bio</a>
+                        <span class="desc">A tiny description about myself</span>
+                    </div>
+                </div>
+                <div class="link dangerous">
+                    <img src="boot/eterna/sprites/ui/icons/eterna_icon_shrunk.png">
+                    <div class="text">
+                        <a href="https://plaao.net/boot/bootscr.html">ETERNA</a>
+                        <span class="desc">A mystery.</span>
+                    </div>
+                </div>
+                <div class="link">
+                    <img src="looter/sprites/areas/003.png">
+                    <div class="text">
+                        <a href="https://scrimblo.foundation">scrimblo.foundation</a>
+                        <span class="desc">My silly little """webring"""</span>
+                    </div>
+                </div>
+            </div>
+            <span class="footer">The nec_apc font is created by VileR <a href="https://int10h.org/oldschool-pc-fonts/">https://int10h.org/oldschool-pc-fonts/</a>, subject to CC-SA 4.0.</span></span>
+        </div>
+    </body>
+</html>

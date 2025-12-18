@@ -1650,7 +1650,7 @@ function render_descriptions(board) {
 
             write_pp_bordered_text(
                 layers.ui2.ctx,
-                `${ball.name}  LV ${ball instanceof UnarmedBall ? "???" : ball.level+1}`,
+                `${ball.name}  LV ${ball instanceof UnarmedBall ? "???" : ball.level+1}`.padEnd(17) + `| HP: ${Math.ceil(ball.hp)}`,
                 l[0], l[1], ball_col, CANVAS_FONTS, 16,
                 false, 1, ball_border_col
             )
