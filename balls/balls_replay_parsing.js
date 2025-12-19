@@ -1,11 +1,6 @@
 let selectable_balls = [
-    DummyBall,
-    HammerBall, SordBall, DaggerBall,
-    BowBall, MagnumBall, NeedleBall,
-    RailgunBall, PotionBall, GrenadeBall,
-    GlassBall, HandBall, ChakramBall,
-    WandBall, AxeBall, ShotgunBall,
-    SpearBall
+    ...main_selectable_balls,
+    ...additional_selectable_balls
 ]
 
 function parse_replay(replay_as_text) {

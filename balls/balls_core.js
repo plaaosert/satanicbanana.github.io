@@ -167,6 +167,10 @@ const entity_sprites = new Map([
     ["explosion3", 8, "explosion3/"],  // Sonic Rush Adventure
 
     ["explosion_small", 10, "explosion_small/"],  // Sonic Rush Adventure
+
+    // Additionals
+    ["LONGSORD", 1, "weapon/additional/"],
+    ["stick", 1, "weapon/additional/"],
 ].map((v, i) => {
     let ts = [];
 
@@ -180,6 +184,10 @@ const entity_sprites = new Map([
             t.addEventListener("load", function() {
                 num_textures_loaded++;
             })
+            t.addEventListener("error", function() {
+                console.log(`Error loading ${t.src}!`);
+                t.src = "img/icons/unknown.png";
+            })
 
             ts.push(t);
         }
@@ -191,6 +199,10 @@ const entity_sprites = new Map([
         num_textures_needed++;
         t.addEventListener("load", function() {
             num_textures_loaded++;
+        })
+        t.addEventListener("error", function(e) {
+            console.log(`Error loading ${t.src}!`);
+            t.src = "img/icons/unknown.png";
         })
 
         ts.push(t);
@@ -330,7 +342,7 @@ function play_audio(name) {
 class Particle {
     static id_inc = 0;
 
-    constructor(position, rotation_angle, size, sprites, frame_speed, duration, looping, delay=0) {
+    constructor(position, rotation_angle, size, sprites, frame_speed, duration, looping, delay=0, render_behind=false) {
         this.set_pos(position);
         this.rotation_angle = rotation_angle;
         this.size = size * PARTICLE_SIZE_MULTIPLIER;
@@ -344,6 +356,8 @@ class Particle {
         this.cur_frame = 0;
 
         this.delay = delay;
+
+        this.render_behind = render_behind;
     }
 
     set_pos(to) {
@@ -1389,6 +1403,7 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
     layers.fg3.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
     layers.bg1.ctx.clearRect(0, 0, canvas_width, canvas_height);
+    layers.bg2.ctx.clearRect(0, 0, canvas_width, canvas_height);
     if (background_tint) {
         layers.bg3.ctx.fillStyle = background_tint;
         layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height);
@@ -1425,16 +1440,18 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
 
         let sprite = particle.sprites[particle.cur_frame];
 
+        let canvas = particle.render_behind ? layers.bg2 : layers.fg1;
+
         if (typeof sprite === "string") {
             write_pp_bordered_text(
-                layers.fg1.ctx, sprite,
+                canvas.ctx, sprite,
                 particle_screen_pos.x, particle_screen_pos.y,
                 particle.text_col.css(), CANVAS_FONTS, (particle.text_size * particle.size) / PARTICLE_SIZE_MULTIPLIER,
                 true, 1, particle.text_border_col.css(), particle.text_modifiers
             );
         } else {
             write_rotated_image(
-                layers.fg1.canvas, layers.fg1.ctx,
+                canvas.canvas, canvas.ctx,
                 particle_screen_pos.x, particle_screen_pos.y,
                 sprite,
                 siz, siz, particle.rotation_angle

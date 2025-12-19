@@ -11,7 +11,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=0.1, user-scalable=yes" />
 
     <link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=02"/>
-	<link rel="stylesheet" type="text/css" href="balls.css?v=26"/>
+	<link rel="stylesheet" type="text/css" href="balls.css?v=27"/>
 </head>
 <body>
 	<div class="topbar">
@@ -49,6 +49,7 @@
 
                             </select>
                             <select class="sandbox-ball-select" onchange="update_ballinfo('ball1')" name="ball1"></select>
+                            <select class="sandbox-ball-select additional nodisplay" onchange="update_ballinfo('ball1')" name="ball1"></select>
                             <select class="sandbox-skin-select" name="ball1_skin"></select>
                             <button class="sandbox-ball-random" onclick="randomise_ballselect('ball1')">Random</button>
                             <div style="flex-grow: 1;" class="rows">
@@ -70,6 +71,7 @@
 
                             </select>
                             <select class="sandbox-ball-select" onchange="update_ballinfo('ball2')" name="ball2"></select>
+                            <select class="sandbox-ball-select additional nodisplay" onchange="update_ballinfo('ball2')" name="ball2"></select>
                             <select class="sandbox-skin-select" name="ball2_skin"></select>
                             <button class="sandbox-ball-random" onclick="randomise_ballselect('ball2')">Random</button>
                             <div style="flex-grow: 1;" class="rows">
@@ -91,6 +93,7 @@
                                 
                             </select>
                             <select class="sandbox-ball-select" onchange="update_ballinfo('ball3')" name="ball3"></select>
+                            <select class="sandbox-ball-select additional nodisplay" onchange="update_ballinfo('ball3')" name="ball3"></select>
                             <select class="sandbox-skin-select" name="ball3_skin"></select>
                             <button class="sandbox-ball-random" onclick="randomise_ballselect('ball3')">Random</button>
                             <div style="flex-grow: 1;" class="rows">
@@ -112,6 +115,7 @@
 
                             </select>
                             <select class="sandbox-ball-select" onchange="update_ballinfo('ball4')" name="ball4"></select>
+                            <select class="sandbox-ball-select additional nodisplay" onchange="update_ballinfo('ball4')" name="ball4"></select>
                             <select class="sandbox-skin-select" name="ball4_skin"></select>
                             <button class="sandbox-ball-random" onclick="randomise_ballselect('ball4')">Random</button>
                             <div style="flex-grow: 1;" class="rows">
@@ -272,12 +276,15 @@
     <script src="../shared/js/helpers.js?v=05"></script>
 	<script src="../shared/js/canvas_helpers.js?v=03"></script>
 	
-    <script src="balls_core.js?v=29"></script>
-    <script src="balls_balls.js?v=32"></script>
-    <script src="balls_replay_parsing.js?v=01"></script>
-    <script src="balls_launcher.js?v=41"></script>
+    <script src="balls_core.js?v=230"></script>
+
+    <script src="balls_balls.js?v=33"></script>
+    <script src="balls_balls_additional.js?v=33"></script>
+
+    <script src="balls_replay_parsing.js?v=02"></script>
+    <script src="balls_launcher.js?v=42"></script>
     
-    <script src="balls_campaign.js?v=03"></script>
+    <script src="balls_campaign.js?v=04"></script>
 
 	<script src="../shared/js/playtime.js?v=00"></script>
 

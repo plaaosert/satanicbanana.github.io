@@ -420,6 +420,10 @@ button.green {
   margin-right: 2vmin;
 }
 
+.sandbox-ball-select.additional {
+  background-color: #024;
+}
+
 .sandbox-skin-select {
   width: 12vmin;
 }
@@ -570,3 +574,4 @@ button.sandbox-ball-random {
 .sandbox-load-replays button {
   font-size: 2vmin;
 }
+

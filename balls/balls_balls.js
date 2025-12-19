@@ -5232,3 +5232,14 @@ class SpearProjectile extends InertiaRespectingStraightLineProjectile {
         ]);
     }
 }
+
+
+let main_selectable_balls = [
+    DummyBall,
+    HammerBall, SordBall, DaggerBall,
+    BowBall, MagnumBall, NeedleBall,
+    RailgunBall, PotionBall, GrenadeBall,
+    GlassBall, HandBall, ChakramBall,
+    WandBall, AxeBall, ShotgunBall,
+    SpearBall
+]

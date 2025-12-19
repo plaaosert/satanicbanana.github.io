@@ -156,6 +156,8 @@ function add_to_replays_tab(tab, replay_entry, to_first=true) {
         let name_span = document.createElement("span");
 
         img_icon.src = `img/icons/${ball_class.ball_name.toLowerCase()}.png`;
+        img_icon.addEventListener("error", () => { img_icon.src = "img/icons/unknown.png" });
+
         name_span.textContent = ` ${(`${ball_class.ball_name} LV ${replay_entry.replay.levels[index]+1} `).padEnd(23, "-")} `;
         name_span.style.color = Colour.from_array(replay_entry.replay.cols[index]).css();
 
@@ -383,7 +385,7 @@ function spawn_selected_balls() {
 
     let ball_classes = [];
     for (let i=0; i<cols.length; i++) {
-        let elem = document.querySelector(`select[name='ball${i+1}']`);
+        let elem = document.querySelector(`select[name='ball${i+1}']:not(.nodisplay)`);
         let ball_proto = selectable_balls.find(t => t.name == elem?.value);
 
         ball_classes.push(ball_proto);
@@ -636,7 +638,7 @@ let banned_for_random = [
     DummyBall, /* HandBall */
 ]
 
-let selectable_balls_for_random = selectable_balls.filter(ball => !banned_for_random.some(c => c.name == ball.name));
+let selectable_balls_for_random = main_selectable_balls.filter(ball => !banned_for_random.some(c => c.name == ball.name));
 
 let match_end_timeout = 0;
 let render_victory_enabled = true;
@@ -937,10 +939,44 @@ document.addEventListener("DOMContentLoaded", function() {
     window.addEventListener("resize", handle_resize);
 
     // set up options
-    let options_elems = document.querySelectorAll("select.sandbox-ball-select");
+    let options_elems = document.querySelectorAll("select.sandbox-ball-select:not(.additional)");
     options_elems.forEach(elem => {
         elem.options.add(new Option("None"))
-        selectable_balls.forEach(ball => elem.options.add(new Option(ball.name)));
+        main_selectable_balls.forEach(ball => elem.options.add(new Option(ball.name)));
+
+        elem.addEventListener("click", e => {
+            if (!keys_down["ControlLeft"]) {
+                return;
+            }
+
+            let name = elem.name;
+
+            let showing = document.querySelectorAll(`.sandbox-ball-select[name='${name}']:not(.nodisplay)`);
+            let hidden = document.querySelectorAll(`.sandbox-ball-select.nodisplay[name='${name}']`);
+
+            showing.forEach(e => e.classList.add("nodisplay"));
+            hidden.forEach(e => e.classList.remove("nodisplay"));
+        })
+    });
+
+    let additional_options_elems = document.querySelectorAll("select.sandbox-ball-select.additional");
+    additional_options_elems.forEach(elem => {
+        elem.options.add(new Option("None"))
+        additional_selectable_balls.forEach(ball => elem.options.add(new Option(ball.name)));
+
+        elem.addEventListener("click", e => {
+            if (!keys_down["ControlLeft"]) {
+                return;
+            }
+
+            let name = elem.name;
+
+            let showing = document.querySelectorAll(`.sandbox-ball-select[name='${name}']:not(.nodisplay)`);
+            let hidden = document.querySelectorAll(`.sandbox-ball-select.nodisplay[name='${name}']`);
+
+            showing.forEach(e => e.classList.add("nodisplay"));
+            hidden.forEach(e => e.classList.remove("nodisplay"));
+        })
     });
 
     let teams_elems = document.querySelectorAll("select.sandbox-team-select");
@@ -955,8 +991,8 @@ document.addEventListener("DOMContentLoaded", function() {
         elem.selectedIndex = elem_idx;
     })
 
-    document.querySelector("select[name='ball1']").value = random_from_array(selectable_balls_for_random).name;
-    document.querySelector("select[name='ball2']").value = random_from_array(selectable_balls_for_random.filter(t => t.name != document.querySelector("select[name='ball1']").value)).name;
+    document.querySelector("select[name='ball1']:not(.additional)").value = random_from_array(selectable_balls_for_random).name;
+    document.querySelector("select[name='ball2']:not(.additional)").value = random_from_array(selectable_balls_for_random.filter(t => t.name != document.querySelector("select[name='ball1']").value)).name;
 
     // document.querySelector("select[name='ball1']").value = "DummyBall";
     // document.querySelector("select[name='ball2']").value = "SordBall";
