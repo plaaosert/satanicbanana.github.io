@@ -157,7 +157,7 @@ function add_to_replays_tab(tab, replay_entry, to_first=true) {
 
         img_icon.src = `${FILES_PREFIX}img/icons/${ball_class.ball_name.toLowerCase()}.png`;
         img_icon.addEventListener("error", () => { 
-            img_icon.src = `${FILES_PREFIX}img/icons/unknown.png`;
+            img_icon.src = `${FILES_PREFIX}img/icons/unknown.png`
         });
 
         name_span.textContent = ` ${(`${ball_class.ball_name} LV ${replay_entry.replay.levels[index]+1} `).padEnd(23, "-")} `;
@@ -1088,7 +1088,7 @@ document.addEventListener("DOMContentLoaded", function() {
     
         elem.classList.add("red");
         elem.href = FILES_PREFIX + "index.html";
-        elem.textContent = elem.textContent.split("|")[0] + ` you are on an old version (${GAME_VERSION})! click here to go to the latest version!`;
+        elem.textContent = elem.textContent.split("|")[0] + ` | you are on an old version (${GAME_VERSION})! click here to go to the latest version!`;
     }
 })
 

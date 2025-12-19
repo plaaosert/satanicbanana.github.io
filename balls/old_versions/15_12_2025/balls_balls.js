@@ -86,8 +86,6 @@ class WeaponBall extends Ball {
         this.poison_intensity = 0;
         this.poison_duration = 0;
 
-        this.burn_intensity = 0;
-
         this.last_damage_source = null;
 
         this.cached_weapon_offsets = [];
@@ -209,8 +207,7 @@ class WeaponBall extends Ball {
             // i love you integral calculator
             // wow maths is so beautiful actually i should get on that shit again
             "rupture": this.rupture_intensity / WeaponBall.RUPTURE_CALCULATION_CONSTANT,
-            "poison": this.poison_intensity * this.poison_duration,
-            "burn": this.burn_intensity * 10  // burn doesn't go down, so take the next 10s
+            "poison": this.poison_intensity * this.poison_duration
         }
     }
 
@@ -262,11 +259,6 @@ class WeaponBall extends Ball {
         if (this.rupture_intensity > 0) {
             this.lose_hp(this.rupture_intensity * time_delta, "ailment");
             this.rupture_intensity = lerp(this.rupture_intensity, 0, 1 - compat_pow(0.5, time_delta));
-        }
-
-        // burn deals constant dps and permanently increases damage taken
-        if (this.burn_intensity > 0) {
-            this.lose_hp(this.burn_intensity * time_delta, "ailment");
         }
     }
 
@@ -470,17 +462,13 @@ class WeaponBall extends Ball {
         return result;
     }
 
-    get_hit(source, damage, hitstop, invuln=null, round_up=true) {
+    get_hit(source, damage, hitstop) {
         // defense_bonus is a simple "divide damage by this" value
         let def = this.player?.stats?.defense_bonus ?? 1;
-
-        // reduce def by burn
-        let burn_dmg_mult = 1 + Math.max(0, this.burn_intensity * 0.2);
-
-        let final_damage = damage == 0 ? damage : Math.max(round_up ? 1 : 0, (damage * burn_dmg_mult) / def);
+        let final_damage = damage == 0 ? damage : Math.max(1, damage / def);
         
         this.lose_hp(final_damage, source);
-        this.apply_invuln(invuln ?? BALL_INVULN_DURATION);
+        this.apply_invuln(BALL_INVULN_DURATION);
         this.apply_hitstop(hitstop);
 
         return {dmg: final_damage, dead: this.hp <= 0};
@@ -555,24 +543,6 @@ class WeaponBall extends Ball {
         );
 
         this.board.register_poison(other, this, amt, duration);
-    }
-
-    apply_burn(other, amt, scales_with_stat="damage_bonus") {
-        let final_amt = amt;
-        if (scales_with_stat) {
-            final_amt *= this.player?.stats[scales_with_stat] ?? 1;
-        }
-
-        other.receive_burn(this, final_amt);
-    }
-
-    receive_burn(other, amt) {
-        let final_amt = amt;
-        final_amt /= this.player?.stats?.ailment_resistance;
-
-        this.burn_intensity += final_amt;
-
-        this.board.register_burn(other, this, amt);
     }
 
     get_hit_by_projectile(source, damage, hitstop) {
@@ -2827,7 +2797,7 @@ class HandBall extends WeaponBall {
                                 throwball.display = true;
 
                                 throwball.set_pos(new_position);
-                                throwball.get_hit(this, this.grab_damage_impact, BASE_HITSTOP_TIME * 4);
+                                throwball.lose_hp(this.grab_damage_impact, this);
 
                                 play_audio("wall_smash");
 
@@ -4905,7 +4875,7 @@ class PotionPuddleProjectile extends Projectile {
 
                 let dmg = (7 * this.intensity * dmg_mul * delta_time) / def_mul;
 
-                ball.get_hit(this.source, dmg, 0, 0, false);
+                ball.lose_hp(dmg, this.source);
 
                 break;
             }

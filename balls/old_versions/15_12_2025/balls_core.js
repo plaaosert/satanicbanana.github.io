@@ -1,10 +1,10 @@
 game_id = "balls";
 
-const FILES_PREFIX = "";
+const FILES_PREFIX = "../../";
 
-const GAME_VERSION = "18/12/2025";
+const GAME_VERSION = "15/12/2025";
 
-const AILMENT_CHARS = "➴☣♨";
+const AILMENT_CHARS = "➴☣";
 
 const layer_names = [
     "front",
@@ -702,27 +702,6 @@ class Board {
 
             let part = new DamageNumberParticle(
                 on.position, 1, `${AILMENT_CHARS[1]} ${amt.toFixed(1)} | ${dur.toFixed(1)}s`, on.get_current_desc_col(), on.velocity, this, size
-            );
-
-            this.spawn_particle(part, on.position);
-        }
-    }
-
-    register_burn(by, on, amt) {
-        if (make_damage_numbers && by instanceof Ball && amt > 0.15 && on.show_stats) {
-            let size = 14;
-            if (amt >= 1) {
-                size = 16;
-                if (amt >= 2) {
-                    size = 18;
-                    if (amt >= 4) {
-                        size = 20;
-                    }
-                }
-            }
-
-            let part = new DamageNumberParticle(
-                on.position, 1, `${AILMENT_CHARS[2]} ${amt.toFixed(1)}`, on.get_current_desc_col(), on.velocity, this, size
             );
 
             this.spawn_particle(part, on.position);
@@ -1738,16 +1717,7 @@ function render_descriptions(board) {
                 write_pp_bordered_text(
                     layers.ui2.ctx,
                     `${AILMENT_CHARS[0]} ${ball.rupture_intensity.toFixed(2).padEnd(5)}`,
-                    l[0] + 106, l[1] + 12 + 12, ball_col, CANVAS_FONTS, 12,
-                    false, 1, ball_border_col
-                )
-            }
-
-            if (ball.burn_intensity >= 0.01) {
-                write_pp_bordered_text(
-                    layers.ui2.ctx,
-                    `${AILMENT_CHARS[2]} ${ball.burn_intensity.toFixed(2).padEnd(5)}`,
-                    l[0] + 160, l[1] + 12 + 12, ball_col, CANVAS_FONTS, 12,
+                    l[0] + 128, l[1] + 12 + 12, ball_col, CANVAS_FONTS, 12,
                     false, 1, ball_border_col
                 )
             }
