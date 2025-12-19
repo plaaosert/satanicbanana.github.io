@@ -184,10 +184,10 @@ const entity_sprites = new Map([
             t.addEventListener("load", function() {
                 num_textures_loaded++;
             })
-            t.addEventListener("error", function() {
-                console.log(`Error loading ${t.src}!`);
-                t.src = "img/icons/unknown.png";
-            })
+            // t.addEventListener("error", function() {
+            //     console.log(`Error loading ${t.src}!`);
+            //     t.src = "img/icons/unknown.png";
+            // })
 
             ts.push(t);
         }
@@ -200,10 +200,10 @@ const entity_sprites = new Map([
         t.addEventListener("load", function() {
             num_textures_loaded++;
         })
-        t.addEventListener("error", function(e) {
-            console.log(`Error loading ${t.src}!`);
-            t.src = "img/icons/unknown.png";
-        })
+        // t.addEventListener("error", function(e) {
+        //     console.log(`Error loading ${t.src}!`);
+        //     t.src = "img/icons/unknown.png";
+        // })
 
         ts.push(t);
     }

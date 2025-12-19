@@ -156,7 +156,9 @@ function add_to_replays_tab(tab, replay_entry, to_first=true) {
         let name_span = document.createElement("span");
 
         img_icon.src = `img/icons/${ball_class.ball_name.toLowerCase()}.png`;
-        img_icon.addEventListener("error", () => { img_icon.src = "img/icons/unknown.png" });
+        img_icon.addEventListener("error", () => { 
+            img_icon.src = "img/icons/unknown.png"
+        });
 
         name_span.textContent = ` ${(`${ball_class.ball_name} LV ${replay_entry.replay.levels[index]+1} `).padEnd(23, "-")} `;
         name_span.style.color = Colour.from_array(replay_entry.replay.cols[index]).css();
@@ -792,6 +794,10 @@ function setup_load_menu(replay_as_text) {
         let name_span = document.createElement("span");
 
         img_icon.src = `img/icons/${ball_class.ball_name.toLowerCase()}.png`;
+        img_icon.addEventListener("error", () => { 
+            img_icon.src = "img/icons/unknown.png"
+        });
+
         name_span.textContent = ` ${(`${ball_class.ball_name} LV ${replay.levels[index]+1} `)} `;
         name_span.style.color = Colour.from_array(replay.cols[index]).css();
 
