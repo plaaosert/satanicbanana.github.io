@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+
+
+<url>
+  <loc>https://plaao.net/</loc>
+  <lastmod>2025-12-21T21:11:01+00:00</lastmod>
+  <priority>1.00</priority>
+</url>
+<url>
+  <loc>https://plaao.net/bio.html</loc>
+  <lastmod>2025-12-21T21:11:01+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://plaao.net/gameslist.html</loc>
+  <lastmod>2025-12-21T21:11:01+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://plaao.net/changelog.html</loc>
+  <lastmod>2025-12-21T21:11:01+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://plaao.net/index.html</loc>
+  <lastmod>2025-12-21T21:11:01+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://plaao.net/bej/bej.html</loc>
+  <lastmod>2025-12-21T21:11:00+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://plaao.net/words/index.html</loc>
+  <lastmod>2025-12-21T21:11:01+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://plaao.net/letters/index.html</loc>
+  <lastmod>2025-12-21T21:11:01+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://plaao.net/wheels/index.html</loc>
+  <lastmod>2025-12-21T21:11:01+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://plaao.net/circles/index.html</loc>
+  <lastmod>2025-12-21T21:11:00+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://plaao.net/time/index.html</loc>
+  <lastmod>2025-12-21T21:11:01+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://plaao.net/turing/index.html</loc>
+  <lastmod>2025-12-21T21:11:01+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://plaao.net/balls/index.html</loc>
+  <lastmod>2025-12-21T21:11:00+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+
+
+</urlset>
