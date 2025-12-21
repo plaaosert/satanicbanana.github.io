@@ -317,6 +317,182 @@ class SmartBowBall extends WeaponBall {
     }
 }
 
+class MissileLauncherBall extends WeaponBall {
+    static ball_name = "Missile Launcher";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Missile Launcher";
+        this.description_brief = "Fires an explosive homing missile.";
+        this.quote = "My creator did not endow me with a victory quote.";
+
+        this.weapon_data = [
+            new BallWeapon(1, "bow", [
+                {pos: new Vector2(16, 72-16), radius: 12},
+                {pos: new Vector2(16, 72), radius: 12},
+            ])
+        ];
+
+        this.firing_offsets = [
+            new Vector2(24, 0)
+        ]
+
+        this.proj_damage_base = 4;
+        this.speed_base = 150;
+
+        this.arrow_size_mult = 1
+        this.arrow_speed = 10000;
+
+        this.shot_cooldown_max = 0.75
+        this.shot_cooldown = this.shot_cooldown_max;
+
+        this.multishots = 0;
+        this.multishots_max = 1;
+        
+        this.multishot_cooldown = 0;
+        // 1/2th of the cooldown or 0.05, whichever is lower
+        this.multishot_cooldown_max = Math.min(0.05, (this.shot_cooldown_max / 2) / this.multishots_max);
+
+        this.bow_sound_random = get_seeded_randomiser(this.board.random_seed);
+    }
+
+    weapon_step(board, time_delta) {
+        // rotate the weapon
+        this.rotate_weapon(0, this.speed_base * time_delta);
+
+        this.shot_cooldown -= time_delta;
+        this.multishot_cooldown -= time_delta;
+        let shooting = false;
+        if (this.multishots > 0 && this.multishot_cooldown < 0) {
+            this.multishots--;
+            this.multishot_cooldown = this.multishot_cooldown_max;
+            shooting = true;
+        } else if (this.shot_cooldown < 0) {
+            this.multishots = this.multishots_max;
+            this.shot_cooldown = this.shot_cooldown_max;
+        }
+
+        if (shooting) {
+            // schut
+            let firing_offset = this.firing_offsets[0].mul(this.weapon_data[0].size_multiplier).rotate(this.weapon_data[0].angle);
+            let fire_pos = this.position.add(firing_offset);
+
+            let times = 1;
+            if (this.level >= AWAKEN_LEVEL) {
+                times += 1;
+            }
+
+            for (let i=0; i<times; i++) {
+                board.spawn_projectile(
+                    new MissileProjectile(
+                        this.board,
+                        this, 0, fire_pos, this.proj_damage_base, 1 * this.arrow_size_mult,
+                        new Vector2(1, 0).rotate(this.weapon_data[0].angle + (random_float(-10, 10, this.board.random) * (Math.PI / 180))),
+                        this.arrow_speed * random_float(0.85, 1.15, this.board.random), this.velocity.mul(0)
+                    ), fire_pos
+                )
+            }
+
+            let snd_rand = this.bow_sound_random();
+            if (snd_rand < 0.5) {
+                play_audio("bow1");
+            } else {
+                play_audio("bow2");
+            }
+        }
+    }
+
+    hit_other(other, with_weapon_index) {
+        return super.hit_other(other, with_weapon_index, 2);
+    }
+
+    hit_other_with_projectile(other, with_projectile) {
+        let result = super.hit_other_with_projectile(other, with_projectile);
+
+        return result;
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    }
+}
+
+class MissileProjectile extends InertiaRespectingStraightLineProjectile {
+    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
+        super(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
+    
+        this.sprite = "arrow";
+        this.set_hitboxes([
+            {pos: new Vector2(-20, 0), radius: 4},
+            {pos: new Vector2(-16, 0), radius: 4},
+            {pos: new Vector2(-12, 0), radius: 4},
+            {pos: new Vector2(-8, 0), radius: 4},
+            {pos: new Vector2(-4, 0), radius: 4},
+            {pos: new Vector2(0, 0), radius: 4},
+            {pos: new Vector2(4, 0), radius: 4},
+            {pos: new Vector2(8, 0), radius: 4},
+            {pos: new Vector2(12, 0), radius: 4},
+            {pos: new Vector2(16, 0), radius: 4},
+            {pos: new Vector2(20, 0), radius: 4},
+        ]);
+    }
+
+    physics_step(time_delta) {
+        super.physics_step(time_delta);
+
+        // find the nearest ball and rotate towards it
+        let cur_dir = this.direction.mul(this.speed);
+
+        // add a flat value to it (scaled by time_delta)
+        let closest_enemy = [...this.board.balls.filter(b => this.can_hit_ball(b))].reduce((p, c) => {
+            return !p || (p[1] > c.position.sqr_distance(this.position)) ? [c, c.position.sqr_distance(this.position)] : p
+        }, null);
+
+        if (closest_enemy) {
+            let vec = closest_enemy[0].position.sub(this.position).normalize();
+
+            cur_dir = cur_dir.add(vec.mul(60000 * time_delta));
+        }
+
+        // recalculate speed and direction
+        this.speed = cur_dir.magnitude();
+        this.set_dir(cur_dir.normalize());
+    }
+
+    make_explosion() {
+        let proj = new GrenadeExplosionProjectile(
+            this.board,
+            this.source, this.source_weapon_index,
+            this.position, this.damage, 1.5
+        );
+
+        proj.can_hit_allied = false;
+        proj.can_hit_source = false;
+
+        play_audio("explosion2");
+
+        this.board.spawn_projectile(proj, this.position);
+    }
+
+    hit_other_projectile(other_projectile) {
+        this.make_explosion();
+        this.active = false;
+    }
+
+    get_parried(by) {
+        this.make_explosion();
+        this.active = false;
+    }
+
+    hit_ball(ball, delta_time) {
+        this.make_explosion();
+        this.active = false;
+    }
+}
+
+// TODO eye of cthulhu
+
 let powered_selectable_balls = [
-    SmartLongsword, SmartBowBall
+    SmartLongsword, SmartBowBall, MissileLauncherBall
 ]
