@@ -41,8 +41,8 @@ class WeaponBall extends Ball {
 
         this.name = "No Weapon";
         this.description_brief = "Does nothing. Unarmed, but not the awesome kind.";
-        this.level_description = "It really doesn't do anything, even when levelled up.";
-        this.max_level_description = "Seriously, it doesn't do anything.";
+        this.level_description = "This ball has no levelup effect.";
+        this.max_level_description = "This ball has no awakening effect.";
         this.quote = "I won? I won! How'd I win?!";
 
         // player.stats:
@@ -284,7 +284,7 @@ class WeaponBall extends Ball {
         this.ailments_step(board, time_delta);
 
         this.invuln_duration -= time_delta;
-        this.weapon_data.forEach(w => w.angle = w.angle % (Math.PI * 2));
+        this.weapon_data.forEach(w => w.angle = positive_mod(w.angle, (Math.PI * 2)));
 
         // not amazing but should at least uplift performance a bit
         // just to cache every physics step
@@ -610,7 +610,7 @@ class WeaponBall extends Ball {
 
 class DummyBall extends WeaponBall {
     // transforms into unarmedball when it takes a hit
-    static ball_name = "No Weapon";
+    static ball_name = "Dummy";
     
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
@@ -4456,6 +4456,15 @@ class Projectile {
     set_hitboxes(to) {
         this.hitboxes = to;
         this.cache_hitboxes_offsets();
+    }
+
+    can_hit_ball(ball) {
+        return (
+            this.active && 
+            !this.ignore_balls.has(ball.id) && 
+            (!ball.allied_with(this.source) || this.can_hit_allied) &&
+            (ball.id != this.source.id || this.can_hit_source)
+        )
     }
 
     physics_step(time_delta) {

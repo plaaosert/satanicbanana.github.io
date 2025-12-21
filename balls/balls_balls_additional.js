@@ -5,7 +5,7 @@ class ThirteenLongswordsBall extends WeaponBall {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "13 Longswords";
-        this.description_brief = "Has 13 longswords that each do 2 damage.";
+        this.description_brief = "Has 13 longswords that each do 2 damage and are also on fire.";
         this.level_description = "This ball has no levelup effect.";
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "Thanks to @XxRodxXr for the deranged idea.";

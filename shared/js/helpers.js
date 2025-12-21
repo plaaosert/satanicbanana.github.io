@@ -554,6 +554,10 @@ class Vector2 {
         return (this.x * other.x) + (this.y * other.y);
     }
 
+    cross(other) {
+        return (this.x * other.y) - (this.y * other.x);
+    }
+
     angle_between(other) {
         let angle = Math.atan2(other.y, other.x) - Math.atan2(this.y, this.x);
         if (angle > Math.PI) {

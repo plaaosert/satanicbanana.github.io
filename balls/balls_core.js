@@ -2006,10 +2006,7 @@ function game_loop() {
 
                         // don't check our own team's projectiles
                         let projectiles = board.projectiles.filter(projectile => 
-                            projectile.active && 
-                            !projectile.ignore_balls.has(ball.id) && 
-                            (!ball.allied_with(projectile.source) || projectile.can_hit_allied) &&
-                            (ball.id != projectile.source.id || projectile.can_hit_source)
+                            projectile.can_hit_ball(ball)
                         );
                         
                         let intersecting_projectiles = ball.check_weapon_to_projectiles_hits(projectiles);
@@ -2147,10 +2144,7 @@ function game_loop() {
                         if (ball.invuln_duration <= 0) {
                             // don't check our own projectiles
                             let projectiles = board.projectiles.filter(projectile => 
-                                projectile.active && 
-                                !projectile.ignore_balls.has(ball.id) && 
-                                (!ball.allied_with(projectile.source) || projectile.can_hit_allied) &&
-                                (ball.id != projectile.source.id || projectile.can_hit_source)
+                                projectile.can_hit_ball(ball)
                             );
 
                             let intersecting_projectiles = ball.check_projectiles_hit_from(projectiles);

@@ -393,7 +393,7 @@ function spawn_selected_balls() {
     let ball_classes = [];
     for (let i=0; i<cols.length; i++) {
         let elem = document.querySelector(`select[name='ball${i+1}']:not(.nodisplay)`);
-        let ball_proto = selectable_balls.find(t => t.name == elem?.value);
+        let ball_proto = selectable_balls.find(t => t.ball_name == elem?.value);
 
         ball_classes.push(ball_proto);
     }
@@ -496,7 +496,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
 function update_ballinfo(ballid, save_skin=false) {
     let ball_team = document.querySelector(`select[name='${ballid}_team']`).selectedIndex;
 
-    let ball_classname = document.querySelector(`select[name='${ballid}']`).value;
+    let ball_classname = document.querySelector(`select[name='${ballid}']:not(.nodisplay)`).value;
     let ball_proto = selectable_balls.find(t => t.name == ball_classname);
 
     let settings_elem = document.querySelector(`#${ballid}_settings`);
@@ -511,7 +511,7 @@ function update_ballinfo(ballid, save_skin=false) {
 
     if (ball_proto) {
         let testball = new ball_proto(
-            {random: Math.random}, 1, 512, Colour.white, null, null, {}, 1, false
+            {random: Math.random, random_seed: "123"}, 1, 512, Colour.white, null, null, {}, 1, false
         );
 
         skins = ["Default skin", ...(ball_proto.AVAILABLE_SKINS ?? [])];
@@ -763,7 +763,17 @@ function setup_match_search(num_candidates, settings) {
 }
 
 function randomise_ballselect(ballid) {
-    document.querySelector(`select[name='${ballid}']`).value = random_from_array(selectable_balls_for_random).name;
+    let elem = document.querySelector(`select[name='${ballid}']:not(.nodisplay)`)
+    
+    let list_to_use = [];
+    if (elem.classList.contains("main")) {
+        list_to_use = main_selectable_balls;
+    } else if (elem.classList.contains("additional")) {
+        list_to_use = additional_selectable_balls;
+    } else {
+        list_to_use = powered_selectable_balls;
+    }
+    elem.value = random_from_array(list_to_use).ball_name;
     update_ballinfo(ballid);
 }
 
@@ -950,10 +960,10 @@ document.addEventListener("DOMContentLoaded", function() {
     window.addEventListener("resize", handle_resize);
 
     // set up options
-    let options_elems = document.querySelectorAll("select.sandbox-ball-select:not(.additional)");
+    let options_elems = document.querySelectorAll("select.sandbox-ball-select.main");
     options_elems.forEach(elem => {
         elem.options.add(new Option("None"))
-        main_selectable_balls.forEach(ball => elem.options.add(new Option(ball.name)));
+        main_selectable_balls.forEach(ball => elem.options.add(new Option(ball.ball_name)));
 
         elem.addEventListener("click", e => {
             if (!keys_down["ControlLeft"]) {
@@ -962,18 +972,18 @@ document.addEventListener("DOMContentLoaded", function() {
 
             let name = elem.name;
 
-            let showing = document.querySelectorAll(`.sandbox-ball-select[name='${name}']:not(.nodisplay)`);
-            let hidden = document.querySelectorAll(`.sandbox-ball-select.nodisplay[name='${name}']`);
+            let showing = document.querySelectorAll(`.sandbox-ball-select[name='${name}'].additional`);
+            let hidden = document.querySelectorAll(`.sandbox-ball-select[name='${name}']:is(.main, .powered)`);
 
-            showing.forEach(e => e.classList.add("nodisplay"));
-            hidden.forEach(e => e.classList.remove("nodisplay"));
+            showing.forEach(e => e.classList.remove("nodisplay"));
+            hidden.forEach(e => e.classList.add("nodisplay"));
         })
     });
 
     let additional_options_elems = document.querySelectorAll("select.sandbox-ball-select.additional");
     additional_options_elems.forEach(elem => {
         elem.options.add(new Option("None"))
-        additional_selectable_balls.forEach(ball => elem.options.add(new Option(ball.name)));
+        additional_selectable_balls.forEach(ball => elem.options.add(new Option(ball.ball_name)));
 
         elem.addEventListener("click", e => {
             if (!keys_down["ControlLeft"]) {
@@ -982,11 +992,31 @@ document.addEventListener("DOMContentLoaded", function() {
 
             let name = elem.name;
 
-            let showing = document.querySelectorAll(`.sandbox-ball-select[name='${name}']:not(.nodisplay)`);
-            let hidden = document.querySelectorAll(`.sandbox-ball-select.nodisplay[name='${name}']`);
+            let showing = document.querySelectorAll(`.sandbox-ball-select[name='${name}'].powered`);
+            let hidden = document.querySelectorAll(`.sandbox-ball-select[name='${name}']:is(.main, .additional)`);
 
-            showing.forEach(e => e.classList.add("nodisplay"));
-            hidden.forEach(e => e.classList.remove("nodisplay"));
+            showing.forEach(e => e.classList.remove("nodisplay"));
+            hidden.forEach(e => e.classList.add("nodisplay"));
+        })
+    });
+
+    let powered_options_elems = document.querySelectorAll("select.sandbox-ball-select.powered");
+    powered_options_elems.forEach(elem => {
+        elem.options.add(new Option("None"))
+        powered_selectable_balls.forEach(ball => elem.options.add(new Option(ball.ball_name)));
+
+        elem.addEventListener("click", e => {
+            if (!keys_down["ControlLeft"]) {
+                return;
+            }
+
+            let name = elem.name;
+
+            let showing = document.querySelectorAll(`.sandbox-ball-select[name='${name}'].main`);
+            let hidden = document.querySelectorAll(`.sandbox-ball-select[name='${name}']:is(.additional, .powered)`);
+
+            showing.forEach(e => e.classList.remove("nodisplay"));
+            hidden.forEach(e => e.classList.add("nodisplay"));
         })
     });
 
@@ -1002,8 +1032,8 @@ document.addEventListener("DOMContentLoaded", function() {
         elem.selectedIndex = elem_idx;
     })
 
-    document.querySelector("select[name='ball1']:not(.additional)").value = random_from_array(selectable_balls_for_random).name;
-    document.querySelector("select[name='ball2']:not(.additional)").value = random_from_array(selectable_balls_for_random.filter(t => t.name != document.querySelector("select[name='ball1']").value)).name;
+    randomise_ballselect('ball1');
+    randomise_ballselect('ball2');
 
     // document.querySelector("select[name='ball1']").value = "DummyBall";
     // document.querySelector("select[name='ball2']").value = "SordBall";

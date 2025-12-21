@@ -1,6 +1,7 @@
 let selectable_balls = [
     ...main_selectable_balls,
-    ...additional_selectable_balls
+    ...additional_selectable_balls,
+    ...powered_selectable_balls
 ]
 
 function parse_replay(replay_as_text) {

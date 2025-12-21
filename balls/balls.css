@@ -424,6 +424,10 @@ button.green {
   background-color: #024;
 }
 
+.sandbox-ball-select.powered {
+  background-color: #420;
+}
+
 .sandbox-skin-select {
   width: 12vmin;
 }
