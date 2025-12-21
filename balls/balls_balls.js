@@ -636,6 +636,9 @@ class DummyBall extends WeaponBall {
     weapon_step(board, time_delta) {
         if (this.transforming && !this.done) {
             this.shake_current += time_delta
+            if (this.board.unarmed_cinematic_played) {
+                this.shake_current += time_delta * 1000;
+            }
 
             if (this.shake_current <= this.shake_duration_max) {
                 this.set_velocity(Vector2.zero);
@@ -662,6 +665,8 @@ class DummyBall extends WeaponBall {
 
                 this.child.set_velocity(random_on_circle(25000, this.board.random));
 
+                this.board.unarmed_cinematic_played = true;
+
                 this.hp = 0;
                 this.transforming = false;
                 this.done = true;
@@ -685,7 +690,9 @@ class DummyBall extends WeaponBall {
     }
 
     start_transforming() {
-        play_audio("unarmed_theme");
+        if (!this.board.unarmed_cinematic_played) {
+            play_audio("unarmed_theme");
+        }
 
         this.hp = 100;
         this.transforming = true;
@@ -1304,6 +1311,8 @@ class BowBall extends WeaponBall {
         this.multishot_cooldown = 0;
         // 1/2th of the cooldown or 0.05, whichever is lower
         this.multishot_cooldown_max = Math.min(0.05, (this.shot_cooldown_max / 2) / this.multishots_max);
+
+        this.bow_sound_random = get_seeded_randomiser(this.board.random_seed);
     }
 
     weapon_step(board, time_delta) {
@@ -1341,6 +1350,13 @@ class BowBall extends WeaponBall {
                         this.arrow_speed * random_float(0.85, 1.15, this.board.random), this.velocity.mul(0)
                     ), fire_pos
                 )
+            }
+
+            let snd_rand = this.bow_sound_random();
+            if (snd_rand < 0.5) {
+                play_audio("bow1");
+            } else {
+                play_audio("bow2");
             }
         }
     }
@@ -1472,6 +1488,9 @@ class MagnumBall extends WeaponBall {
                     new Vector2(1, 0).rotate(this.weapon_data[0].angle).mul(10000).add(fire_pos), 0
                 ), fire_pos
             )
+
+            // its too loud man
+            // play_audio("gun1");
         }
 
         if (this.coin_shot_cooldown < 0) {
@@ -1504,6 +1523,8 @@ class MagnumBall extends WeaponBall {
                     coin2_obj, coin2_fire_pos
                 )
             }
+
+            play_audio("coin");
         }
     }
 
@@ -1958,6 +1979,7 @@ class PotionBall extends WeaponBall {
                     this.weapon_data[i].size_multiplier = 1 * 16
                     this.speeds[i] = random_float(...this.speed_range, this.board.random);
                     this.weapon_data[i].hitboxes = [{pos: new Vector2(30, 64), radius: 14}];
+                    play_audio("bottle_pop");
                 }
             } else {
                 this.rotate_weapon(i, this.speeds[i] * time_delta);
@@ -2017,6 +2039,8 @@ class PotionBall extends WeaponBall {
                 this, 0, fire_pos, 1, 2, index, this.duration_mult
             ), fire_pos
         )
+
+        play_audio("bottle_smash");
 
         this.lose_potion(index, true);
     }
@@ -4735,7 +4759,16 @@ class MagnumProjectile extends HitscanProjectile {
                     ), other.position
                 );
 
-                play_audio("parry2");
+                // play gun2 if first ricochet, gun3 if second and _super if third, otherwise nothing
+                if (this.ricochets == 0) {
+                    play_audio("gun1");
+                } else if (this.ricochets == 1) {
+                    play_audio("gun2");
+                } else if (this.ricochets == 2) {
+                    play_audio("gun3");
+                } else if (this.ricochets == 3) {
+                    play_audio("gun_super");
+                }
 
                 let particle = new Particle(
                     other.position.add(new Vector2(16, -32)), 0, 0.2, entity_sprites.get("explosion"), 12, 3, false
@@ -4954,6 +4987,8 @@ class PotionBottleProjectile extends Projectile {
                 this.source, 0, this.position, 1, 2, this.effect_index, this.duration_mult
             ), this.position
         )
+
+        play_audio("bottle_smash");
     }
 
     hit_other_projectile(other_projectile) {

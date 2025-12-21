@@ -318,6 +318,26 @@ async function load_audio() {
     // i have no idea (ask vitawrap)
     audio.set("impact_paper", await load_audio_item('snd/impact_paper.mp3'));
     
+    // https://pixabay.com/sound-effects/bow-release-85040/
+    audio.set("bow1", await load_audio_item('snd/bow1.mp3'));
+    audio.set("bow2", await load_audio_item('snd/bow2.mp3'));
+
+    // https://www.youtube.com/watch?v=oZK79uueLqk
+    audio.set("gun1", await load_audio_item('snd/gun1.mp3'));
+    audio.set("gun2", await load_audio_item('snd/gun2.mp3'));
+    audio.set("gun3", await load_audio_item('snd/gun3.mp3'));
+
+    // https://www.youtube.com/watch?v=fzKjWrFEVBs
+    audio.set("gun_super", await load_audio_item('snd/gun_super.mp3'));
+
+    // https://pixabay.com/sound-effects/coin-flip-shimmer-85750/
+    audio.set("coin", await load_audio_item('snd/coin.mp3'));
+
+    // https://pixabay.com/sound-effects/glass-bottle-breaking-351297/
+    audio.set("bottle_smash", await load_audio_item('snd/bottle_smash.mp3'));
+
+    // https://pixabay.com/sound-effects/bottle-pop-45531/
+    audio.set("bottle_pop", await load_audio_item('snd/bottle_pop.mp3'));
 }
 
 function play_audio(name) {
@@ -360,6 +380,8 @@ class Particle {
         this.delay = delay;
 
         this.render_behind = render_behind;
+
+        this.unarmed_cinematic_played = false;
     }
 
     set_pos(to) {

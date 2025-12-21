@@ -319,7 +319,12 @@ function load_replay(replay_as_text) {
     let seed = replay.seed;
 
     // hardcoded... for now
-    let positions = default_positions;
+    let positions = [];
+    if (replay.positions) {
+        positions = replay.positions.map(p => new Vector2(p[0], p[1]));
+    } else {
+        positions = default_positions;
+    }
 
     let ball_classes = replay.balls.map(b => {
         return selectable_balls.find(t => t.name == b);
