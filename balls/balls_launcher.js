@@ -497,7 +497,7 @@ function update_ballinfo(ballid, save_skin=false) {
     let ball_team = document.querySelector(`select[name='${ballid}_team']`).selectedIndex;
 
     let ball_classname = document.querySelector(`select[name='${ballid}']:not(.nodisplay)`).value;
-    let ball_proto = selectable_balls.find(t => t.name == ball_classname);
+    let ball_proto = selectable_balls.find(t => t.ball_name == ball_classname);
 
     let settings_elem = document.querySelector(`#${ballid}_settings`);
     let info_parent_elem = document.querySelector(`#${ballid}_info`);
