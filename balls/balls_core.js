@@ -173,6 +173,11 @@ const entity_sprites = new Map([
     // Additionals
     ["LONGSORD", 1, "weapon/additional/"],
     ["stick", 1, "weapon/additional/"],
+    ["lansator_de_rachete", 1, "weapon/additional/"],
+    ["rachete", 1, "weapon/additional/"],
+
+    // Etc
+    ["festive red hat", 1, "etc/"],
 ].map((v, i) => {
     let ts = [];
 
@@ -2220,6 +2225,9 @@ function game_loop() {
                             return true;
                         } else {
                             let result = ball.die();
+                            if (ball.linked_hat_particle) {
+                                ball.linked_hat_particle.lifetime = 999999999;
+                            }
 
                             if (!result.skip_default_explosion) {
                                 if (ball.show_stats) {

@@ -430,6 +430,7 @@ function spawn_selected_balls() {
     );
 }
 
+let christmas = true;
 function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels, players, skins) {
     setTimeout(() => {
         board = new Board(new Vector2(512 * 16, 512 * 16));
@@ -457,6 +458,13 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
                 
                 ball.set_skin(skins[index]);
                 
+                if (christmas) {
+                    let hat_particle = new Particle(ball.position, 0, 1, entity_sprites.get("festive red hat"), 0, 99999, false);
+                    board.spawn_particle(hat_particle, ball.position);
+
+                    ball.linked_hat_particle = hat_particle;
+                }
+
                 balls.push(ball_proto);
             }
         })
@@ -773,7 +781,7 @@ function randomise_ballselect(ballid) {
     } else {
         list_to_use = powered_selectable_balls;
     }
-    elem.value = random_from_array(list_to_use).ball_name;
+    elem.value = random_from_array(list_to_use.filter(c => !banned_for_random.some(b => b.name == c.name))).ball_name;
     update_ballinfo(ballid);
 }
 

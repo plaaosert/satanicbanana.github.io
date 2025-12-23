@@ -151,18 +151,18 @@ class SmartBowBall extends WeaponBall {
             new Vector2(24, 0)
         ]
 
-        this.proj_damage_base = 1;
+        this.proj_damage_base = 8;
         this.speed_base = 720;
 
-        this.arrow_size_mult = 0.5
+        this.arrow_size_mult = 1
         this.arrow_speed = 25000;
         this.sqr_arrow_speed = Math.pow(this.arrow_speed, 2);
 
-        this.shot_cooldown_max = 2;
+        this.shot_cooldown_max = 0.8;
         this.shot_cooldown = this.shot_cooldown_max;
 
         this.multishots = 0;
-        this.multishots_max = 32;
+        this.multishots_max = 1;
         
         this.multishot_cooldown = 0;
         // 1/2th of the cooldown or 0.05, whichever is lower
@@ -301,9 +301,9 @@ class SmartBowBall extends WeaponBall {
     hit_other_with_projectile(other, with_projectile) {
         let result = super.hit_other_with_projectile(other, with_projectile);
 
-        other.hitstop = 0;
-        this.hitstop = 0;
-        other.invuln_duration = 0;
+        // other.hitstop = 0;
+        // this.hitstop = 0;
+        // other.invuln_duration = 0;
 
         return result;
     }
@@ -328,17 +328,17 @@ class MissileLauncherBall extends WeaponBall {
         this.quote = "My creator did not endow me with a victory quote.";
 
         this.weapon_data = [
-            new BallWeapon(1, "bow", [
-                {pos: new Vector2(16, 72-16), radius: 12},
-                {pos: new Vector2(16, 72), radius: 12},
+            new BallWeapon(1, "lansator_de_rachete", [
+                {pos: new Vector2(16, 64), radius: 12},
+                {pos: new Vector2(32, 64), radius: 12},
             ])
         ];
 
         this.firing_offsets = [
-            new Vector2(24, 0)
+            new Vector2(128, 0)
         ]
 
-        this.proj_damage_base = 4;
+        this.proj_damage_base = 12;
         this.speed_base = 150;
 
         this.arrow_size_mult = 1
@@ -387,19 +387,14 @@ class MissileLauncherBall extends WeaponBall {
                 board.spawn_projectile(
                     new MissileProjectile(
                         this.board,
-                        this, 0, fire_pos, this.proj_damage_base, 1 * this.arrow_size_mult,
+                        this, 0, fire_pos, this.proj_damage_base, 0.7 * this.arrow_size_mult,
                         new Vector2(1, 0).rotate(this.weapon_data[0].angle + (random_float(-10, 10, this.board.random) * (Math.PI / 180))),
                         this.arrow_speed * random_float(0.85, 1.15, this.board.random), this.velocity.mul(0)
                     ), fire_pos
                 )
             }
 
-            let snd_rand = this.bow_sound_random();
-            if (snd_rand < 0.5) {
-                play_audio("bow1");
-            } else {
-                play_audio("bow2");
-            }
+            play_audio("bottle_pop")
         }
     }
 
@@ -415,6 +410,14 @@ class MissileLauncherBall extends WeaponBall {
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Missile impact damage: ${this.proj_damage_base.toFixed(2)}`
+        )
+
+        this.write_desc_line(
+            `Missile explosion damage: ${this.proj_damage_base.toFixed(2)}`
+        )
     }
 }
 
@@ -422,7 +425,7 @@ class MissileProjectile extends InertiaRespectingStraightLineProjectile {
     constructor(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
         super(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
     
-        this.sprite = "arrow";
+        this.sprite = "rachete";
         this.set_hitboxes([
             {pos: new Vector2(-20, 0), radius: 4},
             {pos: new Vector2(-16, 0), radius: 4},
@@ -434,8 +437,11 @@ class MissileProjectile extends InertiaRespectingStraightLineProjectile {
             {pos: new Vector2(8, 0), radius: 4},
             {pos: new Vector2(12, 0), radius: 4},
             {pos: new Vector2(16, 0), radius: 4},
-            {pos: new Vector2(20, 0), radius: 4},
+            {pos: new Vector2(20, 0), radius: 8},
         ]);
+
+        this.particle_cd_max = 0.002;
+        this.particle_cd = this.particle_cd_max;
     }
 
     physics_step(time_delta) {
@@ -458,6 +464,17 @@ class MissileProjectile extends InertiaRespectingStraightLineProjectile {
         // recalculate speed and direction
         this.speed = cur_dir.magnitude();
         this.set_dir(cur_dir.normalize());
+
+        this.particle_cd -= time_delta;
+        while (this.particle_cd < 0) {
+            this.particle_cd += this.particle_cd_max;
+
+            let pos = this.position.add(this.direction.mul(-12 * this.size, 0));
+
+            this.board.spawn_particle(new Particle(
+                pos, random_float(0, Math.PI * 2, this.board.random), 0.1, entity_sprites.get("explosion"), 24, 3, false, 0, true
+            ), pos);
+        }
     }
 
     make_explosion() {

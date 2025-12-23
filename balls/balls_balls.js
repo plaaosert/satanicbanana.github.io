@@ -115,6 +115,8 @@ class WeaponBall extends Ball {
         this.render_alt = false;
 
         this.border_siz = 1;
+
+        this.linked_hat_particle = null;
     }
 
     late_setup() {
@@ -294,6 +296,15 @@ class WeaponBall extends Ball {
         // do alt-colour stuff to hopefully improve compression
         let lifetime_mod = this.lifetime % this.alt_flash_freq;
         this.render_alt = lifetime_mod < this.alt_flash_dur;
+
+        // move linked hat particle if there is one
+        this.update_particles(time_delta);
+    }
+
+    update_particles(time_delta) {
+        if (this.linked_hat_particle) {
+            this.linked_hat_particle.position = this.position;
+        }
     }
 
     weapon_step(board, time_delta) {
@@ -1656,6 +1667,13 @@ class NeedleBall extends WeaponBall {
                 new_ball.hp = hp_proportion * 4;
                 new_ball.apply_invuln(BALL_INVULN_DURATION);
 
+                if (christmas) {
+                    let hat_particle = new Particle(new_ball.position, 0, new_ball.radius / this.radius, entity_sprites.get("festive red hat"), 0, 99999, false);
+                    board.spawn_particle(hat_particle, new_ball.position);
+
+                    new_ball.linked_hat_particle = hat_particle;
+                }
+
                 if (true) {
                     let hp_lost = hp_proportion - (hp_proportion * this.split_hp_save);
 
@@ -2304,18 +2322,10 @@ class GrenadeProjectileBall extends WeaponBall {
     }
 
     update_particles(time_delta) {
+        super.update_particles(time_delta);
+
         this.linked_particle.set_pos(this.position);
         this.linked_particle.rotation_angle += this.rotation_speed * (time_delta * (Math.PI / 180))
-    }
-
-    physics_step(board, time_delta) {
-        super.physics_step(board, time_delta);
-
-        if (this.hitstop > 0) {
-            time_delta = time_delta * HITSTOP_DELTATIME_PENALTY;
-        }
-
-        this.update_particles(time_delta);
     }
 
     weapon_step(board, time_delta) {
@@ -3779,18 +3789,10 @@ class WandBlackBall extends WeaponBall {
     }
 
     update_particles(time_delta) {
+        super.update_particles(time_delta);
+
         this.linked_particle.set_pos(this.position);
         this.linked_particle.rotation_angle += this.rotation_speed * (time_delta * (Math.PI / 180))
-    }
-
-    physics_step(board, time_delta) {
-        super.physics_step(board, time_delta);
-
-        if (this.hitstop > 0) {
-            time_delta = time_delta * HITSTOP_DELTATIME_PENALTY;
-        }
-
-        this.update_particles(time_delta);
     }
 
     weapon_step(board, time_delta) {
@@ -3873,18 +3875,10 @@ class WandGreenBall extends WeaponBall {
     }
 
     update_particles(time_delta) {
+        super.update_particles(time_delta);
+
         this.linked_particle.set_pos(this.position);
         this.linked_particle.rotation_angle += this.rotation_speed * (time_delta * (Math.PI / 180))
-    }
-
-    physics_step(board, time_delta) {
-        super.physics_step(board, time_delta);
-
-        if (this.hitstop > 0) {
-            time_delta = time_delta * HITSTOP_DELTATIME_PENALTY;
-        }
-
-        this.update_particles(time_delta);
     }
 
     weapon_step(board, time_delta) {
