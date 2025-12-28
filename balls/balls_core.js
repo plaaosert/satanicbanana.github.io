@@ -1432,13 +1432,19 @@ function handle_resize(event) {
 function render_watermark() {
     layers.front.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
-    layers.front.ctx.globalAlpha = 0.5;
+    layers.front.ctx.globalAlpha = 0.66;
     write_text(
         layers.front.ctx,
         `available for free at ${BASE_URL} :)`,
-        20, canvas_height - 20,
+        20, canvas_height - 20 - 20,
         "white", CANVAS_FONTS, 20
     );
+    write_text(
+        layers.front.ctx,
+        `also now on discord! join at ${BASE_URL}/discord`,
+        20, canvas_height - 20,
+        "#8df", CANVAS_FONTS, 16
+    )
     layers.front.ctx.globalAlpha = 1;
 }
 
