@@ -38,10 +38,10 @@ let col_names = [
 ]
 
 let default_positions = [
-    new Vector2(512*4, 512*4),
-    new Vector2(512*12, 512*12),
-    new Vector2(512*5, 512*11),
-    new Vector2(512*11, 512*5),
+    new Vector2(512*4, 512*3),
+    new Vector2(512*12, 512*11),
+    new Vector2(512*5, 512*10),
+    new Vector2(512*11, 512*4),
 ]
 
 let last_winner = null;
