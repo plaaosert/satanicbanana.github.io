@@ -461,10 +461,9 @@ class ClusterfuckBall extends WeaponBall {
         this.tier = TIERS.ULTRA;
         this.category = CATEGORIES.POWERED;
         this.tags = [
-            TAGS.RANGED,
-            TAGS.PROJECTILES,
-            TAGS.AOE,
-            TAGS.HOMING,
+            TAGS.MELEE,
+            TAGS.BALANCED,
+            TAGS.SMART
         ];
         
         this.weapon_data = [];
@@ -629,6 +628,8 @@ class ClusterfuckBall extends WeaponBall {
         }
 
         let result = super.hit_other(other, with_weapon_index, dmg);
+
+        result.snd = snd;
 
         return result;
     }
