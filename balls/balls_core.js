@@ -1413,7 +1413,9 @@ function handle_resize(event) {
     document.querySelector(".everything-subcontainer").style.height = canvas_smallest + "px";
 
     layers.bg3.ctx.fillStyle = game_normal_col;
-    layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height)
+    layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height);
+
+    render_watermark();
 
     // show the big scary blocker screen if viewport is bad
     if (true || is_valid_viewport()) {

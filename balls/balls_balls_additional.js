@@ -27,8 +27,8 @@ class ThirteenLongswordsBall extends WeaponBall {
             {pos: new Vector2(16, 68), radius: 8},
         ]))
 
-        this.damage_base = 2
-        this.speeds_range = [80, 240]
+        this.damage_base = 2;
+        this.speeds_range = [80, 240];
 
         this.speeds = new Array(this.weapon_data.length).fill(0).map(_ => random_float(...this.speeds_range, this.board.random));
         
@@ -436,7 +436,70 @@ class SuperDummyBall extends WeaponBall {
 }
 
 
+class SuperNeedleBall extends NeedleBall {
+    static ball_name = "Super Needle";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed, can_clone=true, splitcnt=0) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed, can_clone);
+
+        this.name = "Super Needle";
+        this.description_brief = "Same as Needle in every way, but children can copy too.";
+        this.level_description = "Increases split chance and reduces HP lost from splitting.";
+        this.max_level_description = "Applies poison instead for 1s each. Poison deals the full DOT for its duration and refreshes when stacked.";
+        this.quote = "Many thanks for your kind donation! It's always hard getting food\non the table as a mother of six trillion.";
+    
+        this.splitcnt = splitcnt;
+        
+        this.tier = TIERS.S;
+
+        this.radius = this.radius * Math.pow(0.75, this.splitcnt);
+        this.weapon_data.forEach(w => w.size_multiplier *= Math.pow(0.6, this.splitcnt));
+    }
+
+    clone_chance() {
+        let c = this.board.random();
+        if (this.can_clone && c < this.split_chance) {
+            let hp_proportion = Math.floor(this.hp * this.split_ratio);
+
+            if (hp_proportion > 0) {
+                let new_ball = new SuperNeedleBall(
+                    this.board,
+                    this.mass, this.radius, this.colour, this.bounce_factor,
+                    this.friction_factor, this.player, this.level, this.reversed,
+                    true, this.splitcnt + 1
+                );
+
+                new_ball.hp = hp_proportion * 4;
+                new_ball.apply_invuln(BALL_INVULN_DURATION);
+
+                if (christmas) {
+                    let hat_particle = new Particle(new_ball.position, 0, new_ball.radius / this.radius, entity_sprites.get("festive red hat"), 0, 99999, false);
+                    board.spawn_particle(hat_particle, new_ball.position);
+
+                    new_ball.linked_hat_particle = hat_particle;
+                }
+
+                if (true) {
+                    let hp_lost = hp_proportion - (hp_proportion * this.split_hp_save);
+
+                    this.lose_hp(hp_lost, this);
+                }
+
+                new_ball.show_stats = false;
+
+                this.board?.spawn_ball(new_ball, this.position);
+
+                new_ball.add_impulse(random_on_circle(random_float(6000, 10000, this.board.random), this.board.random));
+
+                this.children.push(new_ball);
+                new_ball.parent = this;
+            }
+        }
+    }
+}
+
+
 let additional_selectable_balls = [
     ThirteenLongswordsBall, AStickBall, ThirteenSticksBall, GreatsordBall,
-    ExtralongswordBall, SuperDummyBall,
+    ExtralongswordBall, SuperDummyBall, SuperNeedleBall
 ]
