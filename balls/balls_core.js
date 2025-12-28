@@ -387,11 +387,11 @@ let titles = [
     "",
     "Sunrise", "Winter Morning", "Summer Rain", "Amazon Queen",
     "Waterfall", "Blossom Time", "Starlight", "Dolphin Play",
-    "Twilight", "Underwater Sun", "Ice Tower", "Voyage",
-    "Chronologica", "Alice"
+    "Underwater Sun", "Ice Tower", "Voyage", "Chronologica",
+    "Alice"
 ]
 
-for (let i=1; i<=14; i++) {
+for (let i=1; i<=13; i++) {
     audios_list.push([`2048_${i}`, `https://scrimblo.foundation/uploads/2048_${i}.mp3`, titles[i], "2048 (3DS)"]);
 }
 

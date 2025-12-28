@@ -42,7 +42,7 @@ const ANIMATION_STANDARD_DATA = {
             {frame: 9, snd: "eyebeam_fire"},
             {frame: 9, display: true},
         ],
-        offset: new Vector2(-0.2, 0.25),
+        offset: new Vector2(-0.25, 0.25),
     },
 
     load: {
@@ -1169,7 +1169,10 @@ class UnarmedBall extends WeaponBall {
 class HammerBall extends WeaponBall {
     static ball_name = "Hammer";
 
-    static AVAILABLE_SKINS = ["Squeaky", "Mogul"];
+    static AVAILABLE_SKINS = [
+        "Squeaky",  // Refticus
+        "Mogul",    // Ryn
+    ];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
@@ -1339,7 +1342,12 @@ class HammerBall extends WeaponBall {
 class SordBall extends WeaponBall {
     static ball_name = "SORD";
 
-    static AVAILABLE_SKINS = ["Lightning", "Iron", "Faithful", "RAM"];
+    static AVAILABLE_SKINS = [
+        "Lightning",  // Refticus
+        "Iron",       // Ryn
+        "Faithful",   // Homestuck (SORD...)
+        "RAM"         // Refticus
+    ];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
@@ -2096,7 +2104,10 @@ class NeedleBall extends WeaponBall {
 class RailgunBall extends WeaponBall {
     static ball_name = "Railgun";
 
-    static AVAILABLE_SKINS = ["Chicken", "Soaker"];
+    static AVAILABLE_SKINS = [
+        "Chicken",  // Ryn
+        "Soaker"    // Boggy
+    ];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
@@ -2282,7 +2293,9 @@ class RailgunBall extends WeaponBall {
 class PotionBall extends WeaponBall {
     static ball_name = "Potion";
 
-    static AVAILABLE_SKINS = ["Ornate"];
+    static AVAILABLE_SKINS = [
+        "Ornate",  // Refticus
+    ];
 
     static potion_names = ["Rupture", "Poison", "Pure damage", "Time stop"];
     static potion_cols = [Colour.red, Colour.green, new Colour(0, 96, 255, 255), Colour.from_hex("#FF84F8")];
@@ -2512,7 +2525,11 @@ class PotionBall extends WeaponBall {
 class GrenadeBall extends WeaponBall {
     static ball_name = "Grenade";
 
-    static AVAILABLE_SKINS = ["bao", "blao", "Nostalgic"];
+    static AVAILABLE_SKINS = [
+        "bao",        // Me (plaaosert)
+        "blao",       // Grenade: Refticus | Explosion: Me (plaaosert)
+        "Nostalgic",  // Boggy
+    ];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
@@ -2760,7 +2777,9 @@ class GrenadeProjectileBall extends WeaponBall {
 class GlassBall extends WeaponBall {
     static ball_name = "Glass";
 
-    static AVAILABLE_SKINS = ["Papercut"];
+    static AVAILABLE_SKINS = [
+        "Papercut",  // Vitawrap
+    ];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
@@ -3646,7 +3665,9 @@ class HandBall extends WeaponBall {
 class ChakramBall extends WeaponBall {
     static ball_name = "Chakram";
     
-    static AVAILABLE_SKINS = ["Fidget"];
+    static AVAILABLE_SKINS = [
+        "Fidget",  // Ryn
+    ];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
@@ -3861,7 +3882,9 @@ class ChakramBall extends WeaponBall {
 class WandBall extends WeaponBall {
     static ball_name = "Wand";
 
-    static AVAILABLE_SKINS = ["Whimsy"];
+    static AVAILABLE_SKINS = [
+        "Whimsy",  // Boggy
+    ];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
@@ -4392,7 +4415,10 @@ class WandGreenBall extends WeaponBall {
 class AxeBall extends WeaponBall {
     static ball_name = "Axe";
 
-    static AVAILABLE_SKINS = ["Reaper", "Ancient"];
+    static AVAILABLE_SKINS = [
+        "Reaper",   // Boggy
+        "Ancient",  // Refticus
+    ];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);

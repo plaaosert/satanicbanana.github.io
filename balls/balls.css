@@ -376,8 +376,12 @@ button:disabled {
 }
 
 .speed-control.button {
-  width: 3vmin;
-  height: 3vmin;
+  min-width: 3vmin;
+  max-width: 3vmin;
+
+  min-height: 3vmin;
+  max-height: 3vmin;
+
 
   align-self: unset;
 
