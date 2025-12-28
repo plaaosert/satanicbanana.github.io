@@ -175,12 +175,12 @@ class ThirteenSticksBall extends WeaponBall {
         ];
 
         this.weapon_data = new Array(13).fill("").map(_ => new BallWeapon(1, "stick", [
-                {pos: new Vector2(88, 66), radius: 10},
-                {pos: new Vector2(68, 74), radius: 10},
-                {pos: new Vector2(48, 74), radius: 10},
-                {pos: new Vector2(32, 72), radius: 10},
-                {pos: new Vector2(16, 68), radius: 10},
-            ]))
+            {pos: new Vector2(88, 66), radius: 10},
+            {pos: new Vector2(68, 74), radius: 10},
+            {pos: new Vector2(48, 74), radius: 10},
+            {pos: new Vector2(32, 72), radius: 10},
+            {pos: new Vector2(16, 68), radius: 10},
+        ]))
 
         this.speeds_range = [60, 160]
 

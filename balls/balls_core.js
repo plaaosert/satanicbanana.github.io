@@ -2177,7 +2177,7 @@ function render_postopening(board) {
         if (starting_fullpause_timeout > 0) {
             play_audio("battle_royale_gong");
         }
-        play_music(`2048_${random_int(0, 14, board.random)+1}`, 0.2);
+        play_music(`2048_${random_int(0, 13, board.random)+1}`, 0.2);
         opening_state.cnt = null;
     }
 
