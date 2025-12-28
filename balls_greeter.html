@@ -98,6 +98,36 @@
                 background-color: black;
             }
 
+            /* */
+
+            .links .link.tiktok {
+                background-color: #1a1a1a;
+            }
+
+            .links .link.tiktok:hover {
+                background-color: #555;
+            }
+
+            .links .link.tiktok.down {
+                background-color: black;
+            }
+
+            /* */
+
+            .links .link.instagram {
+                background-color: #303;
+            }
+
+            .links .link.instagram:hover {
+                background-color: #609;
+            }
+
+            .links .link.instagram.down {
+                background-color: black;
+            }
+
+            /* */
+
             .links .link .text {
                 display: flex;
                 flex-direction: column;
@@ -109,11 +139,14 @@
                 border: 1px solid white;
                 background-color: black;
 
-                width: 4vmin;
+                width: round(4vmin, 16px);
+                height: round(4vmin, 16px);
 
                 margin-right: 1vmin;
 
                 padding: 0.5vmin;
+
+                image-rendering: pixelated;
             }
 
             .links .link a {
@@ -127,6 +160,14 @@
 
             .links .link.blue a {
                 color: cyan;
+            }
+
+            .links .link.tiktok a {
+                color: #fff;
+            }
+
+            .links .link.instagram a {
+                color: #e8f;
             }
 
             .links .link .desc {
@@ -144,6 +185,19 @@
 
             .highlight {
                 color: #0ff;
+            }
+
+            .link-set {
+                display: flex;
+                flex-direction: row;
+
+                margin-bottom: 4vmin;
+            }
+
+            .link-set .link {
+                margin: 0;
+                margin-left: 2vmin;
+                margin-right: 2vmin;
             }
         </style>
     </head>
@@ -191,6 +245,30 @@
                     <div class="text">
                         <a href="https://plaao.net/balls/index.html">Balls</a>
                         <span class="desc">This is probably what you're here for.</span>
+                    </div>
+                </div>
+
+                <div class="link-set">
+                    <div class="link tiktok">
+                        <img src="balls/img/icons/tiktok.png">
+                        <div class="text">
+                            <a href="https://www.tiktok.com/@plaaoballs">TikTok</a>
+                            <span class="desc">This is my only TikTok account.</span>
+                        </div>
+                    </div>
+                    <div class="link dangerous">
+                        <img src="balls/img/icons/youtube.png">
+                        <div class="text">
+                            <a href="https://www.youtube.com/@plaaoballs">YouTube</a>
+                            <span class="desc">YouTube alt specifically for plaaoballs.</span>
+                        </div>
+                    </div>
+                    <div class="link instagram">
+                        <img src="balls/img/icons/instagram.png">
+                        <div class="text">
+                            <a href="https://www.instagram.com/plaaoballs/reels/">Instagram</a>
+                            <span class="desc">Instagram alt specifically for plaaoballs.</span>
+                        </div>
                     </div>
                 </div>
 

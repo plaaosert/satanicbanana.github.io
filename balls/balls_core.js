@@ -582,6 +582,7 @@ class HammerMogulMoneyParticle extends Particle {
 
         this.gravity = board.gravity.mul(0.5);
         this.friction = 3500;
+        this.max_downward_speed = 1200;
 
         this.fall_breakpoints = [
             -3000, -1200, 0, 400, 700
@@ -589,6 +590,8 @@ class HammerMogulMoneyParticle extends Particle {
 
         this.in_starting_anim = true;
         this.frame_granular = 0;
+
+        this.render_behind = true;
     }
 
     pass_time(time_delta) {
@@ -598,6 +601,8 @@ class HammerMogulMoneyParticle extends Particle {
         this.velocity = this.velocity.add(this.gravity.mul(time_delta));
         this.velocity.y = Math.sign(this.velocity.y) * Math.max(0, Math.abs(this.velocity.y) - (this.friction * time_delta));
     
+        this.velocity.y = Math.min(this.velocity.y, this.max_downward_speed);
+
         if (this.in_starting_anim) {
             let sprite_n = 0;
             for (let i=0; i<this.fall_breakpoints.length; i++) {
