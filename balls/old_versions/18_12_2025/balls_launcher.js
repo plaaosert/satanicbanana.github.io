@@ -293,8 +293,6 @@ function exit_battle(save_replay=true) {
         document.querySelector("#save_replay_button").disabled = true;
     }
 
-    stop_music();
-
     game_paused = true;
     update_sim_speed_display();
 }
@@ -302,7 +300,7 @@ function exit_battle(save_replay=true) {
 function enter_battle() {
     Object.keys(layers).forEach(k => layers[k].ctx.clearRect(0, 0, layers[k].canvas.width, layers[k].canvas.height));
 
-    layers.bg3.ctx.fillStyle = game_normal_col;
+    layers.bg3.ctx.fillStyle = "#000"
     layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height)
 
     document.querySelector(".game-container").classList.add("popin");
@@ -437,16 +435,13 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
     setTimeout(() => {
         board = new Board(new Vector2(512 * 16, 512 * 16));
 
-        let skipping = searching || document.querySelector("#skip_intro_checkbox").checked;
-
         // set up random seed and framespeed
+        
         board.expected_fps = framespeed;
         board.forced_time_deltas = framespeed == 0 ? 0 : 1000 / framespeed;
         board.set_random_seed(seed);
 
         let balls = [];
-
-        skipping = searching || document.querySelector("#skip_intro_checkbox").checked;
 
         cols.forEach((col, index) => {
             let ball_proto = ball_classes[index];
@@ -469,8 +464,6 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
 
                     ball.linked_hat_particle = hat_particle;
                 }
-
-                ball.display = skipping;
 
                 balls.push(ball_proto);
             }
@@ -502,12 +495,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
             render_victory_enabled = true;
         }
 
-        starting_fullpause_timeout = skipping ? 0 : 7;
-        fullpause_timeout = starting_fullpause_timeout;
-        opening_state = {};
-        if (skipping) {
-            opening_state.cnt = 3;
-        }
+        fullpause_timeout = searching ? 0 : 1;
     }, 0);
 
     enter_battle();
@@ -762,7 +750,6 @@ function setup_match_search(num_candidates, settings) {
                     cancel_match_search();
                     let response = confirm("Found it!\n\nPlay now?");
                     console.log(`Tension: ${replay_picked.tension.toFixed(2)}`);
-                    console.log(`Highest survivor hp: ${highest_survivor_hp}`);
                     console.log(replay_picked.replay);
                     if (response) {
                         load_replay(replay_picked.replay);
@@ -942,11 +929,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // set up to try and match the frame speed with the user's fps
     let try_detect_framerate = () => {
-        if (audios_loaded < audios_required || num_textures_loaded < num_textures_needed) {
-            setTimeout(try_detect_framerate, 1000);
-            return;
-        }
-
         if (user_interacted_with_fps_select) {
             console.log(`User interacted - aborting check`);
             return;  // dont fuck with the user if they already touched the page
@@ -979,11 +961,9 @@ document.addEventListener("DOMContentLoaded", function() {
         document.querySelector("#fps-select").value = `1/${fps_picked}`;
     }
 
-    setTimeout(try_detect_framerate, 500);
-    setTimeout(try_detect_framerate, 750);
-    
-    setTimeout(try_detect_framerate, 1000);
-    setTimeout(try_detect_framerate, 1250);
+    setTimeout(try_detect_framerate, 200);
+    setTimeout(try_detect_framerate, 400);
+    setTimeout(try_detect_framerate, 600);
 
     window.addEventListener("resize", handle_resize);
 
@@ -1063,11 +1043,8 @@ document.addEventListener("DOMContentLoaded", function() {
     randomise_ballselect('ball1');
     randomise_ballselect('ball2');
 
-    // document.querySelector("select[name='ball1']").value = "Grenade";
-    // document.querySelector("select[name='ball2']").value = "Grenade";
-    // document.querySelector("select[name='ball3']").value = "Grenade";
-    // document.querySelector("select[name='ball4']").value = "Grenade";
-
+    // document.querySelector("select[name='ball1']").value = "DummyBall";
+    // document.querySelector("select[name='ball2']").value = "SordBall";
 
     update_ballinfo('ball1');
     update_ballinfo('ball2');
@@ -1104,8 +1081,8 @@ document.addEventListener("DOMContentLoaded", function() {
                     }
                 }
 
-                document.querySelector("select[name='ball1']").value = selectable_balls_for_random[ball1_index].ball_name;
-                document.querySelector("select[name='ball2']").value = selectable_balls_for_random[ball2_index].ball_name;
+                document.querySelector("select[name='ball1']").value = selectable_balls_for_random[ball1_index].name;
+                document.querySelector("select[name='ball2']").value = selectable_balls_for_random[ball2_index].name;
 
                 update_ballinfo('ball1');
                 update_ballinfo('ball2');

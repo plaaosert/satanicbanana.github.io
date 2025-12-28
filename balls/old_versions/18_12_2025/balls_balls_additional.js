@@ -389,54 +389,6 @@ class ExtralongswordBall extends WeaponBall {
 }
 
 
-class SuperDummyBall extends WeaponBall {
-    // transforms into unarmedball when it takes a hit
-    static ball_name = "Super Dummy";
-    
-    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
-        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
-        
-        this.name = "Super Dummy";
-        this.description_brief = "Has no weapons. Starts on 25 HP, gains more max HP per level (+25 per level).";
-        this.level_description = "Gains more max HP per level (+25 per level).";
-        this.max_level_description = "Constantly heals based on missing HP (max 50%/s)";
-
-        this.tier = TIERS.DISMAL;
-        this.category = CATEGORIES.SILLY;
-        this.tags = [
-
-        ];
-
-        this.entry_animation = "load";
-        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
-        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
-    
-        this.max_hp = 25 + (this.level * 25);
-        this.hp = this.max_hp;
-
-        this.heal_speed = 0;
-        if (this.level >= AWAKEN_LEVEL) {
-            this.heal_speed = 0.5;
-        }
-    }
-
-    weapon_step(board, time_delta) {
-        let heal_speed = this.max_hp * (this.heal_speed * (1 - (this.hp / this.max_hp)));
-
-        this.hp = Math.min(this.max_hp, this.hp + (heal_speed * time_delta));
-    }
-
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
-
-        this.write_desc_line(
-            `Max HP: ${this.max_hp}`
-        )
-    }
-}
-
-
 let additional_selectable_balls = [
-    ThirteenLongswordsBall, AStickBall, ThirteenSticksBall, GreatsordBall,
-    ExtralongswordBall, SuperDummyBall,
+    ThirteenLongswordsBall, AStickBall, ThirteenSticksBall, GreatsordBall, ExtralongswordBall
 ]

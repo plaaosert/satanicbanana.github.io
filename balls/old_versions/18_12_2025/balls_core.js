@@ -2,7 +2,7 @@ game_id = "balls";
 
 const FILES_PREFIX = "";
 
-const GAME_VERSION = "27/12/2025";
+const GAME_VERSION = "18/12/2025";
 
 const AILMENT_CHARS = "➴☣♨";
 
@@ -12,7 +12,6 @@ const layer_names = [
     "debug_back",
     "ui1",
     "ui2",
-    "ui3",
     "fg1",
     "fg2",
     "fg3",
@@ -36,15 +35,6 @@ let num_textures_needed = 0;
 const make_damage_numbers = true;
 
 const entity_sprites = new Map([
-    // entries
-    ["entry_impact", 16, "entries/impact/"],
-    ["entry_teleport", 16, "entries/teleport/"],
-    ["entry_wizard_circle", 16, "entries/wizard_circle/"],
-    ["entry_smokebomb", 16, "entries/smokebomb/"],
-    ["entry_snipe", 16, "entries/snipe/"],
-    ["entry_load", 16, "entries/load/"],
-
-    // weapons
     ["SORD", 1, "weapon/"],
     ["SORD_lightning", 1, "weapon/"],
     ["SORD_berserk", 1, "weapon/"],
@@ -200,14 +190,6 @@ const entity_sprites = new Map([
             num_textures_needed++;
             t.addEventListener("load", function() {
                 num_textures_loaded++;
-
-                if (document.querySelector("#graphics_loading")) {
-                    document.querySelector("#graphics_loading").textContent = `${num_textures_loaded}/${num_textures_needed}`;
-                    if (audios_loaded >= audios_required && num_textures_loaded >= num_textures_needed) {
-                        document.querySelector("#loading_prompt").classList.add("hidden");
-                        document.querySelectorAll(".enable-on-full-load").forEach(e => e.disabled = false);
-                    }
-                }
             })
             // t.addEventListener("error", function() {
             //     console.log(`Error loading ${t.src}!`);
@@ -286,7 +268,6 @@ let gain = 0.1;
 gain_node.gain.setValueAtTime(gain, audio_context.currentTime);
 
 let audio_playing = [];
-let music_audio = null;
 
 async function load_audio_item(path) {
     return await load_audio_from_url(`https://plaao.net/balls/${path}`);;
@@ -301,161 +282,78 @@ async function load_audio_from_url(path) {
     return audio_buffer;
 }
 
-let audios_list = [
+async function load_audio() {
     // ultrakill
-    ["parry", 'snd/parry.mp3'],
-    ["parry2", 'snd/parry2.mp3'],
+    audio.set("parry", await load_audio_item('snd/parry.mp3'));
+    audio.set("parry2", await load_audio_item('snd/parry2.mp3'));
     // https://pixabay.com/sound-effects/punch-04-383965/
-    ["impact", 'snd/impact.mp3'],
-    ["impact_heavy", 'snd/impact_heavy.mp3'],
+    audio.set("impact", await load_audio_item('snd/impact.mp3'));
+    audio.set("impact_heavy", await load_audio_item('snd/impact_heavy.mp3'));
     // https://pixabay.com/sound-effects/stick-hitting-a-dreadlock-small-thud-83297/
-    ["thud", "snd/thud.mp3"],
+    audio.set("thud", await load_audio_item("snd/thud.mp3"));
     // game maker classic
-    ["explosion", "snd/explosion.mp3"],
+    audio.set("explosion", await load_audio_item("snd/explosion.mp3"));
     // https://pixabay.com/sound-effects/explosion-312361/
-    ["explosion2", "snd/explosion2.mp3"],
+    audio.set("explosion2", await load_audio_item("snd/explosion2.mp3"));
     // dragon ball z
-    ["strongpunch", "snd/strongpunch.wav"],
-    ["birds_chirping", "snd/birds_chirping.wav"],
-    ["teleport2", "snd/teleport2.wav"],
-    ["land", "snd/land.mp3"],
-    ["wallhit", "snd/wallhit.wav"],
-    ["airrecover_2", "snd/airrecover_2.wav"],
-    ["shenron_eye_glow", "snd/shenron_eye_glow.mp3"],
-    ["mase_charge", "snd/mase_charge.wav"],
-    ["kiblast", "snd/kiblast.wav"],
-    ["disc_fire", "snd/disc_fire.wav"],
-    ["eyebeam_fire", "snd/eyebeam_fire.wav"],
-    // dragon ball z (explosion.wav)
-    ["wall_smash", "snd/wall_smash.mp3"],
+    audio.set("strongpunch", await load_audio_item("snd/strongpunch.wav"));
     // johnny test
-    ["whipcrack", "snd/whipcrack.mp3"],
+    audio.set("whipcrack", await load_audio_item("snd/whipcrack.mp3"));
     // vine thud
-    ["vine_thud", "snd/vine_thud.mp3"],
+    audio.set("vine_thud", await load_audio_item("snd/vine_thud.mp3"));
     // guilty gear: strive (ADV_057.ogg)
-    ["grab", "snd/grab.mp3"],
-    // heat haze shadow 2nd from tekken 7
-    ["unarmed_theme", "https://scrimblo.foundation/uploads/heat_haze_shadow.mp3", "Heat Haze Shadow 2nd", "Tekken 7"],
+    audio.set("grab", await load_audio_item("snd/grab.mp3"));
+    // dragon ball z (explosion.wav)
+    audio.set("wall_smash", await load_audio_item("snd/wall_smash.mp3"));
+    // heat haze shadow from tekken 7
+    audio.set("unarmed_theme", await load_audio_from_url("https://scrimblo.foundation/uploads/heat_haze_shadow.mp3"))
     // berserk (2016)
-    ["CLANG", "snd/CLANG.mp3"],
+    audio.set("CLANG", await load_audio_item("snd/CLANG.mp3"));
     // edited versions of the originals
-    ["impact_shitty", 'snd/impact_shitty.mp3'],
-    ["parry_shitty", 'snd/parry_shitty.mp3'],
+    audio.set("impact_shitty", await load_audio_item('snd/impact_shitty.mp3'));
+    audio.set("parry_shitty", await load_audio_item('snd/parry_shitty.mp3'));
     // edited from https://www.youtube.com/watch?v=lMQGioXwbnI
-    ["chicken", 'snd/chicken.mp3'],
+    audio.set("chicken", await load_audio_item('snd/chicken.mp3'));
     // https://pixabay.com/sound-effects/retro-hurt-1-236672/
-    ["impact_8bit", 'snd/impact_8bit.mp3'],
-    ["impact_heavy_8bit", 'snd/impact_heavy_8bit.mp3'],
+    audio.set("impact_8bit", await load_audio_item('snd/impact_8bit.mp3'));
+    audio.set("impact_heavy_8bit", await load_audio_item('snd/impact_heavy_8bit.mp3'));
     // https://freesound.org/people/Breviceps/sounds/468443/
-    ["impact_squeak", 'snd/impact_squeak.mp3'],
+    audio.set("impact_squeak", await load_audio_item('snd/impact_squeak.mp3'));
     
     // i have no idea (ask vitawrap)
-    ["impact_paper", 'snd/impact_paper.mp3'],
+    audio.set("impact_paper", await load_audio_item('snd/impact_paper.mp3'));
     
     // https://pixabay.com/sound-effects/bow-release-85040/
-    ["bow1", 'snd/bow1.mp3'],
-    ["bow2", 'snd/bow2.mp3'],
+    audio.set("bow1", await load_audio_item('snd/bow1.mp3'));
+    audio.set("bow2", await load_audio_item('snd/bow2.mp3'));
 
     // https://www.youtube.com/watch?v=oZK79uueLqk
-    ["gun1", 'snd/gun1.mp3'],
-    ["gun2", 'snd/gun2.mp3'],
-    ["gun3", 'snd/gun3.mp3'],
+    audio.set("gun1", await load_audio_item('snd/gun1.mp3'));
+    audio.set("gun2", await load_audio_item('snd/gun2.mp3'));
+    audio.set("gun3", await load_audio_item('snd/gun3.mp3'));
 
     // https://www.youtube.com/watch?v=fzKjWrFEVBs
-    ["gun_super", 'snd/gun_super.mp3'],
+    audio.set("gun_super", await load_audio_item('snd/gun_super.mp3'));
 
     // https://pixabay.com/sound-effects/coin-flip-shimmer-85750/
-    ["coin", 'snd/coin.mp3'],
+    audio.set("coin", await load_audio_item('snd/coin.mp3'));
 
     // https://pixabay.com/sound-effects/glass-bottle-breaking-351297/
-    ["bottle_smash", 'snd/bottle_smash.mp3'],
+    audio.set("bottle_smash", await load_audio_item('snd/bottle_smash.mp3'));
 
     // https://pixabay.com/sound-effects/bottle-pop-45531/
-    ["bottle_pop", 'snd/bottle_pop.mp3'],
-
-    // Pokemon Rumble (Wii)
-    ["SE-COUNTDOWN", 'snd/SE-COUNTDOWN.wav'],
-    ["battle_royale_gong", 'snd/battle_royale_gong.mp3'],
-
-    // https://pixabay.com/sound-effects/shotgun-146188/
-    ["shotgun", "snd/shotgun.mp3"],
-    ["shotgun2", "snd/shotgun2.mp3"],
-    ["shotgun3", "snd/shotgun3.mp3"],
-]
-
-let titles = [
-    "",
-    "Sunrise", "Winter Morning", "Summer Rain", "Amazon Queen",
-    "Waterfall", "Blossom Time", "Starlight", "Dolphin Play",
-    "Twilight", "Underwater Sun", "Ice Tower", "Voyage",
-    "Chronologica", "Alice"
-]
-
-for (let i=1; i<=14; i++) {
-    audios_list.push([`2048_${i}`, `https://scrimblo.foundation/uploads/2048_${i}.mp3`, titles[i], "2048 (3DS)"]);
+    audio.set("bottle_pop", await load_audio_item('snd/bottle_pop.mp3'));
 }
 
-let audios_required = audios_list.length;
-let audios_loaded = 0;
-
-async function load_audio() {
-    audios_list.forEach(async snd => {
-        if (snd[1].startsWith("https://")) {
-            audio.set(snd[0], [await load_audio_from_url(snd[1]), snd[2], snd[3]])
-        } else {
-            audio.set(snd[0], [await load_audio_item(snd[1]), snd[2], snd[3]])
-        }
-
-        audios_loaded++;
-        if (document.querySelector("#audios_loading")) {
-            document.querySelector("#audios_loading").textContent = `${audios_loaded}/${audios_required}`;
-            if (audios_loaded >= audios_required && num_textures_loaded >= num_textures_needed) {
-                document.querySelector("#loading_prompt").classList.add("hidden");
-                document.querySelectorAll(".enable-on-full-load").forEach(e => e.disabled = false);
-            }
-        }
-    })
-}
-
-function stop_music() {
-    if (music_audio && music_audio[0]) {
-        music_audio[0].source.stop();
-    }
-
-    document.querySelector("#loading_prompt").classList.add("hidden")
-}
-
-function play_music(name, gain=null) {
-    stop_music()
-
-    if (muted)
-        return;
-
-    music_audio = [audio_playing[play_audio(name, gain)], audio.get(name)[1], audio.get(name)[2], name];
-
-    document.querySelector("#loading_prompt").textContent = `♪ - ${music_audio[1]} - ${music_audio[2]}`
-    document.querySelector("#loading_prompt").classList.remove("hidden");
-}
-
-function play_audio(name, gain=null) {
+function play_audio(name) {
     if (muted)
         return;
 
     let source = audio_context.createBufferSource();
     
-    source.buffer = audio.get(name)[0];
+    source.buffer = audio.get(name);
 
-    let mod_node = gain_node;
-
-    if (gain) {
-        let new_gain_node = audio_context.createGain();
-        new_gain_node.connect(audio_context.destination);
-        new_gain_node.gain.setValueAtTime(gain, audio_context.currentTime);
-
-        mod_node = new_gain_node;
-    }
-
-    source.connect(mod_node);
+    source.connect(gain_node);
 
     let obj = {source: source, ended: false}
     source.addEventListener("ended", () => obj.ended = true);
@@ -510,27 +408,6 @@ class Particle {
         if (this.looping) {
             this.cur_frame = this.cur_frame % this.framecount;
         }
-    }
-}
-
-class PersistentParticle extends Particle {
-    // identical except caps on last frame
-    pass_time(time_delta) {
-        if (this.delay >= 0) {
-            this.delay -= time_delta;
-            if (this.delay < 0) {
-                this.lifetime += -this.delay;
-            }
-
-            return;
-        }
-
-        this.lifetime += time_delta;
-        this.cur_frame = Math.floor(this.lifetime * this.frame_speed)
-        if (this.looping) {
-            this.cur_frame = this.cur_frame % this.framecount;
-        }
-        this.cur_frame = Math.min(this.framecount-1, this.cur_frame);
     }
 }
 
@@ -1407,7 +1284,7 @@ function handle_resize(event) {
 
     document.querySelector(".everything-subcontainer").style.height = canvas_smallest + "px";
 
-    layers.bg3.ctx.fillStyle = game_normal_col;
+    layers.bg3.ctx.fillStyle = "#000"
     layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height)
 
     // show the big scary blocker screen if viewport is bad
@@ -1590,7 +1467,7 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
     // so need to translate those positions into the canvas space
     // rely upon it being square... for now
 
-    let screen_scaling_factor = canvas_width / board.size.x;
+    screen_scaling_factor = canvas_width / board.size.x;
 
     let ctx = layers.fg2.ctx;
 
@@ -1833,12 +1710,7 @@ function render_descriptions(board) {
     
     if (layout) {
         filtered_balls.forEach((ball, index) => {
-            let l_base = layout[index];
-
-            let l = [
-                Math.round(l_base[0] + ball.desc_shake_offset[0]),
-                Math.round(l_base[1] + ball.desc_shake_offset[1]),
-            ]
+            let l = layout[index];
 
             let ball_col = ball.get_current_desc_col().css();
             let ball_border_col = ball.get_current_border_col().css();
@@ -1850,44 +1722,28 @@ function render_descriptions(board) {
                 false, 1, ball_border_col
             )
 
-            let hp = Math.max(0, Math.min(ball.max_hp, ball.hp));
+            let hp = Math.max(0, Math.min(100, ball.hp));
             let hp_ailments = ball.get_ailment_hp_loss();
             // we want to write first the healthy hp, then the poison hp, then the rupture hp
             // #####===:::
-            
-            let max_segments = 40;
-            let chars = "#<=: ";
-
-            // step 1: get the health vs empty
-            // - always round health up and empty down
-            let hp_bar_filled_segs = Math.ceil((ball.hp / ball.max_hp) * max_segments);
-            let hp_bar_empty_segs = max_segments - hp_bar_filled_segs;
-
-            // step 2: get the unaffected health vs affected
-            // - always round affected health up
-            let total_ailment = hp_ailments.rupture + hp_ailments.poison + hp_ailments.burn;
-            let unailed_hp = Math.max(0, hp - total_ailment);
-            let hp_bar_unaffected_segs = Math.floor((unailed_hp / hp) * hp_bar_filled_segs);
-            let hp_bar_affected_segs = hp_bar_filled_segs - hp_bar_unaffected_segs;
-
-            // step 3: split the affected health 
-            // order is rupture, poison, burn
-            // same deal as the other steps, burn should take the final remainder
-            let hp_bar_rupture_segs = Math.floor((hp_ailments.rupture / total_ailment) * hp_bar_affected_segs);
-            let hp_bar_nonrupture_segs = hp_bar_affected_segs - hp_bar_rupture_segs;
-
-            // 3.b (poison, burn)
-            let hp_bar_poison_segs = Math.ceil((hp_ailments.poison / total_ailment) * hp_bar_nonrupture_segs);
-            let hp_bar_burn_segs = hp_bar_nonrupture_segs - hp_bar_poison_segs;
-
-            let segs = [
-                hp_bar_unaffected_segs, hp_bar_rupture_segs, hp_bar_poison_segs, hp_bar_burn_segs, hp_bar_empty_segs
-            ];
-
+            let hp_after_ailments = Math.max(0, Math.min(100, hp - (hp_ailments.poison + hp_ailments.rupture)));
             let str = "";
-            segs.forEach((seg, i) => {
-                str += chars[i].repeat(seg);
-            })
+            let max_segments = 40;
+            let remaining_segments = max_segments;
+            let hp_segments = (hp_after_ailments / 100) * max_segments;
+            let rupture_segments = (Math.min(hp_ailments.rupture, hp) / 100) * max_segments;
+            let poison_segments = (Math.min(hp_ailments.poison, hp) / 100) * max_segments;
+            let empty_segments = Math.max(0, max_segments - (hp_segments + rupture_segments + poison_segments));
+
+            // now we have all our segments
+            let chars = "#<= ";
+            let adjustment = 0;
+            // i need to think more on how to "rasterize" these segments so that:
+            // - hp never shows empty if the ball is alive
+            // - even if all hp is taken up by ailments
+            // (so need to ceil pretty much all the hp)
+            // (but this causes the issue of making ailments take up too much space on the bar)
+            str = "#".repeat(Math.ceil(hp_segments + rupture_segments + poison_segments)) + " ".repeat(Math.floor(empty_segments));
 
             write_pp_bordered_text(
                 layers.ui2.ctx,
@@ -1928,309 +1784,13 @@ function render_descriptions(board) {
     }
 }
 
-function render_opening(board, time_delta) {
-    layers.ui2.ctx.clearRect(0, 0, canvas_width, canvas_height);
-
-    let t_raw = starting_fullpause_timeout - fullpause_timeout;
-
-    let screen_scaling_factor = canvas_width / board.size.x;
-
-    // wait for 0.5 seconds to allow me to start recording
-    let t = t_raw - 0.5;
-
-    if (!opening_state.sound) {
-        opening_state.sound = null;
-    }
-
-    if (t >= -100 && !opening_state.sound) {
-        // opening_state.sound = audio_playing[play_audio("birds_chirping")];
-    }
-
-    // add opening animations 100ms apart; remember we need to manually step particles
-    if (!opening_state.balls) {
-        opening_state.balls = 0;
-    }
-
-    if (!opening_state.balls_anim_snd) {
-        opening_state.balls_anim_snd = [];
-    }
-
-    let balls_num = board.balls.length;
-    if (opening_state.balls < balls_num) {
-        let req = opening_state.balls * (2 / balls_num);
-        if (t > req) {
-            let ball = board.balls[opening_state.balls]
-            let pos = ball.position.add(
-                new Vector2(0, -ball.radius / 3)
-            ).add(ball.entry_animation_offset.mul(ball.radius));
-            let part = new PersistentParticle(pos, 0, 2.5, entity_sprites.get("entry_" + board.balls[opening_state.balls].entry_animation), 18, 100, false);
-            board.spawn_particle(part, pos);
-
-            if (opening_state.balls == 0 && opening_state.sound) {
-                opening_state.sound.source.stop();
-            }
-
-            opening_state.balls++;
-            opening_state.balls_anim_snd.push(0);
-        }
-    }
-
-    board.particles_step(time_delta);
-    
-    // for each particle with frame 8+, start showing the respective ball
-    board.particles.forEach((p, i) => {
-        let cur_anim_snd = opening_state.balls_anim_snd[i];
-        let frame = board.balls[i].entry_animation_keyframes[cur_anim_snd];
-        while (frame && p.cur_frame >= frame.frame) {
-            if (frame.snd) {
-                play_audio(frame.snd);
-            }
-
-            if (frame.display !== undefined) {
-                board.balls[i].display = frame.display;
-            }
-
-            opening_state.balls_anim_snd[i]++;
-            cur_anim_snd = opening_state.balls_anim_snd[i];
-            frame = board.balls[i].entry_animation_keyframes[cur_anim_snd];
-        }
-    });
-
-    let ball_stagger = 2;
-    let base_delay = 1;
-
-    board.balls.forEach((ball, i) => {
-        let req = base_delay + 0.5 + (i * (ball_stagger / balls_num));
-
-        if (t > req) {
-            let pos = ball.position.add(
-                new Vector2(0, ball.radius * 1.75)
-            ).mul(screen_scaling_factor).add(
-                new Vector2(0, 44)
-            );
-
-            write_pp_bordered_text(
-                layers.ui2.ctx,
-                ball.tags.filter(tag => TAGS_INFO[tag].display_ingame).map(tag => TAGS_INFO[tag].name).join(" | "),
-                pos.x, pos.y,
-                "#bbb",
-                CANVAS_FONTS, 12, true,
-                3, ball.get_current_border_col().css()
-            )
-
-            layers.ui2.ctx.beginPath();
-
-            let start_pos = ball.position.add(ball.velocity.normalize().mul(ball.radius * 1.5)).mul(screen_scaling_factor);
-            let end_pos = ball.position.add(ball.velocity.normalize().mul(ball.radius * (1.5 + (ball.velocity.magnitude() / 3500)))).mul(screen_scaling_factor);
-
-            let dir = end_pos.sub(start_pos).normalize();
-
-            let arr1 = start_pos.add(dir.rotate(Math.PI * 0.25).mul(-16));
-            let arr2 = start_pos.add(dir.rotate(Math.PI * -0.25).mul(-16));
-
-            layers.ui2.ctx.moveTo(start_pos.x, start_pos.y);
-            // layers.ui2.ctx.moveTo(end_pos.x, end_pos.y);
-
-            layers.ui2.ctx.lineTo(arr1.x, arr1.y);
-            layers.ui2.ctx.moveTo(start_pos.x, start_pos.y);
-            layers.ui2.ctx.lineTo(arr2.x, arr2.y);
-
-            layers.ui2.ctx.strokeStyle = ball.get_current_border_col().css();
-            layers.ui2.ctx.lineWidth = 8;
-            layers.ui2.ctx.stroke();
-
-            layers.ui2.ctx.strokeStyle = "white";
-            layers.ui2.ctx.lineWidth = 2;
-            layers.ui2.ctx.stroke();
-
-            layers.ui2.ctx.closePath();
-        }
-    });
-
-    board.balls.forEach((ball, i) => {
-        let req = base_delay + 0 + (i * (ball_stagger / balls_num));
-
-        if (t > req) {
-            let pos = ball.position.add(
-                new Vector2(0, ball.radius * 1.75)
-            ).mul(screen_scaling_factor);
-            write_pp_bordered_text(
-                layers.ui2.ctx,
-                ball.name,
-                pos.x, pos.y,
-                ball.get_current_desc_col().css(),
-                CANVAS_FONTS, 24, true,
-                3, ball.get_current_border_col().css()
-            )
-        }
-    })
-
-    board.balls.forEach((ball, i) => {
-        let req = base_delay + 0.25 + (i * (ball_stagger / balls_num));
-
-        if (t > req) {
-            let pos = ball.position.add(
-                new Vector2(0, ball.radius * 1.75)
-            ).mul(screen_scaling_factor).add(
-                new Vector2(0, 24)
-            );
-
-            write_pp_bordered_text(
-                layers.ui2.ctx,
-                ball.category,
-                pos.x - 64, pos.y,
-                CATEGORIES_INFO[ball.category].col.css(),
-                CANVAS_FONTS, 18, true,
-                3, ball.get_current_border_col().css()
-            )
-
-            write_pp_bordered_text(
-                layers.ui2.ctx,
-                "|",
-                pos.x, pos.y,
-                "white",
-                CANVAS_FONTS, 18, true,
-                3, ball.get_current_border_col().css()
-            )
-
-            write_pp_bordered_text(
-                layers.ui2.ctx,
-                "Tier: ",
-                pos.x + 48, pos.y,
-                "white",
-                CANVAS_FONTS, 18, true,
-                3, ball.get_current_border_col().css()
-            )
-
-            write_pp_bordered_text(
-                layers.ui2.ctx,
-                ball.tier,
-                pos.x + 48 + 24, pos.y,
-                TIERS_INFO[ball.tier].col.css(),
-                CANVAS_FONTS, 18, false,
-                3, ball.get_current_border_col().css()
-            )
-        }
-    })
-
-    let base_req = 3.5;
-    if (opening_state.cnt === undefined) {
-        opening_state.cnt = -1;
-    }
-
-    if (t > base_req) {
-        let local_t = t - base_req;
-        let pos = new Vector2(canvas_height / 2, (canvas_width / 2));
-
-        let speed = 1;
-        let cnt = Math.floor(local_t / speed);
-        if (cnt < 3) {
-            let num = 3 - cnt;
-            let left = local_t - (cnt * speed);
-
-            write_pp_bordered_text(
-                layers.ui2.ctx,
-                num,
-                pos.x, pos.y,
-                "white",
-                CANVAS_FONTS, 128, true,
-                4, "#444"
-            )
-            
-            let bar_len = 48;
-            let proportion = (speed - left) / speed;
-            proportion = Math.pow(proportion, 1.75);
-            write_pp_bordered_text(
-                layers.ui2.ctx,
-                `${"█".repeat(Math.round(proportion * bar_len))}${" ".repeat(Math.round((1 - proportion) * bar_len))}`,
-                pos.x, pos.y + 32,
-                "white",
-                CANVAS_FONTS, 6, true,
-                2, "#444"
-            )
-        }
-
-        if (opening_state.cnt != cnt) {
-            opening_state.cnt = cnt;
-            if (cnt >= 3) {
-                // nothing
-            } else {
-                play_audio("SE-COUNTDOWN");
-            }
-        }
-    }
-}
-
-function render_postopening(board) {
-    layers.ui3.ctx.clearRect(0, 0, canvas_width, canvas_height);
-
-    let t = board.duration;
-
-    let maxt = 0.75;
-
-    if (opening_state.cnt) {
-        if (starting_fullpause_timeout > 0) {
-            play_audio("battle_royale_gong");
-        }
-        play_music(`2048_${random_int(0, 14, board.random)+1}`, 0.2);
-        opening_state.cnt = null;
-    }
-
-    if (t < maxt && starting_fullpause_timeout > 0) {
-        let pos = new Vector2(canvas_height / 2, (canvas_width / 2));
-
-        let freq = 1000000;
-        let half_freq = freq / 2;
-        let opacity = Math.abs((t % freq) - half_freq) * (1 / half_freq);
-
-        let displacement_max = 0;
-        let prop = t / maxt;
-        let displacement = (1 - Math.pow(1 - prop, 1.5)) * displacement_max;
-
-        let penalty = (1 - Math.pow(1 - prop, 1.5));
-
-        let opac = opacity - penalty;
-        layers.ui3.ctx.globalAlpha = Math.max(0, opac);
-        write_pp_bordered_text(
-            layers.ui3.ctx,
-            "FIGHT",
-            pos.x - displacement, pos.y,
-            Colour.white.css(),
-            CANVAS_FONTS, 128, true,
-            4, (new Colour(68, 68, 68, 255)).css(),
-        )
-
-        write_pp_bordered_text(
-            layers.ui3.ctx,
-            "FIGHT",
-            pos.x + displacement, pos.y,
-            Colour.white.css(),
-            CANVAS_FONTS, 128, true,
-            4, (new Colour(68, 68, 68, 255)).css(),
-        )
-
-        let bar_len = 128;
-        write_pp_bordered_text(
-            layers.ui3.ctx,
-            `${"█".repeat(Math.round(opac * bar_len))}${" ".repeat(Math.round((1 - opac) * bar_len))}`,
-            pos.x, pos.y + 32,
-            "white",
-            CANVAS_FONTS, 6, true,
-            2, "#444"
-        )
-
-        layers.ui3.ctx.globalAlpha = 1;
-    }
-}
-
 let last_frame = Date.now();
 
 let colliding_parries = new Set();
 let colliding_proj2projs = new Set();
 
 let max_game_duration = 300;
-let game_normal_col = new Colour(8, 8, 8, 255).css();
-let game_end_col = new Colour(36, 0, 0, 255).css();
+let game_end_col = new Colour(36, 0, 0).css();
 
 let game_speed_mult = 1;
 let game_paused = false;
@@ -2243,9 +1803,7 @@ let game_fps_catchup_modifier = 1;
 
 let total_steps = 0;
 
-let starting_fullpause_timeout = 0;
 let fullpause_timeout = 0;
-let opening_state = {};
 
 function game_loop() {
     framecount++;
@@ -2263,13 +1821,7 @@ function game_loop() {
         } else {
             render_game(board, keys_down["KeyQ"], false);
         }
-
-        if (fullpause_timeout > 0) {
-            render_opening(board, (frame_start_time - last_frame_time));
-        } else {
-            render_postopening(board);
-            render_descriptions(board);
-        }
+        render_descriptions(board);
     }
 
     // render_diagnostics(board);
@@ -2720,7 +2272,6 @@ function game_loop() {
 
                 if (match_end_timeout <= 0) {
                     audio_playing.forEach(audio => audio.source.stop());
-                    document.querySelector("#loading_prompt").classList.add("hidden");
 
                     if (board.remaining_players().length == 1 && winrate_tracking) {
                         let winning_balls = board.get_all_player_balls(board.remaining_players()[0]).filter(ball => ball.show_stats);

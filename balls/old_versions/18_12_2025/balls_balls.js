@@ -2,58 +2,6 @@ const AWAKEN_LEVEL = 99;
 const WEAPON_SIZE_MULTIPLIER = 16;
 const PROJ_SIZE_MULTIPLIER = 16;
 
-const ANIMATION_STANDARD_DATA = {
-    impact: {
-        keyframes: [
-            {frame: 2, snd: "airrecover_2"},
-            {frame: 9, snd: "wallhit"},
-            {frame: 8, display: true},
-        ],
-        offset: Vector2.zero,
-    },
-
-    teleport: {
-        keyframes: [
-            {frame: 2, snd: "teleport2"},
-            {frame: 4, display: true},
-        ],
-        offset: Vector2.zero,
-    },
-
-    wizard_circle: {
-        keyframes: [
-            {frame: 2, snd: "mase_charge"},
-            {frame: 11, display: true},
-        ],
-        offset: new Vector2(0, 0.5),
-    },
-
-    smokebomb: {
-        keyframes: [
-            {frame: 7, snd: "kiblast"},
-            {frame: 9, display: true},
-        ],
-        offset: new Vector2(0, 0.25),
-    },
-
-    snipe: {
-        keyframes: [
-            {frame: 1, snd: "disc_fire"},
-            {frame: 9, snd: "eyebeam_fire"},
-            {frame: 9, display: true},
-        ],
-        offset: new Vector2(-0.2, 0.25),
-    },
-
-    load: {
-        keyframes: [
-            {frame: 2, snd: "mase_charge"},
-            {frame: 11, display: true},
-        ],
-        offset: new Vector2(0, 0.5),
-    },
-}
-
 const TIERS = {
     ULTRA: "ULTRA",
     S: "S",
@@ -133,102 +81,82 @@ const TAGS_INFO = {
     [TAGS.UNTAGGED]: {
         name: "Untagged",
         desc: "@plaaosert has forgotten to tag this ball. Go yell at him.",
-        display_ingame: false,
     },
     [TAGS.MELEE]: {
         name: "Melee",
         desc: "Fights using only melee weapons.",
-        display_ingame: true,
     },
     [TAGS.RANGED]: {
         name: "Ranged",
         desc: "Fights primarily using ranged methods.",
-        display_ingame: true,
     },
     [TAGS.HYBRID]: {
         name: "Hybrid",
         desc: "Relies on both melee and ranged attacks.",
-        display_ingame: true,
     },
     [TAGS.DEFENSIVE]: {
         name: "Defensive",
         desc: "Focused more on avoiding or mitigating damage than quickly dealing it.",
-        display_ingame: true,
     },
     [TAGS.OFFENSIVE]: {
         name: "Offensive",
         desc: "Focused more on quickly dealing large amounts of damage than mitigating opposing hits.",
-        display_ingame: true,
     },
     [TAGS.BALANCED]: {
         name: "Balanced",
         desc: "Does not significantly focus on offensive or defensive strategies.",
-        display_ingame: true,
     },
     [TAGS.ADAPTIVE]: {
         name: "Adaptive",
         desc: "Balance between offense and defense can change at random or in response to situations.",
-        display_ingame: true,
     },
     [TAGS.AILMENTS]: {
         name: "Ailments",
         desc: "Able to apply ailments (poison, rupture, burn) with attacks.",
-        display_ingame: true,
     },
     [TAGS.CHILDREN]: {
         name: "Children",
         desc: "Creates other child balls to defend, attack or support the main ball.",
-        display_ingame: true,
     },
     [TAGS.SCALING]: {
         name: "Scaling",
         desc: "Scales in strength as it meets a specific criterion, e.g. damage or survival time.",
-        display_ingame: true,
     },
     [TAGS.TRANSFORMING]: {
         name: "Transforming",
         desc: "Has the capacity to change significantly during a battle, sometimes becoming a completely new ball.",
-        display_ingame: true,
     },
     [TAGS.PROJECTILES]: {
         name: "Projectiles",
         desc: "Shoots projectiles as part of some or all attacks.",
-        display_ingame: true,
     },
     [TAGS.AOE]: {
         name: "AoE",
         desc: "Weapons or projectiles create an area of effect that persists for some time and applies effects or damage.",
-        display_ingame: true,
     },
     [TAGS.HITSCAN]: {
         name: "Hitscan",
         desc: "Shoots hitscan (instant) projectiles as part of some or all attacks.",
-        display_ingame: true,
     },
     [TAGS.HOMING]: {
         name: "Homing",
         desc: "Projectiles are sometimes or always capable of homing towards targets.",
-        display_ingame: true,
     },
     [TAGS.AUTOAIM]: {
         name: "Auto-aim",
         desc: "An aiming mechanism is sometimes or always able to override typical weapon rotation.",
-        display_ingame: true,
     },
     [TAGS.SMART]: {
         name: "Smart",
         desc: "Attempts to position weapons or adjust velocity to land and/or avoid attacks.",
-        display_ingame: true,
     },
     [TAGS.LEVELS_UP]: {
         name: "Levels up",
         desc: "The \"level\" stat has an effect on this ball, improving it in some way.",
-        display_ingame: false,
     },
     [TAGS.CAN_AWAKEN]: {
         name: "Can awaken",
         desc: "This ball is capable of \"awakening\" at max level which provides it with additional powerful bonuses.",
-        display_ingame: false,
     },
 }
 
@@ -279,10 +207,6 @@ class WeaponBall extends Ball {
         this.category = CATEGORIES.STANDARD;
         this.tags = [TAGS.UNTAGGED];
 
-        this.entry_animation = "impact";
-        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
-        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
-
         // player.stats:
         /*
             damage_bonus       [multiplier]
@@ -316,10 +240,6 @@ class WeaponBall extends Ball {
 
         this.show_stats = true;
         this.display = true;
-        this.desc_shake_intensity = 0;
-        this.desc_shake_offset = Vector2.zero;
-        this.desc_shake_offset_freq_max = 0.02;
-        this.desc_shake_offset_freq = this.desc_shake_offset_freq_max;
 
         this.lifetime = 0;
 
@@ -449,17 +369,12 @@ class WeaponBall extends Ball {
 
     get_ailment_hp_loss() {
         // returns the amount of HP that will be lost to ailments
-        let rupture_amt = Math.max(0, this.rupture_intensity) / WeaponBall.RUPTURE_CALCULATION_CONSTANT;
-        if (rupture_amt < 0.05) {
-            rupture_amt = 0;
-        }
-
         return {
             // i love you integral calculator
             // wow maths is so beautiful actually i should get on that shit again
-            "rupture": rupture_amt,
-            "poison": Math.max(0, this.poison_intensity) * Math.max(0, this.poison_duration),
-            "burn": Math.max(0, this.burn_intensity) * 10  // burn doesn't go down, so take the next 10s
+            "rupture": this.rupture_intensity / WeaponBall.RUPTURE_CALCULATION_CONSTANT,
+            "poison": this.poison_intensity * this.poison_duration,
+            "burn": this.burn_intensity * 10  // burn doesn't go down, so take the next 10s
         }
     }
 
@@ -522,17 +437,6 @@ class WeaponBall extends Ball {
     physics_step(board, time_delta) {
         // TODO think about how best to make this less annoying to override
         this.lifetime += time_delta;
-
-        this.desc_shake_intensity = lerp(this.desc_shake_intensity, 0, 1 - compat_pow(0.01, time_delta));
-        this.desc_shake_offset_freq -= time_delta;
-        if (this.desc_shake_offset_freq <= 0) {
-            this.desc_shake_offset_freq = this.desc_shake_offset_freq_max;
-
-            this.desc_shake_offset = [
-                (Math.random() - 0.5) * this.desc_shake_intensity,
-                (Math.random() - 0.5) * this.desc_shake_intensity
-            ]
-        }
 
         this.hitstop -= time_delta;
         if (this.hitstop > 0) {
@@ -752,8 +656,6 @@ class WeaponBall extends Ball {
         this.apply_invuln(invuln ?? BALL_INVULN_DURATION);
         this.apply_hitstop(hitstop);
 
-        this.desc_shake_intensity = Math.max(0, this.desc_shake_intensity) + (final_damage * 2);
-
         return {dmg: final_damage, dead: this.hp <= 0};
     }
 
@@ -888,20 +790,12 @@ class DummyBall extends WeaponBall {
         
         this.max_level_description = "Seriously, it doesn't do anythin- wait... no...";
 
-        this.tier = TIERS.DISMAL;
+        this.tier = TIERS.S;
         this.category = CATEGORIES.STANDARD;
         this.tags = [
+            TAGS.TRANSFORMING,
             TAGS.CAN_AWAKEN,
         ];
-
-        if (this.level >= AWAKEN_LEVEL) {
-            this.tags.push(TAGS.TRANSFORMING);
-            this.tier = TIERS.S;
-        }
-
-        this.entry_animation = "load";
-        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
-        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
 
         this.shake_duration_max = 4.5;
         this.shake_shake_start = 1.5;
@@ -977,7 +871,7 @@ class DummyBall extends WeaponBall {
 
     start_transforming() {
         if (!this.board.unarmed_cinematic_played) {
-            play_music("unarmed_theme");
+            play_audio("unarmed_theme");
         }
 
         this.hp = 100;
@@ -999,7 +893,7 @@ class DummyBall extends WeaponBall {
         });
     }
 
-    get_hit(source, damage, hitstop, invuln=null, round_up=true) {
+    get_hit(source, damage, hitstop) {
         if (this.transforming || this.done) {
             return {dmg: 0, dead: false};
         }
@@ -1007,11 +901,11 @@ class DummyBall extends WeaponBall {
         let result = null;
         if (this.level >= AWAKEN_LEVEL) {
             this.takes_damage = false;
-            result = super.get_hit(source, damage, 0.5, invuln, round_up);
+            result = super.get_hit(source, damage, 0.5);
 
             this.start_transforming();
         } else {
-            result = super.get_hit(source, damage, hitstop, invuln, round_up);
+            result = super.get_hit(source, damage, hitstop);
         }
 
         return result;
@@ -1135,10 +1029,10 @@ class UnarmedBall extends WeaponBall {
         return result;
     }
 
-    get_hit(source, damage, hitstop, invuln=null, round_up=true) {
+    get_hit(source, damage, hitstop) {
         let damage_reduced = Math.max(Math.min(damage, 1), damage - this.defense_final);
 
-        let result = super.get_hit(source, damage_reduced, hitstop, invuln, round_up);
+        let result = super.get_hit(source, damage_reduced, hitstop);
 
         // this.intensity += this.intensity_per_hit;
 
@@ -1372,7 +1266,7 @@ class SordBall extends WeaponBall {
         ];
 
         this.damage_base = 2 + (0.05 * level);
-        this.speed_base = 130 + (4.5 * level);
+        this.speed_base = 135 + (4.5 * level);
     }
 
     set_skin(skin_name) {
@@ -1477,10 +1371,6 @@ class DaggerBall extends WeaponBall {
             TAGS.LEVELS_UP,
             TAGS.CAN_AWAKEN,
         ];
-
-        this.entry_animation = "teleport";
-        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
-        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
 
         this.weapon_data = [
             new BallWeapon(1, "dagger", [
@@ -1779,10 +1669,6 @@ class MagnumBall extends WeaponBall {
             TAGS.CAN_AWAKEN,
         ];
 
-        this.entry_animation = "snipe";
-        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
-        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
-
         this.weapon_data = [
             new BallWeapon(0.5, "gun", [
                 {pos: new Vector2(32, 64-10), radius: 16},
@@ -2046,12 +1932,10 @@ class NeedleBall extends WeaponBall {
         }
     }
 
-    get_hit(source, damage, hitstop, invuln=null, round_up=true) {
-        let result = super.get_hit(source, damage, hitstop, invuln, round_up);
+    get_hit(source, damage, hitstop) {
+        let result = super.get_hit(source, damage, hitstop);
 
-        if (damage > 0.25) {
-            this.clone_chance();
-        }
+        this.clone_chance();
 
         return result;
     }
@@ -2117,10 +2001,6 @@ class RailgunBall extends WeaponBall {
             TAGS.CAN_AWAKEN,
         ];
 
-        this.entry_animation = "snipe";
-        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
-        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
-
         this.weapon_data = [
             new BallWeapon(1, "railgun", [
                 {pos: new Vector2(32, 64), radius: 12},
@@ -2146,7 +2026,7 @@ class RailgunBall extends WeaponBall {
 
         this.speed_base = 100;
 
-        this.shot_cooldown_max_base = 0.72 + (this.level * -0.002);
+        this.shot_cooldown_max_base = 0.7 + (this.level * -0.002);
         this.shot_cooldown_max = this.shot_cooldown_max_base;
         this.shot_cooldown_rapidfire = 0.04 + ((0.04 / 0.666) * -0.002);
         this.shot_cooldown = this.shot_cooldown_max;
@@ -2306,10 +2186,6 @@ class PotionBall extends WeaponBall {
             TAGS.LEVELS_UP,
             TAGS.CAN_AWAKEN,
         ];
-
-        this.entry_animation = "impact";
-        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
-        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
 
         this.weapon_data = [
             new BallWeapon(1, "potion1_weapon", [
@@ -2529,6 +2405,7 @@ class GrenadeBall extends WeaponBall {
             TAGS.RANGED,
             TAGS.OFFENSIVE,
             TAGS.PROJECTILES,
+            TAGS.CHILDREN,
             TAGS.AOE,
             TAGS.LEVELS_UP,
             TAGS.CAN_AWAKEN,
@@ -3002,10 +2879,6 @@ class HandBall extends WeaponBall {
             TAGS.LEVELS_UP,
             TAGS.CAN_AWAKEN,
         ];
-
-        this.entry_animation = "teleport";
-        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
-        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
 
         this.hand_size = 0.5 + (0.002 * this.level);
 
@@ -3667,10 +3540,6 @@ class ChakramBall extends WeaponBall {
             TAGS.CAN_AWAKEN,
         ];
 
-        this.entry_animation = "teleport";
-        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
-        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
-
         this.weapon_data = [];
         
         this.sprite_suffix = "";
@@ -3691,7 +3560,7 @@ class ChakramBall extends WeaponBall {
         this.speed_current = this.speed_base;
         this.windup_speed_mod = 900;
 
-        this.throw_cooldown_max = [4.75, 8.75];
+        this.throw_cooldown_max = [5, 9];
         this.throw_cooldown = random_float(...this.throw_cooldown_max, this.board.random);
 
         this.throw_windup_max = 1.5;
@@ -3878,15 +3747,10 @@ class WandBall extends WeaponBall {
             TAGS.RANGED,
             TAGS.OFFENSIVE,
             TAGS.AILMENTS,
-            TAGS.CHILDREN,
             TAGS.AOE,
             TAGS.LEVELS_UP,
             TAGS.CAN_AWAKEN,
         ];
-
-        this.entry_animation = "wizard_circle";
-        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
-        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
 
         this.weapon_data = [
             new BallWeapon(1, "wand_white", [
@@ -3903,7 +3767,7 @@ class WandBall extends WeaponBall {
         this.damage_base = 1;
         this.speed_base = 180;
 
-        this.cast_delay_max = [1.575 - (this.level * 0.011), 3.15 - (this.level * 0.022)];
+        this.cast_delay_max = [1.6 - (this.level * 0.011), 3.2 - (this.level * 0.022)];
         this.cast_delay = random_float(...this.cast_delay_max, this.board.random);
 
         this.cast_flash_timeout = 0;
@@ -4432,7 +4296,7 @@ class AxeBall extends WeaponBall {
         this.speed_base = 100 + (1 * level);
         this.speed_cur = this.speed_base;
 
-        this.lunge_cooldowns_max = [1.8 - (0.01 * level), 3.6 - (0.02 * level)];
+        this.lunge_cooldowns_max = [2 - (0.01 * level), 4 - (0.02 * level)];
         this.lunge_cooldown = random_float(...this.lunge_cooldowns_max, this.board.random);
         this.last_lunge_cooldown = this.lunge_cooldown;
 
@@ -4596,10 +4460,6 @@ class ShotgunBall extends WeaponBall {
             TAGS.CAN_AWAKEN,
         ];
 
-        this.entry_animation = "snipe";
-        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
-        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
-
         this.weapon_data = [
             new BallWeapon(1, "shotgun", [
                 {pos: new Vector2(32, 64), radius: 12},
@@ -4625,8 +4485,6 @@ class ShotgunBall extends WeaponBall {
         this.width_range = [12, 20];
 
         this.bullet_spread = deg2rad(22.5);
-
-        this.sound_random = get_seeded_randomiser(this.board.random_seed);
     }
 
     recoil_movement() {
@@ -4674,9 +4532,6 @@ class ShotgunBall extends WeaponBall {
                 )
 
                 this.recoil_movement();
-                
-                let snd_rand = Math.floor(this.sound_random() * 3);
-                play_audio(["shotgun", "shotgun", "shotgun3"][snd_rand], 0.04);
             }
         }
     }

@@ -200,7 +200,7 @@ class SmartBowBall extends WeaponBall {
         let pointing_vector = null;
         if (closest_enemy) {
             // debug canvas code
-            let screen_scaling_factor = canvas_width / board.size.x;
+            screen_scaling_factor = canvas_width / board.size.x;
             let ctx = layers.debug_front.ctx;
             let w = 25 * screen_scaling_factor;
 

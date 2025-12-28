@@ -23,7 +23,7 @@
     <canvas width="8" height="8" id="hidden-prerender-canvas" style="display:none"></canvas>
 
     <div class="everything-container">
-        <span id="loading_prompt">Loading assets: <span id="graphics_loading">-/-</span> graphics, <span id="audios_loading">-/-</span> audio</span>
+        <span class="hidden">hi</span>
 
         <div class="everything-subcontainer">
             <div class="left-container">
@@ -150,17 +150,13 @@
                                 <option>1/480</option>
                                 <option>Realtime (no replay)</option>
                             </select>
-                            <button class="enable-on-full-load" disabled onclick="replaying=false; spawn_selected_balls()">Start</button>
-                            <button class="enable-on-full-load" disabled onclick="load_replay_button()">Load replay</button>
+                            <button onclick="replaying=false; spawn_selected_balls()">Start</button>
+                            <button onclick="load_replay_button()">Load replay</button>
                             <!-- <button style="font-size: 20px;" onclick="document.querySelector('#modding_frame').classList.toggle('hidden')">"Modding" -></button> -->
                         </div>
                         <div class="columns" style="margin-top: 0.5vmin">
                             <input type="text" class="inputbox" id="sandbox-random-seed" placeholder="Seed (leave blank for random...)">
                             <button id="save_replay_button" disabled onclick="save_replay_button()">Copy last game's replay link</button>
-                        </div>
-                        <div class="columns" style="margin-top: 0.5vmin; user-select: none;">
-                            <input type="checkbox" id="skip_intro_checkbox">
-                            <span onclick="document.querySelector('#skip_intro_checkbox').click()">Skip intro?</span>
                         </div>
                         <span style="margin-top: 0.5vmin; padding-left:1vmin; padding-right:1vmin; color:#bbb;">Use a frame speed closest to the refresh rate of your screen, or "Realtime" if you don't care about replays. When loading replays, this is set automatically - use speed controls if needed.</span>
                     </div>
@@ -207,9 +203,6 @@
                         This canvas needs to be viewed to be displayed.
                     </canvas>
                     <canvas class="game-canvas" id="game-canvas-fg1">
-                        This canvas needs to be viewed to be displayed.
-                    </canvas>
-                    <canvas class="game-canvas" id="game-canvas-ui3">
                         This canvas needs to be viewed to be displayed.
                     </canvas>
                     <canvas class="game-canvas" id="game-canvas-ui2">
@@ -286,19 +279,19 @@
 		<p style="font-size: 2vmin"><a class="right-text" style="bottom: 16px; color:#f20; font-size: 2vmin" href="../index.html" > << go back >> </a></p>
 	</div>
 	
-    <script src="../shared/js/helpers.js?v=07"></script>
+    <script src="../shared/js/helpers.js?v=06"></script>
 	<script src="../shared/js/canvas_helpers.js?v=04"></script>
 	
-    <script src="balls_core.js?v=28"></script>
+    <script src="balls_core.js?v=27"></script>
 
-    <script src="balls_balls.js?v=38"></script>
-    <script src="balls_balls_additional.js?v=37"></script>
-    <script src="balls_balls_powered.js?v=02"></script>
+    <script src="balls_balls.js?v=37"></script>
+    <script src="balls_balls_additional.js?v=36"></script>
+    <script src="balls_balls_powered.js?v=01"></script>
 
-    <script src="balls_replay_parsing.js?v=05"></script>
-    <script src="balls_launcher.js?v=48"></script>
+    <script src="balls_replay_parsing.js?v=04"></script>
+    <script src="balls_launcher.js?v=47"></script>
     
-    <script src="balls_campaign.js?v=05"></script>
+    <script src="balls_campaign.js?v=04"></script>
 
 	<script src="../shared/js/playtime.js?v=00"></script>
 
