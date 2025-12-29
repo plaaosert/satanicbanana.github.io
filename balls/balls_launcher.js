@@ -1079,6 +1079,8 @@ document.addEventListener("DOMContentLoaded", function() {
         document.querySelector(".spacer").classList.remove("nodisplay");
         document.querySelector(".spacer").classList.remove("hidden");
 
+        document.querySelector(".sandbox.leftpanel").classList.add("nodisplay");
+
         document.querySelector("#ball1_level").value = ball1_start_level;
         document.querySelector("#ball2_level").value = ball2_start_level;
 

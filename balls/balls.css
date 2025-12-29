@@ -25,6 +25,8 @@
   width: calc(100vw - 8vw);
 
   color: white;
+
+  font-size: 2vmin;
 }
 
 .everything-subcontainer {
@@ -588,4 +590,49 @@ button.sandbox-ball-random {
   height: 1.5vmin;
   
   margin-right: 0.5vmin;
+}
+
+.social-img {
+  width: round(2vmin, 16px);
+  height: round(2vmin, 16px);
+
+  padding-right: 1vmin;
+}
+
+.social-link {
+  margin: 1vmin;
+  padding: 1vmin;
+
+  width: fit-content;
+}
+
+.social-link a {
+  position: unset;
+
+  font-weight: unset;
+  text-decoration: underline;
+
+  filter: brightness(1);
+}
+
+.social-link a:hover {
+  filter: brightness(3);
+}
+
+.social-link.tt a {
+  color: #ccc;
+}
+
+.social-link.yt a {
+  color: #c55;
+}
+
+.social-link.ig a {
+  color: #e8f;
+}
+
+@media (orientation: portrait) {
+  .hide-on-low-content-size {
+    display: none;
+  }
 }

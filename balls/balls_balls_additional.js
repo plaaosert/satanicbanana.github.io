@@ -450,6 +450,7 @@ class SuperNeedleBall extends NeedleBall {
     
         this.splitcnt = splitcnt;
         
+        this.category = CATEGORIES.SILLY;
         this.tier = TIERS.S;
 
         this.radius = this.radius * Math.pow(0.75, this.splitcnt);
@@ -499,7 +500,154 @@ class SuperNeedleBall extends NeedleBall {
 }
 
 
+class SuperDaggerBall extends WeaponBall {
+    static ball_name = "super dagger";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "super dagger";
+        this.description_brief = "Same as dagger but with... 67... daggers that all function independently.";
+        this.level_description = "Same as dagger.";
+        this.max_level_description = "Same as dagger... shudders";
+        this.quote = "help.";
+
+        this.tier = TIERS.S;
+        this.category = CATEGORIES.SILLY;
+
+        this.entry_animation = "teleport";
+        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
+        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
+
+        this.weapon_data = [
+            ...new Array(67).fill(0).map(_ => {return new BallWeapon(1, "dagger", [
+                {pos: new Vector2(64, 64), radius: 12},
+                {pos: new Vector2(48, 68), radius: 12},
+                {pos: new Vector2(32, 64), radius: 12},
+                {pos: new Vector2(16, 56), radius: 12},
+                {pos: new Vector2(0, 48), radius: 12},
+            ])})
+        ];
+
+        this.firing_offsets = [
+            new Vector2(24, 0)
+        ]
+
+        this.damage_base = 1;
+        this.damages = [
+            ...new Array(67).fill(0).map(
+                _ => this.damage_base
+            )
+        ]
+
+        this.speed_range = [240, 480];
+        this.speeds_base = [
+            ...new Array(67).fill(0).map(
+                _ => random_float(...this.speed_range, this.board.random)
+            )
+        ];
+
+        this.speeds = [
+            ...this.speeds_base.map(s => s)
+        ];
+
+        this.hit_decays = [
+            ...new Array(67).fill(0)
+        ];
+
+        this.projectiles_cooldowns = [
+            ...new Array(67).fill(0)
+        ];
+        
+        this.projectiles_cooldowns_max = [
+            ...new Array(67).fill(0.2)
+        ];
+
+        this.proj_damage_base = 1;
+        this.proj_speeds = [
+            ...new Array(67).fill(0)
+        ];
+
+        this.hit_decay_max = 1.5 + (0.025 * this.level);
+    }
+
+    weapon_step(board, time_delta) {
+        // rotate the weapon
+        for (let i=0; i<this.weapon_data.length; i++) {
+            this.rotate_weapon(i, this.speeds[i] * time_delta);
+
+            this.hit_decays[i] -= time_delta;
+            if (this.hit_decays[i] < 0) {
+                this.speeds[i] = lerp(this.speeds[i], this.speeds_base[i], 1 - compat_pow(0.25, time_delta));
+                this.damages[i] = lerp(this.damages[i], 1, 1 - compat_pow(0.25, time_delta));
+            }
+
+            if (this.level >= AWAKEN_LEVEL) {
+                this.projectiles_cooldowns_max[i] = 0.5 / (this.speeds_base[i] / 500);
+                this.proj_speeds[i] = 9000 + (100 / this.projectiles_cooldowns_max[i]);
+
+                if (this.speeds_base[i] >= 1000) {
+                    this.projectiles_cooldowns[i] -= time_delta;
+                    if (this.projectiles_cooldowns[i] <= 0) {
+                        this.projectiles_cooldowns[i] = this.projectiles_cooldowns_max[i];
+
+                        let firing_offset = this.firing_offsets[0].mul(this.weapon_data[i].size_multiplier).rotate(this.weapon_data[i].angle);
+                        let fire_pos = this.position.add(firing_offset);
+
+                        board.spawn_projectile(
+                            new DaggerAwakenProjectile(
+                                this.board,
+                                this, 0, fire_pos, this.proj_damage_base, 1,
+                                new Vector2(1, 0).rotate(this.weapon_data[i].angle),
+                                this.proj_speeds[i], this.velocity.mul(0)
+                            ), fire_pos
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    hit_other(other, with_weapon_index) {
+        let result = super.hit_other(other, with_weapon_index, this.damages[with_weapon_index]);
+
+        this.speeds[with_weapon_index] *= 2;
+        this.damages[with_weapon_index] *= 1.5;
+
+        this.hit_decays[with_weapon_index] = this.hit_decay_max
+
+        return result;
+    }
+
+    hit_other_with_projectile(other, with_projectile) {
+        let result = super.hit_other_with_projectile(other, with_projectile);
+
+        this.hitstop = 0;
+        other.hitstop = 0;
+        other.invuln_duration = 0;
+
+        return result;
+    }
+
+    get_projectile_parried(parrier, projectile) {
+        parrier.invuln_duration = 0;
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Don't say I never gave you anything.`
+        )
+
+        this.write_desc_line(
+            `Fastest dagger: ${Math.max(...this.speeds).toFixed(0)}deg/s`
+        )
+    }
+}
+
+
 let additional_selectable_balls = [
     ThirteenLongswordsBall, AStickBall, ThirteenSticksBall, GreatsordBall,
-    ExtralongswordBall, SuperDummyBall, SuperNeedleBall
+    ExtralongswordBall, SuperDummyBall, SuperNeedleBall, SuperDaggerBall
 ]
