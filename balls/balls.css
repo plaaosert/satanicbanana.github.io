@@ -772,7 +772,6 @@ button.sandbox-ball-random {
   height: round(2vmin, 16px);
   width: round(2vmin, 16px);
 
-  user-drag: none;
   -webkit-user-drag: none;
   user-select: none;
   -moz-user-select: none;
