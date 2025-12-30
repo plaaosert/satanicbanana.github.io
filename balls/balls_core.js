@@ -2189,7 +2189,7 @@ function render_postopening(board) {
         if (starting_fullpause_timeout > 0) {
             play_audio("battle_royale_gong");
         }
-        play_music(`2048_${random_int(0, 13, board.random)+1}`, 0.2);
+        play_music(`2048_${random_int(0, 13, get_seeded_randomiser(board.random_seed))+1}`, 0.2);
         opening_state.cnt = null;
     }
 
@@ -2373,6 +2373,7 @@ function game_loop() {
 
         // the "for" component only comes into effect when we're fixed-time
         for (let tick_repeats=0; tick_repeats<num_repeats; tick_repeats++) {
+            // debugger;
             total_steps++;
 
             // COLL_GRANULARITY => do collision checks every N physics steps

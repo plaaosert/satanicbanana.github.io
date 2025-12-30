@@ -357,7 +357,6 @@ function enter_battle() {
     document.querySelector(".game-container").classList.add("popin");
     document.querySelector(".game-container").classList.remove("popout");
 
-    game_paused = false;
     update_sim_speed_display();
     render_watermark();
 }
@@ -505,8 +504,6 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
 
         let balls = [];
 
-        skipping = searching || document.querySelector("#skip_intro_checkbox").checked;
-
         cols.forEach((col, index) => {
             let ball_proto = ball_classes[index];
             if (ball_proto) {
@@ -567,6 +564,8 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
         if (skipping) {
             opening_state.cnt = 3;
         }
+
+        game_paused = false;
     }, 0);
 
     enter_battle();
