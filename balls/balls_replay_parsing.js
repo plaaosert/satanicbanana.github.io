@@ -4,6 +4,12 @@ let selectable_balls = [
     ...powered_selectable_balls
 ]
 
+let category_to_balls_list = {
+    [CATEGORIES.STANDARD]: main_selectable_balls,
+    [CATEGORIES.SILLY]: additional_selectable_balls,
+    [CATEGORIES.POWERED]: powered_selectable_balls,
+}
+
 function parse_replay(replay_as_text) {
     let replay_url = null;
     try {

@@ -18,7 +18,7 @@
 
   height: calc(100vh - 8vh - 16vh);
 
-  margin-top: 8vh;
+  margin-top: 10vh;
   margin-left: 4vw;
   margin-right: 4vw;
 
@@ -183,7 +183,7 @@
   height: 3vmin;
 }
 
-.everything-container button {
+.everything-container button, #popup-container button {
   background-color: #222;
   color: white;
 
@@ -512,11 +512,45 @@ button.sandbox-ball-random {
   }
 }
 
-.sandbox-load-replays {
+#popup-container {
+  position: fixed;
+  z-index: 99;
+
+  left: 0px;
+  top: 8vh;
+
+  margin: 0;
+  padding: 0;
+
+  height: calc(100vh - 8vh - 18vh);
+  width: calc(100vw);
+
+  display: grid;
+
+  pointer-events: none;
+}
+
+#popup-container:has(.popup:not(.nodisplay)) {
+  pointer-events: all;
+}
+
+.popup {
+  grid-column: 1;
+  grid-row: 1;
+  
   background-color: #111;
+  color: white;
 
   width: fit-content;
   height: fit-content;
+
+  max-width: calc(var(--siz) - 2vmin);
+  min-width: 0;
+
+  max-height: calc(var(--siz) - 2vmin);
+  min-height: 0;
+
+  flex-grow: 0;
 
   padding: 1vmin;
   
@@ -526,6 +560,17 @@ button.sandbox-ball-random {
         0 0 0 0.25vmin #444,
         0 0 0 0.5vmin #666,
         0 0 0 1vmin #000;
+
+  pointer-events: all;
+}
+
+.sandbox-load-replays {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+
+  font-size: 2vmin;
 }
 
 .sandbox-load-replays .buttonrow {
@@ -633,6 +678,408 @@ button.sandbox-ball-random {
 
 @media (orientation: portrait) {
   .hide-on-low-content-size {
-    display: none;
+    display: none !important;
   }
 }
+
+.sandbox-ball-selector {
+  --share: 1;
+
+  max-height: unset;
+
+  font-size: 2vmin;
+}
+
+.sandbox-ball-selector .title {
+  background-color: #333;
+  width: 100%;
+  text-align: center;
+
+  font-weight: bold;
+}
+
+.sandbox-ball-selector .category-selection-menu {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+
+  align-items: center;
+  justify-content: center;
+}
+
+.sandbox-ball-selector .category-selection-item {
+  flex: 1 1 0px;
+
+  text-align: center;
+
+  cursor: pointer;
+  user-select: none;
+}
+
+.sandbox-ball-selector .category-selection-item:hover {
+  filter: brightness(2);
+}
+
+.sandbox-ball-selector .category-selection-item.selected {
+  filter: brightness(2.5);
+
+  text-decoration: underline;
+}
+
+.sandbox-ball-selector .spacer {
+  width: 100%;
+
+  background-color: #222;
+}
+
+.small-ball-grid {
+  display: flex;
+  flex-wrap: wrap;
+
+  width: 100%;
+}
+
+.small-ball-grid {
+  --num: 3;
+}
+
+.skin-select {
+  --num: 4;
+}
+
+.team-select {
+  --num: 6;
+}
+
+.small-ball-grid .ball-item {
+  display: flex;
+
+  flex: none;
+
+  align-items: center;
+
+  font-size: 2vmin;
+  min-width: calc((100% / var(--num)) - 0.4vmin);
+  max-width: calc((100% / var(--num)) - 0.4vmin);
+
+  padding: 0.2vmin;
+  
+  cursor: pointer;
+  user-select: none;
+}
+
+.small-ball-grid .ballicon {
+  height: round(2vmin, 16px);
+  width: round(2vmin, 16px);
+
+  user-drag: none;
+  -webkit-user-drag: none;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+.small-ball-grid .ball-item:not(.disable):hover {
+  background-color: #333;
+}
+
+.small-ball-grid .ball-item.selected {
+  background-color: #555;
+  font-weight: bold;
+}
+
+.small-ball-grid .ball-item.selected:hover {
+  background-color: #555;
+  font-weight: bold;
+}
+
+.small-ball-grid .ball-item .ballicon {
+  margin-right: 0.5vmin;
+}
+
+.ball-info-display .cols {
+  display: flex;
+  flex-direction: row;
+}
+
+.ball-info-display .rows {
+  align-items: start;
+}
+
+#ball_info_display .big-ballicon {
+  padding: calc(6vmin - round(5vmin, 16px));
+
+  height: round(5vmin, 16px);
+  width: round(5vmin, 16px);
+
+  margin-right: 1vmin;
+}
+
+.ball-info-display {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.ball-info-display .name {
+  flex: 1 1 0px;
+}
+
+.ball-info-display .name, .ball-info-display .tier {
+  font-weight: bold;
+  font-size: 2vmin;
+}
+
+.ball-info-display .tags {
+  display: flex;
+  flex-wrap: wrap;
+
+  font-size: 2vmin;
+}
+
+.ball-info-display .tag {
+  flex-grow: 0;
+  flex-shrink: 0;
+  text-wrap: nowrap;
+}
+
+.ball-info-display .desc {
+  margin-top: 1vmin;
+  font-size: 1.5vmin;
+  height: 8vmin;
+}
+
+.ball-info-display .sbs {
+  height: 100%;
+  width: 100%;
+
+  margin-top: round(1vmin, 8px);
+}
+
+.ball-info-display .stat-item {
+  display: flex;
+  flex-direction: row;
+  
+  align-items: center;
+}
+
+.ball-info-display .stat-item-pair {
+  display: flex;
+  flex-direction: row;
+
+  width: 100%;
+}
+
+.ball-info-display .minititle, .ball-info-display .content {
+  font-size: 1.5vmin;
+}
+
+.ball-info-display .noflex {
+  display: unset;
+
+  height: 4vmin;
+}
+
+.ball-info-display .onlevelup .minititle {
+  background-color: #060;
+}
+
+.ball-info-display .awakened .minititle {
+  background-color: #606;
+}
+
+.ball-info-display .awakened.locked {
+  color: #555;
+}
+
+.ball-info-display .awakened.locked .minititle {
+  background-color: #303;
+}
+
+.sandbox-ball-selector .slide-supercontainer {
+  display: flex;
+  flex-direction: column;
+
+  justify-content: center;
+  align-items: center;
+
+  width: 100%;
+  --col: white;
+}
+
+.sandbox-ball-selector .slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: var(--s);
+  height: var(--s);
+  background: var(--col);
+  cursor: pointer;
+}
+
+.sandbox-ball-selector .slider::-moz-range-thumb {
+  width: var(--s);
+  height: var(--s);
+  background: var(--col);
+  cursor: pointer;
+}
+
+.sandbox-ball-selector .ball-level-number {
+  font-size: 1.5vmin;
+}
+
+.sandbox-ball-selector .action-buttons {
+  width: 100%;
+  display: flex;
+}
+
+.sandbox-ball-selector .action-buttons .clickable {
+  flex: 1 1 0px;
+
+  text-align: center;
+}
+
+.sandbox-ball-selector .action-buttons .clickable:hover {
+  filter: brightness(2);
+}
+
+.sandbox-ball-selector .action-buttons .clickable:last-child {
+  margin-right: 0;
+}
+
+.sandbox-ball-selector .action-buttons .clickable.save {
+  background-color: #060;
+}
+
+.sandbox-ball-selector .action-buttons .clickable.cancel {
+  background-color: #600;
+}
+
+.new-ballselect {
+  display: flex;
+  flex-direction: column;
+}
+
+.new-ballselect .title {
+  font-size: 2vmin;
+  font-weight: bold;
+
+  color: var(--col);
+
+  text-align: center;
+}
+
+.new-ballselect .ballname {
+  width: 20vmin;
+  display: inline-block;
+  text-align: center;
+}
+
+.new-ballselect .team {
+  background-color: var(--bgcol);
+}
+
+.new-ballselect .subtitle {
+  font-size: 1.5vmin;
+  color: #ccc;
+}
+
+.new-ballselect .big-ballicon {
+  --siz: 6vmin;
+  --pad: 1vmin;
+  --siz_inner: calc(var(--siz) - var(--pad));
+
+  padding: calc(var(--siz) - round(var(--siz_inner), 16px));
+
+  height: round(var(--siz_inner), 16px);
+  width: round(var(--siz_inner), 16px);
+
+  margin-right: var(--pad);
+}
+
+.new-ballselect .info-container {
+  display: flex;
+  flex-direction: row;
+
+  align-items: center;
+
+  margin-bottom: 4vmin;
+}
+
+.new-ballselect .info-container.disabled>*:not(.buttonsets) {
+  filter: brightness(0.3);
+  pointer-events: none;
+}
+
+.new-ballselect .ball-base-info {
+  font-size: 2vmin;
+  margin-right: 2vmin;
+}
+
+.new-ballselect .info-container button {
+  height: fit-content;
+  font-size: 2vmin;
+}
+
+.new-ballselect .buttonsets {
+  align-items: start;
+}
+
+.new-ballselect .rows {
+  gap: 0.25vmin;
+}
+
+.new-ballselect .buttonset {
+  font-size: 2vmin;
+}
+
+.new-ballselect .buttonset button {
+  color: var(--col);
+}
+
+.new-ballselect .info-container.disabled .buttonset>*:not(.disable-button) {
+  filter: brightness(0.3);
+  pointer-events: none;
+}
+
+.new-ballselect .buttonset .disabled {
+  filter: brightness(0.3);
+  pointer-events: none;
+}
+
+.new-ballselect .info-container:not(.disabled) .disable-button::before {
+  content: "Disable";
+}
+
+.new-ballselect .info-container.disabled .disable-button::before {
+  content: "Enable";
+}
+
+/*
+bad css is unsalvageable. the only thing you can do is give up :3
+
+.topbar {
+  position: unset;
+  min-height: 8vh;
+}
+
+.everything-container {
+  margin-top: 0;
+  margin-bottom: 0;
+  height: unset;
+}
+
+.bottombar {
+  position: unset;
+  min-height: 16vh;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+
+  height: 100vh;
+
+  margin: 0
+}
+*/

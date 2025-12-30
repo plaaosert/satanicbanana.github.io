@@ -12,14 +12,13 @@
 	<meta name="viewport" content="width=device-width, initial-scale=0.1, user-scalable=yes" />
 
     <link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=02"/>
-	<link rel="stylesheet" type="text/css" href="balls.css?v=28"/>
+	<link rel="stylesheet" type="text/css" href="balls.css?v=29"/>
 </head>
 <body>
 	<div class="topbar">
 		<p class="right-text" style="font-size: 2vmin; top:-8px; color:#ccc;">you have been actively playing for <span class="important" id="session-time">00:00:00</span> in this session, <span class="important" id="all-time">00:00:00:00</span> total and <span class="important" id="global-time">00:00:00:00</span> across all plaao.net games</p>
 	</div>
-    <p style="height: 1px">Watch balls fight each other with a variety of unique weapons.</p>
-
+    
     <canvas width="8" height="8" id="hidden-prerender-canvas" style="display:none"></canvas>
 
     <div class="everything-container">
@@ -50,96 +49,121 @@
             <div class="game-supercontainer">
                 <div class="game-container" id="game-container" style="display: none;">
                     <div class="sandbox-menu behind-canvases withborder">
-                        <div id="ball1_settings" class="row ballsettings" style="--col: rgb(255, 0, 0)">
-                            <select class="sandbox-team-select" onchange="update_ballinfo('ball1', true)" name="ball1_team">
+                        <div class="old-ballselect nodisplay">
+                            <div id="ball1_settings" class="row ballsettings" style="--col: rgb(255, 0, 0)">
+                                <select class="sandbox-team-select" onchange="update_ballinfo('ball1', true)" name="ball1_team">
 
-                            </select>
-                            <select class="sandbox-ball-select main" onchange="update_ballinfo('ball1')" name="ball1"></select>
-                            <select class="sandbox-ball-select additional nodisplay" onchange="update_ballinfo('ball1')" name="ball1"></select>
-                            <select class="sandbox-ball-select powered nodisplay" onchange="update_ballinfo('ball1')" name="ball1"></select>
-                            <select class="sandbox-skin-select" name="ball1_skin"></select>
-                            <button class="sandbox-ball-random" onclick="randomise_ballselect('ball1')">Random</button>
-                            <div style="flex-grow: 1;" class="rows">
-                                <div class="slidecontainer">
-                                    <input type="range" min="1" max="100" value="1" class="slider" id="ball1_level" oninput="update_awaken_showhide('ball1')">
+                                </select>
+                                <select class="sandbox-ball-select main" onchange="update_ballinfo('ball1')" name="ball1"></select>
+                                <select class="sandbox-ball-select additional nodisplay" onchange="update_ballinfo('ball1')" name="ball1"></select>
+                                <select class="sandbox-ball-select powered nodisplay" onchange="update_ballinfo('ball1')" name="ball1"></select>
+                                <select class="sandbox-skin-select" name="ball1_skin"></select>
+                                <button class="sandbox-ball-random" onclick="randomise_ballselect('ball1')">Random</button>
+                                <div style="flex-grow: 1;" class="rows">
+                                    <div class="slidecontainer">
+                                        <input type="range" min="1" max="100" value="1" class="slider" id="ball1_level" oninput="update_awaken_showhide('ball1')">
+                                    </div>
+                                    <span class="ball-level-number">Level <span id="ball1_level_number">1</span></span>
                                 </div>
-                                <span class="ball-level-number">Level <span id="ball1_level_number">1</span></span>
+                            </div>
+                            <div class="row ballinfo" id="ball1_info" style="--col: rgb(255, 0, 0)">
+                                <span>Scrimblo gumblo</p>
+                            </div>
+                            <div class="row ballinfo ainfo hidden" id="ball1_a_info" style="--col: rgb(255, 128, 128)">
+                                <span>Scrimblo gumblo</p>
+                            </div>
+
+                            <div id="ball2_settings" class="row ballsettings" style="--col: rgb(255, 255, 0)">
+                                <select class="sandbox-team-select" onchange="update_ballinfo('ball2', true)" name="ball2_team" select>
+
+                                </select>
+                                <select class="sandbox-ball-select main" onchange="update_ballinfo('ball2')" name="ball2"></select>
+                                <select class="sandbox-ball-select additional nodisplay" onchange="update_ballinfo('ball2')" name="ball2"></select>
+                                <select class="sandbox-ball-select powered nodisplay" onchange="update_ballinfo('ball2')" name="ball2"></select>
+                                <select class="sandbox-skin-select" name="ball2_skin"></select>
+                                <button class="sandbox-ball-random" onclick="randomise_ballselect('ball2')">Random</button>
+                                <div style="flex-grow: 1;" class="rows">
+                                    <div class="slidecontainer">
+                                        <input type="range" min="1" max="100" value="1" class="slider" id="ball2_level" oninput="update_awaken_showhide('ball2')">
+                                    </div>
+                                    <span class="ball-level-number">Level <span id="ball2_level_number">1</span></span>
+                                </div>
+                            </div>
+                            <div class="row ballinfo" id="ball2_info" style="--col: rgb(255, 255, 0)">
+                                <span>Scrimblo gumblo</p>
+                            </div>
+                            <div class="row ballinfo ainfo hidden" id="ball2_a_info" style="--col: rgb(255, 255, 128)">
+                                <span>Scrimblo gumblo</p>
+                            </div>
+
+                            <div id="ball3_settings" class="row ballsettings" style="--col: rgb(0, 255, 0)">
+                                <select class="sandbox-team-select" onchange="update_ballinfo('ball3', true)" name="ball3_team">
+                                    
+                                </select>
+                                <select class="sandbox-ball-select main" onchange="update_ballinfo('ball3')" name="ball3"></select>
+                                <select class="sandbox-ball-select additional nodisplay" onchange="update_ballinfo('ball3')" name="ball3"></select>
+                                <select class="sandbox-ball-select powered nodisplay" onchange="update_ballinfo('ball3')" name="ball3"></select>
+                                <select class="sandbox-skin-select" name="ball3_skin"></select>
+                                <button class="sandbox-ball-random" onclick="randomise_ballselect('ball3')">Random</button>
+                                <div style="flex-grow: 1;" class="rows">
+                                    <div class="slidecontainer">
+                                        <input type="range" min="1" max="100" value="1" class="slider" id="ball3_level" oninput="update_awaken_showhide('ball3')">
+                                    </div>
+                                    <span class="ball-level-number">Level <span id="ball3_level_number">1</span></span>
+                                </div>
+                            </div>
+                            <div class="row ballinfo" id="ball3_info" style="--col: rgb(0, 255, 0)">
+                                <span>Scrimblo gumblo</p>
+                            </div>
+                            <div class="row ballinfo ainfo hidden" id="ball3_a_info" style="--col: rgb(128, 255, 128)">
+                                <span>Scrimblo gumblo</p>
+                            </div>
+
+                            <div id="ball4_settings" class="row ballsettings" style="--col: rgb(0, 255, 255)">
+                                <select class="sandbox-team-select" onchange="update_ballinfo('ball4', true)" name="ball4_team">
+
+                                </select>
+                                <select class="sandbox-ball-select main" onchange="update_ballinfo('ball4')" name="ball4"></select>
+                                <select class="sandbox-ball-select additional nodisplay" onchange="update_ballinfo('ball4')" name="ball4"></select>
+                                <select class="sandbox-ball-select powered nodisplay" onchange="update_ballinfo('ball4')" name="ball4"></select>
+                                <select class="sandbox-skin-select" name="ball4_skin"></select>
+                                <button class="sandbox-ball-random" onclick="randomise_ballselect('ball4')">Random</button>
+                                <div style="flex-grow: 1;" class="rows">
+                                    <div class="slidecontainer">
+                                        <input type="range" min="1" max="100" value="1" class="slider" id="ball4_level" oninput="update_awaken_showhide('ball4')">
+                                    </div>
+                                    <span class="ball-level-number">Level <span id="ball4_level_number">1</span></span>
+                                </div>
+                            </div>
+                            <div class="row ballinfo" id="ball4_info" style="--col: rgb(0, 255, 255)">
+                                <span>Scrimblo gumblo</p>
+                            </div>
+                            <div class="row ballinfo ainfo hidden" id="ball4_a_info" style="--col: rgb(128, 255, 255)">
+                                <span>Scrimblo gumblo</p>
                             </div>
                         </div>
-                        <div class="row ballinfo" id="ball1_info" style="--col: rgb(255, 0, 0)">
-                            <span>Scrimblo gumblo</p>
-                        </div>
-                        <div class="row ballinfo ainfo hidden" id="ball1_a_info" style="--col: rgb(255, 128, 128)">
-                            <span>Scrimblo gumblo</p>
-                        </div>
 
-                        <div id="ball2_settings" class="row ballsettings" style="--col: rgb(255, 255, 0)">
-                            <select class="sandbox-team-select" onchange="update_ballinfo('ball2', true)" name="ball2_team" select>
-
-                            </select>
-                            <select class="sandbox-ball-select main" onchange="update_ballinfo('ball2')" name="ball2"></select>
-                            <select class="sandbox-ball-select additional nodisplay" onchange="update_ballinfo('ball2')" name="ball2"></select>
-                            <select class="sandbox-ball-select powered nodisplay" onchange="update_ballinfo('ball2')" name="ball2"></select>
-                            <select class="sandbox-skin-select" name="ball2_skin"></select>
-                            <button class="sandbox-ball-random" onclick="randomise_ballselect('ball2')">Random</button>
-                            <div style="flex-grow: 1;" class="rows">
-                                <div class="slidecontainer">
-                                    <input type="range" min="1" max="100" value="1" class="slider" id="ball2_level" oninput="update_awaken_showhide('ball2')">
+                        <div class="new-ballselect">
+                            <div id="ballX_info_container" class="info-container example nodisplay" style="--col: #f88; --bgcol: #800">
+                                <img class="big-ballicon" src="img/icons/unknown.png">
+                                <div class="rows ball-base-info">
+                                    <span class="title"><span class="ballname">Ball name</span></span>
+                                    <span class="subtitle"><span class="skinname">Skin</span>&nbsp;|&nbsp;<span class="ball-level">LV 1</span></span>
+                                    <span class="team">&nbsp;RED&nbsp;</span>
                                 </div>
-                                <span class="ball-level-number">Level <span id="ball2_level_number">1</span></span>
-                            </div>
-                        </div>
-                        <div class="row ballinfo" id="ball2_info" style="--col: rgb(255, 255, 0)">
-                            <span>Scrimblo gumblo</p>
-                        </div>
-                        <div class="row ballinfo ainfo hidden" id="ball2_a_info" style="--col: rgb(255, 255, 128)">
-                            <span>Scrimblo gumblo</p>
-                        </div>
-
-                        <div id="ball3_settings" class="row ballsettings" style="--col: rgb(0, 255, 0)">
-                            <select class="sandbox-team-select" onchange="update_ballinfo('ball3', true)" name="ball3_team">
-                                
-                            </select>
-                            <select class="sandbox-ball-select main" onchange="update_ballinfo('ball3')" name="ball3"></select>
-                            <select class="sandbox-ball-select additional nodisplay" onchange="update_ballinfo('ball3')" name="ball3"></select>
-                            <select class="sandbox-ball-select powered nodisplay" onchange="update_ballinfo('ball3')" name="ball3"></select>
-                            <select class="sandbox-skin-select" name="ball3_skin"></select>
-                            <button class="sandbox-ball-random" onclick="randomise_ballselect('ball3')">Random</button>
-                            <div style="flex-grow: 1;" class="rows">
-                                <div class="slidecontainer">
-                                    <input type="range" min="1" max="100" value="1" class="slider" id="ball3_level" oninput="update_awaken_showhide('ball3')">
+                                <div class="rows buttonsets">
+                                    <div class="buttonset">
+                                        <button class="edit-button">Edit</button>
+                                        <button class="disable-button"></button>
+                                    </div>
+                                    <div class="buttonset">
+                                        <span>Random:</span>
+                                        <button class="random-button random-ball">Ball</button>
+                                        <button class="random-button random-skin">Skin</button>
+                                        <button class="random-button random-everything">Everything!</button>
+                                    </div>
                                 </div>
-                                <span class="ball-level-number">Level <span id="ball3_level_number">1</span></span>
                             </div>
-                        </div>
-                        <div class="row ballinfo" id="ball3_info" style="--col: rgb(0, 255, 0)">
-                            <span>Scrimblo gumblo</p>
-                        </div>
-                        <div class="row ballinfo ainfo hidden" id="ball3_a_info" style="--col: rgb(128, 255, 128)">
-                            <span>Scrimblo gumblo</p>
-                        </div>
-
-                        <div id="ball4_settings" class="row ballsettings" style="--col: rgb(0, 255, 255)">
-                            <select class="sandbox-team-select" onchange="update_ballinfo('ball4', true)" name="ball4_team">
-
-                            </select>
-                            <select class="sandbox-ball-select main" onchange="update_ballinfo('ball4')" name="ball4"></select>
-                            <select class="sandbox-ball-select additional nodisplay" onchange="update_ballinfo('ball4')" name="ball4"></select>
-                            <select class="sandbox-ball-select powered nodisplay" onchange="update_ballinfo('ball4')" name="ball4"></select>
-                            <select class="sandbox-skin-select" name="ball4_skin"></select>
-                            <button class="sandbox-ball-random" onclick="randomise_ballselect('ball4')">Random</button>
-                            <div style="flex-grow: 1;" class="rows">
-                                <div class="slidecontainer">
-                                    <input type="range" min="1" max="100" value="1" class="slider" id="ball4_level" oninput="update_awaken_showhide('ball4')">
-                                </div>
-                                <span class="ball-level-number">Level <span id="ball4_level_number">1</span></span>
-                            </div>
-                        </div>
-                        <div class="row ballinfo" id="ball4_info" style="--col: rgb(0, 255, 255)">
-                            <span>Scrimblo gumblo</p>
-                        </div>
-                        <div class="row ballinfo ainfo hidden" id="ball4_a_info" style="--col: rgb(128, 255, 255)">
-                            <span>Scrimblo gumblo</p>
                         </div>
 
                         <div class="row spacing sandbox-global-controls">
@@ -165,6 +189,11 @@
                         <div class="columns" style="margin-top: 0.5vmin; user-select: none;">
                             <input type="checkbox" id="skip_intro_checkbox">
                             <span onclick="document.querySelector('#skip_intro_checkbox').click()">Skip intro?</span>
+                            
+                            <span>&nbsp;</span>
+
+                            <input type="checkbox" id="extend_intro_checkbox">
+                            <span onclick="document.querySelector('#extend_intro_checkbox').click()">Extended intro?</span>
                         </div>
                         <span style="margin-top: 0.5vmin; padding-left:1vmin; padding-right:1vmin; color:#bbb;">Use a frame speed closest to the refresh rate of your screen, or "Realtime" if you don't care about replays. When loading replays, this is set automatically - use speed controls if needed.</span>
                     </div>
@@ -231,28 +260,15 @@
                     <canvas class="game-canvas" id="game-canvas-front">
                         This canvas needs to be viewed to be displayed.
                     </canvas>
-
-                    <div id="sandbox_load_replays" class="sandbox-load-replays behind-canvases nodisplay">
-                        <span class="title">Loading a replay with the following balls:</span>
-                        <br>
-                        <span id="replay_load_balls_list">
-                            
-                        </span>
-                        <br>
-                        <div class="buttonrow">
-                            <button onclick="kill_confirmation_box()">Cancel</button>
-                            <button onclick="load_readied_replay()">Start</button>
-                        </div>
-                    </div>
                 </div>
             </div>
 
-            <div class="right-container">
+            <div class="right-container" >
                 <div class="campaign rightpanel nodisplay">
                     <span>Hi</span>
                 </div>
 
-                <div id="sandbox_replay_panel" class="sandbox replaypanel">
+                <div id="sandbox_replay_panel" class="sandbox replaypanel hide-on-low-content-size">
                     
                 </div>
 
@@ -280,6 +296,161 @@
         </div>
     </div>
 
+    <div id="popup-container">
+        <div id="sandbox_load_replays" class="popup sandbox-load-replays nodisplay">
+            <span class="title">Loading a replay with the following balls:</span>
+            <br>
+            <span id="replay_load_balls_list">
+                
+            </span>
+            <br>
+            <div class="buttonrow">
+                <button onclick="kill_confirmation_box()">Cancel</button>
+                <button onclick="load_readied_replay()">Start</button>
+            </div>
+        </div>
+
+        <div id="sandbox_ball_selector" class="popup sandbox-ball-selector behind-canvases nodisplay">
+            <span class="title">Select ball and level:</span>
+            <div class="category-selection-menu">
+                <span class="category-selection-item nodisplay example">STANDARD</span>
+                <span style="background-color: #333; color: rgba(255, 255, 255, 255)" class="selected category-selection-item">STANDARD</span>
+                <span style="background-color: #303; color: rgba(255, 128, 255, 255)" class="category-selection-item">SILLY</span>
+                <span style="background-color: #300; color: rgba(255, 128, 128, 255)" class="category-selection-item">POWERED</span>
+            </div>
+            <div class="ball-select small-ball-grid">
+                <div class="ball-item nodisplay example">
+                    <img class="ballicon" src="img/icons/unknown.png">
+                    <span class="ballname">Test</span>
+                </div>
+                <div class="ball-item">
+                    <img class="ballicon" src="img/icons/unknown.png">
+                    <span class="ballname">Test</span>
+                </div>
+                <div class="ball-item selected">
+                    <img class="ballicon" src="img/icons/unknown.png">
+                    <span class="ballname">Test</span>
+                </div>
+                <div class="ball-item">
+                    <img class="ballicon" src="img/icons/unknown.png">
+                    <span class="ballname">Test</span>
+                </div>
+                <div class="ball-item">
+                    <img class="ballicon" src="img/icons/unknown.png">
+                    <span class="ballname">Test</span>
+                </div>
+                <div class="ball-item">
+                    <img class="ballicon" src="img/icons/unknown.png">
+                    <span class="ballname">Test</span>
+                </div>
+                <div class="ball-item">
+                    <img class="ballicon" src="img/icons/unknown.png">
+                    <span class="ballname">Test</span>
+                </div>
+                <div class="ball-item">
+                    <img class="ballicon" src="img/icons/unknown.png">
+                    <span class="ballname">Test</span>
+                </div>
+            </div>
+
+            <span class="spacer hidden">&nbsp;</span>
+
+            <div class="slide-supercontainer">
+                <div class="slidecontainer">
+                    <input style="--col: red" type="range" min="1" max="100" value="1" class="slider" id="ball_level" oninput="update_ball_selection_level()">
+                </div>
+                <span class="ball-level-number">Level <span id="ball_level_number">1</span></span>
+            </div>
+
+            <span class="spacer hidden">&nbsp;</span>
+            <span class="spacer">&nbsp;</span>
+
+            <div id="ball_info_display" class="ball-info-display">
+                <div class="cols">
+                    <img class="big-ballicon" src="img/icons/unknown.png">
+                    <div class="sbs rows">
+                        <div class="stat-item-pair">
+                            <span class="name">Test</span>
+                            <span class="tier">Tier:&nbsp;<span id="tiertext">A</span>&nbsp;</span>
+                        </div>
+                        <div class="stat-item">
+                            <div class="tags">
+
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <span class="desc">This ball does something</span>
+                        </div>
+                    </div>
+                </div>
+
+                <span class="spacer hidden">&nbsp;</span>
+
+                <div class="stat-item onlevelup noflex">
+                    <span class="minititle">LEVEL UP</span>
+                    <span class="content">On level up... who knows</span>
+                </div>
+
+                <div class="stat-item awakened noflex">
+                    <span class="minititle">AWAKEN (lv. 100)</span>
+                    <span class="content">On awaken... who knows</span>
+                </div>
+            </div>
+            
+            <span class="spacer hidden" style="font-size: 1.5vmin;">&nbsp;</span>
+
+            <span class="title">Select a skin:</span>
+            <div class="skin-select small-ball-grid small-skin-grid">
+                <div class="small-ball-grid">
+                    <div class="ball-item nodisplay example">
+                        <span class="ballname">Test</span>
+                    </div>
+                    <div class="ball-item">
+                        <span class="ballname">Test</span>
+                    </div>
+                    <div class="ball-item selected">
+                        <span class="ballname">Test</span>
+                    </div>
+                    <div class="ball-item">
+                        <span class="ballname">Test</span>
+                    </div>
+                    <div class="ball-item">
+                        <span class="ballname">Test</span>
+                    </div>
+                </div>
+            </div>
+
+            <span class="title">Select a team:</span>
+            <div class="team-select small-ball-grid small-team-grid">
+                <div class="small-ball-grid">
+                    <div class="ball-item nodisplay example">
+                        <span class="ballname">Test</span>
+                    </div>
+                    <div class="ball-item">
+                        <span class="ballname">Test</span>
+                    </div>
+                    <div class="ball-item selected">
+                        <span class="ballname">Test</span>
+                    </div>
+                    <div class="ball-item">
+                        <span class="ballname">Test</span>
+                    </div>
+                    <div class="ball-item">
+                        <span class="ballname">Test</span>
+                    </div>
+                </div>
+            </div>
+
+            <span class="spacer hidden">&nbsp;</span>
+
+            <div class="action-buttons">
+                <span class="clickable save" onclick="save_selection_button()">Save</span>
+                <span class="spc">&nbsp;</span>
+                <span class="clickable cancel" onclick="cancel_selection_button()">Cancel</span>
+            </div>
+        </div>
+    </div>
+
 	<div class="bottombar" id="normal-bottombar">
 		<a class="left-text" style="font-size: 3vmin; bottom: 16px; left: 16px" href="index.html">balls v1.0 | balls - best experienced in desktop!<br>
             <!--
@@ -293,16 +464,16 @@
     <script src="../shared/js/helpers.js?v=07"></script>
 	<script src="../shared/js/canvas_helpers.js?v=04"></script>
 	
-    <script src="balls_core.js?v=32"></script>
+    <script src="balls_core.js?v=33"></script>
 
-    <script src="balls_balls.js?v=38"></script>
-    <script src="balls_balls_additional.js?v=40"></script>
-    <script src="balls_balls_powered.js?v=04"></script>
+    <script src="balls_balls.js?v=39"></script>
+    <script src="balls_balls_additional.js?v=41"></script>
+    <script src="balls_balls_powered.js?v=05"></script>
 
-    <script src="balls_replay_parsing.js?v=05"></script>
-    <script src="balls_launcher.js?v=50"></script>
+    <script src="balls_replay_parsing.js?v=06"></script>
+    <script src="balls_launcher.js?v=51"></script>
     
-    <script src="balls_campaign.js?v=05"></script>
+    <script src="balls_campaign.js?v=06"></script>
 
 	<script src="../shared/js/playtime.js?v=00"></script>
 

@@ -42,7 +42,7 @@ const ANIMATION_STANDARD_DATA = {
             {frame: 9, snd: "eyebeam_fire"},
             {frame: 9, display: true},
         ],
-        offset: new Vector2(-0.25, 0.25),
+        offset: new Vector2(-0.2, 0.25),
     },
 
     load: {
@@ -265,6 +265,8 @@ class WeaponBall extends Ball {
     static RUPTURE_CALCULATION_CONSTANT = Math.LN2
 
     static ball_name = "No Weapon";
+
+    static AVAILABLE_SKINS = [];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor);
@@ -1471,9 +1473,9 @@ class DaggerBall extends WeaponBall {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "dagger";
-        this.description_brief = "Rotates exponentially faster and deals exponentially more damage every strike. These bonuses decay back to zero when not continually striking.";
+        this.description_brief = "Rotates exponentially faster and deals exponentially more damage every time a dagger hit connects. These bonuses decay back to zero when not continually striking.";
         this.level_description = "Increases the delay after not striking until bonuses will decay.";
-        this.max_level_description = "When rotation speed is at 1000 deg/s or higher, starts shooting small projectiles (1 dmg) at a frequency and velocity based on rotation speed. Projectile hits don't count as strikes.";
+        this.max_level_description = "When spinning 1000 deg/s or more, shoots small projectiles (1 dmg) at a frequency and velocity based on rotation speed.";
         this.quote = "surely thats not all youve got.\ncome here and let me destroy you again.";
 
         this.tier = TIERS.A;

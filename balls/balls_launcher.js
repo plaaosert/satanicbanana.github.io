@@ -55,6 +55,55 @@ let replaying = false;
 
 let readied_replay = null;
 
+let selected_ball_info = {
+    "ball1": {
+        name: "SORD",
+        skin: "Default",
+        level: 0,
+        team: 0,
+        category: CATEGORIES.STANDARD,
+        disabled: false,
+        saved_selections: {},
+        saved_skins: {},
+    },
+
+    "ball2": {
+        name: "Hammer",
+        skin: "Default",
+        level: 0,
+        team: 1,
+        category: CATEGORIES.STANDARD,
+        disabled: false,
+        saved_selections: {},
+        saved_skins: {},
+    },
+    
+    "ball3": {
+        name: "SORD",
+        skin: "Default",
+        level: 0,
+        team: 2,
+        category: CATEGORIES.STANDARD,
+        disabled: true,
+        saved_selections: {},
+        saved_skins: {},
+    },
+
+    "ball4": {
+        name: "SORD",
+        skin: "Default",
+        level: 0,
+        team: 3,
+        category: CATEGORIES.STANDARD,
+        disabled: true,
+        saved_selections: {},
+        saved_skins: {},
+    },
+}
+
+let currently_editing_ballid = "ball1";
+let saved_prev_state = JSON.parse(JSON.stringify(selected_ball_info[currently_editing_ballid]));
+
 document.addEventListener("DOMContentLoaded", async function() {
     await load_audio();
 });
@@ -384,9 +433,16 @@ function spawn_selected_balls() {
     
     let positions = default_positions;
 
+    let infos = [
+        selected_ball_info.ball1,
+        selected_ball_info.ball2,
+        selected_ball_info.ball3,
+        selected_ball_info.ball4
+    ];
+
     let cols_indexes = [];
     for (let i=0; i<positions.length; i++) {
-        let col_team = document.querySelector(`select[name='ball${i+1}_team']`).selectedIndex;
+        let col_team = infos[i].team;
         cols_indexes.push(col_team);
     }
 
@@ -394,15 +450,18 @@ function spawn_selected_balls() {
 
     let ball_classes = [];
     for (let i=0; i<cols.length; i++) {
-        let elem = document.querySelector(`select[name='ball${i+1}']:not(.nodisplay)`);
-        let ball_proto = selectable_balls.find(t => t.ball_name == elem?.value);
+        let value = infos[i].name;
+        if (infos[i].disabled)
+            value = null;
+
+        let ball_proto = selectable_balls.find(t => t.ball_name == value);
 
         ball_classes.push(ball_proto);
     }
 
     let ball_levels = [];
     for (let i=0; i<cols.length; i++) {
-        let lvl = document.querySelector(`#ball${i+1}_level`).value - 1;
+        let lvl = infos[i].level;
         ball_levels.push(lvl);
     }
 
@@ -420,7 +479,7 @@ function spawn_selected_balls() {
 
     let skins = [];
     for (let i=0; i<positions.length; i++) {
-        let skin = document.querySelector(`select[name='ball${i+1}_skin']`).value;
+        let skin = infos[i].skin;
         skins.push(skin);
     }
 
@@ -502,7 +561,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
             render_victory_enabled = true;
         }
 
-        starting_fullpause_timeout = skipping ? 0 : 7;
+        starting_fullpause_timeout = skipping ? 0 : (document.querySelector("#extend_intro_checkbox").checked ? 6 : 3);
         fullpause_timeout = starting_fullpause_timeout;
         opening_state = {};
         if (skipping) {
@@ -574,6 +633,446 @@ function update_awaken_showhide(ballid) {
     } else {
         document.querySelector(`#${ballid}_a_info`).classList.add("hidden");
     }
+}
+
+function update_ball_selection_popup() {
+    // clear the popup first
+    let ballid = currently_editing_ballid;
+    if (!ballid)
+        return;
+
+    let elem = document.querySelector("#sandbox_ball_selector");
+
+    let category_list = elem.querySelector(".category-selection-menu");
+    category_list.querySelectorAll(".category-selection-item:not(.example)").forEach(e => e.remove());
+
+    let ball_list = elem.querySelector(".ball-select.small-ball-grid");
+    ball_list.querySelectorAll(".ball-item:not(.example)").forEach(e => e.remove());
+
+    let skin_list = elem.querySelector(".skin-select.small-ball-grid");
+    skin_list.querySelectorAll(".ball-item:not(.example)").forEach(e => e.remove());
+
+    let team_list = elem.querySelector(".team-select.small-ball-grid");
+    team_list.querySelectorAll(".ball-item:not(.example)").forEach(e => e.remove());
+
+    let ballinfo_elem = elem.querySelector("#ball_info_display");
+
+    // setup in order
+    // category, ball list, selected ball info, skin, team, level
+    let clone = category_list.querySelector(".example");
+    Object.keys(CATEGORIES).forEach(c => {
+        let new_o = clone.cloneNode(true);
+
+        new_o.textContent = c;
+        new_o.style.backgroundColor = CATEGORIES_INFO[c].col.lerp(Colour.black, 0.8).css();
+        new_o.style.color = CATEGORIES_INFO[c].col.css();
+
+        if (selected_ball_info[ballid].category == c) {
+            new_o.classList.add("selected");
+        }
+
+        new_o.classList.remove("example");
+        new_o.classList.remove("nodisplay");
+
+        let cs = c;
+        new_o.addEventListener("click", _ => {
+            change_selected_category(cs);
+        })
+
+        category_list.append(new_o);
+    });
+
+    clone = ball_list.querySelector(".example");
+    let longest_cat_len = Math.max(...Object.keys(CATEGORIES).map(k => category_to_balls_list[k].length))
+
+    for (let i=0; i<longest_cat_len; i++) {
+        let b = category_to_balls_list[selected_ball_info[ballid].category][i];
+
+        let new_o = clone.cloneNode(true);
+
+        if (b) {
+            new_o.querySelector(".ballname").textContent = b.ball_name;
+            
+            let icon = new_o.querySelector(".ballicon");
+            if (entity_sprites.get(`icon_${b.ball_name.toLowerCase()}`)) {
+                icon.src = `img/icons/${b.ball_name.toLowerCase()}.png`;
+            } else {
+                icon.src = `img/icons/unknown.png`;
+            }
+
+            icon.addEventListener("error", _ => {
+                icon.src = `img/icons/unknown.png`;
+            })
+
+            new_o.style.color = CATEGORIES_INFO[selected_ball_info[ballid].category].col.lerp(Colour.white, 0.5).css();
+
+            if (selected_ball_info[ballid].name == b.ball_name) {
+                new_o.classList.add("selected");
+            }
+
+            new_o.classList.remove("example");
+            new_o.classList.remove("nodisplay");
+
+            new_o.addEventListener("click", _ => {
+                if (selected_ball_info[ballid].name != b.ball_name)
+                    change_selected_ball(b.ball_name);
+            })
+        } else {
+            new_o.classList.remove("example");
+            new_o.classList.remove("nodisplay");
+
+            new_o.style.visibility = "hidden";
+        }
+
+        ball_list.append(new_o);
+    }
+
+    let ball_proto = selectable_balls.find(t => t.ball_name == selected_ball_info[ballid].name);
+    let testball = new ball_proto(
+        {random: Math.random, random_seed: "123"}, 1, 512, Colour.white, null, null, {}, 1, false
+    );
+
+    ballinfo_elem.querySelector(".name").textContent = testball.name;
+
+    let icon = ballinfo_elem.querySelector(".big-ballicon");
+    if (entity_sprites.get(`icon_${ball_proto.ball_name.toLowerCase()}`)) {
+        icon.src = `img/icons/${ball_proto.ball_name.toLowerCase()}.png`;
+    } else {
+        icon.src = `img/icons/unknown.png`;
+    }
+
+    icon.addEventListener("error", _ => {
+        icon.src = `img/icons/unknown.png`;
+    })
+
+    ballinfo_elem.querySelector("#tiertext").style.color = TIERS_INFO[testball.tier].col.css();
+    ballinfo_elem.querySelector("#tiertext").style.backgroundColor = TIERS_INFO[testball.tier].col.lerp(Colour.black, 0.6).css();
+    ballinfo_elem.querySelector("#tiertext").textContent = `${String.fromCharCode(160)}${testball.tier}${String.fromCharCode(160)}`;
+
+    let tag_elem = ballinfo_elem.querySelector(".tags");
+    while (tag_elem.hasChildNodes())
+        tag_elem.firstChild.remove();
+
+    let total_chars = 0;
+    testball.tags.forEach((tag, i) => {
+        let tag2 = document.createElement("span");
+        tag2.classList.add("tag");
+
+        let tag3 = document.createElement("span");
+
+        tag3.textContent = `${String.fromCharCode(160)}${TAGS_INFO[tag].name}${String.fromCharCode(160)}`;
+        
+        total_chars += tag3.textContent.length;
+        
+        tag3.style.backgroundColor = "#333";
+
+        let spc = document.createElement("span");
+        spc.textContent = String.fromCharCode(160);
+        spc.classList.add("spc");
+
+        tag2.append(tag3);
+        tag_elem.append(tag2);
+
+        if (i+1 < testball.tags.length)
+            tag2.append(spc);
+    });
+
+    while (total_chars < 69) {
+        let tag2 = document.createElement("span");
+        tag2.classList.add("tag");
+        tag2.style.visibility = "hidden";
+        tag2.textContent = String.fromCharCode(160).repeat(5);
+        total_chars += 5;
+
+        tag_elem.append(tag2);
+    }
+
+    ballinfo_elem.querySelector(".desc").textContent = testball.description_brief;
+    ballinfo_elem.querySelector(".onlevelup .content").textContent = testball.level_description;
+    
+    ballinfo_elem.querySelector(".awakened .content").textContent = testball.max_level_description;
+    if (selected_ball_info[ballid].level >= AWAKEN_LEVEL) {
+        ballinfo_elem.querySelector(".awakened").classList.remove("locked");
+    } else {
+        ballinfo_elem.querySelector(".awakened").classList.add("locked");
+    }
+
+    let longest_skins_list = Math.max(...selectable_balls.map(b => b.AVAILABLE_SKINS.length));
+
+    clone = skin_list.querySelector(".example");
+    let li = ["Default", ...ball_proto.AVAILABLE_SKINS];
+    for (let i=0; i<longest_skins_list+1; i++) {
+        let c = li[i];
+
+        let new_o = clone.cloneNode(true);
+
+        if (c) {
+            new_o.querySelector(".ballname").textContent = c;
+
+            if (selected_ball_info[ballid].skin == c) {
+                new_o.classList.add("selected");
+            }
+
+            new_o.classList.remove("example");
+            new_o.classList.remove("nodisplay");
+
+            let cs = c;
+            new_o.addEventListener("click", _ => {
+                if (selected_ball_info[ballid].skin != cs)
+                    change_selected_skin(cs);
+            })
+        } else {
+            new_o.classList.remove("example");
+            new_o.classList.remove("nodisplay");
+
+            new_o.style.visibility = "hidden";
+        }
+
+        skin_list.append(new_o);
+    };
+
+    clone = team_list.querySelector(".example");
+    default_cols.forEach((col, i) => {
+        let col_name = col_names[i];
+
+        let new_o = clone.cloneNode(true);
+
+        new_o.querySelector(".ballname").textContent = col_name;
+        new_o.style.color = col.css();
+
+        if (selected_ball_info[ballid].team == i) {
+            new_o.classList.add("selected");
+            new_o.style.backgroundColor = col.lerp(Colour.black, 0.7).css();
+        }
+
+        new_o.classList.remove("example");
+        new_o.classList.remove("nodisplay");
+
+        let it = i;
+        new_o.addEventListener("click", _ => {
+            if (selected_ball_info[ballid].team != it)
+                change_selected_team(it);
+        })
+
+        team_list.append(new_o);
+    })
+
+    // final cleanup (level slider)
+    let e2 = elem.querySelector(".slide-supercontainer");
+    e2.querySelector("#ball_level_number").textContent = selected_ball_info[ballid].level + 1;
+    // and team for col
+    e2.querySelector("input").style.setProperty("--col", default_cols[selected_ball_info[ballid].team].css());
+}
+
+function cancel_selection_button() {
+    // set value back to saved_prev_state
+    // then close as normal
+    selected_ball_info[currently_editing_ballid] = saved_prev_state;
+    save_selection_button();
+}
+
+function save_selection_button() {
+    document.querySelector("#sandbox_ball_selector").classList.add("nodisplay");
+
+    refresh_ballinfo(currently_editing_ballid);
+}
+
+function change_selected_team(to) {
+    let ballid = currently_editing_ballid;
+
+    selected_ball_info[ballid].team = to;
+
+    update_ball_selection_popup();
+}
+
+function change_selected_skin(to) {
+    let ballid = currently_editing_ballid;
+
+    selected_ball_info[ballid].skin = to;
+
+    update_ball_selection_popup();
+}
+
+function change_selected_ball(to) {
+    let ballid = currently_editing_ballid;
+
+    selected_ball_info[ballid].saved_skins[selected_ball_info[ballid].name] = selected_ball_info[ballid].skin;
+
+    selected_ball_info[ballid].name = to;
+    selected_ball_info[ballid].skin = selected_ball_info[ballid].saved_skins[to] ?? "Default";
+
+    update_ball_selection_popup();
+}
+
+function change_selected_category(to) {
+    let ballid = currently_editing_ballid;
+    
+    selected_ball_info[ballid].saved_selections[selected_ball_info[ballid].category] = selected_ball_info[ballid].name;
+
+    selected_ball_info[ballid].category = to;
+
+    // select the first ball from the new list, make sure to reset skin too
+    selected_ball_info[ballid].name = selected_ball_info[ballid].saved_selections[to] ?? category_to_balls_list[to][0].ball_name;
+    selected_ball_info[ballid].skin = selected_ball_info[ballid].saved_skins[selected_ball_info[ballid].name] ?? "Default";
+
+    update_ball_selection_popup();
+}
+
+function update_ball_selection_level() {
+    let e = document.querySelector("#ball_level");
+
+    if (currently_editing_ballid) {
+        selected_ball_info[currently_editing_ballid].level = parseInt(e.value) - 1;
+    }
+
+    update_ball_selection_popup();
+}
+
+function refresh_ballinfo(ballid) {
+    // set col, bgcol, icon, name, skin, team, enabled status
+    let elem = document.querySelector(`#${ballid}_info_container`);
+    
+    let info = selected_ball_info[ballid];
+
+    let col = default_cols[info.team];
+
+    elem.style.setProperty("--col", col.lerp(Colour.white, 0.5).css());
+    elem.style.setProperty("--bgcol", col.lerp(Colour.black, 0.5).css());
+
+    let icon_name = info.name.toLowerCase();
+    let spr = entity_sprites.get(`icon_${icon_name}`);
+    if (spr) {
+        elem.querySelector(".big-ballicon").src = `img/icons/${icon_name}.png`;
+    } else {
+        elem.querySelector(".big-ballicon").src = `img/icons/unknown.png`;
+    }
+
+    elem.querySelector(".ballname").textContent = info.name;
+    elem.querySelector(".skinname").textContent = info.skin;
+    // if no skins, disable button
+    let proto = selectable_balls.find(b => b.ball_name == info.name);
+    if (proto.AVAILABLE_SKINS.length > 0) {
+        elem.querySelector(".random-skin").classList.remove("disabled");
+    } else {
+        elem.querySelector(".random-skin").classList.add("disabled");
+    }
+
+    elem.querySelector(".team").textContent = `${String.fromCharCode(160)}${col_names[info.team]}${String.fromCharCode(160)}`;
+
+    if (info.disabled) {
+        elem.classList.add("disabled");
+    } else {
+        elem.classList.remove("disabled");
+    }
+}
+
+function setup_info_containers() {
+    let clone = document.querySelector("#ballX_info_container.example");
+    let parent = document.querySelector(".new-ballselect");
+
+    for (let i=0; i<4; i++) {
+        let new_o = clone.cloneNode(true);
+
+        new_o.id = `ball${i+1}_info_container`;
+
+        new_o.classList.remove("example");
+        new_o.classList.remove("nodisplay");
+
+        parent.append(new_o);
+    }
+}
+
+function toggle_disabled_ball(ballid) {
+    selected_ball_info[ballid].disabled = !selected_ball_info[ballid].disabled;
+
+    refresh_ballinfo(ballid);
+}
+
+function open_ball_edit_menu(ballid) {
+    currently_editing_ballid = ballid;
+
+    update_ball_selection_popup();
+
+    document.querySelector("#sandbox_ball_selector").classList.remove("nodisplay");
+}
+
+function randomise_ball_info(ballid, rand_type) {
+    // "random-ball", "random-skin", "random-everything"
+    let li = [];
+    let ball = null;
+    let skin = null;
+    let category = null;
+
+    let info = selected_ball_info[ballid];
+
+    switch (rand_type) {
+        case "random-ball": {
+            li = category_to_balls_list[info.category].filter(t => !banned_for_random.some(s => t.ball_name == s.ball_name));
+
+            let newball = null
+            while (!newball || newball == info.name)
+                newball = random_from_array(li).ball_name;
+            
+            ball = newball;
+            break;
+        }
+        
+        case "random-skin": {
+            let proto = selectable_balls.find(b => b.ball_name == info.name);
+            li = ["Default", ...proto.AVAILABLE_SKINS];
+
+            let newskin = null
+            while (!newskin || newskin == info.skin)
+                newskin = random_from_array(li);
+            
+            skin = newskin;
+            break;
+        }
+
+        case "random-everything": {
+            let cats = Object.keys(CATEGORIES)
+            let cat = random_from_array(cats);
+
+            category = cat;
+
+            li = category_to_balls_list[info.category].filter(t => !banned_for_random.some(s => t.ball_name == s.ball_name));
+
+            let newball = null
+            while (!newball || newball == info.name)
+                newball = random_from_array(li).ball_name;
+            
+            ball = newball;
+
+            let proto = selectable_balls.find(b => b.ball_name == ball);
+            li = ["Default", ...proto.AVAILABLE_SKINS];
+
+            let newskin = li[0];
+            if (li.length > 2) {
+                while (!newskin || newskin == info.skin)
+                    newskin = random_from_array(li);
+            }
+
+            skin = newskin;
+
+            break;
+        }
+    }
+    
+    let last_edited = currently_editing_ballid;
+    currently_editing_ballid = ballid;
+
+    if (category)
+        change_selected_category(category)
+
+    if (ball)
+        change_selected_ball(ball)
+
+    if (skin)
+        change_selected_skin(skin)
+
+    currently_editing_ballid = last_edited;
+
+    refresh_ballinfo(ballid);
 }
 
 function refresh_mod_text() {
@@ -1124,6 +1623,34 @@ document.addEventListener("DOMContentLoaded", function() {
 
     update_sim_speed_display();
 
+    setup_info_containers();
+
+    randomise_ball_info("ball1", "random-ball");
+    randomise_ball_info("ball2", "random-ball");
+
+    for (let i=1; i<=4; i++) {
+        refresh_ballinfo(`ball${i}`);
+    }
+
+    document.querySelectorAll(".disable-button").forEach(e => e.addEventListener("click", ev => {
+        let ballid = ev.target.closest(".info-container").id.split("_")[0];
+
+        toggle_disabled_ball(ballid);
+    }));
+
+    document.querySelectorAll(".edit-button").forEach(e => e.addEventListener("click", ev => {
+        let ballid = ev.target.closest(".info-container").id.split("_")[0];
+
+        open_ball_edit_menu(ballid);
+    }));
+
+    document.querySelectorAll(".random-button").forEach(e => e.addEventListener("click", ev => {
+        let ballid = ev.target.closest(".info-container").id.split("_")[0];
+        let random_type = [...ev.target.classList].find(t => !t.endsWith("button"));
+
+        randomise_ball_info(ballid, random_type);
+    }));
+
     // document.querySelector("select[name='ball1']").value = "WandBall";
 
     // setTimeout(() => load_replay("eyJmcmFtZXNwZWVkIjoxNDQsImJhbGxzIjpbIk5lZWRsZUJhbGwiLCJOZWVkbGVCYWxsIiwiQ2hha3JhbUJhbGwiLCJDaGFrcmFtQmFsbCJdLCJsZXZlbHMiOlswLDAsMCwwXSwic2VlZCI6IjMzMjYxMTk3ODUxNjA1MDUifQ=="), 1000)
@@ -1159,6 +1686,29 @@ document.addEventListener("DOMContentLoaded", function() {
         elem.textContent = elem.textContent.split("|")[0] + ` you are on an old version (${GAME_VERSION})! click here to go to the latest version!`;
     }
 })
+
+// entity_sprites late setup
+selectable_balls_for_random.map(b => b.ball_name.toLowerCase()).forEach(n => {
+    let t = new Image(128, 128);
+    let ts = [];
+
+    t.src = `${FILES_PREFIX}img/icons/${n}.png`;
+    t.style.imageRendering = "pixelated";
+
+    num_textures_needed++;
+    t.addEventListener("load", function() {
+        num_textures_loaded++;
+    })
+
+    t.addEventListener("error", function(e) {
+        t.src = "img/icons/unknown.png";
+    })
+
+    ts.push(t);
+    
+    entity_sprites.set(`icon_${n}`, ts);
+})
+
 
 // TODO make levelling information exist somewhere - probably need to think about that when we come to RPG theming really
 

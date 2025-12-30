@@ -209,10 +209,12 @@ const entity_sprites = new Map([
                     }
                 }
             })
-            // t.addEventListener("error", function() {
-            //     console.log(`Error loading ${t.src}!`);
-            //     t.src = "img/icons/unknown.png";
-            // })
+
+            if (v[3]) {
+                t.addEventListener("error", function() {
+                    t.src = "img/icons/unknown.png";
+                })
+            }
 
             ts.push(t);
         }
@@ -225,10 +227,11 @@ const entity_sprites = new Map([
         t.addEventListener("load", function() {
             num_textures_loaded++;
         })
-        // t.addEventListener("error", function(e) {
-        //     console.log(`Error loading ${t.src}!`);
-        //     t.src = "img/icons/unknown.png";
-        // })
+        if (v[3]) {
+            t.addEventListener("error", function(e) {
+                t.src = "img/icons/unknown.png";
+            })
+        }
 
         ts.push(t);
     }
@@ -1407,8 +1410,8 @@ function handle_resize(event) {
         canvas_y = rect.y;
     })
 
-    document.querySelectorAll(".behind-canvases").forEach(elem => { if (elem.id != "sandbox_load_replays") { elem.style.width = canvas_smallest + "px" } });
-    document.querySelectorAll(".behind-canvases").forEach(elem => { if (elem.id != "sandbox_load_replays") { elem.style.height = canvas_smallest + "px" } });
+    document.querySelectorAll(".behind-canvases").forEach(elem => { if (!elem.classList.contains("popup")) { elem.style.width = canvas_smallest + "px" } else { elem.style.setProperty("--siz", canvas_smallest + "px") } });
+    document.querySelectorAll(".behind-canvases").forEach(elem => { if (!elem.classList.contains("popup")) { elem.style.height = canvas_smallest + "px" } else { elem.style.setProperty("--siz", canvas_smallest + "px") } });
 
     document.querySelector(".everything-subcontainer").style.height = canvas_smallest + "px";
 
@@ -1539,15 +1542,15 @@ function render_victory(board, time_until_end) {
 
     if (!b) {
         // draw
-        if (t > 3) {
+        if (t > 0.5) {
             write_pp_bordered_text(ctx, "DRAW", canvas_width/2, 256, "white", CANVAS_FONTS, 128, true, 2, "black");
         }
     } else {
-        if (t > 2) {
+        if (t > 0.5) {
             write_pp_bordered_text(ctx, "VICTORY", canvas_width/2, 256, "white", CANVAS_FONTS, 128, true, 2, "black");
         }
 
-        if (t > 3) {
+        if (t > 0.75) {
             if (b instanceof HandBall) {
                 // special stupid behaviour for this thing in specific
                 if (!board.played_whipcrack) {
@@ -1570,7 +1573,7 @@ function render_victory(board, time_until_end) {
             write_pp_bordered_text(ctx, `${b.name}${bs.length > 1 ? ` +${bs.length-1}`: ""}`, canvas_width/2, 256 + 72, b.get_current_col().css(), CANVAS_FONTS, 72, true, 2, "black");
         }
 
-        if (t > 4.25) {
+        if (t > 1) {
             let quote = b.quote.split("\n");
             quote.forEach((q, i) => {
                 write_pp_bordered_text(
@@ -1996,7 +1999,7 @@ function render_opening(board, time_delta) {
         let frame = board.balls[i].entry_animation_keyframes[cur_anim_snd];
         while (frame && p.cur_frame >= frame.frame) {
             if (frame.snd) {
-                play_audio(frame.snd);
+                play_audio(frame.snd, 0.075);
             }
 
             if (frame.display !== undefined) {
@@ -2010,10 +2013,10 @@ function render_opening(board, time_delta) {
     });
 
     let ball_stagger = 2;
-    let base_delay = 1;
+    let base_delay = 0.6;
 
     board.balls.forEach((ball, i) => {
-        let req = base_delay + 0.5 + (i * (ball_stagger / balls_num));
+        let req = base_delay + 0.25 + (i * (ball_stagger / balls_num));
 
         if (t > req) {
             let pos = ball.position.add(
@@ -2067,6 +2070,7 @@ function render_opening(board, time_delta) {
             let pos = ball.position.add(
                 new Vector2(0, ball.radius * 1.75)
             ).mul(screen_scaling_factor);
+
             write_pp_bordered_text(
                 layers.ui2.ctx,
                 ball.name,
@@ -2079,7 +2083,7 @@ function render_opening(board, time_delta) {
     })
 
     board.balls.forEach((ball, i) => {
-        let req = base_delay + 0.25 + (i * (ball_stagger / balls_num));
+        let req = base_delay + 0.125 + (i * (ball_stagger / balls_num));
 
         if (t > req) {
             let pos = ball.position.add(
@@ -2126,7 +2130,7 @@ function render_opening(board, time_delta) {
         }
     })
 
-    let base_req = 3.5;
+    let base_req = 2.5;
     if (opening_state.cnt === undefined) {
         opening_state.cnt = -1;
     }
@@ -2181,7 +2185,7 @@ function render_postopening(board) {
 
     let maxt = 0.75;
 
-    if (opening_state.cnt) {
+    if (opening_state.cnt !== null) {
         if (starting_fullpause_timeout > 0) {
             play_audio("battle_royale_gong");
         }
