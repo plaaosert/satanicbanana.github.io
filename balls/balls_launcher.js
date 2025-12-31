@@ -989,7 +989,8 @@ function toggle_disabled_ball(ballid) {
 
 function open_ball_edit_menu(ballid) {
     currently_editing_ballid = ballid;
-
+    saved_prev_state = JSON.parse(JSON.stringify(selected_ball_info[currently_editing_ballid]));
+	
     update_ball_selection_popup();
 
     document.querySelector("#sandbox_ball_selector").classList.remove("nodisplay");
