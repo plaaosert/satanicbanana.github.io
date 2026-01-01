@@ -1,8 +1,8 @@
 game_id = "balls";
 
-const FILES_PREFIX = "";
+const FILES_PREFIX = "../../";
 
-const GAME_VERSION = "01/01/2026";
+const GAME_VERSION = "27/12/2025";
 
 const AILMENT_CHARS = "➴☣♨";
 
@@ -2700,39 +2700,7 @@ function game_loop() {
                                 if (!ball.allied_with(other)) {
                                     let colliding_weapons = ball.check_weapons_hit_from(other);
                                     if (colliding_weapons.length > 0) {
-                                        let weapon_index = colliding_weapons[0][0];  // ignore all others
-                                        let other_weapon = other.weapon_data[weapon_index];
-
-                                        // 
-                                        //  ## Particle effects and hit position calculation
-                                        //
-                                        let other_hitbox_position = colliding_weapons[0][1];
-
-                                        let other_coll_index = colliding_weapons[0][2];
-
-                                        // impact position is:
-                                        // source position + (difference vector * size proportion * distance proportion)
-                                        let other_hitbox = other_weapon.hitboxes[other_coll_index];
-
-                                        let total_hitbox_size = (ball.radius) + (other_hitbox.radius * other_weapon.size_multiplier);
-                                        let hitbox_distance = ball.position.distance(other_hitbox_position);
-
-                                        let distance_proportion = hitbox_distance / total_hitbox_size;
-                                        let size_proportion = (ball.radius) / total_hitbox_size;
-
-                                        let difference_vector = other_hitbox_position.sub(ball.position);
-                                        let impact_position = ball.position.add(difference_vector.mul(distance_proportion * size_proportion));
-
-                                        let particle = new Particle(
-                                            impact_position, 0, 2,
-                                            entity_sprites.get("hit"), 16, 4, false
-                                        )
-
-                                        board.spawn_particle(particle, impact_position);
-
-                                        //
-                                        // Rest of logic
-                                        //
+                                        let weapon_index = colliding_weapons[0];  // ignore all others
 
                                         ball.last_hit = 0;
                                         let result = other.hit_other(ball, weapon_index);
@@ -2779,43 +2747,10 @@ function game_loop() {
                             
                             // same rules as normal thing except we go through the get_hit_by for projectiles instead
                             // and delete the projectile
-                            intersecting_projectiles.forEach(projectile_data => {
+                            intersecting_projectiles.forEach(projectile => {
                                 if (this.invuln_duration > 0) {
                                     return;  // don't care if now invuln
                                 }
-
-                                let projectile = projectile_data[0];
-
-                                // 
-                                //  ## Particle effects and hit position calculation
-                                //
-                                let proj_hitbox_position = projectile_data[1];
-
-                                let proj_coll_index = projectile_data[2]
-
-                                // impact position is:
-                                // source position + (difference vector * size proportion * distance proportion)
-                                let proj_hitbox = projectile.hitboxes[proj_coll_index];
-
-                                let total_hitbox_size = (ball.radius) + (proj_hitbox.radius * projectile.size);
-                                let hitbox_distance = ball.position.distance(proj_hitbox_position);
-
-                                let distance_proportion = hitbox_distance / total_hitbox_size;
-                                let size_proportion = (ball.radius) / total_hitbox_size;
-
-                                let difference_vector = proj_hitbox_position.sub(ball.position);
-                                let impact_position = ball.position.add(difference_vector.mul(distance_proportion * size_proportion));
-
-                                let particle = new Particle(
-                                    impact_position, 0, 2,
-                                    entity_sprites.get("hit"), 16, 4, false
-                                )
-
-                                board.spawn_particle(particle, impact_position);
-
-                                //
-                                // Rest of logic
-                                //
 
                                 ball.last_hit = 0;
                                 let result = projectile.source.hit_other_with_projectile(ball, projectile);
@@ -2849,9 +2784,7 @@ function game_loop() {
                         let projectiles_colliding = projectile.check_projectiles_colliding(projectiles_in_scope);
                         projectiles_colliding = projectiles_colliding.filter(proj => !colliding_proj2projs.has(proj.id + (1000000 * projectile.id)))
 
-                        projectiles_colliding.forEach(proj_data => {
-                            let proj = proj_data[0];
-
+                        projectiles_colliding.forEach(proj => {
                             if (proj.parriable) {
                                 projectile.hit_other_projectile(proj);
                             }
@@ -2860,42 +2793,8 @@ function game_loop() {
                             }
                             colliding_proj2projs.add(proj.id + (1000000 * projectile.id));
 
-                            // if either projectile was active and now isn't, play a thud and show the particle effect
+                            // if either projectile was active and now isn't, play a thud
                             if (!proj.active || !projectile.active) {
-                                // 
-                                //  ## Particle effects and hit position calculation
-                                //
-                                let projectile_hitbox_position = proj_data[1][0];
-                                let proj_hitbox_position = proj_data[1][1];
-
-                                let projectile_coll_index = proj_data[2][0];
-                                let proj_coll_index = proj_data[2][1];
-
-                                // impact position is:
-                                // source position + (difference vector * size proportion * distance proportion)
-                                let projectile_hitbox = projectile.hitboxes[projectile_coll_index];
-                                let proj_hitbox = proj.hitboxes[proj_coll_index];
-
-                                let total_hitbox_size = (projectile_hitbox.radius * projectile.size) + (proj_hitbox.radius * proj.size);
-                                let hitbox_distance = projectile_hitbox_position.distance(proj_hitbox_position);
-
-                                let distance_proportion = hitbox_distance / total_hitbox_size;
-                                let size_proportion = (projectile_hitbox.radius * projectile.size) / total_hitbox_size;
-
-                                let difference_vector = proj_hitbox_position.sub(projectile_hitbox_position);
-                                let impact_position = projectile_hitbox_position.add(difference_vector.mul(distance_proportion * size_proportion));
-
-                                let particle = new Particle(
-                                    impact_position, (proj.position.sub(projectile.position)).angle() - (Math.PI * 0.5), 2,
-                                    entity_sprites.get("parry"), 30, 4, false
-                                )
-
-                                board.spawn_particle(particle, impact_position);
-
-                                //
-                                // Rest of logic
-                                //
-
                                 play_audio("thud");
                             }
                         });

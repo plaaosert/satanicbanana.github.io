@@ -640,41 +640,24 @@ class WeaponBall extends Ball {
     // HOW DO YOU NAME THIS
     check_weapons_hit_from(other) {
         // check if THIS BALL is hit by another ball's weapons, and if yes, return which
-        let collisions = [];
-        
-        other.weapon_data.forEach((weapon, weapon_index) => {
+        return new Array(other.weapon_data.length).fill(0).map((_, i) => i).filter(weapon_index => {
             // return true if hit else false
+            let weapon = other.weapon_data[weapon_index];
+
             let hitboxes_offsets = other.get_hitboxes_offsets(weapon_index);
             let weapon_offset = other.get_weapon_offset(weapon_index);
 
-            let collider_position = null;
-            let collider_index = null;
-
             // then check each hitbox; the radius is simply radius * size_multiplier
             // then its classic distance checking
-            let collided = hitboxes_offsets.some((hitbox_offset, index) => {
+            return hitboxes_offsets.some((hitbox_offset, index) => {
                 let hitbox = weapon.hitboxes[index];
 
                 let radius_sum = (hitbox.radius * weapon.size_multiplier) + this.radius;
                 let radius_sum_sqr = compat_pow(radius_sum, 2);
 
-                let other_hitbox_pos = other.position.add(weapon_offset).add(hitbox_offset);
-                if (other_hitbox_pos.sqr_distance(this.position) <= radius_sum_sqr) {
-                    collider_position = other_hitbox_pos;
-                    collider_index = weapon_index;
-                    
-                    return true;
-                } else {
-                    return false;
-                }
-            });
-
-            if (collided) {
-                collisions.push([weapon_index, collider_position, collider_index]);
-            }
+                return other.position.add(weapon_offset).add(hitbox_offset).sqr_distance(this.position) <= radius_sum_sqr;
+            })
         });
-
-        return collisions;
     }
 
     check_weapon_to_weapon_hit_from(other) {
@@ -728,37 +711,19 @@ class WeaponBall extends Ball {
 
     check_projectiles_hit_from(projectiles) {
         // get the projectiles' hitboxes and compare to self - super simple
-        let collisions = [];
-
-        projectiles.forEach(projectile => {
+        return projectiles.filter(projectile => {
             let hitboxes_offsets = projectile.get_hitboxes_offsets();
 
-            let collider_position = null;
-            let collider_index = null;
-
-            let collided = hitboxes_offsets.some((hitbox_offset, index) => {
+            return hitboxes_offsets.some((hitbox_offset, index) => {
                 let hitbox = projectile.hitboxes[index];
 
                 let radius_sum = (hitbox.radius * projectile.size) + this.radius;
                 let radius_sum_sqr = compat_pow(radius_sum, 2);
 
                 let other_hitbox_pos = projectile.position.add(hitbox_offset);
-                if (this.position.sqr_distance(other_hitbox_pos) <= radius_sum_sqr) {
-                    collider_position = other_hitbox_pos;
-                    collider_index = index;
-                    
-                    return true;
-                } else {
-                    return false;
-                }
-            });
-
-            if (collided) {
-                collisions.push([projectile, collider_position, collider_index]);
-            }
+                return this.position.sqr_distance(other_hitbox_pos) <= radius_sum_sqr
+            })
         })
-
-        return collisions;
     }
     
     check_weapon_to_projectiles_hits(projectiles) {
@@ -1613,8 +1578,8 @@ class DaggerBall extends WeaponBall {
         }
 
         if (this.level >= AWAKEN_LEVEL) {
-            this.projectiles_cooldown_max = 0.25 / Math.sqrt(this.speed_base / 500);
-            this.proj_speed = 12000 + Math.sqrt(100 / this.projectiles_cooldown_max);
+            this.projectiles_cooldown_max = 0.5 / (this.speed_base / 500);
+            this.proj_speed = 9000 + (100 / this.projectiles_cooldown_max);
 
             if (this.speed_base >= 1000) {
                 this.projectiles_cooldown -= time_delta;
@@ -5088,9 +5053,7 @@ class Projectile {
     check_projectiles_colliding(projectiles) {
         let this_hitboxes_offsets = this.get_hitboxes_offsets();
 
-        let collisions = [];
-
-        projectiles.forEach(projectile => {
+        return projectiles.filter(projectile => {
             if (!projectile.active || projectile.id == this.id || projectile.source.id == this.source.id) {
                 // projectiles never collide with themselves
                 // disabled projectiles don't collide
@@ -5101,10 +5064,7 @@ class Projectile {
 
             let other_hitboxes_offsets = projectile.get_hitboxes_offsets();
 
-            let collider_positions = null;
-            let collider_indexes = null;
-
-            let collided = this_hitboxes_offsets.some((this_hitbox_offset, this_index) => {
+            return this_hitboxes_offsets.some((this_hitbox_offset, this_index) => {
                 let this_hitbox = this.hitboxes[this_index];
                 
                 // check all of other's hitboxes
@@ -5117,23 +5077,10 @@ class Projectile {
                     let this_hitbox_pos = this.position.add(this_hitbox_offset);
                     let other_hitbox_pos = projectile.position.add(other_hitbox_offset);
 
-                    if (this_hitbox_pos.sqr_distance(other_hitbox_pos) <= radius_sum_sqr) {
-                        collider_positions = [this_hitbox_pos, other_hitbox_pos];
-                        collider_indexes = [this_index, other_index];
-                        
-                        return true;
-                    } else {
-                        return false;
-                    }
+                    return this_hitbox_pos.sqr_distance(other_hitbox_pos) <= radius_sum_sqr
                 })
-            });
-
-            if (collided) {
-                collisions.push([projectile, collider_positions, collider_indexes]);
-            }
+            })
         })
-
-        return collisions;
     }
 
     hit_other_projectile(other_projectile) {
