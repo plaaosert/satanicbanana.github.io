@@ -5316,7 +5316,9 @@ class MagnumProjectile extends HitscanProjectile {
     check_projectiles_colliding(projectiles) {
         let this_hitboxes_offsets = this.get_hitboxes_offsets();
 
-        return projectiles.filter(projectile => {
+        let collisions = [];
+
+        projectiles.forEach(projectile => {
             if (!projectile.active) {
                 return false;
             }
@@ -5331,7 +5333,10 @@ class MagnumProjectile extends HitscanProjectile {
 
             let other_hitboxes_offsets = projectile.get_hitboxes_offsets();
 
-            return this_hitboxes_offsets.some((this_hitbox_offset, this_index) => {
+            let collider_positions = null;
+            let collider_indexes = null;
+
+            let collided = this_hitboxes_offsets.some((this_hitbox_offset, this_index) => {
                 let this_hitbox = this.hitboxes[this_index];
                 
                 // check all of other's hitboxes
@@ -5344,10 +5349,23 @@ class MagnumProjectile extends HitscanProjectile {
                     let this_hitbox_pos = this.position.add(this_hitbox_offset);
                     let other_hitbox_pos = projectile.position.add(other_hitbox_offset);
 
-                    return this_hitbox_pos.sqr_distance(other_hitbox_pos) <= radius_sum_sqr
+                    if (this_hitbox_pos.sqr_distance(other_hitbox_pos) <= radius_sum_sqr) {
+                        collider_positions = [this_hitbox_pos, other_hitbox_pos];
+                        collider_indexes = [this_index, other_index];
+                        
+                        return true;
+                    } else {
+                        return false;
+                    }
                 })
-            })
+            });
+
+            if (collided) {
+                collisions.push([projectile, collider_positions, collider_indexes]);
+            }
         })
+
+        return collisions;
     }
 
     hit_other_projectile(other) {
