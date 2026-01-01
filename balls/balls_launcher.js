@@ -491,6 +491,8 @@ function spawn_selected_balls() {
 }
 
 let christmas = false;
+let new_year = true;
+
 function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels, players, skins) {
     setTimeout(() => {
         board = new Board(new Vector2(512 * 16, 512 * 16));

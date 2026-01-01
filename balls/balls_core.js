@@ -1437,6 +1437,16 @@ function handle_resize(event) {
 function render_watermark() {
     layers.front.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
+    if (new_year) {
+        layers.front.ctx.globalAlpha = Math.max(0, 0.66 - ((board?.duration ?? 0) * 2));
+        write_text(
+            layers.front.ctx,
+            `HAPPY NEW YEAR 2026 !!`,
+            canvas_width / 2, canvas_height / 2,
+            "#d8f", CANVAS_FONTS, 48, true
+        )
+    }
+    
     layers.front.ctx.globalAlpha = 0.66;
     write_text(
         layers.front.ctx,
@@ -2286,6 +2296,9 @@ function game_loop() {
         } else {
             render_postopening(board);
             render_descriptions(board);
+
+            if (new_year)
+                render_watermark();
         }
     }
 
