@@ -5377,8 +5377,8 @@ class MagnumProjectile extends HitscanProjectile {
 
             // ricoshot
             // search for an enemy
-            let enemies = this.board.balls.filter(ball => ball.id != this.source.id);
-            let coins = this.board.projectiles.filter(proj => proj.id != other.id && proj.active && proj instanceof MagnumCoinProjectile && proj.lifetime > 0.1 && this.board.in_bounds(proj.position));
+            let enemies = this.board.balls.filter(ball => !ball.allied_with(this.source));
+            let coins = this.board.projectiles.filter(proj => proj.id != other.id && proj.source.allied_with(this.source) && proj.active && proj instanceof MagnumCoinProjectile && proj.lifetime > 0.1 && this.board.in_bounds(proj.position));
 
             let target = null;
             if (coins.length > 0) {
@@ -5412,11 +5412,18 @@ class MagnumProjectile extends HitscanProjectile {
                     play_audio("gun_super");
                 }
 
+                // let particle = new Particle(
+                //     other.position.add(new Vector2(16, -32)), 0, 0.2, entity_sprites.get("explosion"), 12, 3, false
+                // )
+                // particle.lifetime += 0.1;
+                // this.board.spawn_particle(particle, other.position.add(new Vector2(16, -32)));
+
                 let particle = new Particle(
-                    other.position.add(new Vector2(16, -32)), 0, 0.2, entity_sprites.get("explosion"), 12, 3, false
+                    other.position, 0, 1.25 + (0.25 * this.ricochets),
+                    entity_sprites.get("hit"), 8, 4, false
                 )
-                particle.lifetime += 0.1;
-                this.board.spawn_particle(particle, other.position.add(new Vector2(16, -32)));
+
+                board.spawn_particle(particle, other.position);
 
                 this.target_position = other.position;
 
