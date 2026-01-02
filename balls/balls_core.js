@@ -444,13 +444,13 @@ function stop_music() {
 }
 
 function play_music(name, gain=null) {
-    stop_music()
+    stop_music();
 
     if (muted)
         return;
 
     let played_music = play_audio(name, gain);
-    if (played_music) {
+    if (played_music !== null) {
         music_audio = [audio_playing[played_music], audio.get(name)[1], audio.get(name)[2], name];
 
         document.querySelector("#loading_prompt").textContent = `♪ - ${music_audio[1]} - ${music_audio[2]}`
