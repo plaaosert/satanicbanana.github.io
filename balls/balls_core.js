@@ -28,12 +28,16 @@ const prerender_ctx = prerender_canvas.getContext("2d");
 
 const PARTICLE_SIZE_MULTIPLIER = 16;
 
-const CANVAS_FONTS = "MS Gothic, Roboto Mono, monospace";
+const CANVAS_FONTS = "MS Gothic, terminus, Roboto Mono, monospace";
 
 let num_textures_loaded = 0;
 let num_textures_needed = 0;
 
 const make_damage_numbers = true;
+
+let ending_game = false;
+let mysterious_powers_enabled = false;
+let current_mysterious_power = {name: null, power: 5};
 
 const entity_sprites = new Map([
     // entries
@@ -50,6 +54,7 @@ const entity_sprites = new Map([
     ["rupture", 1, "etc/"],
     ["poison", 1, "etc/"],
     ["burn", 1, "etc/"],
+    ["point", 1, "etc/"],
 
     // weapons
     ["SORD", 1, "weapon/"],
@@ -263,6 +268,9 @@ let canvas_x = 0;
 let canvas_y = 0;
 
 let mouse_position = new Vector2(0, 0);
+let game_position = new Vector2(0, 0);
+
+let screen_to_game_scaling_factor = 1;
 
 const PHYS_GRANULARITY = 2;
 const COLL_GRANULARITY = PHYS_GRANULARITY / 2;  // COLL_GRANULARITY => do collision checks every N physics steps
@@ -441,10 +449,13 @@ function play_music(name, gain=null) {
     if (muted)
         return;
 
-    music_audio = [audio_playing[play_audio(name, gain)], audio.get(name)[1], audio.get(name)[2], name];
+    let played_music = play_audio(name, gain);
+    if (played_music) {
+        music_audio = [audio_playing[played_music], audio.get(name)[1], audio.get(name)[2], name];
 
-    document.querySelector("#loading_prompt").textContent = `♪ - ${music_audio[1]} - ${music_audio[2]}`
-    document.querySelector("#loading_prompt").classList.remove("hidden");
+        document.querySelector("#loading_prompt").textContent = `♪ - ${music_audio[1]} - ${music_audio[2]}`
+        document.querySelector("#loading_prompt").classList.remove("hidden");
+    }
 }
 
 function play_audio(name, gain=null) {
@@ -453,27 +464,34 @@ function play_audio(name, gain=null) {
 
     let source = audio_context.createBufferSource();
     
-    source.buffer = audio.get(name)[0];
+    let audio_content = audio.get(name);
+    if (audio_content) {
+        source.buffer = audio_content[0];
 
-    let mod_node = gain_node;
+        let mod_node = gain_node;
 
-    if (gain) {
-        let new_gain_node = audio_context.createGain();
-        new_gain_node.connect(audio_context.destination);
-        new_gain_node.gain.setValueAtTime(gain, audio_context.currentTime);
+        if (gain) {
+            let new_gain_node = audio_context.createGain();
+            new_gain_node.connect(audio_context.destination);
+            new_gain_node.gain.setValueAtTime(gain, audio_context.currentTime);
 
-        mod_node = new_gain_node;
+            mod_node = new_gain_node;
+        }
+
+        source.connect(mod_node);
+
+        let obj = {source: source, ended: false}
+        source.addEventListener("ended", () => obj.ended = true);
+        audio_playing.push(obj);
+
+        source.start();
+
+        return audio_playing.length-1;
+    } else {
+        // Tried to play a nonexistent sound. Print to console and return null
+        console.log(`Tried to play nonexistent sound ${name}!`);
+        return null;
     }
-
-    source.connect(mod_node);
-
-    let obj = {source: source, ended: false}
-    source.addEventListener("ended", () => obj.ended = true);
-    audio_playing.push(obj);
-
-    source.start();
-
-    return audio_playing.length-1;
 
     // console.log(`played sound ${name}`);
 }
@@ -530,11 +548,14 @@ class AilmentParticle extends Particle {
         
         this.base_size = this.size;
         this.get_current_size();
+
+        this.render_behind = true;
     }
 
     get_current_size() {
         let proportion = this.lifetime / this.duration;
-        let siz = 1 - (2 * Math.abs(proportion - 0.5));
+        // let siz = 1 - (2 * Math.abs(proportion - 0.5));
+        let siz = 1 - proportion;
 
         this.size = Math.max(0, siz) * this.base_size;
     }
@@ -1502,6 +1523,38 @@ function render_watermark() {
     layers.front.ctx.globalAlpha = 1;
 }
 
+function render_mysterious_powers(board) {
+    layers.ui1.ctx.clearRect(0, canvas_height - 200, canvas_width, 200);
+
+    layers.ui1.ctx.globalAlpha = 1;
+    write_text(
+        layers.ui1.ctx,
+        `Mysterious powers are enabled.`,
+        20, canvas_height - 20 - 30 - 20 - 20 - 20,
+        "#98f", CANVAS_FONTS, 16
+    );
+
+    write_text(
+        layers.ui1.ctx,
+        `Activate a power by clicking. Arrow keys to switch powers and change strength.`,
+        20, canvas_height - 20 - 30 - 20 - 20,
+        "#98f", CANVAS_FONTS, 14
+    );
+
+    let m_data = MYSTERIOUS_POWER_INFO[current_mysterious_power.name];
+
+    write_text(
+        layers.ui1.ctx,
+        `>> ${m_data.name.padEnd(16)} | Power: ${current_mysterious_power.power.toFixed(0).padEnd(3)} | ${m_data.desc_fn(board, current_mysterious_power.power)}`,
+        20, canvas_height - 20 - 30 - 20,
+        "#dcf", CANVAS_FONTS, 16
+    );
+    layers.ui1.ctx.globalAlpha = 1;
+
+    let part = new AilmentParticle(game_position, 0, 1.5, entity_sprites.get("point"), 0.3);
+    board.spawn_particle(part, game_position);
+}
+
 function render_diagnostics(board) {
     layers.debug_front.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
@@ -1577,7 +1630,7 @@ function render_victory(board, time_until_end) {
         return;
     }
 
-    layers.ui1.ctx.clearRect(0, 0, canvas_width, canvas_height);
+    layers.ui1.ctx.clearRect(0, 0, canvas_width, canvas_height-200);
 
     let ctx = layers.ui1.ctx;
 
@@ -2335,9 +2388,12 @@ function game_loop() {
         } else {
             render_postopening(board);
             render_descriptions(board);
+            
+            if (mysterious_powers_enabled)
+                render_mysterious_powers(board);
 
             if (new_year)
-                render_watermark();
+                render_watermark();  // new year uses watermark code to fade it so need to rerun it during games
         }
     }
 
@@ -2950,6 +3006,19 @@ function game_loop() {
 
             board.particles_step(game_delta_time);
             
+            // mysterious powers
+            // ....
+            if (board && lmb_down) {
+                if (mysterious_powers_enabled) {
+                    let m_info = MYSTERIOUS_POWER_INFO[current_mysterious_power.name];
+                    let power = current_mysterious_power.power;
+
+                    m_info.effect_hold(board, power, game_position, game_delta_time);
+                }
+            }
+            // ....
+
+            ending_game = false;
             if (board?.remaining_players().length <= 1) {
                 let players = board.remaining_players();
                 if (players.length > 0) {
@@ -2957,6 +3026,8 @@ function game_loop() {
                 }
 
                 match_end_timeout -= game_delta_time;
+                ending_game = true;
+                
                 if (searching) {
                     match_end_timeout = 0;
                 }

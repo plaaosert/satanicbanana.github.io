@@ -1054,6 +1054,74 @@ button.sandbox-ball-random {
   content: "Enable";
 }
 
+@keyframes opacity-fade {
+  from {
+    opacity: 0.2;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.mysterious-powers {
+  animation-name: opacity-fade;
+  animation-duration: 1s;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+
+  background-image: linear-gradient(white, #99f);
+  color: transparent;
+  background-clip: text;
+}
+
+.mysterious-powers-warning {
+  opacity: 1;
+  transition: opacity 0.5s linear;
+
+  margin-top: 1vmin;
+
+  display: flex;
+  flex-direction: row;
+}
+
+@property --letter-h {
+  syntax: '<number>';
+  initial-value: 0;
+  inherits: false;
+}
+
+@keyframes floaty-letters {
+  from {
+    --letter-h: 0;
+  }
+
+  to {
+    --letter-h: 1;
+  }
+}
+
+.mysterious-powers-warning span {
+  animation-name: floaty-letters;
+  animation-duration: 1.5s;
+  animation-delay: calc(sibling-index()*(2s / sibling-count()));
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  animation-timing-function: ease-in-out;
+
+  background-image: linear-gradient(#f88, #f33);
+  color: transparent;
+  background-clip: text;
+
+  white-space: pre;
+
+  transform: translateY(round(calc(var(--letter-h) * 1vmin), 1px));
+}
+
+.faded {
+  opacity: 0;
+}
+
 /*
 bad css is unsalvageable. the only thing you can do is give up :3
 

@@ -512,7 +512,7 @@ class WeaponBall extends Ball {
         let lis = ["rupture", "poison", "burn"];
         for (let i=0; i<3; i++) {
             let a = lis[i];
-            this.ailments_particles_thresholds[i] -= predicted[a] * time_delta;
+            this.ailments_particles_thresholds[i] -= Math.min(predicted[a], 500) * time_delta;
             while (this.ailments_particles_thresholds[i] <= 0) {
                 this.ailments_particles_thresholds[i] += this.ailments_particles_threshold_max;
 

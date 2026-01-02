@@ -2,7 +2,7 @@
 <html lang = "en-US">
 <head>
 	<meta charset = "UTF-8">
-	<title>balls</title>
+	<title>balls: balls fight for honour and glory</title>
 	<meta content="plaao.net >> balls" property="og:title" />
     <meta content="Watch balls fight each other with a variety of unique weapons." property="og:description" />
     <meta name="description" content="Watch balls fight each other with a variety of unique weapons.">
@@ -12,7 +12,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=0.1, user-scalable=yes" />
 
     <link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=02"/>
-	<link rel="stylesheet" type="text/css" href="balls.css?v=29"/>
+	<link rel="stylesheet" type="text/css" href="balls.css?v=30"/>
 </head>
 <body>
 	<div class="topbar">
@@ -194,8 +194,15 @@
 
                             <input type="checkbox" id="extend_intro_checkbox">
                             <span onclick="document.querySelector('#extend_intro_checkbox').click()">Extended intro?</span>
+
+                            <span>&nbsp;</span>
+
+                            <input class="hide-on-low-content-size" type="checkbox" id="mysterious_powers_checkbox">
+                            <span class="hide-on-low-content-size" onclick="document.querySelector('#mysterious_powers_checkbox').click()">Enable <span class="mysterious-powers">mysterious powers...</span></span>
                         </div>
                         <span style="margin-top: 0.5vmin; padding-left:1vmin; padding-right:1vmin; color:#bbb;">Use a frame speed closest to the refresh rate of your screen, or "Realtime" if you don't care about replays. When loading replays, this is set automatically - use speed controls if needed.</span>
+                        <span class="mysterious-powers-warning faded">Channeling mysterious powers will prevent replays from being recorded.</span>
+                        <span class="mysterious-powers-warning faded">These powers are for joke use only. Please don't take them too seriously.</span>
                     </div>
 
                     <div class="campaign behind-canvases">
@@ -464,16 +471,18 @@
     <script src="../shared/js/helpers.js?v=07"></script>
 	<script src="../shared/js/canvas_helpers.js?v=04"></script>
 	
-    <script src="balls_core.js?v=36"></script>
+    <script src="balls_core.js?v=38"></script>
 
-    <script src="balls_balls.js?v=42"></script>
+    <script src="balls_balls.js?v=43"></script>
     <script src="balls_balls_additional.js?v=41"></script>
     <script src="balls_balls_powered.js?v=05"></script>
 
     <script src="balls_replay_parsing.js?v=06"></script>
-    <script src="balls_launcher.js?v=56"></script>
+    <script src="balls_launcher.js?v=58"></script>
     
     <script src="balls_campaign.js?v=06"></script>
+
+    <script src="balls_mysterious_powers.js?v=01"></script>
 
 	<script src="../shared/js/playtime.js?v=00"></script>
 

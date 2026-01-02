@@ -281,7 +281,7 @@ function exit_battle(save_replay=true) {
     if (!board)
         return;
 
-    if (!replaying && board.forced_time_deltas != 0 && save_replay) {
+    if (!replaying && board.forced_time_deltas != 0 && save_replay && !mysterious_powers_enabled) {
         // we might have a replay
         // replay needs:
         // - framespeed
@@ -482,6 +482,8 @@ function spawn_selected_balls() {
         skins.push(skin);
     }
 
+    mysterious_powers_enabled = document.querySelector("#mysterious_powers_checkbox").checked;
+
     start_game(
         framespeed, seed,
         cols, positions,
@@ -494,8 +496,13 @@ let christmas = false;
 let new_year = false;
 
 function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels, players, skins) {
+    document.activeElement.blur();
+    lmb_down = false;
+    
     setTimeout(() => {
         board = new Board(new Vector2(512 * 16, 512 * 16));
+
+        screen_to_game_scaling_factor = board.size.x / canvas_width;
 
         let skipping = searching || document.querySelector("#skip_intro_checkbox").checked;
 
@@ -556,7 +563,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
             match_end_timeout = 1 * 1000;
             render_victory_enabled = false;
         } else {
-            match_end_timeout = 8 * 1000;
+            match_end_timeout = 5 * 1000;
             render_victory_enabled = true;
         }
 
@@ -565,6 +572,15 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
         opening_state = {};
         if (skipping) {
             opening_state.cnt = 3;
+        }
+
+        if (mysterious_powers_enabled) {
+            current_mysterious_power = {
+                name: "EXPLOSION",
+                power: MYSTERIOUS_POWER_INFO[MYSTERIOUS_POWERS.EXPLOSION].power_start
+            };
+
+            setup_god(board);
         }
 
         game_paused = false;
@@ -1378,7 +1394,14 @@ document.addEventListener("DOMContentLoaded", function() {
     })
 
     layers.front.canvas.addEventListener("mousemove", function(event) {
+        let rect = layers.front.canvas.getBoundingClientRect();
+        
+        canvas_x = rect.x;
+        canvas_y = rect.y;
+
         mouse_position = new Vector2(event.clientX-canvas_x, event.clientY-canvas_y);
+        
+        game_position = mouse_position.mul(screen_to_game_scaling_factor);
         //if (mouse_select_pos.x == 0 && mouse_select_pos.y == 0) {
             //mouse_select_pos = mouse_position.copy();
         //}
@@ -1390,6 +1413,15 @@ document.addEventListener("DOMContentLoaded", function() {
             lmb_down = true;
         } else if (event.button == 2) {
             rmb_down = true;
+        }
+
+        if (board && lmb_down) {
+            if (mysterious_powers_enabled) {
+                let m_info = MYSTERIOUS_POWER_INFO[current_mysterious_power.name];
+                let power = current_mysterious_power.power;
+
+                m_info.effect_click(board, power, game_position);
+            }
         }
 
         event.preventDefault();
@@ -1426,11 +1458,52 @@ document.addEventListener("DOMContentLoaded", function() {
         let name = event.key;
         let code = event.code;
 
+        let mysterious_powers_powermod = 0;
+        let mysterious_powers_indexmod = 0;
+
         switch (code) {
             case "Digit1": {
                 exit_battle(false);
                 break;
             }
+
+            case "Space":
+                toggle_pause_simulation();
+                break;
+
+            // mysterious powers
+            case "ArrowLeft":
+            case "KeyA":
+                mysterious_powers_indexmod = -1;
+                break;
+
+            case "ArrowRight":
+            case "KeyD":
+                mysterious_powers_indexmod = 1;
+                break;
+            
+            case "ArrowUp":
+            case "KeyW":
+                mysterious_powers_powermod = 1;
+                break;
+            
+            case "ArrowDown":
+            case "KeyS":
+                mysterious_powers_powermod = -1;
+                break;
+        }
+
+        if (mysterious_powers_indexmod && mysterious_powers_enabled && board) {
+            let idx = MYSTERIOUS_POWERS_ORDER.findIndex(t => t == current_mysterious_power.name);
+            idx = positive_mod(idx + mysterious_powers_indexmod, MYSTERIOUS_POWERS_ORDER.length);
+
+            current_mysterious_power.name = MYSTERIOUS_POWERS_ORDER[idx];
+            current_mysterious_power.power = MYSTERIOUS_POWER_INFO[MYSTERIOUS_POWERS_ORDER[idx]].power_start;
+        }
+
+        if (mysterious_powers_powermod && mysterious_powers_enabled && board) {
+            let info = MYSTERIOUS_POWER_INFO[current_mysterious_power.name];
+            current_mysterious_power.power = Math.max(info.power_min, Math.min(info.power_max, current_mysterious_power.power + mysterious_powers_powermod));
         }
 
         keys_down[code] = true;
@@ -1709,6 +1782,20 @@ document.addEventListener("DOMContentLoaded", function() {
     if (window.location.href.startsWith("file://")) {
         document.querySelector("#skip_intro_checkbox").checked = true;
     }
+
+    document.querySelector("#mysterious_powers_checkbox").addEventListener("change", e => {
+        if (e.target.checked) {
+            document.querySelectorAll(".mysterious-powers-warning").forEach(e => e.classList.remove("faded"));
+        } else {
+            document.querySelectorAll(".mysterious-powers-warning").forEach(e => e.classList.add("faded"));
+        }
+    })
+
+    let e = document.querySelectorAll(".mysterious-powers-warning");
+
+    e.forEach(el => {
+        el.innerHTML = `<span>${[...el.textContent].join("</span><span>")}</span>`;
+    });
 })
 
 // entity_sprites late setup
