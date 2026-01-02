@@ -491,7 +491,7 @@ function spawn_selected_balls() {
 }
 
 let christmas = false;
-let new_year = true;
+let new_year = false;
 
 function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels, players, skins) {
     setTimeout(() => {
@@ -1292,7 +1292,7 @@ function setup_match_search(num_candidates, settings) {
             // apply the randomisation
             let rand = settings.randomise_balls ?? [];
             rand.forEach(index => {
-                randomise_ballselect(`ball${index+1}`);
+                randomise_ball_info(`ball${index+1}`, "random-ball");
             })
 
             spawn_selected_balls();

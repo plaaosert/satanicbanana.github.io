@@ -2786,32 +2786,34 @@ function game_loop() {
 
                                 let projectile = projectile_data[0];
 
-                                // 
-                                //  ## Particle effects and hit position calculation
-                                //
-                                let proj_hitbox_position = projectile_data[1];
+                                if (!projectile.no_hit_particles) {
+                                    // 
+                                    //  ## Particle effects and hit position calculation
+                                    //
+                                    let proj_hitbox_position = projectile_data[1];
 
-                                let proj_coll_index = projectile_data[2]
+                                    let proj_coll_index = projectile_data[2]
 
-                                // impact position is:
-                                // source position + (difference vector * size proportion * distance proportion)
-                                let proj_hitbox = projectile.hitboxes[proj_coll_index];
+                                    // impact position is:
+                                    // source position + (difference vector * size proportion * distance proportion)
+                                    let proj_hitbox = projectile.hitboxes[proj_coll_index];
 
-                                let total_hitbox_size = (ball.radius) + (proj_hitbox.radius * projectile.size);
-                                let hitbox_distance = ball.position.distance(proj_hitbox_position);
+                                    let total_hitbox_size = (ball.radius) + (proj_hitbox.radius * projectile.size);
+                                    let hitbox_distance = ball.position.distance(proj_hitbox_position);
 
-                                let distance_proportion = hitbox_distance / total_hitbox_size;
-                                let size_proportion = (ball.radius) / total_hitbox_size;
+                                    let distance_proportion = hitbox_distance / total_hitbox_size;
+                                    let size_proportion = (ball.radius) / total_hitbox_size;
 
-                                let difference_vector = proj_hitbox_position.sub(ball.position);
-                                let impact_position = ball.position.add(difference_vector.mul(distance_proportion * size_proportion));
+                                    let difference_vector = proj_hitbox_position.sub(ball.position);
+                                    let impact_position = ball.position.add(difference_vector.mul(distance_proportion * size_proportion));
 
-                                let particle = new Particle(
-                                    impact_position, 0, 2,
-                                    entity_sprites.get("hit"), 16, 4, false
-                                )
+                                    let particle = new Particle(
+                                        impact_position, 0, 2,
+                                        entity_sprites.get("hit"), 16, 4, false
+                                    )
 
-                                board.spawn_particle(particle, impact_position);
+                                    board.spawn_particle(particle, impact_position);
+                                }
 
                                 //
                                 // Rest of logic

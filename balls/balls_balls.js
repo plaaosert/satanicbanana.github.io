@@ -661,7 +661,7 @@ class WeaponBall extends Ball {
                 let other_hitbox_pos = other.position.add(weapon_offset).add(hitbox_offset);
                 if (other_hitbox_pos.sqr_distance(this.position) <= radius_sum_sqr) {
                     collider_position = other_hitbox_pos;
-                    collider_index = weapon_index;
+                    collider_index = index;
                     
                     return true;
                 } else {
@@ -2497,7 +2497,7 @@ class PotionBall extends WeaponBall {
                             this, i, fire_pos, this.potion_impact_damage, 1,
                             new Vector2(1, 0).rotate(this.weapon_data[i].angle),
                             random_int(6000, 10000, this.board.random), board.gravity, i, this.duration_mult,
-                            this.sprite_suffix
+                            this.weapon_data[i].reversed ^ this.reversed, this.sprite_suffix
                         ), fire_pos
                     )
                     
@@ -5540,6 +5540,8 @@ class PotionPuddleProjectile extends Projectile {
         this.parriable = false;
         this.collides_other_projectiles = false;
 
+        this.no_hit_particles = true;
+
         this.duration = 5 * PotionPuddleProjectile.mults[effect_index] * duration_mult;
 
         this.effect_index = effect_index;
@@ -5609,7 +5611,7 @@ class PotionPuddleProjectile extends Projectile {
 }
 
 class PotionBottleProjectile extends Projectile {
-    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, gravity, effect_index, duration_mult, sprite_suffix="") {
+    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, gravity, effect_index, duration_mult, reversed, sprite_suffix="") {
         super(board, source, source_weapon_index, position, damage, size, direction, speed);
 
         this.gravity = gravity;
@@ -5624,6 +5626,7 @@ class PotionBottleProjectile extends Projectile {
 
         this.rotation_speed = random_float(270, 540, this.board.random);
 
+        this.reversed = reversed;
         this.duration_mult = duration_mult;
     }
 
@@ -5632,7 +5635,7 @@ class PotionBottleProjectile extends Projectile {
 
         this.proj_velocity = this.proj_velocity.add(this.gravity.mul(time_delta));
     
-        let new_direction_angle = this.direction_angle + ((this.rotation_speed * (Math.PI / 180)) * time_delta);
+        let new_direction_angle = this.direction_angle + ((this.rotation_speed * (Math.PI / 180)) * (this.reversed ? -1 : 1) * time_delta);
         this.set_dir(new Vector2(1, 0).rotate(new_direction_angle));
     }
 
