@@ -39,6 +39,8 @@ let ending_game = false;
 let mysterious_powers_enabled = false;
 let current_mysterious_power = {name: null, power: 5};
 
+let STARTING_HP = 100;
+
 const entity_sprites = new Map([
     // entries
     ["entry_impact", 16, "entries/impact/"],
@@ -1634,7 +1636,7 @@ function render_victory(board, time_until_end) {
 
     let ctx = layers.ui1.ctx;
 
-    let t = (8000 - time_until_end) / 1000;
+    let t = (5000 - time_until_end) / 1000;
     let rps = board.remaining_players();
     let b = null;
     if (rps.length >= 1) {
@@ -2173,9 +2175,14 @@ function render_opening(board, time_delta) {
                 new Vector2(0, ball.radius * 1.75)
             ).mul(screen_scaling_factor);
 
+            let name = ball.name;
+            if (ball.level >= AWAKEN_LEVEL) {
+                name = `* Awakened ${name} *`
+            }
+
             write_pp_bordered_text(
                 layers.ui2.ctx,
-                ball.name,
+                name,
                 pos.x, pos.y,
                 ball.get_current_desc_col().css(),
                 CANVAS_FONTS, 24, true,

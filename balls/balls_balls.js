@@ -303,8 +303,8 @@ class WeaponBall extends Ball {
         ];
 
         // every hit deals a minimum of 1 damage and 100 hp is the max for everyone
-        this.max_hp = 100;
-        this.hp = 100;
+        this.max_hp = STARTING_HP;
+        this.hp = this.max_hp;
         
         this.takes_damage = true;
 
@@ -1064,7 +1064,7 @@ class DummyBall extends WeaponBall {
             play_music("unarmed_theme");
         }
 
-        this.hp = 100;
+        this.hp = STARTING_HP;
         this.transforming = true;
         this.shake_origin = this.position;
         this.skip_physics = false;
@@ -1073,7 +1073,7 @@ class DummyBall extends WeaponBall {
         this.board?.set_timer(new Timer(() => {
             this.skip_physics = false;
             this.takes_damage = false;
-            this.hp = 100;
+            this.hp = STARTING_HP;
         }, 0.05))
 
         this.board?.balls.forEach(ball => {
