@@ -281,6 +281,8 @@ function exit_battle(save_replay=true) {
     if (!board)
         return;
 
+    STARTING_HP = stored_starting_hp;
+
     if (!replaying && board.forced_time_deltas != 0 && save_replay && !mysterious_powers_enabled) {
         // we might have a replay
         // replay needs:
@@ -302,6 +304,8 @@ function exit_battle(save_replay=true) {
             skins: board.starting_skins,
 
             seed: board.random_seed,
+
+            starting_hp: STARTING_HP,
         }
 
         last_replay = btoa(JSON.stringify(replay));
@@ -414,12 +418,17 @@ function load_replay(replay_as_text) {
         }
     }
 
+    let starting_hp = STARTING_HP;
+    if (replay.starting_hp) {
+        starting_hp = replay.starting_hp;
+    }
+
     replaying = true;
     start_game(
         framespeed, seed,
         cols, positions,
         ball_classes, ball_levels,
-        players, skins
+        players, skins, starting_hp
     );
 }
 
@@ -488,18 +497,21 @@ function spawn_selected_balls() {
         framespeed, seed,
         cols, positions,
         ball_classes, ball_levels,
-        players, skins
+        players, skins, STARTING_HP
     );
 }
 
 let christmas = false;
 let new_year = false;
 
-function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels, players, skins) {
+function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels, players, skins, starting_hp) {
     document.activeElement.blur();
     lmb_down = false;
     
     setTimeout(() => {
+        stored_starting_hp = STARTING_HP;
+        STARTING_HP = starting_hp;
+    
         board = new Board(new Vector2(512 * 16, 512 * 16));
 
         screen_to_game_scaling_factor = board.size.x / canvas_width;

@@ -4552,12 +4552,12 @@ class AxeBall extends WeaponBall {
         this.lunge_swing_accel_dur = 0.3;
         this.lunge_swing_cur = null;
 
-        this.lunge_swing_delay_max = 0.3;
+        this.lunge_swing_delay_max = 0.2;
         this.lunge_swing_delay = null;
 
         this.speed_friction = deg2rad(360 * 180);
 
-        this.projectile_delay_max = 0.25;
+        this.projectile_delay_max = 0.275;
         this.projectile_delay = null;
         this.projectile_damage = 8;
         this.projectile_speed = 9000;

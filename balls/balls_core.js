@@ -40,6 +40,7 @@ let mysterious_powers_enabled = false;
 let current_mysterious_power = {name: null, power: 5};
 
 let STARTING_HP = 100;
+let stored_starting_hp = null;
 
 const entity_sprites = new Map([
     // entries
