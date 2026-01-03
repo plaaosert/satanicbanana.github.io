@@ -4542,7 +4542,7 @@ class AxeBall extends WeaponBall {
         this.speed_base = 100 + (1 * level);
         this.speed_cur = this.speed_base;
 
-        this.lunge_cooldowns_max = [1.8 - (0.005 * level), 3.6 - (0.02 * level)];
+        this.lunge_cooldowns_max = [1.8 - (0.01 * level), 3.6 - (0.02 * level)];
         this.lunge_cooldown = random_float(...this.lunge_cooldowns_max, this.board.random);
         this.last_lunge_cooldown = this.lunge_cooldown;
 
@@ -4552,7 +4552,7 @@ class AxeBall extends WeaponBall {
         this.lunge_swing_accel_dur = 0.3;
         this.lunge_swing_cur = null;
 
-        this.lunge_swing_delay_max = 0.3;
+        this.lunge_swing_delay_max = 0.2;
         this.lunge_swing_delay = null;
 
         this.speed_friction = deg2rad(360 * 180);
