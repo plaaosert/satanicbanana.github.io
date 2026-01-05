@@ -210,7 +210,7 @@ const MYSTERIOUS_POWER_INFO = {
             if (targeted_ball) {
                 let ball = targeted_ball[0];
 
-                ball.radius -= power * 0.25 * time_delta;
+                ball.set_radius(ball.radius - (power * 0.25 * time_delta));
 
                 let particle = new Particle(
                     gamepos, 0, 2,
@@ -248,7 +248,7 @@ const MYSTERIOUS_POWER_INFO = {
             if (targeted_ball) {
                 let ball = targeted_ball[0];
 
-                ball.radius += power * 0.25 * time_delta;
+                ball.set_radius(ball.radius + (power * 0.25 * time_delta));
 
                 let particle = new Particle(
                     gamepos, 0, 2,

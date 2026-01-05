@@ -14,6 +14,7 @@ const layer_names = [
     "ui2",
     "ui3",
     "fg1",
+    "fg2_raster",
     "fg2",
     "fg3",
     "bg1",
@@ -42,7 +43,35 @@ let current_mysterious_power = {name: null, power: 5};
 let STARTING_HP = 100;
 let stored_starting_hp = null;
 
+const BALL_RENDERING_METHODS = {
+    VECTOR: "VECTOR",
+    RASTER: "RASTER",
+    AERO: "AERO",
+}
+
+const AERO_LIGHTING_CONFIGS = {
+    SIMPLE: "SIMPLE",
+    WHATS_WRONG_BRO: "WHATS_WRONG_BRO",
+}
+
+const AERO_BACKGROUNDS = {
+    RENDERED: "RENDERED",
+    VISTA: "VISTA",
+}
+
+let BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.VECTOR;
+let AERO_LIGHTING_CONFIG = AERO_LIGHTING_CONFIGS.WHATS_WRONG_BRO;
+let AERO_BACKGROUND = AERO_BACKGROUNDS.VISTA;
+
+let bg_changed = true;
+let switched_to_endgame_col = false;
+
+let BALL_DESC_BORDER_SIZE = BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO ? 2 : 1;
+
 const entity_sprites = new Map([
+    // Vista - https://www.reddit.com/r/FrutigerAero/comments/1eqwt3s/windows_vistainspired_wallpapers_i_made_in_about/
+    ["vista", 1, "etc/"],
+
     // entries
     ["entry_impact", 16, "entries/impact/"],
     ["entry_teleport", 16, "entries/teleport/"],
@@ -1511,19 +1540,28 @@ function render_watermark() {
     }
     
     layers.front.ctx.globalAlpha = 0.66;
-    write_text(
+    write_pp_bordered_text(
         layers.front.ctx,
         `available for free at ${BASE_URL} :)`,
         20, canvas_height - 20 - 20,
-        "white", CANVAS_FONTS, 20
+        "white", CANVAS_FONTS, 20, false, 2, "black"
     );
-    write_text(
+    write_pp_bordered_text(
         layers.front.ctx,
         `also now on discord! join at ${BASE_URL}/discord`,
         20, canvas_height - 20,
-        "#8df", CANVAS_FONTS, 16
+        "#8df", CANVAS_FONTS, 16, false, 2, "black"
     )
     layers.front.ctx.globalAlpha = 1;
+}
+
+function render_just_playing_around_warning() {
+    write_pp_bordered_text(
+        layers.front.ctx,
+        `let me know what you think about this theme!`,
+        20, 40,
+        "white", CANVAS_FONTS, 20, false, 2, "black"
+    );
 }
 
 function render_mysterious_powers(board) {
@@ -1693,14 +1731,83 @@ function render_victory(board, time_until_end) {
 
 function render_game(board, collision_boxes=false, velocity_lines=false, background_tint=null) {
     layers.fg1.ctx.clearRect(0, 0, canvas_width, canvas_height);
-    layers.fg2.ctx.clearRect(0, 0, canvas_width, canvas_height);
     layers.fg3.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
     layers.bg1.ctx.clearRect(0, 0, canvas_width, canvas_height);
     layers.bg2.ctx.clearRect(0, 0, canvas_width, canvas_height);
-    if (background_tint) {
-        layers.bg3.ctx.fillStyle = background_tint;
-        layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height);
+    if (bg_changed) {
+        bg_changed = false;
+
+        if (BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO) {
+            if (AERO_BACKGROUND == AERO_BACKGROUNDS.RENDERED) {
+                let imagedata = layers.bg3.ctx.getImageData(0, 0, canvas_width, canvas_height);
+
+                let floor_col = new Colour(96, 96, 96, 255);
+                let wall_col = new Colour(60, 60, 60, 255);
+                let ceiling_col = new Colour(90, 90, 90, 255);
+                let back_col = new Colour(72, 72, 72, 255);
+
+                let tint_to = game_normal_col;
+                if (background_tint) {
+                    tint_to = background_tint;
+                }
+
+                floor_col = floor_col.lerp(tint_to, 0.5);
+                wall_col = wall_col.lerp(tint_to, 0.5);
+                ceiling_col = ceiling_col.lerp(tint_to, 0.5);
+                back_col = back_col.lerp(tint_to, 0.5);
+
+                let back_size = canvas_width / 5;
+                let back_size_mults = [1, 1];
+
+                let center = canvas_width / 2;
+
+                for (let x=0; x<canvas_width; x++) {
+                    for (let y=0; y<canvas_height; y++) {
+                        let xt = x - center;
+                        let yt = y - center;
+                        let vs = [Math.abs(xt) * back_size_mults[0], Math.abs(yt) * back_size_mults[1]];
+
+                        xt *= back_size_mults[0];
+                        yt *= back_size_mults[1];
+
+                        let col = back_col;
+                        if (vs[0] > back_size || vs[1] > back_size) {
+                            // if abs(y) > abs(x), floor or ceiling, else wall
+                            if (Math.abs(yt) > Math.abs(xt)) {
+                                if (yt > 0) {
+                                    col = floor_col;
+                                } else {
+                                    col = ceiling_col;
+                                }
+                            } else {
+                                col = wall_col;
+                            }
+                        }
+
+                        let idx = ((y * canvas_height) + x) * 4;
+                        for (let c=0; c<4; c++) {
+                            imagedata.data[idx+c] = col.data[c];
+                        }
+                    }
+                }
+
+                layers.bg3.ctx.putImageData(imagedata, 0, 0);
+            } else if (AERO_BACKGROUND == AERO_BACKGROUNDS.VISTA) {
+                write_rotated_image(
+                    layers.bg3.canvas, layers.bg3.ctx,
+                    canvas_width/2, canvas_height/2, entity_sprites.get("vista")[0], canvas_width, canvas_height, 0
+                )
+            }
+        } else {
+            if (background_tint) {
+                layers.bg3.ctx.fillStyle = background_tint.css();
+                layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height);
+            } else {
+                layers.bg3.ctx.fillStyle = game_normal_col.css();
+                layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height);
+            }
+        }
     }
 
     if (true) {
@@ -1713,7 +1820,18 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
 
     let screen_scaling_factor = canvas_width / board.size.x;
 
-    let ctx = layers.fg2.ctx;
+    let layer = layers.fg2;
+    if (BALL_RENDERING_METHOD != BALL_RENDERING_METHODS.VECTOR) {
+        layer = layers.fg2_raster;
+        layer.ctx.clearRect(0, 0, canvas_width, canvas_height);
+    }
+
+    layers.fg2.ctx.clearRect(0, 0, canvas_width, canvas_height);
+
+    let layer_normal = layers.fg2;
+
+    let ctx = layer.ctx;
+    let ctx_normal = layers.fg2.ctx;
 
     let w = 25 * screen_scaling_factor;
 
@@ -1759,7 +1877,7 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
             return;
         }
 
-        let layer = projectile.alternative_layer ? layers[projectile.alternative_layer] : layers.fg3;
+        let proj_layer = projectile.alternative_layer ? layers[projectile.alternative_layer] : layers.fg3;
 
         if (projectile.sprite != "HITSCAN") {
             let projectile_screen_pos = new Vector2(
@@ -1770,7 +1888,7 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
             let siz = projectile.size * screen_scaling_factor * 128;
 
             write_rotated_image(
-                layer.canvas, layer.ctx,
+                proj_layer.canvas, proj_layer.ctx,
                 projectile_screen_pos.x, projectile_screen_pos.y,
                 projectile.sprite instanceof Image ? projectile.sprite : entity_sprites.get(projectile.sprite)[0],
                 siz, siz, projectile.direction_angle
@@ -1792,7 +1910,7 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
             // every line can be 1000 segments. start the line at 1000 * proportion segments down
             // then scale the rest from 0% up to 100% at the end
 
-            layer.ctx.strokeStyle = projectile.sprite_colour;
+            proj_layer.ctx.strokeStyle = projectile.sprite_colour;
 
             let segments = 100;
             let line_start_point = 0;
@@ -1817,13 +1935,13 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
                     w_factor = 1;
                 }
 
-                layer.ctx.lineWidth = w_factor * max_width;
+                proj_layer.ctx.lineWidth = w_factor * max_width;
 
-                layer.ctx.beginPath();
-                layer.ctx.moveTo(last_pos.x, last_pos.y);
-                layer.ctx.lineTo(pos.x, pos.y);
-                layer.ctx.stroke();
-                layer.ctx.closePath();
+                proj_layer.ctx.beginPath();
+                proj_layer.ctx.moveTo(last_pos.x, last_pos.y);
+                proj_layer.ctx.lineTo(pos.x, pos.y);
+                proj_layer.ctx.stroke();
+                proj_layer.ctx.closePath();
 
                 last_pos = pos;
             }
@@ -1856,40 +1974,166 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
         }
     });
 
+    let imagedata = null;
+    if (BALL_RENDERING_METHOD != BALL_RENDERING_METHODS.VECTOR) {
+        imagedata = ctx.getImageData(0, 0, canvas_width, canvas_height);
+    }
+
     // then the balls and weapons
     board.balls.forEach(ball => {
+        let ball_pos = ball.position;
+
         let ball_screen_pos = new Vector2(
-            (ball.position.x) * screen_scaling_factor,
-            (ball.position.y) * screen_scaling_factor,
+            (ball_pos.x) * screen_scaling_factor,
+            (ball_pos.y) * screen_scaling_factor,
         );
 
         if (ball.display) {
-            ctx.beginPath();
-            ctx.arc(ball_screen_pos.x, ball_screen_pos.y, Math.max(0, (ball.radius * screen_scaling_factor) - (w/2)), 0, 2 * Math.PI, false);
-            
             let ball_col = ball.get_current_col();
             if (ball.invuln_duration > 0 && ball.last_hit == 0) {
                 ball_col = ball_col.lerp(Colour.black, 0.75);
             }
-            
-            ctx.fillStyle = ball_col.css();
-            ctx.fill();
-            ctx.lineWidth = w;
-            ctx.strokeStyle = ball_col.lerp(Colour.white, 0.75).css();
-            ctx.stroke();
+
+            switch (BALL_RENDERING_METHOD) {
+                case BALL_RENDERING_METHODS.VECTOR: {
+                    ctx.beginPath();
+                    ctx.arc(ball_screen_pos.x, ball_screen_pos.y, Math.max(0, (ball.radius * screen_scaling_factor) - (w/2)), 0, 2 * Math.PI, false);
+                    
+                    ctx.fillStyle = ball_col.css();
+                    ctx.fill();
+                    ctx.lineWidth = w;
+                    ctx.strokeStyle = ball_col.lerp(Colour.white, 0.75).css();
+                    ctx.stroke();
+
+                    break;
+                }
+
+                case BALL_RENDERING_METHODS.RASTER: {
+                    let ball_siz_scaled = ball.aero_radius_table[3];
+
+                    ball_pos = ball_pos.round();  // raster display
+
+                    let lb = Math.floor(-ball_siz_scaled / 1);
+                    let ub = Math.ceil(ball_siz_scaled / 1);
+
+                    let sqr_radius = ball.aero_radius_table[0];
+                    let sqr_inner_radius = ball.aero_radius_table[1];
+
+                    let s = ub - lb;
+                    
+                    let offset = ball_pos.sub(new Vector2(ball.radius, ball.radius)).mul(screen_scaling_factor).round();
+
+                    for (let y=0; y<s; y++) {
+                        for (let x=0; x<s; x++) {
+                            let idx = (((y + offset.y) * canvas_width) + (x + offset.x)) * 4;
+                            let sum = ball.aero_light_lookup_table[y][x][0];
+
+                            let col = null
+                            if (sum > sqr_radius) {
+                                // col stays blank
+                            } else {
+                                col = ball_col;
+                                if (sum > sqr_inner_radius)
+                                    col = ball_col.lerp(Colour.white, 0.75);
+                            }
+
+                            if (col) {
+                                let data = col.data;
+
+                                for (let c=0; c<4; c++) {
+                                    imagedata.data[idx+c] = data[c];
+                                }
+                            }
+                        }
+                    }
+
+                    break;
+                }
+
+                case BALL_RENDERING_METHODS.AERO: {
+                    let ball_siz_scaled = ball.aero_radius_table[3];
+
+                    ball_pos = ball_pos.round();  // raster display
+
+                    let lb = Math.floor(-ball_siz_scaled / 1);
+                    let ub = Math.ceil(ball_siz_scaled / 1);
+
+                    let sqr_radius = ball.aero_radius_table[0];
+                    let sqr_inner_radius = ball.aero_radius_table[1];
+
+                    let s = ub - lb;
+                    
+                    let offset = ball_pos.sub(ball.aero_radius_table[2]).mul(screen_scaling_factor).round();
+
+                    let lightest = Colour.white;
+                    let lightest_amt = 0.8;
+                    let darkest = Colour.black;
+                    let darkest_amt = 0.5;
+
+                    let border_col = ball_col.lerp(Colour.white, 0.75);
+
+                    let old_ball_col = ball_col;
+                    ball_col = ball_col.lerp(Colour.black, 0.1);
+
+                    for (let y=0; y<s; y++) {
+                        for (let x=0; x<s; x++) {
+                            let idx = (((y + offset.y) * canvas_width) + (x + offset.x)) * 4;
+                            // let sum = Math.pow(xt, 2) + Math.pow(yt, 2);
+
+                            // let dist = Math.sqrt(
+                            //     Math.pow(xt - light_center[0], 2) + Math.pow(yt - light_center[1], 2)
+                            // );
+
+                            let sum = ball.aero_light_lookup_table[y][x][0];
+
+                            let col = null;
+                            if (sum > sqr_radius) {
+                                // col stays blank
+                            } else {
+                                let prop = ball.aero_light_lookup_table[y][x][1];
+                                let val = Math.abs(prop - 0.5) * 2;
+                                col = ball_col.lerp(prop < 0.5 ? lightest : darkest, (prop < 0.5 ? lightest_amt : darkest_amt) * val);
+                                if (sum > sqr_inner_radius)
+                                    col = border_col
+                            }
+
+                            if (col) {
+                                let data = col.data;
+
+                                for (let c=0; c<4; c++) {
+                                    imagedata.data[idx+c] = data[c];
+                                }
+                            }
+                        }
+                    }
+
+                    ball_col = old_ball_col;
+
+                    let hp = Math.max(0, ball.hp);
+
+                    ctx_normal.fillStyle = "white";
+                    ctx_normal.font = `22px ${CANVAS_FONTS}`;
+                    ctx_normal.textAlign = "center";
+                    ctx_normal.textBaseline = "middle";
+                    ctx_normal.fillText(Math.ceil(hp), ball_screen_pos.x-1.5, ball_screen_pos.y-1.5);
+                    ctx_normal.fillText(Math.ceil(hp), ball_screen_pos.x+1.5, ball_screen_pos.y-1.5);
+                    ctx_normal.fillText(Math.ceil(hp), ball_screen_pos.x-1.5, ball_screen_pos.y+1.5);
+                    ctx_normal.fillText(Math.ceil(hp), ball_screen_pos.x+1.5, ball_screen_pos.y+1.5);
+
+                    break;
+                }
+            }
 
             let hp = Math.max(0, ball.hp);
 
-            ctx.fillStyle = "black";
-            ctx.font = `22px ${CANVAS_FONTS}`;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(Math.ceil(hp), ball_screen_pos.x-0.5, ball_screen_pos.y-0.5);
-            ctx.fillText(Math.ceil(hp), ball_screen_pos.x+0.5, ball_screen_pos.y-0.5);
-            ctx.fillText(Math.ceil(hp), ball_screen_pos.x-0.5, ball_screen_pos.y+0.5);
-            ctx.fillText(Math.ceil(hp), ball_screen_pos.x+0.5, ball_screen_pos.y+0.5);
-
-            ctx.closePath();
+            ctx_normal.fillStyle = "black";
+            ctx_normal.font = `22px ${CANVAS_FONTS}`;
+            ctx_normal.textAlign = "center";
+            ctx_normal.textBaseline = "middle";
+            ctx_normal.fillText(Math.ceil(hp), ball_screen_pos.x-0.5, ball_screen_pos.y-0.5);
+            ctx_normal.fillText(Math.ceil(hp), ball_screen_pos.x+0.5, ball_screen_pos.y-0.5);
+            ctx_normal.fillText(Math.ceil(hp), ball_screen_pos.x-0.5, ball_screen_pos.y+0.5);
+            ctx_normal.fillText(Math.ceil(hp), ball_screen_pos.x+0.5, ball_screen_pos.y+0.5);
 
             // now draw the weapons
             // weapon needs to be drawn at an offset from the ball (radius to the right)
@@ -1902,7 +2146,7 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
                 let offset = ball.get_weapon_offset(index);
 
                 let siz = weapon.size_multiplier * screen_scaling_factor * 128;
-                let pos = ball.position.add(offset).mul(screen_scaling_factor);
+                let pos = ball_pos.add(offset).mul(screen_scaling_factor);
 
                 if (weapon.sprite) {
                     write_rotated_image(layers.fg3.canvas, layers.fg3.ctx, pos.x, pos.y, entity_sprites.get(weapon.sprite)[0], siz, siz, weapon.angle);
@@ -1916,7 +2160,7 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
                     weapon.hitboxes.forEach((hitbox, index) => {
                         let hitbox_offset = offset.add(hitboxes_offsets[index]);
 
-                        let hitbox_screen_pos = ball.position.add(hitbox_offset).mul(screen_scaling_factor);
+                        let hitbox_screen_pos = ball_pos.add(hitbox_offset).mul(screen_scaling_factor);
                         let w2 = w / 8;
 
                         layers.debug_back.ctx.beginPath();
@@ -1936,6 +2180,10 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
             })
         }
     })
+
+    if (imagedata) {
+        ctx.putImageData(imagedata, 0, 0);
+    }
 }
 
 function render_descriptions(board) {
@@ -1961,6 +2209,9 @@ function render_descriptions(board) {
                 Math.round(l_base[1] + ball.desc_shake_offset[1]),
             ]
 
+            if (BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO)
+                l[1] += 48;
+
             let ball_col = ball.get_current_desc_col().css();
             let ball_border_col = ball.get_current_border_col().css();
 
@@ -1968,7 +2219,7 @@ function render_descriptions(board) {
                 layers.ui2.ctx,
                 `${ball.name}  LV ${ball instanceof UnarmedBall ? "???" : ball.level+1}`.padEnd(17) + `| HP: ${Math.ceil(ball.hp)}`,
                 l[0], l[1], ball_col, CANVAS_FONTS, 16,
-                false, 1, ball_border_col
+                false, BALL_DESC_BORDER_SIZE, ball_border_col
             )
 
             let hp = Math.max(0, Math.min(ball.max_hp, ball.hp));
@@ -2014,7 +2265,7 @@ function render_descriptions(board) {
                 layers.ui2.ctx,
                 `[${str}]`,
                 l[0], l[1] + 12, ball_col, CANVAS_FONTS, 9,
-                false, 1, ball_border_col
+                false, BALL_DESC_BORDER_SIZE, ball_border_col
             )
             
             if (ball.poison_duration > 0) {
@@ -2022,7 +2273,7 @@ function render_descriptions(board) {
                     layers.ui2.ctx,
                     `${AILMENT_CHARS[1]} ${ball.poison_intensity.toFixed(2).padEnd(5)} | ${ball.poison_duration.toFixed(1)}s`,
                     l[0], l[1] + 12 + 12, ball_col, CANVAS_FONTS, 12,
-                    false, 1, ball_border_col
+                    false, BALL_DESC_BORDER_SIZE, ball_border_col
                 )
             }
 
@@ -2031,7 +2282,7 @@ function render_descriptions(board) {
                     layers.ui2.ctx,
                     `${AILMENT_CHARS[0]} ${ball.rupture_intensity.toFixed(2).padEnd(5)}`,
                     l[0] + 106, l[1] + 12 + 12, ball_col, CANVAS_FONTS, 12,
-                    false, 1, ball_border_col
+                    false, BALL_DESC_BORDER_SIZE, ball_border_col
                 )
             }
 
@@ -2040,7 +2291,7 @@ function render_descriptions(board) {
                     layers.ui2.ctx,
                     `${AILMENT_CHARS[2]} ${ball.burn_intensity.toFixed(2).padEnd(5)}`,
                     l[0] + 160, l[1] + 12 + 12, ball_col, CANVAS_FONTS, 12,
-                    false, 1, ball_border_col
+                    false, BALL_DESC_BORDER_SIZE, ball_border_col
                 )
             }
 
@@ -2356,8 +2607,8 @@ let colliding_parries = new Set();
 let colliding_proj2projs = new Set();
 
 let max_game_duration = 300;
-let game_normal_col = new Colour(8, 8, 8, 255).css();
-let game_end_col = new Colour(36, 0, 0, 255).css();
+let game_normal_col = new Colour(8, 8, 8, 255);
+let game_end_col = new Colour(36, 0, 0, 255);
 
 let game_speed_mult = 1;
 let game_paused = false;
@@ -2374,6 +2625,8 @@ let starting_fullpause_timeout = 0;
 let fullpause_timeout = 0;
 let opening_state = {};
 
+let last_frame_start = 0;
+
 function game_loop() {
     framecount++;
 
@@ -2385,14 +2638,16 @@ function game_loop() {
     let frame_start_time = Date.now();
 
     if (board) {
-        if (board.duration > max_game_duration) {
+        if (board.duration > max_game_duration && !switched_to_endgame_col) {
+            switched_to_endgame_col = true;
+            bg_changed = true;
             render_game(board, keys_down["KeyQ"], false, game_end_col);
         } else {
             render_game(board, keys_down["KeyQ"], false);
         }
 
         if (fullpause_timeout > 0) {
-            render_opening(board, (frame_start_time - last_frame_time));
+            render_opening(board, (frame_start_time - last_frame_start));
         } else {
             render_postopening(board);
             render_descriptions(board);
@@ -2405,6 +2660,9 @@ function game_loop() {
         }
     }
 
+    if (BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO)
+        render_just_playing_around_warning();
+    
     // render_diagnostics(board);
     
     let render_end_time = Date.now();
@@ -3129,6 +3387,7 @@ function game_loop() {
     let frame_end_time = Date.now();
     let time_since_last_frame = frame_end_time - last_frame_time;
     last_frame_time = frame_end_time;
+    last_frame_start = frame_start_time;
 
     last_frame_times.push(time_since_last_frame);
     last_frame_times = last_frame_times.slice(-120);

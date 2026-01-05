@@ -353,6 +353,8 @@ function exit_battle(save_replay=true) {
 }
 
 function enter_battle() {
+    bg_changed = true;
+
     Object.keys(layers).forEach(k => layers[k].ctx.clearRect(0, 0, layers[k].canvas.width, layers[k].canvas.height));
 
     layers.bg3.ctx.fillStyle = game_normal_col;
@@ -1476,6 +1478,36 @@ document.addEventListener("DOMContentLoaded", function() {
         switch (code) {
             case "Digit1": {
                 exit_battle(false);
+                break;
+            }
+
+            case "Digit2": {
+                BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.VECTOR;
+                handle_resize();
+                get_canvases();
+                render_watermark();
+                bg_changed = true;
+                BALL_DESC_BORDER_SIZE = BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO ? 2 : 1;
+                break;
+            }
+
+            case "Digit3": {
+                BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.RASTER;
+                handle_resize();
+                get_canvases();
+                render_watermark();
+                BALL_DESC_BORDER_SIZE = BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO ? 2 : 1;
+                bg_changed = true;
+                break;
+            }
+
+            case "Digit4": {
+                BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.AERO;
+                handle_resize();
+                get_canvases();
+                render_watermark();
+                BALL_DESC_BORDER_SIZE = BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO ? 2 : 1;
+                bg_changed = true;
                 break;
             }
 

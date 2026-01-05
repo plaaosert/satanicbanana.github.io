@@ -453,7 +453,7 @@ class SuperNeedleBall extends NeedleBall {
         this.category = CATEGORIES.SILLY;
         this.tier = TIERS.S;
 
-        this.radius = this.radius * Math.pow(0.75, this.splitcnt);
+        this.set_radius(this.radius * Math.pow(0.75, this.splitcnt));
         this.weapon_data.forEach(w => w.size_multiplier *= Math.pow(0.6, this.splitcnt));
     }
 

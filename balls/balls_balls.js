@@ -365,9 +365,12 @@ class WeaponBall extends Ball {
         this.alt_flash_dur = 0.2;
         this.render_alt = false;
 
-        this.border_siz = 1;
-
         this.linked_hat_particle = null;
+
+        this.aero_light_lookup_table = null;
+        this.aero_radius_table = null;
+
+        this.setup_aero_light_lookup_table();
     }
 
     late_setup() {
@@ -377,6 +380,157 @@ class WeaponBall extends Ball {
 
         this.cache_weapon_offsets();
         this.cache_hitboxes_offsets();
+    }
+
+    setup_aero_light_lookup_table() {
+        if (!this.board.size) {
+            this.aero_light_lookup_table = null;
+            return;
+        }
+
+        let screen_scaling_factor = canvas_width / this.board.size.x;
+
+        let ball_siz_scaled = Math.round(this.radius * screen_scaling_factor);
+
+        let lb = Math.floor(-ball_siz_scaled / 1);
+        let ub = Math.ceil(ball_siz_scaled / 1);
+
+        let s = ub - lb;
+
+        switch (AERO_LIGHTING_CONFIG) {
+            case AERO_LIGHTING_CONFIGS.SIMPLE: {
+                let light_center = [-ball_siz_scaled * 0.05, -ball_siz_scaled * 0.3];
+
+                this.aero_light_lookup_table = [];
+                for (let y=0; y<s; y++) {
+                    let arr = [];
+                    this.aero_light_lookup_table.push(arr);
+                    for (let x=0; x<s; x++) {
+                        let xt = x - ball_siz_scaled;
+                        let yt = y - ball_siz_scaled;
+
+                        let sum = Math.pow(xt, 2) + Math.pow(yt, 2);
+                        let dist = Math.sqrt(
+                            Math.pow(xt - light_center[0], 2) + Math.pow(yt - light_center[1], 2)
+                        );
+                        let prop = dist / ball_siz_scaled;
+
+                        arr.push([sum, prop]);
+                    }
+                }
+
+                break;
+            }
+
+            case AERO_LIGHTING_CONFIGS.WHATS_WRONG_BRO: {
+                let light_centers = [
+                    [[-ball_siz_scaled * 0.5, -ball_siz_scaled * 0.5], 1],
+                    [[-ball_siz_scaled * 0, -ball_siz_scaled * 0], -0.2],
+                ];
+
+                let auroras = [
+                    {
+                        shiny_level: -1.1,
+                        shiny_min: ball_siz_scaled * 0.75,
+                        shiny_max: ball_siz_scaled * 0.9,
+                        shiny_diff: null,
+                        angles: [deg2rad(120), deg2rad(0)],
+                        angles_length: deg2rad(45),
+                        shiny_min_sqr: null,
+                        shiny_max_sqr: null,
+                    },
+
+                    {
+                        shiny_level: 1.8,
+                        shiny_min: ball_siz_scaled * 0.85,
+                        shiny_max: ball_siz_scaled,
+                        shiny_diff: null,
+                        angles: [deg2rad(0)],
+                        angles_length: deg2rad(360),
+                        shiny_min_sqr: null,
+                        shiny_max_sqr: null,
+                    },
+
+                    {
+                        shiny_level: -0.3,
+                        shiny_min: ball_siz_scaled * 0.3,
+                        shiny_max: ball_siz_scaled * 0.7,
+                        shiny_diff: null,
+                        angles: [deg2rad(270)],
+                        angles_length: deg2rad(135),
+                        shiny_min_sqr: null,
+                        shiny_max_sqr: null,
+                    },
+                ]
+
+                auroras.forEach(a => {
+                    a.shiny_diff = a.shiny_max - a.shiny_min;
+                    a.shiny_min_sqr = Math.pow(a.shiny_min, 2);
+                    a.shiny_max_sqr = Math.pow(a.shiny_max, 2);
+                })
+
+                this.aero_light_lookup_table = [];
+                for (let y=0; y<s; y++) {
+                    let arr = [];
+                    this.aero_light_lookup_table.push(arr);
+                    for (let x=0; x<s; x++) {
+                        let xt = x - ball_siz_scaled;
+                        let yt = y - ball_siz_scaled;
+
+                        let sum = Math.pow(xt, 2) + Math.pow(yt, 2);
+                        let props = light_centers.map(c => {
+                            let dist = (Math.sqrt(
+                                Math.pow(xt - c[0][0], 2) + Math.pow(yt - c[0][1], 2)
+                            ) * c[1]);
+
+                            let light_prop = dist / ball_siz_scaled;
+
+                            return light_prop;
+                        });
+
+                        let aurora_light = 0;
+                        let sqr_abs_dist = Math.pow(xt, 2) + Math.pow(yt, 2);
+                        auroras.forEach(aurora => {
+                            if (sqr_abs_dist >= aurora.shiny_min_sqr && sqr_abs_dist <= aurora.shiny_max_sqr) {
+                                let vec = new Vector2(xt, yt);
+                                let angle = positive_mod(vec.angle(), Math.PI * 2);
+
+                                let dist = Math.sqrt(sqr_abs_dist);
+
+                                let aurora_diffs = aurora.angles.map(a => Math.min((2 * Math.PI) - Math.abs(a - angle), Math.abs(a - angle)));
+                                let aurora_diff = Math.min(...aurora_diffs);
+
+                                let aurora_angle_prop = 1 - Math.min(1, aurora_diff / aurora.angles_length);
+
+                                let aurora_dist_prop = (dist - aurora.shiny_min) / aurora.shiny_diff;
+
+                                aurora_light += aurora.shiny_level * aurora_dist_prop * aurora_angle_prop;
+                            }
+                        });
+
+                        let prop = Math.min(1, props.reduce((p, c) => p+c, 0));
+                        prop += aurora_light;
+
+                        arr.push([sum, prop]);
+                    }
+                }
+                
+                break;
+            }
+        }
+
+        let w = 25 * screen_scaling_factor;
+        this.aero_radius_table = [
+            Math.pow(this.radius * screen_scaling_factor, 2),
+            Math.pow((this.radius * screen_scaling_factor) - (w * 1.2), 2),
+            (new Vector2(this.radius, this.radius)),
+            Math.round(this.radius * screen_scaling_factor),
+        ]
+    }
+
+    set_radius(to) {
+        this.radius = to;
+        this.setup_aero_light_lookup_table();
     }
 
     set_colour(to_col) {
@@ -436,7 +590,7 @@ class WeaponBall extends Ball {
         let txt = text;
         let fnt = CANVAS_FONTS;
 
-        if (this.border_siz == 0) {
+        if (BALL_DESC_BORDER_SIZE == 0) {
             write_text(
                 ctx, txt, xpos, ypos, col, fnt, siz
             );
@@ -449,7 +603,7 @@ class WeaponBall extends Ball {
             }
 
             write_pp_bordered_text(
-                ctx, txt, xpos, ypos, col, fnt, siz, false, this.border_siz, border_col
+                ctx, txt, xpos, ypos, col, fnt, siz, false, BALL_DESC_BORDER_SIZE, border_col
             );
         }
 
@@ -2071,7 +2225,7 @@ class NeedleBall extends WeaponBall {
 
         this.can_clone = can_clone;
         
-        this.radius *= can_clone ? 1 : 0.75
+        this.set_radius(this.radius * (can_clone ? 1 : 0.75));
     }
 
     weapon_step(board, time_delta) {
