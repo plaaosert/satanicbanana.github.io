@@ -65,6 +65,7 @@ let AERO_BACKGROUND = AERO_BACKGROUNDS.VISTA;
 
 let bg_changed = true;
 let switched_to_endgame_col = false;
+let balls_need_aero_recache = false;
 
 let BALL_DESC_BORDER_SIZE = BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO ? 2 : 1;
 
@@ -1467,10 +1468,10 @@ function handle_resize(event) {
     // i would apologise but im not sorry
     canvas_base_size = 625;
 
+    const DPR = window.devicePixelRatio ?? 1;
+
     canvas_height = canvas_base_size;
     canvas_width = canvas_base_size;
-
-    const DPR = window.devicePixelRatio ?? 1;
 
     Object.keys(layers).forEach(k => {
         let canvas = layers[k].canvas;
@@ -1480,9 +1481,14 @@ function handle_resize(event) {
         canvas.style.height = canvas_smallest + "px";
     
         // might work, might not
-        ctx.canvas.width = canvas_width * DPR;
-        ctx.canvas.height = canvas_height * DPR;
-        ctx.scale(DPR, DPR);
+        if (false) {
+            ctx.canvas.width = canvas_width * DPR;
+            ctx.canvas.height = canvas_height * DPR;
+            ctx.scale(DPR, DPR);
+        } else {
+            ctx.canvas.width = canvas_width;
+            ctx.canvas.height = canvas_height;
+        }
 
         ctx.imageSmoothingEnabled = false;
     
@@ -1518,6 +1524,9 @@ function handle_resize(event) {
     } else {
         document.querySelector("#desktop_mode_prompt").classList.remove("nodisplay");
     }
+
+    bg_changed = true;
+    balls_need_aero_recache = true;
 
     //refresh_wtsp_stwp();
 
@@ -2075,8 +2084,16 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
                     let old_ball_col = ball_col;
                     ball_col = ball_col.lerp(Colour.black, 0.1);
 
-                    for (let y=0; y<s; y++) {
-                        for (let x=0; x<s; x++) {
+                    // ball.setup_aero_light_lookup_table();
+
+                    let xmin = -Math.min(0, offset.x);
+                    let xmax = Math.min(offset.x + s, canvas_width) - offset.x;
+
+                    let ymin = -Math.min(0, offset.y);
+                    let ymax = Math.min(offset.y + s, canvas_height) - offset.y;
+
+                    for (let y=ymin; y<ymax; y++) {
+                        for (let x=xmin; x<xmax; x++) {
                             let idx = (((y + offset.y) * canvas_width) + (x + offset.x)) * 4;
                             // let sum = Math.pow(xt, 2) + Math.pow(yt, 2);
 
@@ -2638,6 +2655,14 @@ function game_loop() {
     let frame_start_time = Date.now();
 
     if (board) {
+        if (balls_need_aero_recache) {
+            if (BALL_RENDERING_METHOD != BALL_RENDERING_METHODS.VECTOR) {
+                board.balls.forEach(ball => ball.setup_aero_light_lookup_table());
+            }
+
+            balls_need_aero_recache = false;
+        }
+
         if (board.duration > max_game_duration && !switched_to_endgame_col) {
             switched_to_endgame_col = true;
             bg_changed = true;

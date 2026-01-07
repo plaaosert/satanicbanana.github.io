@@ -424,9 +424,18 @@ class WeaponBall extends Ball {
 
             case AERO_LIGHTING_CONFIGS.WHATS_WRONG_BRO: {
                 let light_centers = [
-                    [[-ball_siz_scaled * 0.5, -ball_siz_scaled * 0.5], 1],
-                    [[-ball_siz_scaled * 0, -ball_siz_scaled * 0], -0.2],
+                    [new Vector2(-ball_siz_scaled * 0.5, -ball_siz_scaled * 0.5), 1],
+                    [new Vector2(-ball_siz_scaled * 0, -ball_siz_scaled * 0), -0.2],
                 ];
+
+                /*
+                let light_rot_angle = this.position.angle();
+
+                light_centers = light_centers.map(c => {
+                    return [c[0].rotate(light_rot_angle), c[1]];
+                })
+                */
+                let light_rot_angle = 0;
 
                 let auroras = [
                     {
@@ -441,8 +450,8 @@ class WeaponBall extends Ball {
                     },
 
                     {
-                        shiny_level: 1.8,
-                        shiny_min: ball_siz_scaled * 0.85,
+                        shiny_level: 0.5,
+                        shiny_min: ball_siz_scaled * 0.8,
                         shiny_max: ball_siz_scaled,
                         shiny_diff: null,
                         angles: [deg2rad(0)],
@@ -456,7 +465,7 @@ class WeaponBall extends Ball {
                         shiny_min: ball_siz_scaled * 0.3,
                         shiny_max: ball_siz_scaled * 0.7,
                         shiny_diff: null,
-                        angles: [deg2rad(270)],
+                        angles: [deg2rad(45)],
                         angles_length: deg2rad(135),
                         shiny_min_sqr: null,
                         shiny_max_sqr: null,
@@ -480,7 +489,7 @@ class WeaponBall extends Ball {
                         let sum = Math.pow(xt, 2) + Math.pow(yt, 2);
                         let props = light_centers.map(c => {
                             let dist = (Math.sqrt(
-                                Math.pow(xt - c[0][0], 2) + Math.pow(yt - c[0][1], 2)
+                                Math.pow(xt - c[0].x, 2) + Math.pow(yt - c[0].y, 2)
                             ) * c[1]);
 
                             let light_prop = dist / ball_siz_scaled;
@@ -493,7 +502,7 @@ class WeaponBall extends Ball {
                         auroras.forEach(aurora => {
                             if (sqr_abs_dist >= aurora.shiny_min_sqr && sqr_abs_dist <= aurora.shiny_max_sqr) {
                                 let vec = new Vector2(xt, yt);
-                                let angle = positive_mod(vec.angle(), Math.PI * 2);
+                                let angle = positive_mod(vec.angle() + light_rot_angle, Math.PI * 2);
 
                                 let dist = Math.sqrt(sqr_abs_dist);
 
@@ -502,7 +511,7 @@ class WeaponBall extends Ball {
 
                                 let aurora_angle_prop = 1 - Math.min(1, aurora_diff / aurora.angles_length);
 
-                                let aurora_dist_prop = (dist - aurora.shiny_min) / aurora.shiny_diff;
+                                let aurora_dist_prop = 1 - ((Math.abs((dist - aurora.shiny_min) - (aurora.shiny_diff / 2)) * 2) / aurora.shiny_diff);
 
                                 aurora_light += aurora.shiny_level * aurora_dist_prop * aurora_angle_prop;
                             }
