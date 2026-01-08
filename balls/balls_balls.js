@@ -3048,7 +3048,7 @@ class GlassBall extends WeaponBall {
         ];
 
         this.weapon_data = [
-            new BallWeapon(1, "glass", [
+            new BallWeapon(1, "glass1", [
                 {pos: new Vector2(76, 64), radius: 6},
                 {pos: new Vector2(64, 64), radius: 12},
                 {pos: new Vector2(48, 64), radius: 16},
@@ -3067,6 +3067,8 @@ class GlassBall extends WeaponBall {
         this.vorpal_mult = 12;
 
         this.skin_suffix = "";
+        
+        this.adaptive_sprites = true;
     }
 
     set_skin(skin_name) {
@@ -3076,6 +3078,8 @@ class GlassBall extends WeaponBall {
             case "Papercut": {
                 this.weapon_data[0].sprite = "glass_paper";
                 this.skin_suffix = "_paper";
+
+                this.adaptive_sprites = false;
 
                 break;
             }
@@ -3091,6 +3095,10 @@ class GlassBall extends WeaponBall {
             this.weapon_data[0].sprite = "glass_angry";
         } else {
             this.weapon_data[0].sprite = "glass";
+            let charge_prop = this.charge / this.charge_threshold;
+            let n = Math.floor(charge_prop * 5) + 1;
+
+            this.weapon_data[0].sprite += n.toString();
         }
     
         this.weapon_data[0].sprite += this.skin_suffix;

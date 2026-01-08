@@ -154,7 +154,11 @@ const entity_sprites = new Map([
     ["grenade_bomb", 1, "weapon/"],
     ["grenade_weapon_bomb", 1, "weapon/"],
 
-    ["glass", 1, "weapon/"],
+    ["glass1", 1, "weapon/"],
+    ["glass2", 1, "weapon/"],
+    ["glass3", 1, "weapon/"],
+    ["glass4", 1, "weapon/"],
+    ["glass5", 1, "weapon/"],
     ["glass_angry", 1, "weapon/"],
 
     ["glass_paper", 1, "weapon/"],
@@ -256,8 +260,12 @@ const entity_sprites = new Map([
             })
 
             if (v[3]) {
+                let e = false;
                 t.addEventListener("error", function() {
-                    t.src = "img/icons/unknown.png";
+                    if (!e) {
+                        t.src = `${FILES_PREFIX}img/icons/unknown.png`;
+                        e = true;
+                    }
                 })
             }
 
@@ -273,8 +281,12 @@ const entity_sprites = new Map([
             num_textures_loaded++;
         })
         if (v[3]) {
-            t.addEventListener("error", function(e) {
-                t.src = "img/icons/unknown.png";
+            let e = false;
+            t.addEventListener("error", function() {
+                if (!e) {
+                    t.src = `${FILES_PREFIX}img/icons/unknown.png`;
+                    e = true;
+                }
             })
         }
 

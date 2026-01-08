@@ -206,8 +206,12 @@ function add_to_replays_tab(tab, replay_entry, to_first=true) {
         let name_span = document.createElement("span");
 
         img_icon.src = `${FILES_PREFIX}img/icons/${ball_class.ball_name.toLowerCase()}.png`;
-        img_icon.addEventListener("error", () => { 
-            img_icon.src = `${FILES_PREFIX}img/icons/unknown.png`;
+        let e = false;
+        img_icon.addEventListener("error", () => {
+            if (!e) {
+                img_icon.src = `${FILES_PREFIX}img/icons/unknown.png`;
+                e = true;
+            }
         });
 
         name_span.textContent = ` ${(`${ball_class.ball_name} LV ${replay_entry.replay.levels[index]+1} `).padEnd(23, "-")} `;
@@ -868,9 +872,13 @@ function update_ball_selection_popup() {
                 icon.src = `${FILES_PREFIX}img/icons/unknown.png`;
             }
 
-            icon.addEventListener("error", _ => {
-                icon.src = `${FILES_PREFIX}img/icons/unknown.png`;
-            })
+            let e = false;
+            icon.addEventListener("error", () => {
+                if (!e) {
+                    icon.src = `${FILES_PREFIX}img/icons/unknown.png`;
+                    e = true;
+                }
+            });
 
             new_o.style.color = CATEGORIES_INFO[selected_ball_info[ballid].category].col.lerp(Colour.white, 0.5).css();
 
@@ -909,9 +917,13 @@ function update_ball_selection_popup() {
         icon.src = `${FILES_PREFIX}img/icons/unknown.png`;
     }
 
-    icon.addEventListener("error", _ => {
-        icon.src = `${FILES_PREFIX}img/icons/unknown.png`;
-    })
+    let e = false;
+    icon.addEventListener("error", () => {
+        if (!e) {
+            icon.src = `${FILES_PREFIX}img/icons/unknown.png`;
+            e = true;
+        }
+    });
 
     ballinfo_elem.querySelector("#tiertext").style.color = TIERS_INFO[testball.tier].col.css();
     ballinfo_elem.querySelector("#tiertext").style.backgroundColor = TIERS_INFO[testball.tier].col.lerp(Colour.black, 0.6).css();
@@ -1525,8 +1537,12 @@ function setup_load_menu(replay_as_text) {
         let name_span = document.createElement("span");
 
         img_icon.src = `${FILES_PREFIX}img/icons/${ball_class.ball_name.toLowerCase()}.png`;
-        img_icon.addEventListener("error", () => { 
-            img_icon.src = `${FILES_PREFIX}img/icons/unknown.png`;
+        let e = false;
+        img_icon.addEventListener("error", () => {
+            if (!e) {
+                img_icon.src = `${FILES_PREFIX}img/icons/unknown.png`;
+                e = true;
+            }
         });
 
         name_span.textContent = ` ${(`${ball_class.ball_name} LV ${levels[index]+1} `)} `;
@@ -2006,9 +2022,13 @@ selectable_balls_for_random.map(b => b.ball_name.toLowerCase()).forEach(n => {
         num_textures_loaded++;
     })
 
-    t.addEventListener("error", function(e) {
-        t.src = `${FILES_PREFIX}img/icons/unknown.png`;
-    })
+    let e = false;
+    t.addEventListener("error", () => {
+        if (!e) {
+            t.src = `${FILES_PREFIX}img/icons/unknown.png`;
+            e = true;
+        }
+    });
 
     ts.push(t);
     
