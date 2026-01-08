@@ -1508,6 +1508,9 @@ function setup_load_menu(replay_as_text) {
     // structure is <span><img> <span>BallName LV X</span></span> like in replay buttons
     let replay = parse_replay(replay_as_text);
 
+    let cols = replay.cols ?? default_cols;
+    let levels = replay.levels ?? new Array(replay.balls.length).fill(0);
+
     replay.balls.forEach((ball, index) => {
         let ball_str = replay.balls[index];
         if (!ball_str) {
@@ -1526,8 +1529,8 @@ function setup_load_menu(replay_as_text) {
             img_icon.src = `${FILES_PREFIX}img/icons/unknown.png`;
         });
 
-        name_span.textContent = ` ${(`${ball_class.ball_name} LV ${replay.levels[index]+1} `)} `;
-        name_span.style.color = Colour.from_array(replay.cols[index]).css();
+        name_span.textContent = ` ${(`${ball_class.ball_name} LV ${levels[index]+1} `)} `;
+        name_span.style.color = Colour.from_array(cols[index]).css();
 
         entry_span.appendChild(img_icon);
         entry_span.appendChild(name_span);
