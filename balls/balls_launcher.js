@@ -1508,7 +1508,7 @@ function setup_load_menu(replay_as_text) {
     // structure is <span><img> <span>BallName LV X</span></span> like in replay buttons
     let replay = parse_replay(replay_as_text);
 
-    let cols = replay.cols ?? default_cols;
+    let cols = replay.cols ?? default_cols.map(c => c.data);
     let levels = replay.levels ?? new Array(replay.balls.length).fill(0);
 
     replay.balls.forEach((ball, index) => {
