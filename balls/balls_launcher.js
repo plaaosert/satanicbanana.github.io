@@ -131,7 +131,7 @@ function save_replay_button(override_text, override_elem, override_return) {
     // copy the replay to the clipboard
     let elem = override_elem ? override_elem : document.getElementById("save_replay_button");
     navigator.clipboard.writeText(
-        `${BASE_URL}?r=${override_text ? override_text : last_replay_compressed}`
+        `${BASE_URL}?r=${override_text ? override_text : (last_replay_compressed ?? last_replay)}`
     ).then(function() {
 		console.log('Copied replay link to clipboard!');
 		
@@ -244,7 +244,7 @@ function add_to_replays_tab(tab, replay_entry, to_first=true) {
     play_button.textContent = "Play replay";
 
     copy_button.addEventListener("click", () => {
-        save_replay_button(btoa(JSON.stringify(replay_entry.replay_compressed)), copy_button, copy_button.textContent);
+        save_replay_button(btoa(JSON.stringify(replay_entry.replay_compressed ?? replay_entry.replay)), copy_button, copy_button.textContent);
     })
 
     play_button.addEventListener("click", () => {
