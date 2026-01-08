@@ -31,6 +31,21 @@ function parse_replay(replay_as_text) {
         replay = decompress_replay(replay);
     }
 
+    // balls might be collapsed
+    replay.balls = replay.balls.map(b => {
+        if (!b)
+            return;
+
+        if (!b.endsWith("Ball")) {
+            let idx = b.slice(1);
+
+            let list = REPLAY_BALLS_LISTS[b.charCodeAt(0)-65];
+            return list[idx].name;
+        } else {
+            return b;
+        }
+    })
+
     if (!(replay.framespeed && replay.seed && replay.balls)) {
         throw Error("Replay doesn't have all necessary fields!");
     }

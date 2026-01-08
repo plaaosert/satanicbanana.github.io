@@ -278,6 +278,11 @@ function update_replays_tab(refresh=false) {
     }
 }
 
+const REPLAY_BALLS_LISTS = [
+    main_selectable_balls,
+    additional_selectable_balls,
+    powered_selectable_balls
+];
 function collapse_replay(replay) {
     // collapse down the replay as much as possible:
     /*
@@ -337,6 +342,28 @@ function collapse_replay(replay) {
     if (skins_matched) {
         replay_collapsed.skins = null;
     }
+
+    // rename the balls from their names to codes
+    replay_collapsed.balls = replay_collapsed.balls.map(b => {
+        let list_index = -1;
+        let ball_index = -1;
+
+        for (let i=0; i<REPLAY_BALLS_LISTS.length; i++) {
+            let idx = REPLAY_BALLS_LISTS[i].findIndex(bp => bp.name == b);
+            if (idx != -1) {
+                ball_index = idx;
+                list_index = i;
+                break;
+            }
+        }
+
+        if (list_index != -1) {
+            let char = String.fromCharCode(65 + list_index);
+            return `${char}${ball_index}`;
+        } else {
+            return b;
+        }
+    });
 
     // then rename all the elements to shorter names (compress_replay)
     let compressed = compress_replay(replay_collapsed);
@@ -1519,6 +1546,9 @@ function on_mobile() {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
+    if (window.location.href.includes("description_generator"))
+        return;
+
     get_canvases();
 
     layers.front.canvas.addEventListener("contextmenu", function(event) {
