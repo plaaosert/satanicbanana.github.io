@@ -2,6 +2,7 @@ const BASE_URL = "https://plaao.net/balls";
 
 let board = null;
 let last_replay = "";
+let last_replay_compressed = "";
 let fps_checks = [
     60, 90, 120, 144, 240, 480
 ]
@@ -130,7 +131,7 @@ function save_replay_button(override_text, override_elem, override_return) {
     // copy the replay to the clipboard
     let elem = override_elem ? override_elem : document.getElementById("save_replay_button");
     navigator.clipboard.writeText(
-        `${BASE_URL}?r=${override_text ? override_text : last_replay}`
+        `${BASE_URL}?r=${override_text ? override_text : last_replay_compressed}`
     ).then(function() {
 		console.log('Copied replay link to clipboard!');
 		
@@ -243,7 +244,7 @@ function add_to_replays_tab(tab, replay_entry, to_first=true) {
     play_button.textContent = "Play replay";
 
     copy_button.addEventListener("click", () => {
-        save_replay_button(btoa(JSON.stringify(replay_entry.replay)), copy_button, copy_button.textContent);
+        save_replay_button(btoa(JSON.stringify(replay_entry.replay_compressed)), copy_button, copy_button.textContent);
     })
 
     play_button.addEventListener("click", () => {
@@ -277,6 +278,107 @@ function update_replays_tab(refresh=false) {
     }
 }
 
+function collapse_replay(replay) {
+    // collapse down the replay as much as possible:
+    /*
+        - balls: cut off nulls at the end (and do the equivalent for cols, levels, players, skins)
+        - cols+players: codependent; set to nulls IFF both are exactly the default
+        - levels: set to null if [0, 0, ...]
+        - skins: set to null if ['Default', 'Default', ...]
+    */
+    let replay_collapsed = structuredClone(replay);
+
+    for (let i=replay_collapsed.balls.length-1; i>=0; i--) {
+        let b = replay_collapsed.balls[i];
+        if (!b) {
+            // remove from all
+            replay_collapsed.balls.splice(i, 1);
+
+            replay_collapsed.cols?.splice(i, 1);
+            replay_collapsed.levels?.splice(i, 1);
+            replay_collapsed.players?.splice(i, 1);
+            replay_collapsed.skins?.splice(i, 1);
+        } else {
+            break;
+        }
+    }
+    
+    let cols_matched = replay_collapsed.cols?.every((c, i) => Colour.from_array(c).eq(default_cols[i]));
+    
+    let sample_player = {
+        id: -1,
+        stats: {
+            damage_bonus: 1,
+            defense_bonus: 1,
+            ailment_resistance: 1,
+        }
+    }
+
+    let players_matched = replay_collapsed.players?.every((p, i) => {
+        let pc = sample_player;
+        pc.id = i;
+
+        return JSON.stringify(p) == JSON.stringify(pc);
+    });
+
+    let levels_matched = replay_collapsed.levels?.every(l => l == 0);
+
+    let skins_matched = replay_collapsed.skins?.every(s => s == "Default");
+
+    if (cols_matched && players_matched) {
+        replay_collapsed.cols = null;
+        replay_collapsed.players = null;
+    }
+
+    if (levels_matched) {
+        replay_collapsed.levels = null;
+    }
+
+    if (skins_matched) {
+        replay_collapsed.skins = null;
+    }
+
+    // then rename all the elements to shorter names (compress_replay)
+    let compressed = compress_replay(replay_collapsed);
+
+    return compressed;
+}
+
+const REPLAY_VALUES = {
+    "balls": "b",
+    "cols": "c",
+    "duration": "d",
+    "framespeed": "f",
+    "game_version": "g",
+    "levels": "l",
+    "players": "p",
+    "seed": "s",
+    "skins": "k",
+    "starting_hp": "h",
+    "time_recorded": "t",
+};
+
+function compress_replay(replay) {
+    let compressed = {};
+
+    Object.keys(REPLAY_VALUES).forEach((k, i) => {
+        if (replay[k])
+            compressed[REPLAY_VALUES[k]] = replay[k]
+    });
+
+    return compressed;
+}
+
+function decompress_replay(replay) {
+    let decompressed = {};
+
+    Object.keys(REPLAY_VALUES).forEach((k, i) => {
+        decompressed[k] = replay[REPLAY_VALUES[k]];
+    });
+
+    return decompressed;
+} 
+
 function exit_battle(save_replay=true) {
     if (!board)
         return;
@@ -308,7 +410,10 @@ function exit_battle(save_replay=true) {
             starting_hp: STARTING_HP,
         }
 
+        let replay_compressed = collapse_replay(replay);
+
         last_replay = btoa(JSON.stringify(replay));
+        last_replay_compressed = btoa(JSON.stringify(replay_compressed));
 
         let rps = board.remaining_players();
         let b = null;
@@ -323,6 +428,7 @@ function exit_battle(save_replay=true) {
 
         replay_history.unshift({
             replay: replay,
+            replay_compressed: replay_compressed,
             tension: board.tension,
             winners: board.starting_players.map(ps => rps.some(p => p.id == ps.id))
         });
@@ -578,6 +684,10 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
             render_victory_enabled = false;
         } else {
             match_end_timeout = 5 * 1000;
+            if (window.location.href.startsWith("file://")) {
+                match_end_timeout = 16 * 1000;
+            }
+            
             render_victory_enabled = true;
         }
 
@@ -1279,6 +1389,13 @@ function setup_match_search(num_candidates, settings) {
 
             let duration = last_board?.duration;
 
+            let dur_lb = null;
+            let dur_ub = null;
+            if (settings.duration) {
+                dur_lb = settings.duration[0] ?? null;
+                dur_ub = settings.duration[1] ?? null;
+            }
+
             let lb = null;
             let ub = null;
             if (settings.survivor_hp_bounds) {
@@ -1295,10 +1412,11 @@ function setup_match_search(num_candidates, settings) {
                 (ub === null || highest_survivor_hp <= ub) &&
                 (lb === null || lowest_survivor_hp >= lb) &&
                 (settings.num_balls_survived === null || num_balls_survived <= settings.num_balls_survived) &&
-                (settings.duration === null || duration <= settings.duration)
+                (dur_ub === null || duration <= dur_ub) &&
+                (dur_lb === null || duration >= dur_lb)
             ) {
                 // this is valid, so add to candidates list
-                search_stored_replays.push({tension: last_board?.tension, replay: last_replay});
+                search_stored_replays.push({tension: last_board?.tension, replay: last_replay, replay_compressed: last_replay_compressed});
                 console.log(`Found one with tension ${last_board?.tension?.toFixed(2)}`);
 
                 if (search_stored_replays.length >= num_candidates) {
@@ -1310,9 +1428,9 @@ function setup_match_search(num_candidates, settings) {
                     let response = confirm("Found it!\n\nPlay now?");
                     console.log(`Tension: ${replay_picked.tension.toFixed(2)}`);
                     console.log(`Highest survivor hp: ${highest_survivor_hp}`);
-                    console.log(replay_picked.replay);
+                    console.log(replay_picked.replay_compressed);
                     if (response) {
-                        load_replay(replay_picked.replay);
+                        load_replay(replay_picked.replay_compressed);
                     }
 
                     return;

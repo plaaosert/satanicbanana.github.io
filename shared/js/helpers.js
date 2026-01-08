@@ -790,6 +790,16 @@ class Colour {
         this.data[3] = this.a;
     }
 
+    eq(other) {
+        if (other instanceof Colour) {
+            return this.data.every((v, i) => v == other.data[i]);
+        } else if (other instanceof Array) {
+            return this.data.every((v, i) => v == other[i]);
+        } else {
+            throw Error("Not comparable");
+        }
+    }
+
     lerp(to, amt) {
         return Colour.from_array(lerp_arr(this.data, to.data, amt, true));
     }

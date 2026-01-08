@@ -25,6 +25,12 @@ function parse_replay(replay_as_text) {
     }
     let replay = JSON.parse(atob(replay_text));
 
+    // then decompress if necessary
+    // only compressed replays will have the "b" variable
+    if (replay.b) {
+        replay = decompress_replay(replay);
+    }
+
     if (!(replay.framespeed && replay.seed && replay.balls)) {
         throw Error("Replay doesn't have all necessary fields!");
     }
