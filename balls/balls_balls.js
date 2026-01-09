@@ -635,6 +635,21 @@ class WeaponBall extends Ball {
         }
     }
 
+    gain_hp(amt, source, bypass_damage_prevention=false) {
+        if (this.takes_damage || bypass_damage_prevention) {
+            let hp_to_gain = Math.min(this.max_hp - this.hp, amt);
+
+            // we don't care about overkill for the ball itself but we do for tension
+            this.hp += hp_to_gain;
+
+            this.board.register_hp_gain(source, this, hp_to_gain);
+
+            return amt;
+        }
+
+        return 0;
+    }
+
     lose_hp(amt, source, bypass_damage_prevention=false) {
         if (this.takes_damage || bypass_damage_prevention) {
             let hp_to_lose = Math.min(this.hp, amt);
@@ -1106,6 +1121,14 @@ class WeaponBall extends Ball {
     }
 
     get_projectile_parried(parrier, projectile) {
+        // nothing
+    }
+
+    collide_ball(other) {
+        // nothing
+    }
+
+    collide_wall(other) {
         // nothing
     }
 
@@ -5163,6 +5186,72 @@ class SpearBall extends WeaponBall {
     }
 }
 
+class RosaryBall extends WeaponBall {
+    static ball_name = "Rosary";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Rosary";
+        this.description_brief = "Has no functional weapon! Periodically releases a burst that heals allies. Summons random balls with reduced health to assist in battle.";
+        this.level_description = "Healing burst is more frequent. Summoned balls also gain level bonuses.";
+        this.max_level_description = "Summoned balls also gain awakening bonuses. Two balls are summoned at once each time.";
+        this.quote = "For this victory I may thank only the Ball Above All. Praise be.";
+
+        this.tier = TIERS.A;
+        this.category = CATEGORIES.STANDARD;
+        this.tags = [
+            TAGS.HYBRID,
+            TAGS.BALANCED,
+            TAGS.CHILDREN,
+            TAGS.LEVELS_UP,
+            TAGS.CAN_AWAKEN,
+        ];
+
+        this.weapon_data = [
+            new BallWeapon(1, "rosary", []),
+            new BallWeapon(1, "rosary_halo", []),
+        ];
+
+        this.speed_range = [40, 100];
+        this.speed_base = random_float(...this.speed_range, this.board.random);
+
+        this.healing_cooldown_max = 3 - ((this.level+1) * 0.01);
+        this.healing_cooldown = this.healing_cooldown_max;
+        this.healing_amount = 12;
+
+        this.summon_cooldown_range = [8, 24];
+        this.summon_self_stun = 1;
+        this.summon_cooldown = 2;
+        this.summon_hp = 16;
+        this.summon_appear_delay = 1;
+        this.summon_completion_delay = 2;
+        this.summon_particle = "entry_rift";
+        this.summon_current_dur = 0;
+        this.summoning = false;
+    }
+
+    weapon_step(board, time_delta) {
+        this.weapon_data[0].angle = 0;
+        this.rotate_weapon(1, time_delta * this.speed_base);
+
+        this.healing_cooldown -= time_delta;
+        if (this.healing_cooldown <= 0) {
+            this.healing_cooldown += this.healing_cooldown_max;
+
+            let proj = new RosaryHealingBurstProjectile(
+                this.board, this, 0, this.position, 3
+            );
+
+            this.board.spawn_projectile(proj, this.position);
+        }
+    }
+
+    hit_heal(ball) {
+        ball.gain_hp(this.healing_amount, this, true);
+    }
+}
+
 class Projectile {
     // projectiles have a position, a damage stat, a direction, speed and some hitboxes
     static id_inc = 0;
@@ -5200,6 +5289,7 @@ class Projectile {
         // also need to split out team and player ID to allow for this
         this.can_hit_allied = false;
         this.can_hit_source = false; // specifically for hit/parry from SOURCE ball
+        this.can_hit_enemy = true;
 
         this.ignore_balls = new Set();
 
@@ -5231,6 +5321,7 @@ class Projectile {
             this.active && 
             !this.ignore_balls.has(ball.id) && 
             (!ball.allied_with(this.source) || this.can_hit_allied) &&
+            (this.can_hit_enemy || ball.allied_with(this.source)) &&
             (ball.id != this.source.id || this.can_hit_source)
         )
     }
@@ -5840,6 +5931,51 @@ class PotionBottleProjectile extends Projectile {
     }
 }
 
+class PersistentAoEProjectile extends Projectile {
+    constructor(board, source, source_weapon_index, position, damage, size, duration, sprite) {
+        super(board, source, source_weapon_index, position, damage, size, new Vector2(1, 0), 0);
+
+        this.sprites = entity_sprites.get(sprite);
+        this.framecount = this.sprites.length;
+        this.sprite = this.sprites[0];
+
+        /*
+        this.set_hitboxes([
+            
+        ]);
+        */
+
+        this.hitboxes_by_frame = new Array(this.framecount).fill(0).map(_ => []);
+
+        this.parriable = false;
+        this.collides_other_projectiles = false;
+
+        this.lifetime = 0;
+        this.duration = duration;
+    }
+
+    physics_step(time_delta) {
+        this.lifetime += time_delta;
+
+        let frame = Math.floor((this.lifetime / this.duration) * this.framecount);
+        this.sprite = this.sprites[frame];
+
+        this.set_hitboxes(this.hitboxes_by_frame[frame]);
+
+        if (this.lifetime >= this.duration) {
+            this.active = false;
+        }
+    }
+
+    hit_ball(ball, delta_time) {
+        super.hit_ball(ball, delta_time);
+
+        this.ignore_balls.add(ball.id);
+
+        this.active = true;
+    }
+}
+
 class GrenadeExplosionProjectile extends Projectile {
     constructor(board, source, source_weapon_index, position, damage, size, sprite_override="explosion_grenade") {
         super(board, source, source_weapon_index, position, damage, size, new Vector2(1, 0), 0);
@@ -6128,6 +6264,42 @@ class SpearProjectile extends InertiaRespectingStraightLineProjectile {
     }
 }
 
+class RosaryHealingBurstProjectile extends PersistentAoEProjectile {
+    constructor(board, source, source_weapon_index, position, size) {
+        super(board, source, source_weapon_index, position, 0, size, 1, "berserker_shockwave");
+
+        this.hitboxes_by_frame = [
+            [],
+            [{pos: new Vector2(0, 8), radius: 16}],
+            [{pos: new Vector2(0, 8), radius: 24}],
+            [{pos: new Vector2(0, 8), radius: 36}],
+            [{pos: new Vector2(0, 8), radius: 48}],
+            [{pos: new Vector2(0, 8), radius: 48}],
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+            []
+        ]
+
+        this.can_hit_allied = true;
+        this.can_hit_source = false;
+        this.can_hit_enemy = false;
+    }
+
+    hit_ball(ball, delta_time) {
+        // do not call super
+        this.ignore_balls.add(ball.id);
+
+        this.active = true;
+
+        this.source.hit_heal(ball);
+    }
+}
+
 
 let main_selectable_balls = [
     DummyBall,
@@ -6136,5 +6308,5 @@ let main_selectable_balls = [
     RailgunBall, PotionBall, GrenadeBall,
     GlassBall, HandBall, ChakramBall,
     WandBall, AxeBall, ShotgunBall,
-    SpearBall
+    SpearBall, RosaryBall
 ]

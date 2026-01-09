@@ -653,18 +653,13 @@ class BerserkerBall extends WeaponBall {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "Berserker";
-        this.description_brief = "@plaaoballsit's passive the lower it gets the more strength and speed it gets//It's ability to down slam create a shockwave in a big radius stunning the opponent for 2 seconds only against the wall or whatever wall to freeze the enemy btw.//The downside it's bigger and easier to hit//Cd 5 sec ig//Base hp 115?";
-        this.level_description = "-";
-        this.max_level_description = "-";
+        this.description_brief = "@plaaoballsit's passive the lower it gets the more strength and speed it gets // It's ability to down slam create a shockwave in a big radius stunning the opponent for 2 seconds only against the wall or whatever wall to freeze the enemy btw. // The downside it's bigger and easier to hit // Cd 5 sec ig // Base hp 115?";
         this.quote = "Thanks @jaydeniskandar9185.";
 
-        this.tier = TIERS.A;
-        this.category = CATEGORIES.STANDARD;
+        this.tier = TIERS.DISMAL;
+        this.category = CATEGORIES.SILLY;
         this.tags = [
             TAGS.MELEE,
-            TAGS.OFFENSIVE,
-            TAGS.LEVELS_UP,
-            TAGS.CAN_AWAKEN,
         ];
 
         this.weapon_data = [
@@ -678,17 +673,48 @@ class BerserkerBall extends WeaponBall {
         this.down_slam_cooldown_max = 5;
         this.down_slam_cooldown = this.down_slam_cooldown_max;
 
+        this.slamming = false;
+
         this.max_hp = 115;
         this.hp = this.max_hp;
 
-        this.set_radius(this.radius * 2);
+        this.set_radius(this.radius * 1.25);
     }
 
     weapon_step(board, time_delta) {
-        this.speed_cur = Math.max(this.speed_base, this.speed_cur - this.speed_friction * time_delta);
-
         this.rotate_weapon(0, this.speed_cur * time_delta);
-        this.damage = this.damage_base + (this.damage_per_speed * this.speed_cur);
+
+        this.down_slam_cooldown -= time_delta;
+        if (this.down_slam_cooldown <= 0) {
+            this.down_slam_cooldown = this.down_slam_cooldown_max;
+
+            console.log("slam time");
+            this.slamming = true;
+
+            let particle = new Particle(this.position, Math.PI * 0.5, 1.5 * 1.25, entity_sprites.get("hand_punch_particles"), 16, 0.4, false);
+            this.board.spawn_particle(particle, this.position);
+        }
+
+        if (this.slamming) {
+            this.set_velocity(new Vector2(0, 17500));
+        }
+    }
+
+    collide_wall() {
+        if (this.slamming) {
+            this.slamming = false;
+
+            let proj = new BerserkerShockwaveProjectile(
+                this.board, this, 0, this.position, 0, 5
+            );
+
+            this.board.spawn_projectile(proj, this.position);
+
+            play_audio("wallhit");
+
+            this.apply_hitstop(0.6);
+            this.set_velocity(this.velocity.rotate(random_float(-Math.PI*0.5, Math.PI*0.5, this.board.random)));
+        }
     }
 
     hit_other(other, with_weapon_index) {
@@ -707,7 +733,43 @@ class BerserkerBall extends WeaponBall {
 }
 
 
+class NormalerBall extends WeaponBall {
+    
+}
+
+
+class BerserkerShockwaveProjectile extends PersistentAoEProjectile {
+    constructor(board, source, source_weapon_index, position, damage, size) {
+        super(board, source, source_weapon_index, position, damage, size, 1, "berserker_shockwave");
+
+        this.hitboxes_by_frame = [
+            [],
+            [{pos: new Vector2(0, 0), radius: 16}],
+            [{pos: new Vector2(0, 0), radius: 24}],
+            [{pos: new Vector2(0, 0), radius: 36}],
+            [{pos: new Vector2(0, 0), radius: 36}],
+            [{pos: new Vector2(0, 0), radius: 36}],
+            [{pos: new Vector2(0, 0), radius: 36}],
+            [{pos: new Vector2(0, 0), radius: 36}],
+            [],
+            [],
+            [],
+            [],
+            [],
+            []
+        ]
+    }
+
+    hit_ball(ball, delta_time) {
+        super.hit_ball(ball, delta_time);
+
+        ball.apply_hitstop(2);
+    }
+}
+
+
 let additional_selectable_balls = [
     ThirteenLongswordsBall, AStickBall, ThirteenSticksBall, GreatsordBall,
-    ExtralongswordBall, SuperDummyBall, SuperNeedleBall, SuperDaggerBall
+    ExtralongswordBall, SuperDummyBall, SuperNeedleBall, SuperDaggerBall,
+    BerserkerBall
 ]

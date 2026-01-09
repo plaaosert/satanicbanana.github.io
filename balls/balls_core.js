@@ -80,6 +80,8 @@ const entity_sprites = new Map([
     ["entry_smokebomb", 16, "entries/smokebomb/"],
     ["entry_snipe", 16, "entries/snipe/"],
     ["entry_load", 16, "entries/load/"],
+    ["entry_rift_front", 15, "rift/front/"],
+    ["entry_rift_back", 15, "rift/back/"],
 
     // effects
     ["parry", 9, "etc/parry/"],
@@ -218,6 +220,9 @@ const entity_sprites = new Map([
 
     ["spear", 1, "weapon/"],
     ["spear_projectile", 1, "weapon/"],
+
+    ["rosary", 1, "weapon/"],
+    ["rosary_halo", 1, "weapon/"],
 
     ["explosion", 16, "explosion/"],  // Game Maker Classic
 
@@ -985,6 +990,33 @@ class Board {
         }
     }
 
+    register_hp_gain(by, on, amt) {
+        if (!on.show_stats) {
+            return; // dont care about adds
+        }
+
+        // do damage numbers
+        if (make_damage_numbers && by instanceof Ball && amt > 0.15 && on.show_stats) {
+            let size = 14;
+            if (amt >= 8) {
+                size = 16;
+                if (amt >= 16) {
+                    size = 18;
+                    if (amt >= 32) {
+                        size = 20;
+                    }
+                }
+            }
+
+            let part = null;
+            part = new DamageNumberParticle(
+                on.position, 1, `❤ ${(amt).toFixed(1)}`, on.get_current_desc_col(), on.velocity, this, size
+            );
+
+            this.spawn_particle(part, on.position);
+        }
+    }
+
     register_rupture(by, on, amt) {
         if (make_damage_numbers && by instanceof Ball && amt > 0.15 && on.show_stats) {
             let size = 14;
@@ -1253,6 +1285,9 @@ class Board {
         collisions.forEach(coll => {
             coll.first.resolve_collision(sthis, coll.second);
 
+            coll.first.collide_ball(coll.second);
+            coll.second.collide_ball(coll.first);
+
             if (thud_cooldown < 0) {
                 play_audio("thud");
                 thud_cooldown += 0.3;
@@ -1272,6 +1307,8 @@ class Board {
                 if (ball.collides_line(line)) {
                     ball.resolve_line_collision(sthis, line);
                     
+                    ball.collide_wall();
+
                     if (thud_cooldown < 0) {
                         play_audio("thud");
                         thud_cooldown += 0.3;
