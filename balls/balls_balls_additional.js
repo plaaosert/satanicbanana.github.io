@@ -646,6 +646,66 @@ class SuperDaggerBall extends WeaponBall {
     }
 }
 
+class BerserkerBall extends WeaponBall {
+    static ball_name = "Berserker";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Berserker";
+        this.description_brief = "@plaaoballsit's passive the lower it gets the more strength and speed it gets//It's ability to down slam create a shockwave in a big radius stunning the opponent for 2 seconds only against the wall or whatever wall to freeze the enemy btw.//The downside it's bigger and easier to hit//Cd 5 sec ig//Base hp 115?";
+        this.level_description = "-";
+        this.max_level_description = "-";
+        this.quote = "Thanks @jaydeniskandar9185.";
+
+        this.tier = TIERS.A;
+        this.category = CATEGORIES.STANDARD;
+        this.tags = [
+            TAGS.MELEE,
+            TAGS.OFFENSIVE,
+            TAGS.LEVELS_UP,
+            TAGS.CAN_AWAKEN,
+        ];
+
+        this.weapon_data = [
+
+        ];
+
+        this.damage = 1;
+
+        this.speed_cur = 100;
+
+        this.down_slam_cooldown_max = 5;
+        this.down_slam_cooldown = this.down_slam_cooldown_max;
+
+        this.max_hp = 115;
+        this.hp = this.max_hp;
+
+        this.set_radius(this.radius * 2);
+    }
+
+    weapon_step(board, time_delta) {
+        this.speed_cur = Math.max(this.speed_base, this.speed_cur - this.speed_friction * time_delta);
+
+        this.rotate_weapon(0, this.speed_cur * time_delta);
+        this.damage = this.damage_base + (this.damage_per_speed * this.speed_cur);
+    }
+
+    hit_other(other, with_weapon_index) {
+        let result = super.hit_other(other, with_weapon_index, this.damage);
+
+        return result;
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Damage: ${this.damage.toFixed(1)}`
+        )
+    }
+}
+
 
 let additional_selectable_balls = [
     ThirteenLongswordsBall, AStickBall, ThirteenSticksBall, GreatsordBall,

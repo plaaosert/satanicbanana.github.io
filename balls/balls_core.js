@@ -237,6 +237,7 @@ const entity_sprites = new Map([
 
     // Etc
     ["festive red hat", 1, "etc/"],
+    ["berserker_shockwave", 13, "etc/berserker_shockwave/"],
 ].map((v, i) => {
     let ts = [];
 
@@ -351,17 +352,39 @@ gain_node.gain.setValueAtTime(gain, audio_context.currentTime);
 let audio_playing = [];
 let music_audio = null;
 
-async function load_audio_item(path) {
-    return await load_audio_from_url(`https://plaao.net/balls/${path}`);;
+function reset_audio_buffer() {
+    audio_context.close();
+    audio_context = new AudioContext();
+
+    // reduce the volume
+    gain_node = audio_context.createGain();
+    gain_node.connect(audio_context.destination);
+    gain = 0.1;
+    gain_node.gain.setValueAtTime(gain, audio_context.currentTime);
+
+    audio_playing = [];
+    music_audio = null;
 }
 
-async function load_audio_from_url(path) {
+async function load_audio_item(path, lazy=false) {
+    return await load_audio_from_url(`https://plaao.net/balls/${path}`, lazy);;
+}
+
+async function decode_audio(array_buffer) {
+    return await audio_context.decodeAudioData(array_buffer);
+}
+
+async function load_audio_from_url(path, lazy=false) {
     let resp = await fetch(`${path}`);
     let array_buffer = await resp.arrayBuffer();
 
-    let audio_buffer = await audio_context.decodeAudioData(array_buffer);
+    if (lazy) {
+        return array_buffer;
+    } else {
+        let audio_buffer = await decode_audio(array_buffer);
 
-    return audio_buffer;
+        return audio_buffer;
+    }
 }
 
 let audios_list = [
@@ -398,7 +421,7 @@ let audios_list = [
     // guilty gear: strive (ADV_057.ogg)
     ["grab", "snd/grab.mp3"],
     // heat haze shadow 2nd from tekken 7
-    ["unarmed_theme", "https://scrimblo.foundation/uploads/heat_haze_shadow.mp3", "Heat Haze Shadow 2nd", "Tekken 7"],
+    ["unarmed_theme", "https://scrimblo.foundation/uploads/heat_haze_shadow.mp3", "Heat Haze Shadow 2nd", "Tekken 7", true],
     // berserk (2016)
     ["CLANG", "snd/CLANG.mp3"],
     // edited versions of the originals
@@ -455,7 +478,7 @@ let titles = [
 ]
 
 for (let i=1; i<=13; i++) {
-    audios_list.push([`2048_${i}`, `https://scrimblo.foundation/uploads/2048_${i}.mp3`, titles[i], "2048 (3DS)"]);
+    audios_list.push([`2048_${i}`, `https://scrimblo.foundation/uploads/2048_${i}.mp3`, titles[i], "2048 (3DS)", true]);
 }
 
 let audios_required = audios_list.length;
@@ -464,9 +487,9 @@ let audios_loaded = 0;
 async function load_audio() {
     audios_list.forEach(async snd => {
         if (snd[1].startsWith("https://")) {
-            audio.set(snd[0], [await load_audio_from_url(snd[1]), snd[2], snd[3]])
+            audio.set(snd[0], [await load_audio_from_url(snd[1], snd[4]), snd[2], snd[3], snd[4]])
         } else {
-            audio.set(snd[0], [await load_audio_item(snd[1]), snd[2], snd[3]])
+            audio.set(snd[0], [await load_audio_item(snd[1], snd[4]), snd[2], snd[3], snd[4]])
         }
 
         audios_loaded++;
@@ -480,6 +503,20 @@ async function load_audio() {
     })
 }
 
+async function prepare_lazy_audio(name) {
+    let audio_content = audio.get(name);
+    if (!audio_content[3]) {
+        // not lazy, just return
+        return;
+    }
+
+    let buffer = await decode_audio(audio_content[0])
+
+    // update to buffer and set to non-lazy
+    audio_content[0] = buffer;
+    audio_content[3] = false;
+}
+
 function stop_music() {
     if (music_audio && music_audio[0]) {
         music_audio[0].source.stop();
@@ -488,13 +525,13 @@ function stop_music() {
     document.querySelector("#loading_prompt").classList.add("hidden")
 }
 
-function play_music(name, gain=null) {
+async function play_music(name, gain=null) {
     stop_music();
 
     if (muted)
         return;
 
-    let played_music = play_audio(name, gain);
+    let played_music = await play_audio(name, gain);
     if (played_music !== null) {
         music_audio = [audio_playing[played_music], audio.get(name)[1], audio.get(name)[2], name];
 
@@ -503,35 +540,55 @@ function play_music(name, gain=null) {
     }
 }
 
-function play_audio(name, gain=null) {
+function play_audio_data(buffer_content, gain=null) {
+    let source = audio_context.createBufferSource();
+
+    source.buffer = buffer_content;
+
+    let mod_node = gain_node;
+
+    if (gain) {
+        let new_gain_node = audio_context.createGain();
+        new_gain_node.connect(audio_context.destination);
+        new_gain_node.gain.setValueAtTime(gain, audio_context.currentTime);
+
+        mod_node = new_gain_node;
+    }
+
+    source.connect(mod_node);
+
+    let obj = {source: source, ended: false}
+    source.addEventListener("ended", () => obj.ended = true);
+    audio_playing.push(obj);
+
+    source.start();
+
+    return audio_playing.length - 1;
+}
+
+async function play_audio(name, gain=null) {
+    // this may end up needing to fetch the audio data if it isn't preloaded
+    // in that case, finish loading and set up the promise to play once decoded
     if (muted)
         return;
-
-    let source = audio_context.createBufferSource();
     
     let audio_content = audio.get(name);
     if (audio_content) {
-        source.buffer = audio_content[0];
-
-        let mod_node = gain_node;
-
-        if (gain) {
-            let new_gain_node = audio_context.createGain();
-            new_gain_node.connect(audio_context.destination);
-            new_gain_node.gain.setValueAtTime(gain, audio_context.currentTime);
-
-            mod_node = new_gain_node;
+        // this could either be a full source or base response
+        let idx = null;
+        if (audio_content[3]) {
+            // lazy and not loaded; load it now
+            await prepare_lazy_audio(name);
         }
 
-        source.connect(mod_node);
+        if (!audio_content[3]) {
+            idx = play_audio_data(audio_content[0], gain);
+        } else {
+            // for some reason it didn't load. log and don't play
+            console.log(`Audio ${name} didn't load on demand for some reason`);
+        }
 
-        let obj = {source: source, ended: false}
-        source.addEventListener("ended", () => obj.ended = true);
-        audio_playing.push(obj);
-
-        source.start();
-
-        return audio_playing.length-1;
+        return idx;
     } else {
         // Tried to play a nonexistent sound. Print to console and return null
         console.log(`Tried to play nonexistent sound ${name}!`);
@@ -2695,10 +2752,10 @@ function game_loop() {
             if (new_year)
                 render_watermark();  // new year uses watermark code to fade it so need to rerun it during games
         }
-    }
 
-    if (BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO)
-        render_just_playing_around_warning();
+        if (BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO)
+            render_just_playing_around_warning();
+    }
     
     // render_diagnostics(board);
     
@@ -3339,7 +3396,7 @@ function game_loop() {
                 render_victory(board, match_end_timeout);
 
                 if (match_end_timeout <= 0) {
-                    audio_playing.forEach(audio => audio.source.stop());
+                    reset_audio_buffer();
                     document.querySelector("#loading_prompt").classList.add("hidden");
 
                     if (board.remaining_players().length == 1 && winrate_tracking) {

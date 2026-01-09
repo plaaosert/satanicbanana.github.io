@@ -738,6 +738,11 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
             setup_god(board);
         }
 
+        // cache the music if not muted
+        if (!muted && starting_fullpause_timeout > 1) {
+            prepare_lazy_audio(`2048_${random_int(0, 13, get_seeded_randomiser(board.random_seed))+1}`);
+        }
+
         game_paused = false;
     }, 0);
 
