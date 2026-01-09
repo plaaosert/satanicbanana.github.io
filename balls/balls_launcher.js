@@ -1587,7 +1587,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         mouse_position = new Vector2(event.clientX-canvas_x, event.clientY-canvas_y);
         
-        game_position = mouse_position.mul(screen_to_game_scaling_factor);
+        game_position = mouse_position.mul(screen_to_game_scaling_factor * window.devicePixelRatio);
         //if (mouse_select_pos.x == 0 && mouse_select_pos.y == 0) {
             //mouse_select_pos = mouse_position.copy();
         //}
