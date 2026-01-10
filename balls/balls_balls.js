@@ -52,6 +52,29 @@ const ANIMATION_STANDARD_DATA = {
         ],
         offset: new Vector2(0, 0.5),
     },
+
+    rift_front: {
+        keyframes: [
+            {frame: 0, part_back: "entry_rift_back"},
+            {frame: 0, pos_offset: new Vector2(-2048, 0)},
+            {frame: 0, weaponsiz: 0.1},
+            
+            {frame: 0, snd: "shenron_eye_glow"},
+
+            {frame: 5, pos_offset: new Vector2(2048 * 0.325, 0)},
+            {frame: 6, display: true},
+            {frame: 7, weaponsiz: 5},
+
+            {frame: 7, pos_offset: new Vector2(2048 * 0.675*0.5, 0)},
+            {frame: 7, weaponsiz: 2},
+            
+            {frame: 8, pos_offset: new Vector2(2048 * 0.675*0.25, 0)},
+
+            {frame: 9, pos_offset: new Vector2(2048 * 0.675*0.15, 0)},
+            {frame: 10, pos_offset: new Vector2(2048 * 0.675*0.1, 0)},
+        ],
+        offset: new Vector2(-2, 0)
+    }
 }
 
 const TIERS = {
@@ -1059,7 +1082,7 @@ class WeaponBall extends Ball {
 
     receive_rupture(other, amt) {
         let final_amt = amt;
-        final_amt /= this.player?.stats?.ailment_resistance;
+        final_amt /= this.player?.stats?.ailment_resistance ?? 1;
 
         this.rupture_intensity += final_amt;
 
@@ -1079,7 +1102,7 @@ class WeaponBall extends Ball {
     receive_poison(other, amt, duration) {
         // duration scales with resistance
         let final_duration = duration;
-        final_duration /= this.player?.stats?.ailment_resistance;
+        final_duration /= this.player?.stats?.ailment_resistance ?? 1;
 
         this.poison_intensity += amt;
         this.poison_duration = Math.max(
@@ -1101,7 +1124,7 @@ class WeaponBall extends Ball {
 
     receive_burn(other, amt) {
         let final_amt = amt;
-        final_amt /= this.player?.stats?.ailment_resistance;
+        final_amt /= this.player?.stats?.ailment_resistance ?? 1;
 
         this.burn_intensity += final_amt;
 
@@ -5193,7 +5216,7 @@ class RosaryBall extends WeaponBall {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "Rosary";
-        this.description_brief = "Has no functional weapon! Periodically releases a burst that heals allies. Summons random balls with reduced health to assist in battle.";
+        this.description_brief = "Has no functional weapon! Periodically releases a burst that heals allies. Summons random balls with reduced health to assist in battle. Summoned balls burn in holy fire if their master dies.";
         this.level_description = "Healing burst is more frequent. Summoned balls also gain level bonuses.";
         this.max_level_description = "Summoned balls also gain awakening bonuses. Two balls are summoned at once each time.";
         this.quote = "For this victory I may thank only the Ball Above All. Praise be.";
@@ -5202,16 +5225,24 @@ class RosaryBall extends WeaponBall {
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.HYBRID,
-            TAGS.BALANCED,
+            TAGS.OFFENSIVE,
             TAGS.CHILDREN,
             TAGS.LEVELS_UP,
             TAGS.CAN_AWAKEN,
         ];
 
+        this.entry_animation = "rift_front";
+        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
+        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
+
         this.weapon_data = [
             new BallWeapon(1, "rosary", []),
             new BallWeapon(1, "rosary_halo", []),
         ];
+
+        this.firing_offsets = [
+            new Vector2(this.radius * 2, 0)
+        ]
 
         this.speed_range = [40, 100];
         this.speed_base = random_float(...this.speed_range, this.board.random);
@@ -5220,15 +5251,25 @@ class RosaryBall extends WeaponBall {
         this.healing_cooldown = this.healing_cooldown_max;
         this.healing_amount = 12;
 
-        this.summon_cooldown_range = [8, 24];
+        this.summon_cooldown_range = [10, 18];
+        this.last_summon_cooldown = 1;
         this.summon_self_stun = 1;
-        this.summon_cooldown = 2;
-        this.summon_hp = 16;
-        this.summon_appear_delay = 1;
-        this.summon_completion_delay = 2;
-        this.summon_particle = "entry_rift";
+        this.summon_cooldown = 1;
+        this.summon_hp = 20;
+        this.summon_particle_name = "entry_rift";
         this.summon_current_dur = 0;
-        this.summoning = false;
+        this.summon_particle = null;
+        this.summon_particle_lastframe = -1;
+        this.summoned_ball = null;
+        this.summoned_rotation = 0;
+
+        this.children = [];
+    }
+
+    late_setup() {
+        this.weapon_data[0].angle = 0;
+
+        super.late_setup();
     }
 
     weapon_step(board, time_delta) {
@@ -5245,10 +5286,133 @@ class RosaryBall extends WeaponBall {
 
             this.board.spawn_projectile(proj, this.position);
         }
+
+        this.summon_cooldown -= time_delta;
+        if (this.summon_cooldown <= 0) {
+            this.summon_cooldown += random_float(...this.summon_cooldown_range, this.board.random);
+            this.last_summon_cooldown = this.summon_cooldown;
+
+            // let pos = this.position.add(this.get_weapon_offset(1).add(this.firing_offsets[0]).rotate(this.weapon_data[1].angle));
+            let pos = this.position;
+            let part_pos = this.position.sub(new Vector2(this.radius * 2.25, 0).rotate(this.weapon_data[1].angle));
+
+            this.summoned_rotation = this.weapon_data[1].angle;
+
+            let part = new Particle(
+                part_pos, this.weapon_data[1].angle, 2.5 * 0.75,
+                entity_sprites.get(this.summon_particle_name + "_back"),
+                18, 100, false, null, true
+            );
+
+            let part2 = new Particle(
+                part_pos, this.weapon_data[1].angle, 2.5 * 0.75,
+                entity_sprites.get(this.summon_particle_name + "_front"),
+                18, 100
+            );
+
+            board.spawn_particle(part, part_pos);
+            board.spawn_particle(part2, part_pos);
+
+            this.summon_particle = part;
+
+            // spawn ball (skip_physics and display=false)
+            let proto = seeded_random_from_array(selectable_balls_for_random, this.board.random);
+            let ball = new proto(
+                this.board, this.mass * 0.5, this.radius * 0.75, this.colour,
+                this.bounce_factor, this.friction_factor, this.player,
+                this.level, this.board.random() < 0.5
+            );
+
+            this.summoned_ball = ball;
+            this.summoned_ball.skip_physics = true;
+            this.summoned_ball.display = false;
+            this.summoned_ball.show_stats = false;
+
+            this.summoned_ball.max_hp = this.summon_hp;
+            this.summoned_ball.hp = this.summon_hp;
+
+            this.children.push(this.summoned_ball);
+
+            ball.set_velocity(new Vector2(8000, 0).rotate(
+                this.summoned_rotation + (deg2rad(25) * random_float(-1, 1, this.board.random))
+            ));
+
+            this.board.spawn_ball(ball, pos);
+
+            this.summon_current_dur = 0;
+
+            this.speed_base = random_float(...this.speed_range, this.board.random);
+        }
+
+        if (this.summon_particle) {
+            // actions based on the frame; same as entry. we can even base it on the keyframes
+            if (this.summon_particle.cur_frame != this.summon_particle_lastframe) {
+                // do actions
+                this.summon_particle_lastframe = this.summon_particle.cur_frame;
+
+                let keyframes = this.entry_animation_keyframes.filter(f => f.frame == this.summon_particle_lastframe);
+                keyframes.forEach(frame => {
+                    if (frame.snd) {
+                        // play custom sound? maybe?
+                        play_audio("db_flying", 0.075);
+                    }
+
+                    if (frame.display !== undefined) {
+                        this.summoned_ball.display = true;
+                    }
+
+                    if (frame.pos_offset) {
+                        this.summoned_ball.position = this.summoned_ball.position.add(frame.pos_offset.rotate(this.summoned_rotation));
+                    }
+
+                    if (frame.weaponsiz) {
+                        this.summoned_ball.weapon_data.forEach(w => w.size_multiplier *= frame.weaponsiz);
+                        this.summoned_ball.cache_weapon_offsets();
+                        this.summoned_ball.cache_hitboxes_offsets();
+                    }
+                })
+            }
+
+            this.summon_current_dur += time_delta;
+            if (this.summon_particle.cur_frame >= 9) {
+                this.summoned_ball.skip_physics = false;
+                this.summoned_ball.display = true;
+                this.summon_particle = null;
+            }
+        }
+    }
+
+    die() {
+        this.children.forEach(c => this.apply_burn(c, random_int(15, 50, this.board.random), null));
+        return super.die();
     }
 
     hit_heal(ball) {
         ball.gain_hp(this.healing_amount, this, true);
+    }
+
+    hit_other_with_projectile(other, with_projectile) {
+        return {hitstop: 0, mute: true}
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Healing: ${this.healing_amount}`
+        )
+
+        this.write_desc_line(
+            `Healing cooldown: ${(this.healing_cooldown.toFixed(1) + "s").padEnd(5)} [${"#".repeat(Math.ceil((this.healing_cooldown / this.healing_cooldown_max) * 12)).padEnd(12)}]`
+        )
+
+        this.write_desc_line(
+            `Summon cooldown: ${(this.summon_cooldown.toFixed(1) + "s").padEnd(5)}  [${"#".repeat(Math.ceil((this.summon_cooldown / this.last_summon_cooldown) * 12)).padEnd(12)}]`
+        )
+
+        this.write_desc_line(
+            `Summon count: ${this.children.length}`
+        )
     }
 }
 
@@ -6043,9 +6207,11 @@ class GrenadeExplosionProjectile extends Projectile {
 
         let other_mag = ball.velocity.magnitude();
 
-        let new_other_velocity = ball.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
+        if (other_mag != 0) {
+            let new_other_velocity = ball.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
 
-        ball.set_velocity(new_other_velocity);
+            ball.set_velocity(new_other_velocity);
+        }
 
         ball.apply_invuln(BALL_INVULN_DURATION * 2);
 
@@ -6308,5 +6474,5 @@ let main_selectable_balls = [
     RailgunBall, PotionBall, GrenadeBall,
     GlassBall, HandBall, ChakramBall,
     WandBall, AxeBall, ShotgunBall,
-    SpearBall, RosaryBall
+    SpearBall
 ]

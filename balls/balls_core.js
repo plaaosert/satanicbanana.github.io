@@ -80,8 +80,8 @@ const entity_sprites = new Map([
     ["entry_smokebomb", 16, "entries/smokebomb/"],
     ["entry_snipe", 16, "entries/snipe/"],
     ["entry_load", 16, "entries/load/"],
-    ["entry_rift_front", 15, "rift/front/"],
-    ["entry_rift_back", 15, "rift/back/"],
+    ["entry_rift_front", 16, "rift/front/"],
+    ["entry_rift_back", 16, "rift/back/"],
 
     // effects
     ["parry", 9, "etc/parry/"],
@@ -413,6 +413,7 @@ let audios_list = [
     ["wallhit", "snd/wallhit.wav"],
     ["airrecover_2", "snd/airrecover_2.wav"],
     ["shenron_eye_glow", "snd/shenron_eye_glow.mp3"],
+    ["db_flying", "snd/db_flying.wav"],
     ["mase_charge", "snd/mase_charge.wav"],
     ["kiblast", "snd/kiblast.wav"],
     ["disc_fire", "snd/disc_fire.wav"],
@@ -996,7 +997,8 @@ class Board {
         }
 
         // do damage numbers
-        if (make_damage_numbers && by instanceof Ball && amt > 0.15 && on.show_stats) {
+        // show all healing because it's rarer
+        if (make_damage_numbers && by instanceof Ball && amt > 0.15) {
             let size = 14;
             if (amt >= 8) {
                 size = 16;
@@ -2446,6 +2448,10 @@ function render_opening(board, time_delta) {
         opening_state.balls = 0;
     }
 
+    if (!opening_state.particles) {
+        opening_state.particles = [];
+    }
+
     if (!opening_state.balls_anim_snd) {
         opening_state.balls_anim_snd = [];
     }
@@ -2460,6 +2466,7 @@ function render_opening(board, time_delta) {
             ).add(ball.entry_animation_offset.mul(ball.radius));
             let part = new PersistentParticle(pos, 0, 2.5, entity_sprites.get("entry_" + board.balls[opening_state.balls].entry_animation), 18, 100, false);
             board.spawn_particle(part, pos);
+            opening_state.particles.push(part);
 
             if (opening_state.balls == 0 && opening_state.sound) {
                 opening_state.sound.source.stop();
@@ -2473,7 +2480,7 @@ function render_opening(board, time_delta) {
     board.particles_step(time_delta);
     
     // for each particle with frame 8+, start showing the respective ball
-    board.particles.forEach((p, i) => {
+    opening_state.particles.forEach((p, i) => {
         let cur_anim_snd = opening_state.balls_anim_snd[i];
         let frame = board.balls[i].entry_animation_keyframes[cur_anim_snd];
         while (frame && p.cur_frame >= frame.frame) {
@@ -2483,6 +2490,29 @@ function render_opening(board, time_delta) {
 
             if (frame.display !== undefined) {
                 board.balls[i].display = frame.display;
+            }
+
+            if (frame.part_back) {
+                let pos = board.balls[i].position.add(
+                    board.balls[i].entry_animation_offset.mul(board.balls[i].radius)
+                )
+                let part = new PersistentParticle(
+                    pos, 0, 2.5,
+                    entity_sprites.get(frame.part_back),
+                    18, 100, false, null, true
+                );
+
+                board.spawn_particle(part, pos);
+            }
+
+            if (frame.pos_offset) {
+                board.balls[i].position = board.balls[i].position.add(frame.pos_offset);
+            }
+
+            if (frame.weaponsiz) {
+                board.balls[i].weapon_data.forEach(w => w.size_multiplier *= frame.weaponsiz);
+                board.balls[i].cache_weapon_offsets();
+                board.balls[i].cache_hitboxes_offsets();
             }
 
             opening_state.balls_anim_snd[i]++;
