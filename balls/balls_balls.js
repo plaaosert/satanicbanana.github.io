@@ -2320,6 +2320,7 @@ class NeedleBall extends WeaponBall {
                 );
 
                 new_ball.hp = hp_proportion * 4;
+                new_ball.max_hp = new_ball.hp;
                 new_ball.apply_invuln(BALL_INVULN_DURATION);
 
                 if (christmas) {
@@ -3015,6 +3016,7 @@ class GrenadeProjectileBall extends WeaponBall {
         this.explosion_damage = explosion_damage;
 
         this.hp = 1;
+        this.max_hp = 1;
         this.show_stats = false;
 
         this.parent = null;
@@ -3072,6 +3074,7 @@ class GlassBall extends WeaponBall {
 
     static AVAILABLE_SKINS = [
         "Papercut",  // Vitawrap
+        "Chainsaw",  // Me (plaaosert)
     ];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
@@ -3129,6 +3132,15 @@ class GlassBall extends WeaponBall {
 
                 break;
             }
+
+            case "Chainsaw": {
+                this.weapon_data[0].sprite = "glass_chainsaw";
+                this.skin_suffix = "_chainsaw";
+
+                this.adaptive_sprites = false;
+
+                break;
+            }
         }
     }
 
@@ -3144,7 +3156,9 @@ class GlassBall extends WeaponBall {
             let charge_prop = this.charge / this.charge_threshold;
             let n = Math.floor(charge_prop * 5) + 1;
 
-            this.weapon_data[0].sprite += n.toString();
+            if (this.adaptive_sprites) {
+                this.weapon_data[0].sprite += n.toString();
+            }
         }
     
         this.weapon_data[0].sprite += this.skin_suffix;
@@ -4397,6 +4411,7 @@ class WandBall extends WeaponBall {
                         )
 
                         new_ball.hp = this.poison_barb_hp;
+                        new_ball.max_hp = this.poison_barb_hp;
 
                         new_ball.apply_invuln(BALL_INVULN_DURATION);
                         new_ball.show_stats = false;
@@ -4554,6 +4569,7 @@ class WandBlackBall extends WeaponBall {
         this.hit_damage = hit_damage;
 
         this.hp = 100000;
+        this.max_hp = 100000;
         this.show_stats = false;
 
         this.parent = null;
@@ -4642,6 +4658,7 @@ class WandGreenBall extends WeaponBall {
         this.damage_poison_intensity = poison_intensity;
 
         this.hp = 1;
+        this.max_hp = 1;
         this.show_stats = false;
 
         this.parent = null;
@@ -5218,7 +5235,7 @@ class RosaryBall extends WeaponBall {
         this.name = "Rosary";
         this.description_brief = "Has no functional weapon! Periodically releases a burst that heals allies. Summons random balls with reduced health to assist in battle. Summoned balls burn in holy fire if their master dies.";
         this.level_description = "Healing burst is more frequent. Summoned balls also gain level bonuses.";
-        this.max_level_description = "Summoned balls also gain awakening bonuses. Two balls are summoned at once each time.";
+        this.max_level_description = "Summoned balls also gain awakening bonuses. Ball summoning delay is halved.";
         this.quote = "For this victory I may thank only the Ball Above All. Praise be.";
 
         this.tier = TIERS.A;
@@ -5247,11 +5264,18 @@ class RosaryBall extends WeaponBall {
         this.speed_range = [40, 100];
         this.speed_base = random_float(...this.speed_range, this.board.random);
 
-        this.healing_cooldown_max = 3 - ((this.level+1) * 0.01);
+        this.healing_cooldown_max = 2.5 - ((this.level+1) * 0.01);
         this.healing_cooldown = this.healing_cooldown_max;
         this.healing_amount = 12;
 
-        this.summon_cooldown_range = [10, 18];
+        this.summon_cooldown_range = [8, 16];
+        if (this.level >= AWAKEN_LEVEL) {
+            this.summon_cooldown_range = [
+                this.summon_cooldown_range[0] * 0.5,
+                this.summon_cooldown_range[1] * 0.5
+            ]
+        }
+
         this.last_summon_cooldown = 1;
         this.summon_self_stun = 1;
         this.summon_cooldown = 1;
@@ -6432,15 +6456,15 @@ class SpearProjectile extends InertiaRespectingStraightLineProjectile {
 
 class RosaryHealingBurstProjectile extends PersistentAoEProjectile {
     constructor(board, source, source_weapon_index, position, size) {
-        super(board, source, source_weapon_index, position, 0, size, 1, "berserker_shockwave");
+        super(board, source, source_weapon_index, position, 0, size, 1, "healing_burst");
 
         this.hitboxes_by_frame = [
             [],
-            [{pos: new Vector2(0, 8), radius: 16}],
-            [{pos: new Vector2(0, 8), radius: 24}],
-            [{pos: new Vector2(0, 8), radius: 36}],
-            [{pos: new Vector2(0, 8), radius: 48}],
-            [{pos: new Vector2(0, 8), radius: 48}],
+            [{pos: new Vector2(0, 0), radius: 24}],
+            [{pos: new Vector2(0, 0), radius: 36}],
+            [{pos: new Vector2(0, 0), radius: 48}],
+            [{pos: new Vector2(0, 0), radius: 48}],
+            [{pos: new Vector2(0, 0), radius: 48}],
             [],
             [],
             [],
@@ -6454,6 +6478,8 @@ class RosaryHealingBurstProjectile extends PersistentAoEProjectile {
         this.can_hit_allied = true;
         this.can_hit_source = false;
         this.can_hit_enemy = false;
+
+        this.has_played_sound = false;
     }
 
     hit_ball(ball, delta_time) {
@@ -6461,6 +6487,11 @@ class RosaryHealingBurstProjectile extends PersistentAoEProjectile {
         this.ignore_balls.add(ball.id);
 
         this.active = true;
+
+        if (ball.hp < ball.max_hp && !this.has_played_sound) {
+            this.has_played_sound = true;
+            play_audio("jump");
+        }
 
         this.source.hit_heal(ball);
     }
@@ -6474,5 +6505,5 @@ let main_selectable_balls = [
     RailgunBall, PotionBall, GrenadeBall,
     GlassBall, HandBall, ChakramBall,
     WandBall, AxeBall, ShotgunBall,
-    SpearBall
+    SpearBall, RosaryBall
 ]

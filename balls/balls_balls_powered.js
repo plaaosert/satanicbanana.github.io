@@ -187,6 +187,11 @@ class SmartBowBall extends WeaponBall {
         this.multishot_cooldown_max = Math.min(0.001, (this.shot_cooldown_max / 20) / this.multishots_max);
 
         this.bow_sound_random = get_seeded_randomiser(this.board.random_seed);
+    
+        this.arrow_proto = ArrowProjectile;
+
+        this.speed_spread = 0;
+        this.deg_spread = 2;
     }
 
     weapon_step(board, time_delta) {
@@ -294,11 +299,11 @@ class SmartBowBall extends WeaponBall {
 
             for (let i=0; i<times; i++) {
                 board.spawn_projectile(
-                    new ArrowProjectile(
+                    new (this.arrow_proto)(
                         this.board,
                         this, 0, fire_pos, this.proj_damage_base, 1 * this.arrow_size_mult,
-                        new Vector2(1, 0).rotate((pointing_vector ? pointing_vector.angle() : this.weapon_data[0].angle) + deg2rad(random_float(-2, 2, this.board.random))),
-                        this.arrow_speed, this.velocity.mul(0)
+                        new Vector2(1, 0).rotate((pointing_vector ? pointing_vector.angle() : this.weapon_data[0].angle) + deg2rad(this.deg_spread * random_float(-1, 1, this.board.random))),
+                        this.arrow_speed + (this.speed_spread > 0 ? (this.speed_spread * random_float(-1, 1, this.board.random)) : 0), this.velocity.mul(0)
                     ), fire_pos
                 )
             }
@@ -635,6 +640,45 @@ class ClusterfuckBall extends WeaponBall {
     }
 }
 
+class TurretBall extends SmartBowBall {
+    static ball_name = "Smart Turret";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Smart Turret";
+        this.description_brief = "Fires a whole lot of bullets. Locks onto the closest target and tries to predict its movement.";
+        this.quote = "Thanks @TheGlimGuy.";
+
+        this.tier = TIERS.ULTRA;
+
+        this.weapon_data = [
+            new BallWeapon(0.5, "gun", [
+                {pos: new Vector2(32, 64-10), radius: 16},
+            ]),
+        ];
+
+        this.firing_offsets = [
+            new Vector2(128, -16),
+        ]
+
+        this.arrow_proto = BulletProjectile;
+
+        this.shot_cooldown_max = 0.001;
+        this.shot_cooldown = this.shot_cooldown_max;
+
+        this.arrow_speed = 30000;
+        this.speed_spread = 5000;
+        this.deg_spread = 10;
+    }
+
+    weapon_step(board, time_delta) {
+        this.velocity = Vector2.zero;
+
+        super.weapon_step(board, time_delta);
+    }
+}
+
 class MissileProjectile extends InertiaRespectingStraightLineProjectile {
     constructor(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
         super(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
@@ -725,5 +769,5 @@ class MissileProjectile extends InertiaRespectingStraightLineProjectile {
 // TODO eye of cthulhu
 
 let powered_selectable_balls = [
-    SmartLongsword, SmartBowBall, MissileLauncherBall, ClusterfuckBall
+    SmartLongsword, SmartBowBall, MissileLauncherBall, ClusterfuckBall, TurretBall
 ]

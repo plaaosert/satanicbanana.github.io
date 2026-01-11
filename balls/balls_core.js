@@ -85,6 +85,9 @@ const entity_sprites = new Map([
 
     // effects
     ["parry", 9, "etc/parry/"],
+    
+    ["yomi_parry", 9, "etc/yomi_parry/"],  // redrawn, based on Your Only Move is Hustle
+
     ["hit", 6, "etc/hit/"],
     ["rupture", 1, "etc/"],
     ["poison", 1, "etc/"],
@@ -166,6 +169,9 @@ const entity_sprites = new Map([
     ["glass_paper", 1, "weapon/"],
     ["glass_angry_paper", 1, "weapon/"],
 
+    ["glass_chainsaw", 1, "weapon/"],
+    ["glass_angry_chainsaw", 1, "weapon/"],
+
     ["hand_neutral", 1, "weapon/hands/"],
     ["hand_open", 1, "weapon/hands/"],
     ["hand_grab", 1, "weapon/hands/"],
@@ -223,6 +229,7 @@ const entity_sprites = new Map([
 
     ["rosary", 1, "weapon/"],
     ["rosary_halo", 1, "weapon/"],
+    ["healing_burst", 11, "healing_burst/"],
 
     ["explosion", 16, "explosion/"],  // Game Maker Classic
 
@@ -239,6 +246,10 @@ const entity_sprites = new Map([
     ["stick", 1, "weapon/additional/"],
     ["lansator_de_rachete", 1, "weapon/additional/"],
     ["rachete", 1, "weapon/additional/"],
+    ["shield", 1, "weapon/additional/"],
+    ["skong_thread_storm", 9, "etc/skong_thread_storm/"],
+    ["spike", 1, "weapon/additional/"],
+    ["bullet", 1, "weapon/"],
 
     // Etc
     ["festive red hat", 1, "etc/"],
@@ -418,6 +429,7 @@ let audios_list = [
     ["kiblast", "snd/kiblast.wav"],
     ["disc_fire", "snd/disc_fire.wav"],
     ["eyebeam_fire", "snd/eyebeam_fire.wav"],
+    ["jump", "snd/jump.wav"],
     // dragon ball z (explosion.wav)
     ["wall_smash", "snd/wall_smash.mp3"],
     // johnny test
@@ -473,6 +485,14 @@ let audios_list = [
     ["shotgun", "snd/shotgun.mp3"],
     ["shotgun2", "snd/shotgun2.mp3"],
     ["shotgun3", "snd/shotgun3.mp3"],
+
+    // Hollow Knight (Hornet)
+    ["hornet_gitgud", "snd/hornet_gitgud.mp3"],
+    ["hornet_edino", "snd/hornet_edino.mp3"],
+    ["hornet_shaw", "snd/hornet_shaw.mp3"],
+
+    // https://freesound.org/people/alkanetexe/sounds/170598/
+    ["sword_schwing", "snd/sword_schwing.mp3"],
 ]
 
 let titles = [
@@ -2984,9 +3004,16 @@ function game_loop() {
                                         let difference_vector = other_hitbox_position.sub(source_hitbox_position);
                                         let impact_position = source_hitbox_position.add(difference_vector.mul(distance_proportion * size_proportion));
 
+                                        let parry_particle = "parry";
+                                        if (ball.custom_parry_particle) {
+                                            parry_particle = ball.custom_parry_particle;
+                                        } else if (other.custom_parry_particle) {
+                                            parry_particle = other.custom_parry_particle;
+                                        }
+
                                         let particle = new Particle(
                                             impact_position, (ball.position.sub(other.position)).angle() - (Math.PI * 0.5), 2,
-                                            entity_sprites.get("parry"), 30, 4, false
+                                            entity_sprites.get(parry_particle), 30, 4, false
                                         )
 
                                         board.spawn_particle(particle, impact_position);
@@ -3108,21 +3135,30 @@ function game_loop() {
                             let ball_hitbox = ball_weapon_data.hitboxes[ball_coll_index];
                             let proj_hitbox = projectile.hitboxes[proj_coll_index];
 
-                            let total_hitbox_size = (ball_hitbox.radius * ball_weapon_data.size_multiplier) + (proj_hitbox.radius * projectile.size);
-                            let hitbox_distance = ball_hitbox_position.distance(proj_hitbox_position);
+                            // there is a very low chance that multiple projectiles will hit a breaking potion in the same frame.
+                            // this will crash if we don't protect here against it
+                            if (ball_hitbox) {
+                                let total_hitbox_size = (ball_hitbox.radius * ball_weapon_data.size_multiplier) + (proj_hitbox.radius * projectile.size);
+                                let hitbox_distance = ball_hitbox_position.distance(proj_hitbox_position);
 
-                            let distance_proportion = hitbox_distance / total_hitbox_size;
-                            let size_proportion = (ball_hitbox.radius * ball_weapon_data.size_multiplier) / total_hitbox_size;
+                                let distance_proportion = hitbox_distance / total_hitbox_size;
+                                let size_proportion = (ball_hitbox.radius * ball_weapon_data.size_multiplier) / total_hitbox_size;
 
-                            let difference_vector = proj_hitbox_position.sub(ball_hitbox_position);
-                            let impact_position = ball_hitbox_position.add(difference_vector.mul(distance_proportion * size_proportion));
+                                let difference_vector = proj_hitbox_position.sub(ball_hitbox_position);
+                                let impact_position = ball_hitbox_position.add(difference_vector.mul(distance_proportion * size_proportion));
 
-                            let particle = new Particle(
-                                impact_position, (ball.position.sub(projectile.position)).angle() - (Math.PI * 0.5), 2,
-                                entity_sprites.get("parry"), 30, 4, false
-                            )
+                                let parry_particle = "parry";
+                                if (ball.custom_parry_particle) {
+                                    parry_particle = ball.custom_parry_particle;
+                                }
 
-                            board.spawn_particle(particle, impact_position);
+                                let particle = new Particle(
+                                    impact_position, (ball.position.sub(projectile.position)).angle() - (Math.PI * 0.5), 2,
+                                    entity_sprites.get(parry_particle), 30, 4, false
+                                )
+
+                                board.spawn_particle(particle, impact_position);
+                            }
 
                             //
                             // Rest of logic
@@ -3456,7 +3492,7 @@ function game_loop() {
                 ending_game = true;
                 
                 if (searching) {
-                    match_end_timeout = 0;
+                    match_end_timeout -= game_delta_time * 10;
                 }
 
                 // "animation"

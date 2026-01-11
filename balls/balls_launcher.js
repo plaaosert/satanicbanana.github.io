@@ -716,7 +716,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
         } else {
             match_end_timeout = 5 * 1000;
             if (window.location.href.startsWith("file://")) {
-                match_end_timeout = 16 * 1000;
+                // match_end_timeout = 16 * 1000;
             }
             
             render_victory_enabled = true;
@@ -1885,10 +1885,10 @@ document.addEventListener("DOMContentLoaded", function() {
         document.querySelector(".spacer").classList.remove("nodisplay");
         document.querySelector(".spacer").classList.remove("hidden");
 
-        document.querySelector(".sandbox.leftpanel").classList.add("nodisplay");
+        document.querySelector(".sandbox.leftpanel").classList.add("nodisplay"); - 1
 
-        document.querySelector("#ball1_level").value = ball1_start_level;
-        document.querySelector("#ball2_level").value = ball2_start_level;
+        selected_ball_info.ball1.level = ball1_start_level - 1;
+        selected_ball_info.ball2.level = ball2_start_level - 1;
 
         repeater_interval = setInterval(() => {
             if (!board) {
@@ -1912,11 +1912,8 @@ document.addEventListener("DOMContentLoaded", function() {
                     }
                 }
 
-                document.querySelector("select[name='ball1']").value = selectable_balls_for_random[ball1_index].ball_name;
-                document.querySelector("select[name='ball2']").value = selectable_balls_for_random[ball2_index].ball_name;
-
-                update_ballinfo('ball1');
-                update_ballinfo('ball2');
+                selected_ball_info.ball1.name = selectable_balls_for_random[ball1_index].ball_name;
+                selected_ball_info.ball2.name = selectable_balls_for_random[ball2_index].ball_name;
 
                 spawn_selected_balls();
             }
@@ -2053,7 +2050,7 @@ if (winrate_tracking)
 let muted = searching;
 
 let repeater_interval = null;
-let force_ball1 = null;
+let force_ball1 = RosaryBall;
 
 let displayelement = null;
 
