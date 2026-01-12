@@ -481,6 +481,7 @@ let audios_list = [
     ["sword_schwing", "snd/sword_schwing.mp3"],
 ]
 
+
 let titles = [
     "",
     "Sunrise", "Winter Morning", "Summer Rain", "Amazon Queen",
@@ -489,8 +490,10 @@ let titles = [
     "Alice"
 ]
 
-for (let i=1; i<=13; i++) {
-    audios_list.push([`2048_${i}`, `https://scrimblo.foundation/uploads/2048_${i}.mp3`, titles[i], "2048 (3DS)", true]);
+if (new URLSearchParams(window.location.search).get("nomusic") !== "true") {
+    for (let i=1; i<=13; i++) {
+        audios_list.push([`2048_${i}`, `https://scrimblo.foundation/uploads/2048_${i}.mp3`, titles[i], "2048 (3DS)", true]);
+    }
 }
 
 if (new URLSearchParams(window.location.search).get("noaudio") == "true") {
