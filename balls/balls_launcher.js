@@ -1737,7 +1737,23 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     let interval = setInterval(function() {
-        if (num_textures_loaded >= num_textures_needed) {
+        num_textures_loaded = entity_sprites.keys().reduce((p, c) => {
+            let loaded = entity_sprites.get(c).reduce((pt, ct) => {
+                return pt + (ct.complete && ct.naturalWidth !== 0 ? 1 : 0);
+            }, 0)
+            
+            return p + loaded;
+        }, 0)
+
+        if (document.querySelector("#graphics_loading")) {
+            document.querySelector("#graphics_loading").textContent = `${num_textures_loaded}/${num_textures_needed}`;
+            if (audios_loaded >= audios_required && num_textures_loaded >= num_textures_needed) {
+                document.querySelector("#loading_prompt").classList.add("hidden");
+                document.querySelectorAll(".enable-on-full-load").forEach(e => e.disabled = false);
+            }
+        }
+
+        if (audios_loaded >= audios_required && num_textures_loaded >= num_textures_needed) {
             document.getElementById("game-container").style.display = "";
             clearInterval(interval);
             

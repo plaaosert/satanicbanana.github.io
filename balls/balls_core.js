@@ -264,17 +264,6 @@ const entity_sprites = new Map([
             t.style.imageRendering = "pixelated";
 
             num_textures_needed++;
-            t.addEventListener("load", function() {
-                num_textures_loaded++;
-
-                if (document.querySelector("#graphics_loading")) {
-                    document.querySelector("#graphics_loading").textContent = `${num_textures_loaded}/${num_textures_needed}`;
-                    if (audios_loaded >= audios_required && num_textures_loaded >= num_textures_needed) {
-                        document.querySelector("#loading_prompt").classList.add("hidden");
-                        document.querySelectorAll(".enable-on-full-load").forEach(e => e.disabled = false);
-                    }
-                }
-            })
 
             if (v[3]) {
                 let e = false;
@@ -294,9 +283,6 @@ const entity_sprites = new Map([
         t.style.imageRendering = "pixelated";
 
         num_textures_needed++;
-        t.addEventListener("load", function() {
-            num_textures_loaded++;
-        })
         if (v[3]) {
             let e = false;
             t.addEventListener("error", function() {
@@ -505,6 +491,10 @@ let titles = [
 
 for (let i=1; i<=13; i++) {
     audios_list.push([`2048_${i}`, `https://scrimblo.foundation/uploads/2048_${i}.mp3`, titles[i], "2048 (3DS)", true]);
+}
+
+if (new URLSearchParams(window.location.search).get("noaudio") == "true") {
+    audios_list = [];
 }
 
 let audios_required = audios_list.length;
