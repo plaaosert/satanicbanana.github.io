@@ -686,6 +686,7 @@ button.sandbox-ball-random {
   --share: 1;
 
   max-height: unset;
+  max-width: 80vmin;
 
   font-size: 2vmin;
 }
