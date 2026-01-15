@@ -96,12 +96,14 @@ const entity_sprites = new Map([
 
     // weapons
     ["SORD", 1, "weapon/"],
+    ["SORD2", 1, "weapon/"],
     ["SORD_lightning", 1, "weapon/"],
     ["SORD_berserk", 1, "weapon/"],
     ["SORD_faithful", 1, "weapon/"],
     ["SORD_ram", 1, "weapon/"],
 
     ["hamer", 1, "weapon/"],
+    ["hamer2", 1, "weapon/"],
     ["hamer_squeaky", 1, "weapon/"],
     ["hamer_mogul", 1, "weapon/"],
     ["money_particle", 10, "money/"],
@@ -651,7 +653,7 @@ class Particle {
                 this.lifetime += -this.delay;
             }
 
-            return;
+            return false;
         }
 
         this.lifetime += time_delta;
@@ -659,6 +661,50 @@ class Particle {
         if (this.looping) {
             this.cur_frame = this.cur_frame % this.framecount;
         }
+
+        return true;
+    }
+}
+
+class MovingParticle extends Particle {
+    constructor(position, rotation_angle, size, sprites, frame_speed, duration, looping, velocity, delay=0, render_behind=false) {
+        super(position, rotation_angle, size, sprites, frame_speed, duration, looping, delay, render_behind)
+    
+        this.velocity = velocity;
+    }
+
+    pass_time(time_delta) {
+        let result = super.pass_time(time_delta);
+        if (result) {
+            this.position = this.position.add(this.velocity.mul(time_delta));
+        }
+        
+        return result;
+    }
+}
+
+class MovingFrictionParticle extends MovingParticle {
+    constructor(position, rotation_angle, size, sprites, frame_speed, duration, looping, velocity, friction, delay=0, render_behind=false) {
+        super(position, rotation_angle, size, sprites, frame_speed, duration, looping, velocity, delay, render_behind)
+    
+        this.velocity = velocity;
+        this.friction = friction;
+    }
+
+    pass_time(time_delta) {
+        let result = super.pass_time(time_delta);
+        if (result) {
+            // friction force is the same direction (signs) as velocity
+            // and maximum of velocity
+            let friction_force = this.velocity.normalize().mul(-1 * this.friction * time_delta);
+            if (friction_force.sqr_magnitude() > this.velocity.sqr_magnitude()) {
+                friction_force = this.velocity.mul(-1);
+            }
+
+            this.velocity = this.velocity.add(friction_force);
+        }
+        
+        return result;
     }
 }
 
@@ -688,12 +734,14 @@ class AilmentParticle extends Particle {
                 this.lifetime += -this.delay;
             }
 
-            return;
+            return false;
         }
 
         this.lifetime += time_delta;
         this.cur_frame = 0;
         this.get_current_size();
+
+        return true;
     }
 }
 
@@ -706,7 +754,7 @@ class PersistentParticle extends Particle {
                 this.lifetime += -this.delay;
             }
 
-            return;
+            return false;
         }
 
         this.lifetime += time_delta;
@@ -715,6 +763,7 @@ class PersistentParticle extends Particle {
             this.cur_frame = this.cur_frame % this.framecount;
         }
         this.cur_frame = Math.min(this.framecount-1, this.cur_frame);
+        return true;
     }
 }
 
@@ -748,6 +797,8 @@ class DamageNumberParticle extends Particle {
         } else {
             this.text_col = Colour.white.lerp(this.base_col, this.lifetime / this.duration);
         }
+
+        return true;
     }
 }
 
@@ -811,6 +862,8 @@ class HammerMogulMoneyParticle extends Particle {
 
             this.sprites = [this.sprite_list[5 + frame_actual]];
         }
+
+        return true;
     }
 }
 

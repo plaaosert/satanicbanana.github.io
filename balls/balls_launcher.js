@@ -962,7 +962,7 @@ function update_ball_selection_popup() {
             tag2.append(spc);
     });
 
-    while (total_chars < 69) {
+    while (total_chars < 90) {
         let tag2 = document.createElement("span");
         tag2.classList.add("tag");
         tag2.style.visibility = "hidden";

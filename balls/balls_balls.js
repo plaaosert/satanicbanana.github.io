@@ -1463,8 +1463,9 @@ class HammerBall extends WeaponBall {
     static ball_name = "Hammer";
 
     static AVAILABLE_SKINS = [
-        "Squeaky",  // Refticus
-        "Mogul",    // Ryn
+        "Nostalgic",  // Original sprite
+        "Squeaky",    // Refticus
+        "Mogul",      // Ryn
     ];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
@@ -1486,7 +1487,7 @@ class HammerBall extends WeaponBall {
         ];
 
         this.weapon_data = [
-            new BallWeapon(0.8 + (level * 0), "hamer", [
+            new BallWeapon(0.8 + (level * 0), "hamer2", [
                 {pos: new Vector2(104, 32), radius: 24},
                 {pos: new Vector2(104, 48), radius: 24},
                 {pos: new Vector2(104, 64), radius: 24},
@@ -1496,7 +1497,7 @@ class HammerBall extends WeaponBall {
         ];
 
         if (this.level >= AWAKEN_LEVEL) {
-            this.weapon_data.push(new BallWeapon(0.8 / 2, "hamer", [
+            this.weapon_data.push(new BallWeapon(0.8 / 2, "hamer2", [
                 {pos: new Vector2(104, 32), radius: 24},
                 {pos: new Vector2(104, 48), radius: 24},
                 {pos: new Vector2(104, 64), radius: 24},
@@ -1513,6 +1514,15 @@ class HammerBall extends WeaponBall {
         super.set_skin(skin_name);
 
         switch (skin_name) {
+            case "Nostalgic": {
+                this.weapon_data[0].sprite = "hamer";
+                if (this.weapon_data[1]) {
+                    this.weapon_data[1].sprite = "hamer";
+                }
+                
+                break;
+            }
+
             case "Squeaky": {
                 this.weapon_data[0].sprite = "hamer_squeaky";
                 if (this.weapon_data[1]) {
@@ -1636,6 +1646,7 @@ class SordBall extends WeaponBall {
     static ball_name = "SORD";
 
     static AVAILABLE_SKINS = [
+        "Nostalgic",  // Original sprite
         "Lightning",  // Refticus
         "Iron",       // Ryn
         "Faithful",   // Homestuck (SORD...)
@@ -1662,7 +1673,7 @@ class SordBall extends WeaponBall {
         ];
 
         this.weapon_data = [
-            new BallWeapon(1, "SORD", [
+            new BallWeapon(1, "SORD2", [
                 {pos: new Vector2(100, 58), radius: 12},
                 {pos: new Vector2(80, 64), radius: 16},
                 {pos: new Vector2(64, 64), radius: 16},
@@ -1680,6 +1691,11 @@ class SordBall extends WeaponBall {
         super.set_skin(skin_name);
 
         switch (skin_name) {
+            case "Nostalgic": {
+                this.weapon_data[0].sprite = "SORD";
+                break;
+            }
+
             case "Lightning": {
                 this.weapon_data[0].sprite = "SORD_lightning";
                 // TODO lightning particle effects are in order once i finally add hit location detection
@@ -1809,6 +1825,14 @@ class DaggerBall extends WeaponBall {
         this.proj_speed = 0;
 
         this.hit_decay_max = 1.5 + (0.025 * this.level);
+
+        this.explosions_random = get_seeded_randomiser(this.board.random_seed);
+
+        this.explosions_num = 1;
+        this.explosions_range_per_sord = [1,1];
+        this.explosions_delay_max = 0.02;
+        this.explosions_delay = this.explosions_delay_max;
+        this.explosion_delay_speed = 0;
     }
 
     weapon_step(board, time_delta) {
@@ -1821,8 +1845,10 @@ class DaggerBall extends WeaponBall {
             this.damage_base = lerp(this.damage_base, 1, 1 - compat_pow(0.25, time_delta));
         }
 
+        this.explosion_delay_speed = 0.25 / Math.sqrt(this.speed_base / 500);
+
         if (this.level >= AWAKEN_LEVEL) {
-            this.projectiles_cooldown_max = 0.25 / Math.sqrt(this.speed_base / 500);
+            this.projectiles_cooldown_max = this.explosion_delay_speed;
             this.proj_speed = 12000 + Math.sqrt(100 / this.projectiles_cooldown_max);
 
             if (this.speed_base >= 1000) {
@@ -1841,6 +1867,47 @@ class DaggerBall extends WeaponBall {
                             this.proj_speed, this.velocity.mul(0)
                         ), fire_pos
                     )
+                }
+            }
+        }
+
+        this.fire_particles(time_delta)
+    }
+
+    fire_particles(time_delta) {
+        let spd = (1 / this.explosion_delay_speed) * 0.1 * 0.5;
+        if (spd < 0.5) {
+            spd = 0;
+        }
+        this.explosions_delay -= spd * time_delta;
+
+        while (this.explosions_delay < 0) {
+            this.explosions_delay += this.explosions_delay_max;
+
+            for (let i=0; i<this.explosions_num; i++) {
+                for (let wp=0; wp<this.weapon_data.length; wp++) {
+                    let wp_offset = this.get_weapon_offset(wp);
+                    let hitboxes = this.get_hitboxes_offsets(wp);
+
+                    let times = random_int(...this.explosions_range_per_sord, this.explosions_random);
+                    for (let n=0; n<times; n++) {
+                        let hitbox_index = random_int(0, hitboxes.length, this.explosions_random);
+
+                        let pos = this.position.add(wp_offset.add(hitboxes[hitbox_index]));
+                        pos = pos.add(random_on_circle(
+                            random_float(0, this.weapon_data[wp].hitboxes[hitbox_index].radius, this.explosions_random),
+                            this.explosions_random
+                        ))
+
+                        let dir = pos.sub(this.position);
+                        let mag = dir.magnitude();
+                        dir = dir.div(mag).mul(Math.min(0.8, this.radius / mag) * 5000);
+
+                        this.board.spawn_particle(new MovingFrictionParticle(
+                            pos, random_float(0, Math.PI * 2, this.explosions_random), 0.1,
+                            entity_sprites.get("explosion").slice(3), 24, 3, false, dir, 3000, 0, true
+                        ), pos);
+                    }
                 }
             }
         }
