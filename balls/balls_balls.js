@@ -79,30 +79,65 @@ const ANIMATION_STANDARD_DATA = {
 
 const TIERS = {
     ULTRA: "ULTRA",
+    X: "X",
+    SPLUS: "SPLUS",
     S: "S",
+    APLUS: "APLUS",
     A: "A",
+    BPLUS: "BPLUS",
     B: "B",
+    C: "C",
     DISMAL: "DISMAL",
 }
 
 const TIERS_INFO = {
     [TIERS.ULTRA]: {
-        desc: "Hugely powerful and almost unbeatable.",
+        name: "ULTRA",
+        desc: "Hugely powerful; almost unbeatable.",
         col: Colour.white,
     },
-    [TIERS.S]: {
-        desc: "Very strong and versatile.",
+    [TIERS.X]: {
+        name: "X",
+        desc: "Able to easily demolish all but the strongest of opponents.",
+        col: new Colour(255, 255, 192, 255),
+    },
+    [TIERS.SPLUS]: {
+        name: "S+",
+        desc: "Very strong and versatile, with an edge over even other S-tier balls.",
         col: new Colour(255, 255, 128, 255),
     },
-    [TIERS.A]: {
-        desc: "Average strength.",
+    [TIERS.S]: {
+        name: "S",
+        desc: "Very strong and versatile, with significant advantages over A-tier balls.",
+        col: new Colour(255, 255, 128, 255),
+    },
+    [TIERS.APLUS]: {
+        name: "A+",
+        desc: "Noticeably stronger over A-tier balls.",
         col: new Colour(128, 255, 128, 255),
     },
+    [TIERS.A]: {
+        name: "A",
+        desc: "Average, unremarkable strength.",
+        col: new Colour(128, 255, 128, 255),
+    },
+    [TIERS.BPLUS]: {
+        name: "B+",
+        desc: "Reasonably weaker compared to A-tier but still far from ineffective.",
+        col: new Colour(128, 255, 255, 255),
+    },
     [TIERS.B]: {
+        name: "B",
         desc: "Weak, with few redeeming factors.",
         col: new Colour(128, 255, 255, 255),
     },
+    [TIERS.C]: {
+        name: "C",
+        desc: "Very weak, disadvantaged in almost every matchup.",
+        col: new Colour(255, 128, 255, 255),
+    },
     [TIERS.DISMAL]: {
+        name: "DISMAL",
         desc: "Practically incapable of winning.",
         col: new Colour(128, 128, 128, 255),
     },
@@ -300,7 +335,7 @@ class WeaponBall extends Ball {
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "I won? I won! How'd I win?!";
 
-        this.tier = TIERS.A;
+        this.tier = TIERS.DISMAL;
         this.category = CATEGORIES.STANDARD;
         this.tags = [TAGS.UNTAGGED];
 
@@ -1189,7 +1224,7 @@ class DummyBall extends WeaponBall {
 
         if (this.level >= AWAKEN_LEVEL) {
             this.tags.push(TAGS.TRANSFORMING);
-            this.tier = TIERS.S;
+            this.tier = TIERS.SPLUS;
         }
 
         this.entry_animation = "load";
@@ -1210,6 +1245,8 @@ class DummyBall extends WeaponBall {
         this.original_colour = this.colour;
 
         this.child = null;
+
+        prepare_lazy_audio("unarmed_theme");
     }
 
     weapon_step(board, time_delta) {
@@ -1341,7 +1378,7 @@ class UnarmedBall extends WeaponBall {
         this.max_level_description = "It cannot improve on perfection.";
         this.quote = "...pathetic.";
 
-        this.tier = TIERS.S;
+        this.tier = TIERS.SPLUS;
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.MELEE,
@@ -1478,6 +1515,10 @@ class HammerBall extends WeaponBall {
         this.quote = "I'm sure you understand.\nThe subject of my victory is quite the heavy topic.";
 
         this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.MELEE,
@@ -1663,6 +1704,10 @@ class SordBall extends WeaponBall {
         this.quote = "I told you about those strikes, bro. I TOLD you.";
 
         this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.MELEE,
@@ -1786,6 +1831,10 @@ class DaggerBall extends WeaponBall {
         this.quote = "surely thats not all youve got.\ncome here and let me destroy you again.";
 
         this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.MELEE,
@@ -1875,7 +1924,7 @@ class DaggerBall extends WeaponBall {
     }
 
     fire_particles(time_delta) {
-        let spd = (1 / this.explosion_delay_speed) * 0.1 * 0.5;
+        let spd = Math.min(10, (1 / this.explosion_delay_speed) * 0.1 * 0.5);
         if (spd < 0.5) {
             spd = 0;
         }
@@ -1905,7 +1954,7 @@ class DaggerBall extends WeaponBall {
 
                         this.board.spawn_particle(new MovingFrictionParticle(
                             pos, random_float(0, Math.PI * 2, this.explosions_random), 0.1,
-                            entity_sprites.get("explosion").slice(3), 24, 3, false, dir, 3000, 0, true
+                            entity_sprites.get("explosion").slice(3), 24, 3, false, dir, 5000, 0, true
                         ), pos);
                     }
                 }
@@ -1977,6 +2026,10 @@ class BowBall extends WeaponBall {
         this.quote = "Phew! Almost ran out of arrows there.";
 
         this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.RANGED,
@@ -2137,6 +2190,10 @@ class MagnumBall extends WeaponBall {
         this.quote = "Do you have any idea how much this battle cost me?\nIt's a good thing I can write off these coins as business expenses.";
 
         this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.RANGED,
@@ -2302,6 +2359,10 @@ class NeedleBall extends WeaponBall {
         this.quote = "Many thanks for your kind donation! It's always hard getting food\non the table as a mother of six trillion.";
 
         this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.MELEE,
@@ -2480,6 +2541,10 @@ class RailgunBall extends WeaponBall {
         this.quote = "Wow, it's hard to hold this thing!\nSeriously, take a look- No, really, try it!";
 
         this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.RANGED,
@@ -2671,6 +2736,10 @@ class PotionBall extends WeaponBall {
         this.quote = "You couldn't handle my strongest potions.";
 
         this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.HYBRID,
@@ -2902,6 +2971,10 @@ class GrenadeBall extends WeaponBall {
         this.quote = "I can't hear anything. Am I dying? Is this the end?";
 
         this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.RANGED,
@@ -3154,6 +3227,10 @@ class GlassBall extends WeaponBall {
         this.quote = "[unintelligible animalistic grunting]";
 
         this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.MELEE,
@@ -3396,6 +3473,10 @@ class HandBall extends WeaponBall {
         this.quote = "It doesn't count as a self-insert if it's just my hands.";
 
         this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.MELEE,
@@ -4061,6 +4142,10 @@ class ChakramBall extends WeaponBall {
         this.quote = "它叫手里剑我一直在说";
 
         this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.HYBRID,
@@ -4278,6 +4363,10 @@ class WandBall extends WeaponBall {
         this.quote = "Chat did you see that guy lmao what a loser";
 
         this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.RANGED,
@@ -4815,6 +4904,10 @@ class AxeBall extends WeaponBall {
         this.quote = "Did you get that on camera?!\nI gotta put this match in my highlight reel!";
 
         this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.MELEE,
@@ -4998,6 +5091,10 @@ class ShotgunBall extends WeaponBall {
         this.quote = "...Target eliminated.";
 
         this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.RANGED,
@@ -5135,6 +5232,10 @@ class SpearBall extends WeaponBall {
         this.quote = "I knew you could do it, little spear!\nI'm gonna put you in a display case so all the others can learn from you!";
 
         this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.HYBRID,
@@ -5306,6 +5407,10 @@ class RosaryBall extends WeaponBall {
         this.quote = "For this victory I may thank only the Ball Above All. Praise be.";
 
         this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.HYBRID,

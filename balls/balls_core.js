@@ -43,6 +43,8 @@ let current_mysterious_power = {name: null, power: 5};
 let STARTING_HP = 100;
 let stored_starting_hp = null;
 
+let run_function_on_match_end = null;
+
 const BALL_RENDERING_METHODS = {
     VECTOR: "VECTOR",
     RASTER: "RASTER",
@@ -481,6 +483,9 @@ let audios_list = [
 
     // https://freesound.org/people/alkanetexe/sounds/170598/
     ["sword_schwing", "snd/sword_schwing.mp3"],
+
+    // https://www.myinstants.com/en/instant/slot-machine-44998/
+    ["WINNER", "snd/WINNER.mp3"],
 ]
 
 
@@ -511,15 +516,6 @@ async function load_audio() {
             audio.set(snd[0], [await load_audio_from_url(snd[1], snd[4]), snd[2], snd[3], snd[4]])
         } else {
             audio.set(snd[0], [await load_audio_item(snd[1], snd[4]), snd[2], snd[3], snd[4]])
-        }
-
-        audios_loaded++;
-        if (document.querySelector("#audios_loading")) {
-            document.querySelector("#audios_loading").textContent = `${audios_loaded}/${audios_required}`;
-            if (audios_loaded >= audios_required && num_textures_loaded >= num_textures_needed) {
-                document.querySelector("#loading_prompt").classList.add("hidden");
-                document.querySelectorAll(".enable-on-full-load").forEach(e => e.disabled = false);
-            }
         }
     })
 }
@@ -991,6 +987,8 @@ class Board {
         this.tension = 0;
         this.time_since_parry = 0;
         this.time_since_hit = 0;
+
+        this.max_game_duration = default_max_game_duration;
     }
     
     register_hit(by, on) {
@@ -2701,7 +2699,7 @@ function render_opening(board, time_delta) {
 
             write_pp_bordered_text(
                 layers.ui2.ctx,
-                ball.tier,
+                TIERS_INFO[ball.tier].name,
                 pos.x + 48 + 24, pos.y,
                 TIERS_INFO[ball.tier].col.css(),
                 CANVAS_FONTS, 18, false,
@@ -2820,12 +2818,23 @@ function render_postopening(board) {
     }
 }
 
+function make_default_player(pid) {
+    return {
+        id: pid,
+        stats: {
+            damage_bonus: 1,
+            defense_bonus: 1,
+            ailment_resistance: 1,
+        }
+    }
+}
+
 let last_frame = Date.now();
 
 let colliding_parries = new Set();
 let colliding_proj2projs = new Set();
 
-let max_game_duration = 300;
+const default_max_game_duration = 300;
 let game_normal_col = new Colour(8, 8, 8, 255);
 let game_end_col = new Colour(36, 0, 0, 255);
 
@@ -2856,7 +2865,7 @@ function game_loop() {
 
     let frame_start_time = Date.now();
 
-    if (board) {
+    if (board && render) {
         if (balls_need_aero_recache) {
             if (BALL_RENDERING_METHOD != BALL_RENDERING_METHODS.VECTOR) {
                 board.balls.forEach(ball => ball.setup_aero_light_lookup_table());
@@ -2865,7 +2874,7 @@ function game_loop() {
             balls_need_aero_recache = false;
         }
 
-        if (board.duration > max_game_duration && !switched_to_endgame_col) {
+        if (board.duration > board.max_game_duration && !switched_to_endgame_col) {
             switched_to_endgame_col = true;
             bg_changed = true;
             render_game(board, keys_down["KeyQ"], false, game_end_col);
@@ -3469,8 +3478,8 @@ function game_loop() {
                     })
 
                     // if the board duration is past the max duration, deal 5dps to all balls
-                    if (board.duration > max_game_duration) {
-                        board.balls.forEach(ball => ball.lose_hp(5 * coll_game_delta_time, "endgame"));
+                    if (board.duration > board.max_game_duration) {
+                        board.balls.forEach(ball => ball.lose_hp(25 * coll_game_delta_time, "endgame"));
                     }
 
                     // cull any dead balls
@@ -3581,7 +3590,7 @@ function game_loop() {
                                 let lerp_to = winrate > 0.5 ? Colour.blue : Colour.red;
                                 let lerp_amt = Math.min(1, Math.max(Math.abs(winrate-0.5)-0.02, 0) * 20);
 
-                                html += `${classobj.name.padEnd(16)}${wins.toFixed(0).padStart(4)} / ${total.toFixed(0).padEnd(8)}<span style="background-color: ${Colour.dgreen.lerp(lerp_to, lerp_amt).css()}">${isNaN(winrate) ? "   -   " : ((winrate * 100).toFixed(2)+"%").padEnd(8)}</span><br>`;
+                                html += `${classobj.name.padEnd(24)}${wins.toFixed(0).padStart(4)} / ${total.toFixed(0).padEnd(8)}<span style="background-color: ${Colour.dgreen.lerp(lerp_to, lerp_amt).css()}">${isNaN(winrate) ? "   -   " : ((winrate * 100).toFixed(2)+"%").padEnd(8)}</span><br>`;
                             });
 
                             document.querySelector("#game_winrates").innerHTML = html;
@@ -3614,6 +3623,15 @@ function game_loop() {
                 }
             }
         }
+    }
+
+    // gambling :3
+    if (screen_open == "gambling") {
+        gambling_money_display = lerp(gambling_money_display, gambling_money, 1 - Math.pow(0.01, delta_time / 1000))
+        if (Math.abs(gambling_money_display - gambling_money) < 0.5) {
+            gambling_money_display = gambling_money;
+        }
+        update_gambling_money();
     }
 
     let calc_end_time = Date.now();

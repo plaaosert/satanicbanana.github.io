@@ -345,6 +345,22 @@ button:disabled {
     background-color: #555;
 }
 
+.button.green {
+  background-color: #060;
+}
+
+.button.green:hover {
+    background-color: #090;
+}
+
+.button.green:active {
+    background-color: #040;
+}
+
+.button.green.disabled {
+    background-color: #020;
+}
+
 .tab-content {
   background-color: #111;
   border: 1px solid gray;
@@ -362,8 +378,6 @@ button:disabled {
 }
 
 .sandbox-speed-buttons {
-  padding-top: 2vmin;
-
   display: flex;
 
   flex-direction: row;
@@ -769,7 +783,7 @@ button.sandbox-ball-random {
   user-select: none;
 }
 
-.small-ball-grid .ballicon {
+.small-ball-grid .ballicon, .generic-icon {
   height: round(2vmin, 16px);
   width: round(2vmin, 16px);
 
@@ -807,12 +821,14 @@ button.sandbox-ball-random {
   align-items: start;
 }
 
-#ball_info_display .big-ballicon {
+#ball_info_display .big-ballicon, .gambling-ball-info .big-ballicon {
   padding: calc(6vmin - round(5vmin, 16px));
 
   height: round(5vmin, 16px);
   width: round(5vmin, 16px);
+}
 
+#ball_info_display .big-ballicon {
   margin-right: 1vmin;
 }
 
@@ -871,7 +887,7 @@ button.sandbox-ball-random {
   width: 100%;
 }
 
-.ball-info-display .minititle, .ball-info-display .content {
+.ball-info-display .minititle, .ball-info-display .content, .gambling-ball-info .content, .gambling-ball-info .minititle {
   font-size: 1.5vmin;
 }
 
@@ -881,19 +897,19 @@ button.sandbox-ball-random {
   height: 4vmin;
 }
 
-.ball-info-display .onlevelup .minititle {
+.onlevelup .minititle {
   background-color: #060;
 }
 
-.ball-info-display .awakened .minititle {
+.awakened .minititle {
   background-color: #606;
 }
 
-.ball-info-display .awakened.locked {
+.awakened.locked {
   color: #555;
 }
 
-.ball-info-display .awakened.locked .minititle {
+.awakened.locked .minititle {
   background-color: #303;
 }
 
@@ -928,30 +944,48 @@ button.sandbox-ball-random {
   font-size: 1.5vmin;
 }
 
-.sandbox-ball-selector .action-buttons {
+.action-buttons {
   width: 100%;
   display: flex;
+
+  user-select: none;
 }
 
-.sandbox-ball-selector .action-buttons .clickable {
+.action-buttons.disabled {
+  opacity: 0.25;
+}
+
+.action-buttons .clickable {
   flex: 1 1 0px;
 
   text-align: center;
 }
 
-.sandbox-ball-selector .action-buttons .clickable:hover {
+.action-buttons .clickable:hover {
   filter: brightness(2);
 }
 
-.sandbox-ball-selector .action-buttons .clickable:last-child {
+.action-buttons .clickable:last-child {
   margin-right: 0;
 }
 
-.sandbox-ball-selector .action-buttons .clickable.save {
+.action-buttons .clickable.save {
   background-color: #060;
 }
 
-.sandbox-ball-selector .action-buttons .clickable.cancel {
+.action-buttons .clickable.ok {
+  background-color: #036;
+}
+
+.action-buttons .clickable.info {
+  background-color: #444;
+}
+
+.action-buttons .clickable.bet {
+  background-color: #444;
+}
+
+.action-buttons .clickable.cancel {
   background-color: #600;
 }
 
@@ -1121,6 +1155,164 @@ button.sandbox-ball-random {
 
 .faded {
   opacity: 0;
+}
+
+.bottomcontainer {
+  display: flex;
+  flex-direction: row;
+
+  width: 100%;
+}
+
+.bottomcontainer .section {
+  flex-basis: 25%;
+  min-width: 25%;
+
+  padding-top: 2vmin;
+}
+
+.bottomcontainer .section.leftside, .bottomcontainer .section.rightside {
+  display: flex;
+
+  align-items: center;
+}
+
+.bottomcontainer .section.leftside .button, .bottomcontainer .section.rightside .button {
+  margin: 0;
+  max-width: fit-content;
+  padding-left: 2vmin;
+  padding-right: 2vmin;
+}
+
+.bottomcontainer .center {
+  flex-basis: 50%;
+  min-width: 50%;
+}
+
+.campaign-button {
+  border: 1px solid #f99;
+  color: #f99;
+  background-color: #622;
+}
+
+.sandbox-button {
+  border: 1px solid #99f;
+  color: #99f;
+  background-color: #226;
+}
+
+.gambling-button {
+  border: 1px solid 9f9;
+  color: #9f9;
+  background-color: #262;
+}
+
+.gambling-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 2vmin;
+
+  width: 100%;
+  height: calc(100% - 4vmin);
+}
+
+.gambling-container .odds-amount {
+  display: flex;
+  width: 100%;
+
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.gambling-container .bet-possible-winnings {
+  color: lime;
+}
+
+.gambling-container .versus {
+  font-size: 2vmin;
+  margin-left: 2vmin;
+  margin-right: 2vmin;
+}
+
+.gambling-countdown {
+  white-space: pre;
+}
+
+.gambling-contestants {
+  display: flex;
+  flex-direction: row;
+
+  align-items: center;
+  justify-content: center;
+
+  width: calc(100% - 4vmin);
+}
+
+.gambling-ball-info {
+  display: flex;
+  flex-direction: column;
+
+  gap: 1vmin;
+
+  align-items: start;
+  justify-content: start;
+
+  padding: 1vmin;
+}
+
+.gambling-container .gambling-ball-info {
+  width: 50%;
+}
+
+.gambling-ball-info .big-ballicon {
+  align-self: center;
+}
+
+#gambling_ball_info_1 {
+  background-color: #300;
+}
+
+#gambling_ball_info_2 {
+  background-color: #114;
+}
+
+.gambling-ball-info .title-level {
+  display: flex;
+
+  justify-content: space-between;
+  width: 100%;
+}
+
+.gambling-ball-info .title, .gambling-ball-info .level {
+  text-shadow: #888 1px 1px;
+}
+
+.gambling-ball-info .desc {
+  font-size: 1.5vmin;
+}
+
+.popup.gambling-ball-extra-info .gambling-ball-info .desc {
+  font-size: 1.5vmin;
+}
+
+.gambling-ball-info .tier {
+  font-size: 2vmin;
+}
+
+.gambling-ball-extra-info .tier {
+  font-size: 1.5vmin;
+}
+
+.gambling-ball-extra-info {
+  max-width: 50vmin;
+  min-width: 50vmin;
+}
+
+.gambling-container .money {
+  margin-top: auto;
 }
 
 /*

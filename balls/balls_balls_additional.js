@@ -236,7 +236,7 @@ class GreatsordBall extends WeaponBall {
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "Requested by @TheGlimGuy.";
 
-        this.tier = TIERS.S;
+        this.tier = TIERS.SPLUS;
         this.category = CATEGORIES.SILLY;
         this.tags = [
             TAGS.MELEE,
@@ -451,7 +451,10 @@ class SuperNeedleBall extends NeedleBall {
         this.splitcnt = splitcnt;
         
         this.category = CATEGORIES.SILLY;
-        this.tier = TIERS.S;
+        this.tier = TIERS.APLUS;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.S;
+        }
 
         this.set_radius(this.radius * Math.pow(0.75, this.splitcnt));
         this.weapon_data.forEach(w => w.size_multiplier *= Math.pow(0.6, this.splitcnt));
@@ -512,7 +515,7 @@ class SuperDaggerBall extends WeaponBall {
         this.max_level_description = "Same as dagger... shudders";
         this.quote = "help.";
 
-        this.tier = TIERS.S;
+        this.tier = TIERS.SPLUS;
         this.category = CATEGORIES.SILLY;
 
         this.entry_animation = "teleport";
@@ -792,7 +795,7 @@ class ShieldBall extends WeaponBall {
         this.description_brief = "1.sheld ball! reflects all atacks AND have 10% chance to grow";
         this.quote = "Thanks @sPAIN_foru.";
 
-        this.tier = TIERS.B;
+        this.tier = TIERS.C;
         this.category = CATEGORIES.SILLY;
         this.tags = [
             TAGS.MELEE,
@@ -1018,7 +1021,7 @@ class NotSoSuperDaggerBall extends WeaponBall {
         this.max_level_description = "Same as dagger... shudders";
         this.quote = "Yup man just do whatever";
 
-        this.tier = TIERS.S;
+        this.tier = TIERS.APLUS;
         this.category = CATEGORIES.SILLY;
 
         this.entry_animation = "teleport";
@@ -1333,6 +1336,9 @@ class HornetBall extends SuperNeedleBall {
         
         this.category = CATEGORIES.SILLY;
         this.tier = TIERS.S;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.SPLUS;
+        }
 
         this.set_radius(this.radius * Math.pow(0.75, this.splitcnt));
         this.weapon_data.forEach(w => w.size_multiplier *= Math.pow(0.6, this.splitcnt));
@@ -1390,6 +1396,10 @@ class HyperParrierBall extends WeaponBall {
             TAGS.MELEE,
             TAGS.DEFENSIVE,
         ];
+        
+        this.entry_animation = "load";
+        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
+        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
 
         this.weapon_data = [];
 
@@ -1502,7 +1512,7 @@ class ThwompBall extends WeaponBall {
         this.description_brief = "Periodically grows spikes and slams down, dealing 50 damage to any balls in the way. Spikes deal 5 damage while not slamming and retract shortly after the slam completes.";
         this.quote = "Thanks @CasualBinaryMan.";
 
-        this.tier = TIERS.A;
+        this.tier = TIERS.BPLUS;
         this.category = CATEGORIES.SILLY;
         this.tags = [
             TAGS.MELEE,
@@ -1712,7 +1722,11 @@ class ThiccNeedleBall extends NeedleBall {
         this.max_level_description = "Has 1000 hp (at level 100)... and needle's other awakening bonuses";
         this.quote = "Thanks @_Olar_.";
 
-        this.tier = TIERS.S;
+        this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.SPLUS;
+        }
+
         this.category = CATEGORIES.SILLY;
 
         if (this.level >= AWAKEN_LEVEL) {

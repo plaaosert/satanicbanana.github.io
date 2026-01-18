@@ -37,6 +37,10 @@
                     <span>Hi</span>
                 </div>
 
+                <div class="gambling leftpanel nodisplay">
+                    
+                </div>
+
                 <div class="sandbox leftpanel hide-on-low-content-size">
                     <span>Social links:</span>
                     <div class="social-link tt"><img class="social-img" src="img/icons/tiktok.png"><a href="https://www.tiktok.com/@plaaoballs">TikTok</a></div>
@@ -231,6 +235,81 @@
                         </div>
                     </div>
 
+                    <div class="gambling behind-canvases withborder">
+                        <div class="gambling-container">
+                            <span style="font-size: 1.5vmin;">Warning: this feature is in beta. Expect changes :3</span>
+                            <span>Next battle:</span>
+                            <span>Fight ID #<span id="gambling_fight_index">12934847293</span></span>
+                            <span id="gambling_countdown" class="gambling-countdown">30</span>
+                            <div class="gambling-contestants">
+                                <div class="gambling-ball-info" id="gambling_ball_info_1">
+                                    <img class="big-ballicon" src="img/icons/unknown.png">
+                                    <div class="title-level">
+                                        <span class="name">Thing</span>
+                                        <span class="level">LV 1</span>
+                                    </div>
+                                    <span class="tier">Tier:&nbsp;<span class="tiertext">&nbsp;A&nbsp;</span>&nbsp;</span>
+                                    <div class="action-buttons">
+                                        <span class="clickable info" onclick="show_gambling_info_popup(0)">More info</span>
+                                    </div>
+                                    
+                                    <span></span>
+
+                                    <div class="odds-amount">
+                                        <span>Payout =&gt; </span>
+                                        <span class="odds-number">2</span>
+                                    </div>
+
+                                    <span class="bet-amount hidden">Wagered: <span class="bet-amount-number">2</span> <span class="bet-possible-winnings">(+40?)</span></span>
+
+                                    <div class="action-buttons betbuttons">
+                                        <span class="clickable bet" onclick="gambling_bet(0, 0.1)">Bet 10%</span>
+                                        <span class="spc">&nbsp;</span>
+                                        <span class="clickable bet" onclick="gambling_bet(0, 0.25)">Bet 25%</span>
+                                    </div>
+                                    <div class="action-buttons betbuttons">
+                                        <span class="clickable bet" onclick="gambling_bet(0, 0.5)">Bet 50%</span>
+                                        <span class="spc">&nbsp;</span>
+                                        <span class="clickable bet" onclick="gambling_bet(0, 1)">All in!</span>
+                                    </div>
+                                </div>
+                                <span class="versus">VS</span>
+                                <div class="gambling-ball-info" id="gambling_ball_info_2">
+                                    <img class="big-ballicon" src="img/icons/unknown.png">
+                                    <div class="title-level">
+                                        <span class="name">Thing</span>
+                                        <span class="level">LV 1</span>
+                                    </div>
+                                    <span class="tier">Tier:&nbsp;<span class="tiertext">&nbsp;A&nbsp;</span>&nbsp;</span>
+                                    <div class="action-buttons">
+                                        <span class="clickable info" onclick="show_gambling_info_popup(1)">More info</span>
+                                    </div>
+
+                                    <span></span>
+
+                                    <div class="odds-amount">
+                                        <span class="odds-number">2</span>
+                                        <span> &lt;= Payout</span>
+                                    </div>
+
+                                    <span class="bet-amount hidden">Wagered: <span class="bet-amount-number">2</span> <span class="bet-possible-winnings">(+40?)</span></span>
+
+                                    <div class="action-buttons betbuttons">
+                                        <span class="clickable bet" onclick="gambling_bet(1, 0.1)">Bet 10%</span>
+                                        <span class="spc">&nbsp;</span>
+                                        <span class="clickable bet" onclick="gambling_bet(1, 0.25)">Bet 25%</span>
+                                    </div>
+                                    <div class="action-buttons betbuttons">
+                                        <span class="clickable bet" onclick="gambling_bet(1, 0.5)">Bet 50%</span>
+                                        <span class="spc">&nbsp;</span>
+                                        <span class="clickable bet" onclick="gambling_bet(1, 1)">All in!</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="money"><img class="generic-icon" src="img/icons/coin.png"> <span id="gambling_money_number">123</span> <span class="button green" id="gambling_pity_button" onclick="gambling_pity_money()">&nbsp;+&nbsp;</span></span>
+                        </div>
+                    </div>
+
                     <canvas class="game-canvas" id="game-canvas-bg3">
                         This canvas needs to be viewed to be displayed.
                     </canvas>
@@ -278,6 +357,10 @@
                     <span>Hi</span>
                 </div>
 
+                <div class="gambling rightpanel nodisplay">
+                    
+                </div>
+
                 <div id="sandbox_replay_panel" class="sandbox replaypanel hide-on-low-content-size">
                     
                 </div>
@@ -297,16 +380,68 @@
         </div>
 
         <div class="bottomcontainer">
-            <div class="sandbox-speed-buttons">
-                <span class="speed-control button" onclick="mod_simulation_speed(event, 0.5)">-</span>
-                <span class="speed-control label" onclick="toggle_pause_simulation();" ondblclick="reset_simulation_speed()" id="speed_display">- Paused -</span>
-                <span class="speed-control button" onclick="mod_simulation_speed(event, 2)">+</span>
+            <div class="leftside section campaign">
+                
             </div>
-            <p class="speed-alert hidden" id="speed_alert_main">This game is running at <span class="alert-item" id="fps_original">144fps</span> but you seem to be rendering at <span class="alert-item" id="fps_user">60fps</span>.<br>Speed has been adjusted to compensate.</p>
+            <div class="leftside section sandbox hidden">
+                <span class="campaign-button button modeswitch">&lt;&lt; Campaign</span>
+            </div>
+            <div class="leftside section gambling">
+                <span class="sandbox-button button modeswitch">&lt;&lt; Sandbox</span>
+            </div>
+            <div class="center section">
+                <div class="sandbox-speed-buttons">
+                    <span class="speed-control button" onclick="mod_simulation_speed(event, 0.5)">-</span>
+                    <span class="speed-control label" onclick="toggle_pause_simulation();" ondblclick="reset_simulation_speed()" id="speed_display">- Paused -</span>
+                    <span class="speed-control button" onclick="mod_simulation_speed(event, 2)">+</span>
+                </div>
+                <p class="speed-alert hidden" id="speed_alert_main">This game is running at <span class="alert-item" id="fps_original">144fps</span> but you seem to be rendering at <span class="alert-item" id="fps_user">60fps</span>.<br>Speed has been adjusted to compensate.</p>
+            </div>
+            <div class="rightside section campaign">
+                <span class="sandbox-button button modeswitch">Sandbox &gt;&gt;</span>
+            </div>
+            <div class="rightside section sandbox">
+                <span class="gambling-button button modeswitch">Cinema &gt;&gt;</span>
+            </div>
+            <div class="rightside section gambling">
+                
+            </div>
         </div>
     </div>
 
     <div id="popup-container">
+        <div id="gambling_pity", class="popup gambling-pity nodisplay">
+            <span style="display: block;">You made a call to your parents, who bailed you out of your gambling debt... this time.</span>
+            <span style="display: block;">&nbsp;</span>
+            <div class="action-buttons">
+                <span class="clickable save" onclick="document.querySelector('#gambling_pity').classList.add('nodisplay')">I have a problem</span>
+            </div>
+        </div>
+
+        <div id="gambling_ball_extra_info", class="popup gambling-ball-extra-info nodisplay">
+            <div class="gambling-ball-info" id="gambling_ball_info">
+                <img class="big-ballicon" src="img/icons/unknown.png">
+                <div class="title-level">
+                    <span class="name">Thing</span>
+                    <span class="level">LV 1</span>
+                </div>
+                <span class="tier">Tier:&nbsp;<span class="tiertext">&nbsp;A&nbsp;</span>&nbsp;</span>
+                <span class="desc">Description</span>
+                <div class="stat-item onlevelup noflex">
+                    <span class="minititle">LEVEL UP</span>
+                    <span class="content">On level up... who knows</span>
+                </div>
+
+                <div class="stat-item awakened noflex">
+                    <span class="minititle">AWAKEN (lv. 100)</span>
+                    <span class="content">On awaken... who knows</span>
+                </div>
+                <div class="action-buttons">
+                    <span class="clickable ok" onclick="close_gambling_info_popup()">OK</span>
+                </div>
+            </div>
+        </div>
+
         <div id="sandbox_load_replays" class="popup sandbox-load-replays nodisplay">
             <span class="title">Loading a replay with the following balls:</span>
             <br>
@@ -381,7 +516,7 @@
                     <div class="sbs rows">
                         <div class="stat-item-pair">
                             <span class="name">Test</span>
-                            <span class="tier">Tier:&nbsp;<span id="tiertext">A</span>&nbsp;</span>
+                            <span class="tier">Tier:&nbsp;<span class="tiertext">A</span>&nbsp;</span>
                         </div>
                         <div class="stat-item">
                             <div class="tags">
@@ -479,6 +614,8 @@
     <script src="balls_balls.js?v=50"></script>
     <script src="balls_balls_additional.js?v=44"></script>
     <script src="balls_balls_powered.js?v=06"></script>
+
+    <script src="balls_gambling_info.js?v=00"></script>
 
     <script src="balls_replay_parsing.js?v=09"></script>
     <script src="balls_launcher.js?v=70"></script>

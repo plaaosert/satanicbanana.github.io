@@ -105,6 +105,81 @@ let selected_ball_info = {
 let currently_editing_ballid = "ball1";
 let saved_prev_state = JSON.parse(JSON.stringify(selected_ball_info[currently_editing_ballid]));
 
+let number_strings = [
+`######
+##  ##
+##  ##
+##  ##
+######`,
+
+`####  
+  ##  
+  ##  
+  ##  
+######`,
+
+`######
+    ##
+######
+##    
+######`,
+
+`######
+    ##
+######
+    ##
+######`,
+
+`##  ##
+##  ##
+######
+    ##
+    ##`,
+
+`######
+##    
+######
+    ##
+######`,
+
+`######
+##    
+######
+##  ##
+######`,
+
+`######
+    ##
+    ##
+    ##
+    ##`,
+
+`######
+##  ##
+######
+##  ##
+######`,
+
+`######
+##  ##
+######
+    ##
+######`,
+
+`      
+      
+      
+      
+  ##  `
+]
+
+let gambling_current_match_data = null;
+let gambling_wager_info = [null, 0];
+let gambling_money = 0;
+let gambling_money_display = 0;
+
+let screen_open = "sandbox";
+
 document.addEventListener("DOMContentLoaded", async function() {
     await load_audio();
 });
@@ -369,6 +444,10 @@ function collapse_replay(replay) {
         }
     });
 
+    if (replay_collapsed.max_game_duration == default_max_game_duration) {
+        replay_collapsed.max_game_duration = null;
+    }
+
     // then rename all the elements to shorter names (compress_replay)
     let compressed = compress_replay(replay_collapsed);
 
@@ -428,6 +507,7 @@ function exit_battle(save_replay=true) {
             game_version: GAME_VERSION,
             time_recorded: Date.now(),
             duration: board.duration,
+            max_game_duration: board.max_game_duration,
 
             framespeed: board.forced_time_deltas && Math.round(1000 / board.forced_time_deltas),
             balls: board.starting_balls,
@@ -470,6 +550,11 @@ function exit_battle(save_replay=true) {
         localStorage.setItem("balls_replay_history", JSON.stringify(replay_history));
 
         // console.log(board.tension);
+    }
+
+    if (run_function_on_match_end) {
+        run_function_on_match_end(board);
+        run_function_on_match_end = null;
     }
 
     replaying = false;
@@ -562,12 +647,18 @@ function load_replay(replay_as_text) {
         starting_hp = replay.starting_hp;
     }
 
+    let max_game_duration = default_max_game_duration;
+    if (replay.max_game_duration) {
+        max_game_duration = replay.max_game_duration;
+    }
+
     replaying = true;
     start_game(
         framespeed, seed,
         cols, positions,
         ball_classes, ball_levels,
-        players, skins, starting_hp
+        players, skins, starting_hp,
+        max_game_duration
     );
 }
 
@@ -636,14 +727,15 @@ function spawn_selected_balls() {
         framespeed, seed,
         cols, positions,
         ball_classes, ball_levels,
-        players, skins, STARTING_HP
+        players, skins, STARTING_HP,
+        default_max_game_duration
     );
 }
 
 let christmas = false;
 let new_year = false;
 
-function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels, players, skins, starting_hp) {
+function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels, players, skins, starting_hp, max_game_duration) {
     document.activeElement.blur();
     lmb_down = false;
     
@@ -700,6 +792,8 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
         board.starting_cols = cols.map(c => c.data);
         board.starting_skins = skins;
 
+        board.max_game_duration = max_game_duration;
+
         board.balls.forEach(ball => ball.add_velocity(
             random_on_circle(
                 random_float(512 * 5, 512 * 10, board.random),
@@ -749,6 +843,13 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
     enter_battle();
 }
 
+function create_testball(proto, level=0) {
+    return new proto(
+        {random: Math.random, random_seed: "123"}, 1, 512,
+        Colour.white, null, null, {}, level+1, false
+    )
+}
+
 function update_ballinfo(ballid, save_skin=false) {
     let ball_team = document.querySelector(`select[name='${ballid}_team']`).selectedIndex;
 
@@ -766,9 +867,7 @@ function update_ballinfo(ballid, save_skin=false) {
     let skins_elem = document.querySelector(`select[name=${ballid}_skin]`);
 
     if (ball_proto) {
-        let testball = new ball_proto(
-            {random: Math.random, random_seed: "123"}, 1, 512, Colour.white, null, null, {}, 1, false
-        );
+        let testball = create_testball(ball_proto);
 
         skins = ["Default skin", ...(ball_proto.AVAILABLE_SKINS ?? [])];
 
@@ -809,6 +908,50 @@ function update_awaken_showhide(ballid) {
         document.querySelector(`#${ballid}_a_info`).classList.remove("hidden");
     } else {
         document.querySelector(`#${ballid}_a_info`).classList.add("hidden");
+    }
+}
+
+function update_ball_info_widget(ball_proto, testball, level, ballinfo_elem) {
+    ballinfo_elem.querySelector(".name").textContent = testball.name;
+
+    let icon = ballinfo_elem.querySelector(".big-ballicon");
+    if (entity_sprites.get(`icon_${ball_proto.ball_name.toLowerCase()}`)) {
+        icon.src = `${FILES_PREFIX}img/icons/${ball_proto.ball_name.toLowerCase()}.png`;
+    } else {
+        icon.src = `${FILES_PREFIX}img/icons/unknown.png`;
+    }
+
+    let e = false;
+    icon.addEventListener("error", () => {
+        if (!e) {
+            icon.src = `${FILES_PREFIX}img/icons/unknown.png`;
+            e = true;
+        }
+    });
+
+    ballinfo_elem.querySelector(".tiertext").style.color = TIERS_INFO[testball.tier].col.css();
+    ballinfo_elem.querySelector(".tiertext").style.backgroundColor = TIERS_INFO[testball.tier].col.lerp(Colour.black, 0.6).css();
+    ballinfo_elem.querySelector(".tiertext").textContent = `${String.fromCharCode(160)}${TIERS_INFO[testball.tier].name}${String.fromCharCode(160)}`;
+
+    let desc_e = ballinfo_elem.querySelector(".desc");
+    if (desc_e)
+        desc_e.textContent = testball.description_brief;
+
+    let levelup_e = ballinfo_elem.querySelector(".onlevelup .content");
+    if (levelup_e) {
+        levelup_e.textContent = testball.level_description;
+        
+        ballinfo_elem.querySelector(".awakened .content").textContent = testball.max_level_description;
+        if (level >= AWAKEN_LEVEL) {
+            ballinfo_elem.querySelector(".awakened").classList.remove("locked");
+        } else {
+            ballinfo_elem.querySelector(".awakened").classList.add("locked");
+        }
+    }
+
+    let level_section = ballinfo_elem.querySelector(".level");
+    if (level_section) {
+        level_section.textContent = `LV ${level+1}`;
     }
 }
 
@@ -909,30 +1052,9 @@ function update_ball_selection_popup() {
     }
 
     let ball_proto = selectable_balls.find(t => t.ball_name == selected_ball_info[ballid].name);
-    let testball = new ball_proto(
-        {random: Math.random, random_seed: "123"}, 1, 512, Colour.white, null, null, {}, 1, false
-    );
+    let testball = create_testball(ball_proto, selected_ball_info[ballid].level);
 
-    ballinfo_elem.querySelector(".name").textContent = testball.name;
-
-    let icon = ballinfo_elem.querySelector(".big-ballicon");
-    if (entity_sprites.get(`icon_${ball_proto.ball_name.toLowerCase()}`)) {
-        icon.src = `${FILES_PREFIX}img/icons/${ball_proto.ball_name.toLowerCase()}.png`;
-    } else {
-        icon.src = `${FILES_PREFIX}img/icons/unknown.png`;
-    }
-
-    let e = false;
-    icon.addEventListener("error", () => {
-        if (!e) {
-            icon.src = `${FILES_PREFIX}img/icons/unknown.png`;
-            e = true;
-        }
-    });
-
-    ballinfo_elem.querySelector("#tiertext").style.color = TIERS_INFO[testball.tier].col.css();
-    ballinfo_elem.querySelector("#tiertext").style.backgroundColor = TIERS_INFO[testball.tier].col.lerp(Colour.black, 0.6).css();
-    ballinfo_elem.querySelector("#tiertext").textContent = `${String.fromCharCode(160)}${testball.tier}${String.fromCharCode(160)}`;
+    update_ball_info_widget(ball_proto, testball, selected_ball_info[ballid].level, ballinfo_elem);
 
     let tag_elem = ballinfo_elem.querySelector(".tags");
     while (tag_elem.hasChildNodes())
@@ -970,16 +1092,6 @@ function update_ball_selection_popup() {
         total_chars += 5;
 
         tag_elem.append(tag2);
-    }
-
-    ballinfo_elem.querySelector(".desc").textContent = testball.description_brief;
-    ballinfo_elem.querySelector(".onlevelup .content").textContent = testball.level_description;
-    
-    ballinfo_elem.querySelector(".awakened .content").textContent = testball.max_level_description;
-    if (selected_ball_info[ballid].level >= AWAKEN_LEVEL) {
-        ballinfo_elem.querySelector(".awakened").classList.remove("locked");
-    } else {
-        ballinfo_elem.querySelector(".awakened").classList.add("locked");
     }
 
     let longest_skins_list = Math.max(...selectable_balls.map(b => b.AVAILABLE_SKINS.length));
@@ -1350,7 +1462,7 @@ function update_sim_speed_display(temporary_modifiers=1) {
 }
 
 function switch_game_layout(to) {
-    let layouts = ["sandbox", "campaign"];
+    let layouts = ["sandbox", "campaign", "gambling"];
 
     // hide everything then show only the matching
     layouts.forEach(layout => {
@@ -1360,6 +1472,8 @@ function switch_game_layout(to) {
             document.querySelectorAll(`.${layout}`).forEach(e => e.classList.add("nodisplay"));
         }
     })
+
+    screen_open = to;
 }
 
 let banned_for_random = [
@@ -1367,6 +1481,9 @@ let banned_for_random = [
 ]
 
 let selectable_balls_for_random = main_selectable_balls.filter(ball => !banned_for_random.some(c => c.name == ball.name));
+
+// let chaos reign
+// selectable_balls_for_random = selectable_balls;
 
 let match_end_timeout = 0;
 let render_victory_enabled = true;
@@ -1560,6 +1677,314 @@ function setup_load_menu(replay_as_text) {
     })
 }
 
+function check_next_gambling_fight_id(screen_config) {
+    let next_fight_index = Math.floor((Date.now() / 1000) / screen_config.fight_frequency);
+    let time_until_fight = ((next_fight_index+1) * 1000 * screen_config.fight_frequency) - Date.now();
+
+    return [next_fight_index, time_until_fight];
+}
+
+function get_next_gambling_fight(screen_config) {
+    /*
+    let screen_config = {
+        fight_frequency: 90,
+        fight_max_duration: 75,
+        same_tier: true,
+        ball_pool: main_selectable_balls,
+        selectable_levels: [0, 100],
+        duplicates_allowed: false,
+        same_level_required: true,
+    }
+    */
+
+    // based on Date.now()
+    let next_fight_info = check_next_gambling_fight_id(screen_config);
+    let next_fight_index = next_fight_info[0];
+    let time_until_fight = next_fight_info[1]; 
+
+    let fight_random_seed = next_fight_index.toString();
+    let randomness = get_seeded_randomiser(fight_random_seed);
+
+    let ball1 = seeded_random_from_array(screen_config.ball_pool, randomness);
+    let ball1_proto = create_testball(ball1);
+    
+    let ball2_options = screen_config.ball_pool;
+    if (!screen_config.duplicates_allowed) {
+        ball2_options = ball2_options.filter(b => b.name != ball1.name);
+    }
+
+    if (screen_config.same_tier) {
+        ball2_options = ball2_options.filter(b => {
+            let testball = create_testball(b);
+
+            if (ball1_proto.tier == testball.tier)
+                return true;
+
+            return false;
+        })
+    }
+
+    if (ball2_options.length == 0) {
+        // DO NOTHING!!!!!!! I HATE ERROR HANDLING!!!!!!!!!!!!
+    }
+
+    let ball2 = seeded_random_from_array(ball2_options, randomness);
+    let ball2_proto = create_testball(ball2);
+    
+    let level1 = null;
+    let level2 = null;
+    if (!ball1_proto.tags.includes(TAGS.LEVELS_UP)) {
+        level1 = 0;
+    }
+
+    if (!ball2_proto.tags.includes(TAGS.LEVELS_UP)) {
+        level2 = 0;
+    }
+
+    // then, if level1 hasn't been picked, randomly pick it
+    if (level1 === null) {
+        level1 = seeded_random_from_array(screen_config.selectable_levels, randomness);
+    }
+
+    // then sync levels if required (level2 overrides level1 if set)
+    if (screen_config.same_level_required) {
+        if (level2 !== null) {
+            level1 = level2;
+        } else {
+            level2 = level1;
+        }
+    }
+
+    // then randomise level2 if it's not set
+    if (level2 === null) {
+        level2 = seeded_random_from_array(screen_config.selectable_levels, randomness);
+    }
+
+    // get odds, or 50/50 if unknown
+    let ball1_index = selectable_balls_for_random.findIndex(b => b.name == ball1.name);
+    let ball2_index = selectable_balls_for_random.findIndex(b => b.name == ball2.name);
+
+    let odds = 0.5;
+    if (level1 == level2 && (level1 == 0 || level1 == 99) && ball1_index != -1 && ball2_index != -1) {
+        odds = (level1 == 0 ? gambling_normal_wrs : gambling_awakened_wrs)[
+            (ball1_index * selectable_balls_for_random.length) + ball2_index
+        ]
+    }
+
+    if (ball1.name != ball2.name) {
+        // apply variance in the odds
+        odds *= random_float(...screen_config.odds_variance, randomness);
+    }
+
+    odds = Math.round((1 - odds) * 1000) / 1000;
+
+    return {
+        id: next_fight_index,
+        seed: fight_random_seed,
+        time_until: time_until_fight,
+        balls: [ball1, ball2],
+        duration: screen_config.fight_max_duration,
+        levels: [level1, level2],
+        cols: [default_cols[0], default_cols[3]],
+        odds: odds,
+    }
+}
+
+function save_gambling_money() {
+    localStorage.setItem("balls_gambling_money", gambling_money);
+}
+
+function gambling_pity_money() {
+    gambling_money += 100;
+    document.querySelector('#gambling_pity').classList.remove('nodisplay')
+    save_gambling_money();
+}
+
+function get_win_from_bet(bet, odds, round=true) {
+    let odds_divisor = odds / (1 - odds);
+
+    let profit_return = bet * odds_divisor;
+
+    if (round) {
+        return Math.floor(bet + profit_return);
+    } else {
+        return bet + profit_return
+    }
+}
+
+function update_gambling_screen(match_data) {
+    let time_to_battle = match_data.time_until / 1000;
+    let time_to_battle_text = time_to_battle.toFixed(2);
+
+    let countdown_text = "";
+    let digits = [...time_to_battle_text].map(c => number_strings[try_parse_int(c, 10)].split("\n"))
+    let longest = digits.reduce((p, c) => Math.max(c.length-1, p), 0);
+    for (let i=0; i<=longest; i++) {
+        // get lines of the digits and concat
+        let line = digits.map(d => i < d.length ? d[i] : " ".repeat(d[0].length)).join("   ");
+        countdown_text += line + "\n"
+    }
+
+    document.querySelector("#gambling_countdown").textContent = countdown_text;
+
+    for (let i=0; i<match_data.balls.length; i++) {
+        let ballinfo_elem = document.querySelector(`.gambling-container #gambling_ball_info_${i+1}`);
+
+        let ball = match_data.balls[i];
+        let level = match_data.levels[i];
+
+        update_ball_info_widget(
+            ball, create_testball(ball, level),
+            level, ballinfo_elem
+        )
+
+        let odds_n = (i == 0 ? match_data.odds : 1 - match_data.odds);
+        ballinfo_elem.querySelector(".odds-number").textContent = get_win_from_bet(1, odds_n, false).toFixed(3);
+
+        let action_buttons = ballinfo_elem.querySelectorAll(".betbuttons");
+        if (gambling_wager_info[0] == i || gambling_wager_info[0] === null) {
+            action_buttons.forEach(e => e.classList.remove("disabled"));
+        } else {
+            action_buttons.forEach(e => e.classList.add("disabled"));
+        }
+
+        if (gambling_wager_info[0] == i) {
+            let amt_elem = ballinfo_elem.querySelector(".bet-amount");
+            amt_elem.classList.remove("hidden");
+
+            amt_elem.querySelector(".bet-amount-number").textContent = gambling_wager_info[1];
+            amt_elem.querySelector(".bet-possible-winnings").textContent = `(+${get_win_from_bet(gambling_wager_info[1], odds_n)}?)`
+        } else {
+            let amt_elem = ballinfo_elem.querySelector(".bet-amount");
+            amt_elem.classList.add("hidden");
+        }
+    }
+
+    if (gambling_wager_info[0] === null && gambling_money_display < 10) {
+        document.querySelector("#gambling_pity_button").classList.remove("nodisplay");
+    } else {
+        document.querySelector("#gambling_pity_button").classList.add("nodisplay");
+    }
+}
+
+function update_gambling_money() {
+    document.querySelector("#gambling_money_number").textContent = format_number(Math.floor(gambling_money_display), NumberFormat.SCIENTIFIC, 1e6);
+}
+
+function gambling_bet(ballid, amt) {
+    let to_bet = Math.floor(gambling_money * amt);
+    if (to_bet <= 0) {
+        to_bet = Math.min(gambling_money, 1);
+    }
+
+    if (gambling_wager_info[0] === null) {
+        gambling_wager_info = [ballid, 0];
+    }
+    
+    if (gambling_wager_info[0] == ballid) {
+        gambling_wager_info[1] += to_bet;
+    } // else do nothing
+
+    gambling_money -= to_bet;
+}
+
+function gambling_display_loop() {
+    let screen_config = {
+        fight_frequency: 90,
+        fight_max_duration: 75,
+        same_tier: true,
+        ball_pool: selectable_balls_for_random,
+        selectable_levels: [0, 99],
+        duplicates_allowed: false,
+        same_level_required: true,
+        odds_variance: [0.85, 1.15]
+    }
+
+    if (screen_open == "gambling") {
+        // do things
+        if (!gambling_current_match_data) {
+            gambling_current_match_data = get_next_gambling_fight(screen_config);
+        }
+
+        let next_fight_info = check_next_gambling_fight_id(screen_config);
+
+        gambling_current_match_data.time_until = next_fight_info[1];
+
+        update_gambling_screen(gambling_current_match_data);
+
+        if (next_fight_info[0] != gambling_current_match_data.id) {
+            // we've moved to the next one - open the match by generating a replay
+            // and null the match data so we get the next one asap
+            
+            if (board) {
+                // we're still in the last game, so leave everything intact, but update current match data
+                gambling_current_match_data = next_fight_info;
+            } else {
+                // TODO generate replay
+                // for now just manually start the game
+                let payout_amt = get_win_from_bet(
+                    gambling_wager_info[1],
+                    (gambling_wager_info[0] == 0 ? gambling_current_match_data.odds : 1 - gambling_current_match_data.odds)
+                );
+                let payout_player_id = gambling_wager_info[0];
+                
+                run_function_on_match_end = (board => {
+                    let remaining_players = board.remaining_players();
+                    if (remaining_players.length == 1) {
+                        // either do nothing or give bet + payout
+                        if (remaining_players[0].id == payout_player_id) {
+                            gambling_money += gambling_wager_info[1] + payout_amt;
+                            play_audio("WINNER", 0.025);
+                        }
+                    } else {
+                        // refund bet
+                        gambling_money += gambling_wager_info[1];
+                    }
+
+                    save_gambling_money();
+                    gambling_wager_info = [null, 0];
+                });
+
+                start_game(
+                    144, gambling_current_match_data.seed,
+                    gambling_current_match_data.cols,
+                    [default_positions[0], default_positions[1]],
+                    gambling_current_match_data.balls,
+                    gambling_current_match_data.levels,
+                    [0, 1].map(pid => make_default_player(pid)),
+                    ["Default", "Default"],
+                    100, gambling_current_match_data.duration
+                )
+
+                gambling_current_match_data = null;
+            }
+        }
+    }
+
+    window.requestAnimationFrame(gambling_display_loop);
+}
+
+function show_gambling_info_popup(ball_index) {
+    if (!gambling_current_match_data)
+        return;
+
+    let popup = document.querySelector("#gambling_ball_extra_info");
+
+    let ball = gambling_current_match_data.balls[ball_index]
+    let level = gambling_current_match_data.levels[ball_index]
+
+    update_ball_info_widget(
+        ball, create_testball(ball, level),
+        level, popup
+    )
+
+    popup.classList.remove("nodisplay");
+}
+
+function close_gambling_info_popup() {
+    document.querySelector("#gambling_ball_extra_info").classList.add("nodisplay");
+}
+
 function is_valid_viewport() {
     // check we have enough content size AND we're not on mobile (or on desktop mode in mobile)
     return (window.innerHeight >= 919 && window.innerWidth >= 640) && (!on_mobile() || window.innerWidth > screen.availWidth);
@@ -1574,6 +1999,9 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
 
     get_canvases();
+
+    gambling_money = try_parse_int(localStorage.getItem("balls_gambling_money"), null) ?? 1000;
+    gambling_money_display = gambling_money;
 
     layers.front.canvas.addEventListener("contextmenu", function(event) {
         event.preventDefault();
@@ -1744,6 +2172,8 @@ document.addEventListener("DOMContentLoaded", function() {
             
             return p + loaded;
         }, 0)
+
+        audios_loaded = audios_list.reduce((p,c) => p + (audio.get(c[0]) ? 1 : 0), 0)
 
         if (document.querySelector("#graphics_loading")) {
             document.querySelector("#graphics_loading").textContent = `${num_textures_loaded}/${num_textures_needed}`;
@@ -2025,6 +2455,15 @@ document.addEventListener("DOMContentLoaded", function() {
     e.forEach(el => {
         el.innerHTML = `<span>${[...el.textContent].join("</span><span>")}</span>`;
     });
+
+    document.querySelectorAll(".bottomcontainer .modeswitch").forEach(e => {
+        let mode = [...e.classList].filter(c => c.includes("-button"))[0].split("-")[0]
+        e.addEventListener("click", () => {
+            switch_game_layout(mode);
+        });
+    })
+
+    window.requestAnimationFrame(gambling_display_loop);
 })
 
 // entity_sprites late setup
@@ -2037,7 +2476,7 @@ selectable_balls_for_random.map(b => b.ball_name.toLowerCase()).forEach(n => {
 
     num_textures_needed++;
     t.addEventListener("load", function() {
-        num_textures_loaded++;
+        // num_textures_loaded++;
     })
 
     let e = false;
@@ -2059,6 +2498,9 @@ selectable_balls_for_random.map(b => b.ball_name.toLowerCase()).forEach(n => {
 let searching = false;
 let winrate_tracking = searching;
 
+// hide all graphics
+let render = true;
+
 let force_fps = null;
 if (winrate_tracking)
     force_fps = 144;
@@ -2066,7 +2508,7 @@ if (winrate_tracking)
 let muted = searching;
 
 let repeater_interval = null;
-let force_ball1 = RosaryBall;
+let force_ball1 = null;
 
 let displayelement = null;
 

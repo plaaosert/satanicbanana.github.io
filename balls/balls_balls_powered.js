@@ -10,7 +10,7 @@ class SmartLongsword extends WeaponBall {
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "Taste true power.";
 
-        this.tier = TIERS.ULTRA;
+        this.tier = TIERS.X;
         this.category = CATEGORIES.POWERED;
         this.tags = [
             TAGS.MELEE,
