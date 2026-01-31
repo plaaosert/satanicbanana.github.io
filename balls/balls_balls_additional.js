@@ -87,7 +87,7 @@ class ThirteenLongswordsBall extends WeaponBall {
             `Damage: ${this.damage_base.toFixed(2)}`
         )
         this.write_desc_line(
-            `Longswords: 13`
+            `Longswords: ${this.weapon_data.length}`
         )
         this.write_desc_line(
             `Longswords: lit up on fire`
@@ -1787,6 +1787,270 @@ class ThiccNeedleBall extends NeedleBall {
 }
 
 
+class FourteenLongswordsBall extends ThirteenLongswordsBall {
+    static ball_name = "14 Longswords";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "14 Longswords";
+        this.description_brief = "Has 14 longswords that each do 2 damage and are also on fire.";
+        this.level_description = "This ball has no levelup effect.";
+        this.max_level_description = "This ball has no awakening effect.";
+        this.quote = "This is a crime. I must not be allowed to win.";
+
+        this.weapon_data = new Array(14).fill("").map(_ => new BallWeapon(1, "LONGSORD", [
+            {pos: new Vector2(116, 72), radius: 8},
+            {pos: new Vector2(100, 72), radius: 8},
+            {pos: new Vector2(80, 74), radius: 8},
+            {pos: new Vector2(64, 74), radius: 8},
+            {pos: new Vector2(48, 74), radius: 8},
+            {pos: new Vector2(32, 72), radius: 8},
+            {pos: new Vector2(16, 68), radius: 8},
+        ]))
+
+        this.damage_base = 2;
+        this.speeds_range = [80, 240];
+
+        this.speeds = new Array(this.weapon_data.length).fill(0).map(_ => random_float(...this.speeds_range, this.board.random));
+        
+        for (let i=0; i<this.weapon_data.length; i++) {
+            if (i % 2 == 1) {
+                this.reverse_weapon(i);
+            }
+        }
+    }
+}
+
+
+class ShotgunMagnumBall extends WeaponBall {
+    static ball_name = "Shotgun-Magnum";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Shotgun-Magnum";
+        this.description_brief = "Fusion of Shotgun and Magnum...! Also the coins are shotted gunned";
+        this.level_description = "Both Shotgun and Magnum's level-up effects.";
+        this.max_level_description = "Both Shotgun and Magnum's awakening effects.";
+        this.quote = "...Do you have any idea how much it cost me to eliminate you?";
+
+        this.tier = TIERS.SPLUS;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.X;
+        }
+
+        this.category = CATEGORIES.STANDARD;
+        this.tags = [
+            TAGS.RANGED,
+            TAGS.OFFENSIVE,
+            TAGS.PROJECTILES,
+            TAGS.HITSCAN,
+            TAGS.LEVELS_UP,
+            TAGS.CAN_AWAKEN,
+        ];
+
+        this.entry_animation = "snipe";
+        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
+        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
+
+        this.weapon_data = [
+            new BallWeapon(1, "shotgun-magnum", [
+                {pos: new Vector2(32, 64), radius: 12},
+                {pos: new Vector2(48, 64), radius: 12},
+            ]),
+
+            new BallWeapon(1.5, "coin_weapon", [
+
+            ])
+        ];
+
+        if (this.level >= AWAKEN_LEVEL) {
+            let w = new BallWeapon(1.5, "coin_weapon", [
+
+            ]);
+
+            this.weapon_data.push(w);
+        }
+
+        this.weapon_data[1].reverse();
+
+        this.firing_offsets = [
+            new Vector2(90, -12),
+            new Vector2(32, 0)
+        ]
+
+        this.proj_damage_base = 3 + (this.level * 0.03);
+        this.speed_base = 80;
+
+        this.coin_damage_base = 1;
+        this.coin_speed_base = 90;
+
+        this.shot_cooldown_max = 0.8 + (this.level * -0.0015);
+        this.shot_cooldown = this.shot_cooldown_max;
+
+        this.num_bullets = 8;
+        if (this.level >= AWAKEN_LEVEL) {
+            this.num_bullets *= 2;
+        }
+
+        this.width_range = [12, 20];
+
+        this.bullet_spread = deg2rad(22.5);
+
+        this.coin_shot_cooldown_max = 0.5 + (this.level * -0.001);
+        this.coin_shot_cooldown = this.coin_shot_cooldown_max;
+
+        this.sound_random = get_seeded_randomiser(this.board.random_seed);
+    }
+
+    recoil_movement() {
+        let new_angle = this.weapon_data[0].angle;
+        let diff_vec = new Vector2(-1, 0).rotate(new_angle);
+        let share = 0.25;
+
+        let diff_add = diff_vec.mul(share);
+
+        let this_mag = this.velocity.magnitude();
+
+        let new_this_velocity = this.velocity.div(this_mag).mul(1 - share).add(diff_add).normalize().mul(this_mag)
+
+        this.set_velocity(new_this_velocity);
+    }
+
+    weapon_step(board, time_delta) {
+        // rotate the weapon
+        this.rotate_weapon(0, this.speed_base * time_delta);
+
+        this.rotate_weapon(1, this.coin_speed_base * 2.5 * time_delta);
+        this.rotate_weapon(2, this.coin_speed_base * 2.5 * 1.3 * time_delta);
+
+        this.shot_cooldown -= time_delta;
+        this.coin_shot_cooldown -= time_delta;
+
+        if (this.shot_cooldown < 0) {
+            this.shot_cooldown = this.shot_cooldown_max;
+
+            // schut
+            let firing_offset = this.firing_offsets[0].mul(this.weapon_data[0].size_multiplier).rotate(this.weapon_data[0].angle);
+            let fire_pos = this.position.add(firing_offset);
+
+            for (let i=0; i<this.num_bullets; i++) {
+                let shot_angle = this.weapon_data[0].angle + random_float(
+                    -this.bullet_spread, this.bullet_spread, this.board.random
+                );
+
+                let col = Colour.yellow.lerp(Colour.orange, random_float(0, 1, this.board.random));
+                let width = random_float(...this.width_range, this.board.random);
+
+                board.spawn_projectile(
+                new MagnumProjectile(
+                    this.board,
+                    this, 0, fire_pos, this.proj_damage_base,
+                    new Vector2(1, 0).rotate(shot_angle).mul(10000).add(fire_pos), 0
+                ), fire_pos
+            )
+
+                this.recoil_movement();
+                
+                let snd_rand = Math.floor(this.sound_random() * 3);
+                play_audio(["shotgun", "shotgun", "shotgun3"][snd_rand], 0.04);
+            }
+        }
+
+        if (this.coin_shot_cooldown < 0) {
+            this.coin_shot_cooldown = this.coin_shot_cooldown_max;
+
+            let coin_firing_offset = this.firing_offsets[1].mul(this.weapon_data[1].size_multiplier).rotate(this.weapon_data[1].angle);
+            let coin_fire_pos = this.position.add(coin_firing_offset);
+            
+            for (let i=0; i<this.num_bullets; i++) {
+                let shot_angle = this.weapon_data[1].angle + random_float(
+                    -this.bullet_spread, this.bullet_spread, this.board.random
+                );
+
+                let coin_obj = new MagnumCoinProjectile(
+                    this.board,
+                    this, 1, coin_fire_pos, this.coin_damage_base, 1.5,
+                    new Vector2(1, 0).rotate(shot_angle), random_int(6000, 10000, this.board.random), board.gravity
+                );
+
+                board.spawn_projectile(
+                    coin_obj, coin_fire_pos
+                )
+
+                if (this.level >= AWAKEN_LEVEL) {
+                    let coin2_firing_offset = this.firing_offsets[1].mul(this.weapon_data[2].size_multiplier).rotate(this.weapon_data[2].angle);
+                    let coin2_fire_pos = this.position.add(coin2_firing_offset);
+                    
+                    let shot_angle2 = this.weapon_data[2].angle + random_float(
+                        -this.bullet_spread, this.bullet_spread, this.board.random
+                    );
+
+                    let coin2_obj = new MagnumCoinProjectile(
+                        this.board,
+                        this, 1, coin2_fire_pos, this.coin_damage_base, 1.5,
+                        new Vector2(1, 0).rotate(shot_angle2), random_int(6000, 10000, this.board.random), board.gravity
+                    );
+
+                    board.spawn_projectile(
+                        coin2_obj, coin2_fire_pos
+                    )
+                }
+            }
+
+            play_audio("coin");
+        }
+    }
+
+    hit_other(other, with_weapon_index) {
+        return super.hit_other(other, with_weapon_index, 1);
+    }
+
+    hit_other_with_projectile(other, with_projectile) {
+        let result = super.hit_other_with_projectile(other, with_projectile);
+
+        return result;
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Bullet damage: ${this.proj_damage_base.toFixed(2)}`
+        )
+        this.write_desc_line(
+            `Gun rotation speed: ${this.speed_base.toFixed(0)} deg/s`
+        )
+        this.write_desc_line(
+            `Coin damage: ${this.coin_damage_base.toFixed(2)}`
+        )
+        this.write_desc_line(
+            `Coin rotation speed: ${(this.speed_base * 2.5).toFixed(0)} deg/s`
+        )
+        this.write_desc_line(
+            `Significant knockback on each shot.`
+        )
+        this.write_desc_line(
+            `Shots ricochet off coins for double damage.`, false, 10
+        )
+        this.write_desc_line(
+            `Ricochet shots can't be parried.`, false, 10
+        )
+
+        let awakened = this.level >= AWAKEN_LEVEL
+        this.write_desc_line(
+            `Bullet count: ${this.num_bullets}`, awakened
+        )
+        if (this.level >= AWAKEN_LEVEL) {
+            this.write_desc_line(
+                `Has an additional coin thrower.`, true
+            )
+        }
+    }
+}
+
+
 class NormalerBall extends WeaponBall {
     
 }
@@ -1879,5 +2143,6 @@ let additional_selectable_balls = [
     ExtralongswordBall, SuperDummyBall, SuperNeedleBall, SuperDaggerBall,
     BerserkerBall, BigBall, ShieldBall, GamblerBall, NotSoSuperDaggerBall,
     RailgunIfItLockedIn, SwordAndShieldBall, HornetBall, HyperParrierBall,
-    ThwompBall, MachineGunBall, ThiccNeedleBall
+    ThwompBall, MachineGunBall, ThiccNeedleBall, FourteenLongswordsBall,
+    ShotgunMagnumBall
 ]

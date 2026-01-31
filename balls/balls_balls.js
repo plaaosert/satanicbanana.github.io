@@ -2535,7 +2535,7 @@ class RailgunBall extends WeaponBall {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "Railgun";
-        this.description_brief = "Shoots a beam projectile. If the shot hits or is parried, temporarily speeds up fire rate & rotation then quickly fires another shot. -[Original design by Boggy]";
+        this.description_brief = "Shoots a beam projectile. If the shot hits, temporarily speeds up fire rate & rotation then quickly fires another shot. -[Original design by Boggy]";
         this.level_description = "Increases shot frequency.";
         this.max_level_description = "Use two railguns that always mirror positions and always shoot together, but damage is reduced by 33%.";
         this.quote = "Wow, it's hard to hold this thing!\nSeriously, take a look- No, really, try it!";
@@ -2559,14 +2559,14 @@ class RailgunBall extends WeaponBall {
         this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
 
         this.weapon_data = [
-            new BallWeapon(1, "railgun", [
+            new BallWeapon(1, "railgun2", [
                 {pos: new Vector2(32, 64), radius: 12},
                 {pos: new Vector2(64, 64), radius: 12},
             ])
         ];
 
         if (this.level >= AWAKEN_LEVEL) {
-            this.weapon_data.push(new BallWeapon(1, "railgun", [
+            this.weapon_data.push(new BallWeapon(1, "railgun2", [
                 {pos: new Vector2(32, 64), radius: 12},
                 {pos: new Vector2(64, 64), radius: 12},
             ]))
@@ -2680,6 +2680,13 @@ class RailgunBall extends WeaponBall {
 
         other.apply_invuln(0.015, true);
 
+        for (let i=0; i<8; i++) {
+            this.board.spawn_particle(new RailgunParticle(
+                other.position, 1, entity_sprites.get("railgun_point"), 0, 16, true,
+                25000, 120000, this, 0, true
+            ), other.position)
+        }
+
         return result;
     }
 
@@ -2703,7 +2710,7 @@ class RailgunBall extends WeaponBall {
             `Gun rotation speed: ${this.speed_base.toFixed(0)} deg/s`
         )
         this.write_desc_line(
-            `On shot hit or parry, rotation speed increases,`, false, 10
+            `On shot hit, rotation speed increases,`, false, 10
         )
         this.write_desc_line(
             `and quickly fire another shot.`, false, 10
@@ -5686,6 +5693,23 @@ class Projectile {
         )
     }
 
+    collides_line(line) {
+        let hitboxes_offsets = this.get_hitboxes_offsets();
+        for (let i=0; i<hitboxes_offsets.length; i++) {
+            let hitbox_offset = hitboxes_offsets[i];
+            let hitbox_index = i;
+
+            let this_hitbox = this.hitboxes[hitbox_index];
+            let hitbox_pos = this.position.add(hitbox_offset);
+
+            if (point_collides_line(hitbox_pos, this_hitbox.radius * this.size, line)) {
+                return hitbox_pos;
+            }
+        }
+        
+        return null;
+    }
+
     physics_step(time_delta) {
         // do nothing
     }
@@ -5769,6 +5793,10 @@ class Projectile {
     }
 
     hit_ball(ball, delta_time) {
+        this.active = false;
+    }
+
+    collide_wall(pos) {
         this.active = false;
     }
 }
@@ -5892,6 +5920,13 @@ class HitscanProjectile extends Projectile {
 
     hit_ball(ball, delta_time) {
         this.active = true;
+    }
+
+    collide_wall(pos) {
+        this.target_position = pos;
+        this.set_hitboxes(this.create_hitboxes(true));
+
+        // console.log("collided wall as hitscan")
     }
 }
 

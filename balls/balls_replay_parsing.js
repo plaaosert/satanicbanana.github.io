@@ -36,7 +36,7 @@ function parse_replay(replay_as_text) {
         if (!b)
             return;
 
-        if (!b.endsWith("Ball") && b != "SmartLongsword" /* don't ever make that mistake again */) {
+        if (!b.endsWith("Ball") && b != "SmartLongsword" && b != "RailgunIfItLockedIn" /* don't ever make that mistake again */) {
             let idx = b.slice(1);
 
             let list = REPLAY_BALLS_LISTS[b.charCodeAt(0)-65];

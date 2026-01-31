@@ -120,6 +120,10 @@
   margin-right: 2vmin;
 }
 
+.bold {
+  font-weight: bold;
+}
+
 .row.ballinfo span {
   height: 4.5vmin;
 
@@ -696,7 +700,7 @@ button.sandbox-ball-random {
   }
 }
 
-.sandbox-ball-selector {
+.generic-ball-selector {
   --share: 1;
 
   max-height: unset;
@@ -705,7 +709,7 @@ button.sandbox-ball-random {
   font-size: 2vmin;
 }
 
-.sandbox-ball-selector .title {
+.generic-ball-selector .title {
   background-color: #333;
   width: 100%;
   text-align: center;
@@ -713,7 +717,7 @@ button.sandbox-ball-random {
   font-weight: bold;
 }
 
-.sandbox-ball-selector .category-selection-menu {
+.generic-ball-selector .category-selection-menu {
   width: 100%;
   display: flex;
   flex-direction: row;
@@ -722,7 +726,7 @@ button.sandbox-ball-random {
   justify-content: center;
 }
 
-.sandbox-ball-selector .category-selection-item {
+.generic-ball-selector .category-selection-item {
   flex: 1 1 0px;
 
   text-align: center;
@@ -731,17 +735,17 @@ button.sandbox-ball-random {
   user-select: none;
 }
 
-.sandbox-ball-selector .category-selection-item:hover {
+.generic-ball-selector .category-selection-item:hover {
   filter: brightness(2);
 }
 
-.sandbox-ball-selector .category-selection-item.selected {
+.generic-ball-selector .category-selection-item.selected {
   filter: brightness(2.5);
 
   text-decoration: underline;
 }
 
-.sandbox-ball-selector .spacer {
+.generic-ball-selector .spacer {
   width: 100%;
 
   background-color: #222;
@@ -808,6 +812,16 @@ button.sandbox-ball-random {
   font-weight: bold;
 }
 
+.small-ball-grid .ball-item.other-selected {
+  background-color: #030;
+  font-weight: bold;
+}
+
+.small-ball-grid .ball-item.other-selected:hover {
+  background-color: #151;
+  font-weight: bold;
+}
+
 .small-ball-grid .ball-item .ballicon {
   margin-right: 0.5vmin;
 }
@@ -821,14 +835,14 @@ button.sandbox-ball-random {
   align-items: start;
 }
 
-#ball_info_display .big-ballicon, .gambling-ball-info .big-ballicon {
+.ball-info-display .big-ballicon, .generic-ball-info .big-ballicon {
   padding: calc(6vmin - round(5vmin, 16px));
 
   height: round(5vmin, 16px);
   width: round(5vmin, 16px);
 }
 
-#ball_info_display .big-ballicon {
+.ball-info-display .big-ballicon {
   margin-right: 1vmin;
 }
 
@@ -838,11 +852,15 @@ button.sandbox-ball-random {
   flex-direction: column;
 }
 
-.ball-info-display .name {
+.ball-info-display .name, .ball-info-display .resources-spent {
   flex: 1 1 0px;
 }
 
-.ball-info-display .name, .ball-info-display .tier {
+.ball-info-display .name-container {
+  flex: 1 1 0px;
+}
+
+.ball-info-display .name, .ball-info-display .name-container, .ball-info-display .tier {
   font-weight: bold;
   font-size: 2vmin;
 }
@@ -887,7 +905,15 @@ button.sandbox-ball-random {
   width: 100%;
 }
 
-.ball-info-display .minititle, .ball-info-display .content, .gambling-ball-info .content, .gambling-ball-info .minititle {
+.ball-info-display .stat-item-pair :first-child {
+  flex: 1 1 0px;
+}
+
+.ball-info-display .stat-item-pair :not(:first-child) {
+  flex: unset;
+}
+
+.ball-info-display .minititle, .ball-info-display .content, .generic-ball-info .content, .generic-ball-info .minititle {
   font-size: 1.5vmin;
 }
 
@@ -913,7 +939,7 @@ button.sandbox-ball-random {
   background-color: #303;
 }
 
-.sandbox-ball-selector .slide-supercontainer {
+.generic-ball-selector .slide-supercontainer {
   display: flex;
   flex-direction: column;
 
@@ -924,7 +950,7 @@ button.sandbox-ball-random {
   --col: white;
 }
 
-.sandbox-ball-selector .slider::-webkit-slider-thumb {
+.generic-ball-selector .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: var(--s);
@@ -933,14 +959,14 @@ button.sandbox-ball-random {
   cursor: pointer;
 }
 
-.sandbox-ball-selector .slider::-moz-range-thumb {
+.generic-ball-selector .slider::-moz-range-thumb {
   width: var(--s);
   height: var(--s);
   background: var(--col);
   cursor: pointer;
 }
 
-.sandbox-ball-selector .ball-level-number {
+.generic-ball-selector .ball-level-number {
   font-size: 1.5vmin;
 }
 
@@ -955,10 +981,14 @@ button.sandbox-ball-random {
   opacity: 0.25;
 }
 
-.action-buttons .clickable {
+.action-buttons span:not(.spc) {
   flex: 1 1 0px;
 
   text-align: center;
+}
+
+.action-buttons *:not(.clickable) {
+  opacity: 0.25;
 }
 
 .action-buttons .clickable:hover {
@@ -1251,7 +1281,7 @@ button.sandbox-ball-random {
   width: calc(100% - 4vmin);
 }
 
-.gambling-ball-info {
+.generic-ball-info {
   display: flex;
   flex-direction: column;
 
@@ -1263,11 +1293,11 @@ button.sandbox-ball-random {
   padding: 1vmin;
 }
 
-.gambling-container .gambling-ball-info {
+.gambling-container .generic-ball-info {
   width: 50%;
 }
 
-.gambling-ball-info .big-ballicon {
+.generic-ball-info .big-ballicon {
   align-self: center;
 }
 
@@ -1279,40 +1309,159 @@ button.sandbox-ball-random {
   background-color: #114;
 }
 
-.gambling-ball-info .title-level {
+.generic-ball-info .title-level {
   display: flex;
 
   justify-content: space-between;
   width: 100%;
 }
 
-.gambling-ball-info .title, .gambling-ball-info .level {
+.generic-ball-info .title, .generic-ball-info .level {
   text-shadow: #888 1px 1px;
 }
 
-.gambling-ball-info .desc {
+.generic-ball-info .desc {
   font-size: 1.5vmin;
 }
 
-.popup.gambling-ball-extra-info .gambling-ball-info .desc {
+.popup.generic-ball-extra-info .generic-ball-info .desc {
   font-size: 1.5vmin;
 }
 
-.gambling-ball-info .tier {
+.generic-ball-info .tier {
   font-size: 2vmin;
 }
 
-.gambling-ball-extra-info .tier {
+.generic-ball-extra-info .tier {
   font-size: 1.5vmin;
 }
 
-.gambling-ball-extra-info {
+.generic-ball-extra-info {
   max-width: 50vmin;
   min-width: 50vmin;
 }
 
 .gambling-container .money {
   margin-top: auto;
+}
+
+.campaign-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2vmin;
+
+  width: 100%;
+}
+
+.campaign-container .header {
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+}
+
+.campaign-container .main-content {
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+}
+
+.campaign-container .active-tournament-view {
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+}
+
+.campaign-container .tournament-next-fight {
+  color: #0cf;
+}
+
+.campaign-container .tournament-next-fight.soon {
+  color: #f30;
+}
+
+.campaign-container .tournament-next-fight.now {
+  color: #4d4;
+  font-weight: bold;
+}
+
+.campaign-container .balls-list {
+  width: 100%;
+
+  display: flex;
+  flex-direction: row;
+
+  justify-content: center;
+  align-items: center;
+
+  gap: 2vmin;
+}
+
+.campaign-container .balls-list .ball-info-display {
+  width: 25vmin;
+
+  border: 1px solid white;
+}
+
+.campaign-container .balls-list .ball-info-display .ball-stats {
+  margin: 1vmin;
+
+  width: auto;
+}
+
+.campaign-container .balls-list .ball-info-display .horizontal-line {
+  width: 100%;
+  border-top: 1px solid white;
+  height: 1px;
+}
+
+.campaign-container .balls-list.player .ball-info-display {
+  background-color: #014;
+}
+
+.campaign-container .balls-list.opponent .ball-info-display {
+  background-color: #410;
+}
+
+.campaign-container .balls-list .ball-info-display .action-buttons {
+  padding: 1vmin;
+  width: calc(100% - 2vmin);
+}
+
+.campaign-container .balls-list.player .ball-info-display .action-buttons.opponent {
+  display: none;
+}
+
+.campaign-container .balls-list.opponent .ball-info-display .action-buttons.player {
+  display: none;
+}
+
+.campaign-ball-selector {
+  max-width: 80vmin;
+  min-width: 80vmin;
+}
+
+.campaign-ball-info {
+  font-size: 2vmin;
+}
+
+.campaign-ball-info.ball-info-display {
+  padding: 0;
+}
+
+.campaign-ball-info .tier {
+  font-size: 2vmin;
+}
+
+.campaign-ball-info .resources-spent {
+  font-size: 2vmin;
 }
 
 /*

@@ -71,6 +71,77 @@ let balls_need_aero_recache = false;
 
 let BALL_DESC_BORDER_SIZE = BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO ? 2 : 1;
 
+// TODO - need to fix collision weirdness when hitting sides of lines
+const board_obstacles = [
+    board => [],
+    board => {
+        return [{
+                // ax + by + c = 0
+                id: 2,
+
+                a: 1,
+                b: 0,
+                c: (-board.size.x / 2) - 512,
+
+                lbx: null,
+                ubx: null,
+                lby: (board.size.y / 2) - 512,
+                uby: (board.size.y / 2) + 512,
+
+                projectile_solid: true,
+            },
+
+            {
+                // ax + by + c = 0
+                id: 2,
+
+                a: 1,
+                b: 0,
+                c: (-board.size.x / 2) + 512,
+
+                lbx: null,
+                ubx: null,
+                lby: (board.size.y / 2) - 512,
+                uby: (board.size.y / 2) + 512,
+
+                projectile_solid: true,
+            },
+
+            {
+                // ax + by + c = 0
+                id: 2,
+
+                a: 0,
+                b: 1,
+                c: (-board.size.y / 2) - 512,
+
+                lbx: (board.size.x / 2) - 512,
+                ubx: (board.size.x / 2) + 512,
+                lby: null,
+                uby: null,
+
+                projectile_solid: true,
+            },
+
+            {
+                // ax + by + c = 0
+                id: 2,
+
+                a: 0,
+                b: 1,
+                c: (-board.size.y / 2) + 512,
+
+                lbx: (board.size.x / 2) - 512,
+                ubx: (board.size.x / 2) + 512,
+                lby: null,
+                uby: null,
+
+                projectile_solid: true,
+            }
+        ]
+    }
+]
+
 const entity_sprites = new Map([
     // Vista - https://www.reddit.com/r/FrutigerAero/comments/1eqwt3s/windows_vistainspired_wallpapers_i_made_in_about/
     ["vista", 1, "etc/"],
@@ -95,6 +166,8 @@ const entity_sprites = new Map([
     ["poison", 1, "etc/"],
     ["burn", 1, "etc/"],
     ["point", 1, "etc/"],
+    
+    ["railgun_point", 1, "etc/"],
 
     // weapons
     ["SORD", 1, "weapon/"],
@@ -119,6 +192,7 @@ const entity_sprites = new Map([
     ["gun", 1, "weapon/"],
 
     ["railgun", 1, "weapon/"],
+    ["railgun2", 1, "weapon/"],
     ["railgun_chicken", 1, "weapon/"],
     ["railgun_soaker", 1, "weapon/"],
 
@@ -254,6 +328,7 @@ const entity_sprites = new Map([
     ["skong_thread_storm", 9, "etc/skong_thread_storm/"],
     ["spike", 1, "weapon/additional/"],
     ["bullet", 1, "weapon/"],
+    ["shotgun-magnum", 1, "weapon/"],
 
     // Etc
     ["festive red hat", 1, "etc/"],
@@ -522,7 +597,7 @@ async function load_audio() {
 
 async function prepare_lazy_audio(name) {
     let audio_content = audio.get(name);
-    if (!audio_content[3]) {
+    if (!audio_content || !audio_content[3]) {
         // not lazy, just return
         return;
     }
@@ -615,6 +690,46 @@ async function play_audio(name, gain=null) {
     // console.log(`played sound ${name}`);
 }
 
+function point_collides_line(pos, radius, line) {
+    // a line is given mathematically as ax+by+c=0, with optional limits of x and/or y
+    // we naively get the distance and treat the line as fully 2d (so it cannot collide on the side).
+    // the only two cases we care about is "in front" and "behind" the line
+
+    // check coordinate bounds
+    // it's out of bounds if its position minus radius is > greater bound or position plus radius < lower bound
+    if (line.lbx && pos.x + radius < line.lbx) {
+        return false;
+    }
+
+    if (line.lby && pos.y + radius < line.lby) {
+        return false;
+    }
+
+    if (line.ubx && pos.x - radius > line.ubx) {
+        return false;
+    }
+
+    if (line.uby && pos.y - radius > line.uby) {
+        return false;
+    }
+
+    // https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+    let a = line.a;
+    let b = line.b;
+    let c = line.c;
+    let distance = Math.abs(pos.x * a + pos.y * b + c) / Math.sqrt(a*a + b*b);
+
+    // if (this.position.y >= 145 && line.id == 1) {
+    //     //debugger;
+    // }
+
+    // if (distance < this.radius) {
+    //     // console.log("collision: distance", distance, "with line ID", line.id);
+    // }
+
+    return distance < radius;  
+}
+
 class Particle {
     static id_inc = 0;
 
@@ -701,6 +816,64 @@ class MovingFrictionParticle extends MovingParticle {
         }
         
         return result;
+    }
+}
+
+class RailgunParticle extends MovingParticle {
+    constructor(position, size, sprites, frame_speed, duration, looping, velocity_mag, friction, linked_ball, delay=0, render_behind=false) {
+        super(position, 0, size, sprites, frame_speed, duration, looping, random_on_circle(velocity_mag), delay, render_behind)
+    
+        this.friction = friction;
+        this.linked_ball = linked_ball;
+
+        this.trail_cooldown_max = 0.0001;
+        this.trail_cooldown = this.trail_cooldown_max;
+    }
+
+    pass_time(time_delta) {
+        let times = 4;
+        let speed_mul = 2;
+        let time_delta_section = speed_mul * (time_delta / times);
+        let last_result = true;
+
+        for (let i=0; i<times; i++) {
+            let result = super.pass_time(time_delta_section);
+            if (result) {
+                // check if should destroy
+                if (this.position.sqr_distance(this.linked_ball.position) < Math.pow(this.linked_ball.radius * 0.9, 2)) {
+                    this.lifetime = 9999;
+                }
+            }
+
+            if (result) {
+                this.trail_cooldown -= time_delta_section;
+                if (this.trail_cooldown <= 0) {
+                    this.trail_cooldown = this.trail_cooldown_max;
+
+                    this.linked_ball.board.spawn_particle(new AilmentParticle(
+                        this.position, 0, this.size / PARTICLE_SIZE_MULTIPLIER,
+                        this.sprites, 0.2
+                    ), this.position)
+                }
+
+                // friction force is the same direction (signs) as velocity
+                // and maximum of velocity
+                let friction_force = this.velocity.normalize().mul(-1 * this.friction * time_delta_section);
+                if (friction_force.sqr_magnitude() > this.velocity.sqr_magnitude()) {
+                    friction_force = this.velocity.mul(-1);
+                }
+
+                this.velocity = this.velocity.add(friction_force);
+
+                // then apply force towards linked ball
+                let propel_vector = this.linked_ball.position.sub(this.position).normalize();
+                this.velocity = this.velocity.add(propel_vector.mul(200000 * time_delta_section));
+            }
+            
+            last_result = result;
+        }
+
+        return last_result;
     }
 }
 
@@ -913,6 +1086,8 @@ class Board {
                 ubx: null,
                 lby: null,
                 uby: null,
+
+                projectile_solid: false,
             },
 
             {
@@ -927,6 +1102,8 @@ class Board {
                 ubx: null,
                 lby: null,
                 uby: null,
+
+                projectile_solid: false,
             },
 
             {
@@ -941,6 +1118,8 @@ class Board {
                 ubx: null,
                 lby: null,
                 uby: null,
+
+                projectile_solid: false,
             },
 
             {
@@ -955,8 +1134,12 @@ class Board {
                 ubx: null,
                 lby: null,
                 uby: null,
-            }
+
+                projectile_solid: false,
+            },
         ]
+
+        this.projectile_solid_lines = this.lines.filter(l => l.projectile_solid);
 
         // this.gravity = new Vector2(0, 0);
         this.gravity = new Vector2(0, 9810);
@@ -1286,6 +1469,18 @@ class Board {
         // make the projectiles move
         this.projectiles.forEach(projectile => {
             projectile.physics_step(time_delta);
+
+            this.projectile_solid_lines.forEach(line => {
+                let pos = projectile.collides_line(line)
+                if (pos) {
+                    projectile.collide_wall(pos);
+                    // TODO -- need to disable hitscan projectiles for one physics tick,
+                    // then enable them after we confirm it's been sliced by this function
+                    // also cannibalise the code from hit detection to make the hitscan stop positions
+                    // more accurate
+                    // this can't be done until a balance update
+                }
+            })
         })
 
         // clean up any inactive / OOB ones
@@ -1467,43 +1662,7 @@ class Ball {
     }
 
     collides_line(line) {
-        // a line is given mathematically as ax+by+c=0, with optional limits of x and/or y
-        // we naively get the distance and treat the line as fully 2d (so it cannot collide on the side).
-        // the only two cases we care about is "in front" and "behind" the line
-
-        // check coordinate bounds
-        // it's out of bounds if its position minus radius is > greater bound or position plus radius < lower bound
-        if (line.lbx && this.position.x + this.radius < line.lbx) {
-            return false;
-        }
-
-        if (line.lby && this.position.y + this.radius < line.lby) {
-            return false;
-        }
-
-        if (line.ubx && this.position.x - this.radius > line.ubx) {
-            return false;
-        }
-
-        if (line.uby && this.position.y - this.radius > line.uby) {
-            return false;
-        }
-
-        // https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
-        let a = line.a;
-        let b = line.b;
-        let c = line.c;
-        let distance = Math.abs(this.position.x * a + this.position.y * b + c) / Math.sqrt(a*a + b*b);
-
-        // if (this.position.y >= 145 && line.id == 1) {
-        //     //debugger;
-        // }
-
-        // if (distance < this.radius) {
-        //     // console.log("collision: distance", distance, "with line ID", line.id);
-        // }
-
-        return distance < this.radius;
+        return point_collides_line(this.position, this.radius, line);
     }
 
     resolve_line_collision(board, line) {
@@ -2015,6 +2174,53 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
     let ctx_normal = layers.fg2.ctx;
 
     let w = 25 * screen_scaling_factor;
+
+    // board collision lines
+    if (collision_boxes) {
+        board.lines.forEach(line => {
+            let col = line.projectile_solid ? Colour.red : Colour.green;
+
+            // line vector is simply (-b,a)
+            // then find a point on the line to start from,
+            // and add 10000 / -10000 on each side
+            // then limit by lbxy/ubxy
+            let line_point = new Vector2(
+                (line.a * -line.c) / (Math.pow(line.a, 2) + Math.pow(line.b, 2)),
+                (line.b * -line.c) / (Math.pow(line.a, 2) + Math.pow(line.b, 2)),
+            );
+            let line_vector_normalised = new Vector2(-line.b, line.a);
+        
+            let amt_lb_x = 10000;
+            let amt_lb_y = 10000;
+            let amt_ub_x = 10000;
+            let amt_ub_y = 10000;
+
+            let screen_scaling_factor = canvas_width / board.size.x;
+
+            if (line.lbx)
+                amt_lb_x = (line_point.x - line.lbx) / line_vector_normalised.x;
+            
+            if (line.lby)
+                amt_lb_y = (line_point.y - line.lby) / line_vector_normalised.y;
+
+            if (line.ubx)
+                amt_ub_x = (line.ubx - line_point.x) / line_vector_normalised.x;
+
+            if (line.uby)
+                amt_ub_y = (line.uby - line_point.y) / line_vector_normalised.y;
+
+            let point1 = line_point.sub(line_vector_normalised.mul(Math.min(amt_lb_x, amt_lb_y))).mul(screen_scaling_factor);
+            let point2 = line_point.add(line_vector_normalised.mul(Math.min(amt_ub_x, amt_ub_y))).mul(screen_scaling_factor);
+
+            layers.debug_back.ctx.beginPath();
+            layers.debug_back.ctx.moveTo(point1.x, point1.y);
+            layers.debug_back.ctx.lineTo(point2.x, point2.y);
+            layers.debug_back.ctx.lineWidth = 2;
+            layers.debug_back.ctx.strokeStyle = col.css();
+            layers.debug_back.ctx.stroke();
+            layers.debug_back.ctx.closePath();
+        })
+    }
 
     // particles
     board.particles.forEach(particle => {
@@ -2835,6 +3041,9 @@ let colliding_parries = new Set();
 let colliding_proj2projs = new Set();
 
 const default_max_game_duration = 300;
+const default_board_size = 512 * 16;
+let BOARD_SIZE = default_board_size;
+
 let game_normal_col = new Colour(8, 8, 8, 255);
 let game_end_col = new Colour(36, 0, 0, 255);
 

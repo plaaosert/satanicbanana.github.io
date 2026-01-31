@@ -210,27 +210,53 @@
                     </div>
 
                     <div class="campaign behind-canvases">
-                        <!-- storage, upgrade, shop, tournament -->
-                        <div class="tab-menu">
-                            <div class="tab-select-buttons-container">
-                                <div class="tab-select-buttons">
-                                    <span id="select_button_center_storage" class="button selected">Storage</span>
-                                    <span id="select_button_center_upgrade" class="button">Upgrade</span>
-                                    <span id="select_button_center_shop" class="button">Shop</span>
-                                    <span id="select_button_center_tournament" class="button">Tournament</span>
+                        <div class="campaign-container">
+                            <!-- storage, upgrade, shop, tournament -->
+                            <div class="tab-menu nodisplay">
+                                <div class="tab-select-buttons-container">
+                                    <div class="tab-select-buttons">
+                                        <span id="select_button_center_storage" class="button selected">Storage</span>
+                                        <span id="select_button_center_upgrade" class="button">Upgrade</span>
+                                        <span id="select_button_center_shop" class="button">Shop</span>
+                                        <span id="select_button_center_tournament" class="button">Tournament</span>
+                                    </div>
+                                </div>
+                                <div class="tab-content">
+                                    <span>Hi</span>
+                                </div>
+                                <div class="tab-content hidden">
+                                    <span>Hi2</span>
+                                </div>
+                                <div class="tab-content hidden">
+                                    <span>Hi3</span>
+                                </div>
+                                <div class="tab-content hidden">
+                                    <span>Hi4</span>
                                 </div>
                             </div>
-                            <div class="tab-content">
-                                <span>Hi</span>
+
+                            <div class="header">
+                                <span>Week 1 | Day 1</span>
                             </div>
-                            <div class="tab-content hidden">
-                                <span>Hi2</span>
-                            </div>
-                            <div class="tab-content hidden">
-                                <span>Hi3</span>
-                            </div>
-                            <div class="tab-content hidden">
-                                <span>Hi4</span>
+
+                            <div class="main-content">
+                                <div class="active-tournament-view">
+                                    <span><span class="tournament-name">Tournament Name</span> (<span class="tournament-format">Duel</span>) -- <span class="tournament-stage">Semifinals</span></span>
+                                    <span>Next match: <span class="tournament-next-fight now">3 days</span> <span class="tournament-next-fight-date">(W1D4)</span></span>
+                                    <span>&nbsp;</span>
+                                    <span class="bold">Selected participants:</span>
+                                    <span>&nbsp;</span>
+                                    <div class="player-balls balls-list player">
+                                        <!-- will be filled at load time -->
+                                    </div>
+                                    <span>&nbsp;</span>
+                                    <span class="bold">Opposing participants:</span>
+                                    <span>&nbsp;</span>
+                                    <span class="bye nodisplay">None! (Bye round)</span>
+                                    <div class="player-balls balls-list opponent">
+                                        <!-- will be filled at load time -->
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -242,7 +268,7 @@
                             <span>Fight ID #<span id="gambling_fight_index">12934847293</span></span>
                             <span id="gambling_countdown" class="gambling-countdown">30</span>
                             <div class="gambling-contestants">
-                                <div class="gambling-ball-info" id="gambling_ball_info_1">
+                                <div class="generic-ball-info gambling-ball-info" id="gambling_ball_info_1">
                                     <img class="big-ballicon" src="img/icons/unknown.png">
                                     <div class="title-level">
                                         <span class="name">Thing</span>
@@ -274,7 +300,7 @@
                                     </div>
                                 </div>
                                 <span class="versus">VS</span>
-                                <div class="gambling-ball-info" id="gambling_ball_info_2">
+                                <div class="generic-ball-info gambling-ball-info" id="gambling_ball_info_2">
                                     <img class="big-ballicon" src="img/icons/unknown.png">
                                     <div class="title-level">
                                         <span class="name">Thing</span>
@@ -383,8 +409,8 @@
             <div class="leftside section campaign">
                 
             </div>
-            <div class="leftside section sandbox hidden">
-                <span class="campaign-button button modeswitch">&lt;&lt; Campaign</span>
+            <div class="leftside section sandbox">
+                <span class="campaign-button button modeswitch nodisplay">&lt;&lt; Campaign</span>
             </div>
             <div class="leftside section gambling">
                 <span class="sandbox-button button modeswitch">&lt;&lt; Sandbox</span>
@@ -418,8 +444,8 @@
             </div>
         </div>
 
-        <div id="gambling_ball_extra_info", class="popup gambling-ball-extra-info nodisplay">
-            <div class="gambling-ball-info" id="gambling_ball_info">
+        <div id="gambling_ball_extra_info", class="popup generic-ball-extra-info gambling-ball-extra-info nodisplay">
+            <div class="generic-ball-info gambling-ball-info" id="gambling_ball_info">
                 <img class="big-ballicon" src="img/icons/unknown.png">
                 <div class="title-level">
                     <span class="name">Thing</span>
@@ -442,6 +468,117 @@
             </div>
         </div>
 
+        <div id="campaign_ball_extra_info", class="popup generic-ball-extra-info campaign-ball-extra-info nodisplay">
+            <div class="generic-ball-info campaign-ball-info ball-info-display" id="campaign_ball_info">
+                <img class="big-ballicon" src="img/icons/unknown.png">
+                <div class="title-level">
+                    <span class="name">Thing</span>
+                    <span class="level">LV 1</span>
+                </div>
+                <div class="sbs rows">
+                    <div class="stat-item-pair">
+                        <span class="tier">Tier:&nbsp;<span class="tiertext">&nbsp;A&nbsp;</span>&nbsp;</span>
+                        <span class="resources-spent"><img class="generic-icon" src="img/icons/material_all.png"> <span class="resources-spent-number">123</span></span>
+                    </div>
+                </div>
+                <span class="desc">Description</span>
+                <div class="stat-item onlevelup noflex">
+                    <span class="minititle">LEVEL UP</span>
+                    <span class="content">On level up... who knows</span>
+                </div>
+
+                <div class="stat-item awakened noflex">
+                    <span class="minititle">AWAKEN (lv. 100)</span>
+                    <span class="content">On awaken... who knows</span>
+                </div>
+                <div class="action-buttons">
+                    <span class="clickable ok" onclick="close_campaign_info_popup()">OK</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="campaign_ball_selector" class="popup generic-ball-selector campaign-ball-selector behind-canvases nodisplay">
+            <span class="title">Select ball:</span>
+            <span class="spacer hidden">&nbsp;</span>
+            <div class="ball-select small-ball-grid">
+                <div class="ball-item nodisplay example">
+                    <img class="ballicon" src="img/icons/unknown.png">
+                    <span class="ballnickname">Test</span>
+                </div>
+                <div class="ball-item">
+                    <img class="ballicon" src="img/icons/unknown.png">
+                    <span class="ballnickname">Test</span>
+                </div>
+                <div class="ball-item selected">
+                    <img class="ballicon" src="img/icons/unknown.png">
+                    <span class="ballnickname">Test</span>
+                </div>
+                <div class="ball-item other-selected">
+                    <img class="ballicon" src="img/icons/unknown.png">
+                    <span class="ballnickname">Test</span>
+                </div>
+                <div class="ball-item">
+                    <img class="ballicon" src="img/icons/unknown.png">
+                    <span class="ballnickname">Test</span>
+                </div>
+                <div class="ball-item other-selected">
+                    <img class="ballicon" src="img/icons/unknown.png">
+                    <span class="ballnickname">Test</span>
+                </div>
+                <div class="ball-item">
+                    <img class="ballicon" src="img/icons/unknown.png">
+                    <span class="ballnickname">Test</span>
+                </div>
+            </div>
+
+            <span class="spacer hidden">&nbsp;</span>
+            <span class="spacer">&nbsp;</span>
+            
+            <div class="ball-info-display">
+                <div class="cols">
+                    <img class="big-ballicon" src="img/icons/unknown.png">
+                    <div class="sbs rows">
+                        <div class="stat-item-pair">
+                            <span class="name-container"><span class="nickname">Nickname</span><span class="name-surround"> (<span class="name">SORD</span>)</span></span>
+                            <span class="tier">Tier:&nbsp;<span class="tiertext" style="background-color: #282;">&nbsp;A&nbsp;</span></span>
+                        </div>
+                        <div class="stat-item-pair" style="margin-top: 0.5vmin">
+                            <span class="level">LV 1</span>
+                            <span class="resources-spent"><img class="generic-icon" src="img/icons/material_all.png"> <span class="resources-spent-number">123</span></span>
+                        </div>
+                        <div class="stat-item">
+                            <div class="tags">
+
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <span class="desc">This ball does something</span>
+                        </div>
+                    </div>
+                </div>
+
+                <span class="spacer hidden">&nbsp;</span>
+
+                <div class="stat-item onlevelup noflex">
+                    <span class="minititle">LEVEL UP</span>
+                    <span class="content">On level up... who knows</span>
+                </div>
+
+                <div class="stat-item awakened noflex">
+                    <span class="minititle">AWAKEN (lv. 100)</span>
+                    <span class="content">On awaken... who knows</span>
+                </div>
+            </div>
+
+            <span class="spacer hidden">&nbsp;</span>
+
+            <div class="action-buttons">
+                <span class="clickable save" onclick="save_campaign_selection_button()">Select</span>
+                <span class="spc">&nbsp;</span>
+                <span class="clickable cancel" onclick="cancel_campaign_selection_button()">Cancel</span>
+            </div>
+        </div>
+
         <div id="sandbox_load_replays" class="popup sandbox-load-replays nodisplay">
             <span class="title">Loading a replay with the following balls:</span>
             <br>
@@ -455,7 +592,7 @@
             </div>
         </div>
 
-        <div id="sandbox_ball_selector" class="popup sandbox-ball-selector behind-canvases nodisplay">
+        <div id="sandbox_ball_selector" class="popup generic-ball-selector sandbox-ball-selector behind-canvases nodisplay">
             <span class="title">Select ball and level:</span>
             <div class="category-selection-menu">
                 <span class="category-selection-item nodisplay example">STANDARD</span>
@@ -510,7 +647,7 @@
             <span class="spacer hidden">&nbsp;</span>
             <span class="spacer">&nbsp;</span>
 
-            <div id="ball_info_display" class="ball-info-display">
+            <div class="ball-info-display">
                 <div class="cols">
                     <img class="big-ballicon" src="img/icons/unknown.png">
                     <div class="sbs rows">
@@ -606,6 +743,28 @@
 		<p style="font-size: 2vmin"><a class="right-text" style="bottom: 16px; color:#f20; font-size: 2vmin" href="../index.html" > << go back >> </a></p>
 	</div>
 	
+    <div class="templates nodisplay">
+        <div class="campaign-tournament-ball-info-display ball-info-display">
+            <div class="cols ball-stats">
+                <img class="big-ballicon" src="img/icons/unknown.png">
+                <div class="rows">
+                    <span class="name">Needle</span>
+                    <span class="tier"><span class="tiertext" style="color: rgb(128, 255, 128); background-color: rgb(51, 102, 51);">&nbsp;A&nbsp;</span></span>
+
+                    <span class="level">LV 1</span>
+                    <span class="resources-spent"><img class="generic-icon" src="img/icons/material_all.png"> <span class="resources-spent-number">123</span></span>
+                </div>
+            </div>
+            <span class="horizontal-line"></span>
+            <div class="action-buttons player">
+                <span class="clickable save">Change</span>
+            </div>
+            <div class="action-buttons opponent">
+                <span class="clickable info">Info</span>
+            </div>
+        </div>
+    </div>
+
     <script src="../shared/js/helpers.js?v=09"></script>
 	<script src="../shared/js/canvas_helpers.js?v=05"></script>
 	

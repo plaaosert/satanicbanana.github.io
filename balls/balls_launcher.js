@@ -448,6 +448,10 @@ function collapse_replay(replay) {
         replay_collapsed.max_game_duration = null;
     }
 
+    if (replay_collapsed.board_size == default_board_size) {
+        replay_collapsed.board_size = null;
+    }
+
     // then rename all the elements to shorter names (compress_replay)
     let compressed = compress_replay(replay_collapsed);
 
@@ -466,6 +470,7 @@ const REPLAY_VALUES = {
     "skins": "k",
     "starting_hp": "h",
     "time_recorded": "t",
+    "board_size": "z",
 };
 
 function compress_replay(replay) {
@@ -508,6 +513,7 @@ function exit_battle(save_replay=true) {
             time_recorded: Date.now(),
             duration: board.duration,
             max_game_duration: board.max_game_duration,
+            board_size: board.size.x,
 
             framespeed: board.forced_time_deltas && Math.round(1000 / board.forced_time_deltas),
             balls: board.starting_balls,
@@ -652,13 +658,18 @@ function load_replay(replay_as_text) {
         max_game_duration = replay.max_game_duration;
     }
 
+    let board_size = default_board_size;
+    if (replay.board_size) {
+        board_size = replay.board_size;
+    }
+
     replaying = true;
     start_game(
         framespeed, seed,
         cols, positions,
         ball_classes, ball_levels,
         players, skins, starting_hp,
-        max_game_duration
+        max_game_duration, board_size
     );
 }
 
@@ -728,14 +739,14 @@ function spawn_selected_balls() {
         cols, positions,
         ball_classes, ball_levels,
         players, skins, STARTING_HP,
-        default_max_game_duration
+        default_max_game_duration, BOARD_SIZE
     );
 }
 
 let christmas = false;
 let new_year = false;
 
-function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels, players, skins, starting_hp, max_game_duration) {
+function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels, players, skins, starting_hp, max_game_duration, board_size) {
     document.activeElement.blur();
     lmb_down = false;
     
@@ -743,7 +754,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
         stored_starting_hp = STARTING_HP;
         STARTING_HP = starting_hp;
     
-        board = new Board(new Vector2(512 * 16, 512 * 16));
+        board = new Board(new Vector2(board_size, board_size));
 
         screen_to_game_scaling_factor = board.size.x / canvas_width;
 
@@ -809,8 +820,8 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
             render_victory_enabled = false;
         } else {
             match_end_timeout = 5 * 1000;
-            if (window.location.href.startsWith("file://")) {
-                // match_end_timeout = 16 * 1000;
+            if (window.location.href.startsWith("file://") && screen_open == "sandbox") {
+                match_end_timeout = 10 * 1000;
             }
             
             render_victory_enabled = true;
@@ -975,7 +986,7 @@ function update_ball_selection_popup() {
     let team_list = elem.querySelector(".team-select.small-ball-grid");
     team_list.querySelectorAll(".ball-item:not(.example)").forEach(e => e.remove());
 
-    let ballinfo_elem = elem.querySelector("#ball_info_display");
+    let ballinfo_elem = elem.querySelector(".ball-info-display");
 
     // setup in order
     // category, ball list, selected ball info, skin, team, level
@@ -1535,6 +1546,7 @@ function setup_match_search(num_candidates, settings) {
             let remaining_players = last_board?.remaining_players();
             let winning_team = null;
             let survivors = last_board?.balls.filter(ball => ball.show_stats);
+            let survivors_unfiltered = last_board?.balls;
             if (remaining_players?.length == 1) {
                 winning_team = remaining_players[0].id;
             }
@@ -1546,7 +1558,7 @@ function setup_match_search(num_candidates, settings) {
                 lowest_survivor_hp = survivors?.reduce((p, c) => Math.min(p, c.hp), Number.POSITIVE_INFINITY);
             }
 
-            let num_balls_survived = survivors?.length;
+            let num_balls_survived = survivors_unfiltered?.length;
 
             let duration = last_board?.duration;
 
@@ -1953,7 +1965,7 @@ function gambling_display_loop() {
                     gambling_current_match_data.levels,
                     [0, 1].map(pid => make_default_player(pid)),
                     ["Default", "Default"],
-                    100, gambling_current_match_data.duration
+                    100, gambling_current_match_data.duration, BOARD_SIZE
                 )
 
                 gambling_current_match_data = null;
@@ -2462,6 +2474,33 @@ document.addEventListener("DOMContentLoaded", function() {
             switch_game_layout(mode);
         });
     })
+
+    document.querySelectorAll(".player-balls.balls-list").forEach(e => {
+        // add 3 from template
+        let template = document.querySelector(".templates .campaign-tournament-ball-info-display");
+
+        for (let i=0; i<3; i++) {
+            let clone = template.cloneNode(true);
+
+            clone.querySelector(".action-buttons .save")?.addEventListener("click", e => {
+                // TODO run open selector for element index (i)
+                open_campaign_selection_popup(i);
+            });
+
+            clone.querySelector(".action-buttons .info")?.addEventListener("click", e => {
+                // TODO run show info for element index (i)
+                show_campaign_info_popup(i);
+            });
+            
+            e.append(clone);
+        }
+    })
+
+    // campaign test code
+    set_new_tournament(user_player, campaign_cur_date, test_tournament);
+    layout_tournament_screen();
+
+    console.log(current_tournament_info.players[0].ball_inventory[0]);
 
     window.requestAnimationFrame(gambling_display_loop);
 })
