@@ -2961,7 +2961,7 @@ function render_opening(board, time_delta) {
 
     let balls_num = board.balls.length;
     if (opening_state.balls < balls_num) {
-        let req = opening_state.balls * (1.2 / balls_num);
+        let req = opening_state.balls * (1.5 / balls_num);
         if (t > req) {
             let ball = board.balls[opening_state.balls]
             let pos = ball.position.add(
@@ -3024,7 +3024,7 @@ function render_opening(board, time_delta) {
         }
     });
 
-    let ball_stagger = 1.2;
+    let ball_stagger = 1.5;
     let base_delay = 0.4;
 
     board.balls.forEach((ball, i) => {
@@ -3994,7 +3994,7 @@ function game_loop() {
                     board.get_all_player_balls(players[0]).forEach(ball => ball.takes_damage = false);
                 }
 
-                muted = match_end_timeout < 14000;
+                // muted = match_end_timeout < 14000;
 
                 match_end_timeout -= game_delta_time;
                 ending_game = true;
