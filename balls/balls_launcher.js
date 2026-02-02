@@ -1308,6 +1308,7 @@ function randomise_ball_info(ballid, rand_type) {
     let ball = null;
     let skin = null;
     let category = null;
+    let col = null;
 
     let info = selected_ball_info[ballid];
 
@@ -1360,6 +1361,8 @@ function randomise_ball_info(ballid, rand_type) {
 
             skin = newskin;
 
+            col = random_int(0, default_cols.length)
+
             break;
         }
     }
@@ -1375,6 +1378,9 @@ function randomise_ball_info(ballid, rand_type) {
 
     if (skin)
         change_selected_skin(skin)
+
+    if (col)
+        change_selected_team(col);
 
     currently_editing_ballid = last_edited;
 
