@@ -791,8 +791,6 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
 
         start_balls = balls;
 
-        board.starting_system_energy = board.calculate_system_energy();
-
         board.starting_balls = ball_classes.map(c => c?.name);
         board.starting_levels = ball_levels;
         board.starting_players = players;

@@ -1,8 +1,8 @@
 game_id = "balls";
 
-const FILES_PREFIX = "";
+const FILES_PREFIX = "../../";
 
-const GAME_VERSION = "02/02/2026";
+const GAME_VERSION = "01/02/2026";
 
 const AILMENT_CHARS = "➴☣♨";
 
@@ -1206,32 +1206,64 @@ class Board {
             {
                 // ax + by + c = 0
                 id: 0,
-                a: 1, b: 0, c: 0,
-                lbx: null, ubx: null, lby: null, uby: null,
+
+                a: 1,
+                b: 0,
+                c: 0,
+
+                lbx: null,
+                ubx: null,
+                lby: null,
+                uby: null,
+
                 projectile_solid: false,
             },
 
             {
                 // ax + by + c = 0
                 id: 0,
-                a: 1, b: 0, c: -this.size.x,
-                lbx: null, ubx: null, lby: null, uby: null,
+
+                a: 1,
+                b: 0,
+                c: -this.size.x,
+
+                lbx: null,
+                ubx: null,
+                lby: null,
+                uby: null,
+
                 projectile_solid: false,
             },
 
             {
                 // ax + by + c = 0
                 id: 1,
-                a: 0, b: 1, c: 0,
-                lbx: null, ubx: null, lby: null, uby: null,
+
+                a: 0,
+                b: 1,
+                c: 0,
+
+                lbx: null,
+                ubx: null,
+                lby: null,
+                uby: null,
+
                 projectile_solid: false,
             },
 
             {
                 // ax + by + c = 0
                 id: 1,
-                a: 0, b: 1, c: -this.size.y,
-                lbx: null, ubx: null, lby: null, uby: null,
+
+                a: 0,
+                b: 1,
+                c: -this.size.y,
+
+                lbx: null,
+                ubx: null,
+                lby: null,
+                uby: null,
+
                 projectile_solid: false,
             },
         ]
@@ -1277,23 +1309,8 @@ class Board {
         this.powerups_next = null;
 
         this.max_game_duration = default_max_game_duration;
-
-        this.starting_system_energy = 0;
-        this.attempt_energy_conservation = true;
-        this.energy_conservation_aggression = 0.5;
     }
     
-    calculate_system_energy() {
-        return this.balls.filter(ball => !ball.skip_physics).reduce((t, ball) => {
-            let kinetic_energy = 0.5 * ball.mass * ball.velocity.sqr_magnitude();
-
-            let height = this.size.y - ball.position.y;
-            let gravitational_energy = ball.mass * this.gravity.y * height;
-
-            return t + kinetic_energy + gravitational_energy;
-        }, 0)
-    }
-
     register_hit(by, on) {
         this.time_since_hit = 0;
     }
@@ -1605,21 +1622,6 @@ class Board {
             return;
         }
 
-        // then, apply gravity to balls
-        this.balls.forEach(ball => {
-            if (ball.skip_physics)
-                return;  // skip_physics balls should completely stop
-
-            if (!ball.at_rest) {
-                let time_delta_factor = 1;
-                if (ball.hitstop > 0) {
-                    time_delta_factor *= HITSTOP_DELTATIME_PENALTY;
-                }
-
-                ball.add_impulse(this.gravity.mul(time_delta * time_delta_factor).mul(ball.mass));
-            }
-        })
-
         // make the balls move
         this.balls.forEach(ball => {
             if (ball.skip_physics)
@@ -1658,6 +1660,21 @@ class Board {
             }
 
             return true;
+        })
+
+        // then, apply gravity to balls
+        this.balls.forEach(ball => {
+            if (ball.skip_physics)
+                return;  // skip_physics balls should completely stop
+
+            if (!ball.at_rest) {
+                let time_delta_factor = 1;
+                if (ball.hitstop > 0) {
+                    time_delta_factor *= HITSTOP_DELTATIME_PENALTY;
+                }
+
+                ball.add_impulse(this.gravity.mul(time_delta * time_delta_factor).mul(ball.mass));
+            }
         })
 
         // any air drag?
@@ -1860,16 +1877,6 @@ class Ball {
 
         this.add_pos(this.velocity.normalize().mul(-rollback_distance));
 
-        if (board.attempt_energy_conservation) {
-            let nrg = board.calculate_system_energy();
-            let prop = 1 - (nrg / board.starting_system_energy);
-            if (prop > 0) {
-                new_velocity = new_velocity.mul(
-                    1 + (prop * board.energy_conservation_aggression)
-                );
-            }
-        }
-
         // update velocity
         this.set_velocity(new_velocity);
 
@@ -1934,15 +1941,6 @@ class Ball {
 
         let impulse_this = mtd_normalized.mul(impulse_magnitude_this);
         let impulse_other = mtd_normalized.mul(impulse_magnitude_other);
-
-        if (board.attempt_energy_conservation) {
-            let nrg = board.calculate_system_energy();
-            let prop = 1 - (nrg / board.starting_system_energy);
-            if (prop > 0) {
-                impulse_this = impulse_this.mul(1 + (this.mass * prop * board.energy_conservation_aggression * 0.5));
-                impulse_other = impulse_other.mul(1 + (this.mass * prop * board.energy_conservation_aggression * 0.5));
-            }
-        }
 
         // apply change to momentum
         this.add_impulse(impulse_this);
@@ -2164,10 +2162,8 @@ function render_diagnostics(board) {
     let avg_frame_time = last_frame_times.reduce((a, b) => a + b, 0) / last_frame_times.length;
     let fps = 1000/avg_frame_time;
 
-    let offset = board?.powerups_enabled ? 144 : 0;
-
     write_text(
-        layers.debug_front.ctx, `fps: ${Math.round(fps)}`, 10, offset + 16, "#fff", CANVAS_FONTS, 9
+        layers.debug_front.ctx, `fps: ${Math.round(fps)}`, 10, 16, "#fff", CANVAS_FONTS, 9
     )
 
     let frame_times_raw = [render_durations, calc_durations, wait_durations].map(arr => {
@@ -2179,7 +2175,7 @@ function render_diagnostics(board) {
     })
 
     write_text(
-        layers.debug_front.ctx, `frame spread:`, 10, offset + 28, "#fff", CANVAS_FONTS, 9
+        layers.debug_front.ctx, `frame spread:`, 10, 28, "#fff", CANVAS_FONTS, 9
     )
 
     let total_bar_length = 48;
@@ -2191,30 +2187,32 @@ function render_diagnostics(board) {
     ]
 
     write_text(
-        layers.debug_front.ctx, frame_time_splits[0] + "draw" + " " + "#".repeat(bars[0]), 10, offset + 28+12, "#0f0", CANVAS_FONTS, 9
+        layers.debug_front.ctx, frame_time_splits[0] + "draw" + " " + "#".repeat(bars[0]), 10, 28+12, "#0f0", CANVAS_FONTS, 9
     )
 
     write_text(
-        layers.debug_front.ctx, frame_time_splits[1] + "calc" + " " + "#".repeat(bars[1]), 10, offset + 28+12+12, "#f00", CANVAS_FONTS, 9
+        layers.debug_front.ctx, frame_time_splits[1] + "calc" + " " + "#".repeat(bars[1]), 10, 28+12+12, "#f00", CANVAS_FONTS, 9
     )
 
     write_text(
-        layers.debug_front.ctx, frame_time_splits[2] + "wait" + " " + "#".repeat(bars[2]), 10, offset + 28+12+12+12, "#666", CANVAS_FONTS, 9
+        layers.debug_front.ctx, frame_time_splits[2] + "wait" + " " + "#".repeat(bars[2]), 10, 28+12+12+12, "#666", CANVAS_FONTS, 9
     )
 
     if (!board)
         return;
 
-    let nrg = board.calculate_system_energy();
-    let snrg = board.starting_system_energy;
     write_text(
-        layers.debug_front.ctx, `system energy | ${Math.round(nrg)} | ${Math.round(snrg)}`, 10, offset + 28+12+12+12+24, "white", CANVAS_FONTS, 9
-    )
-    write_text(
-        layers.debug_front.ctx, `[${("#".repeat(Math.min(64, Math.round(64 * nrg/snrg)))).padEnd(64)}]`, 10, offset + 28+12+12+12+24+12, "white", CANVAS_FONTS, 9
+        layers.debug_front.ctx, `system energy | ${Math.round(board.balls.filter(ball => !ball.skip_physics).reduce((t, ball) => {
+            let kinetic_energy = 0.5 * ball.mass * ball.velocity.sqr_magnitude();
+
+            let height = board.size.y - ball.position.y;
+            let gravitational_energy = ball.mass * board.gravity.y * height;
+
+            return t + kinetic_energy + gravitational_energy;
+        }, 0))}`, 10, 28+12+12+12+24, "white", CANVAS_FONTS, 9
     )
 
-    let board_d_y = offset + 28+12+12+12+24+12+24;
+    let board_d_y = 28+12+12+12+24+24;
 
     board.balls.forEach((ball, index) => {
         let t = board_d_y + (36 * index);
@@ -3348,7 +3346,7 @@ function game_loop() {
         //     render_just_playing_around_warning();
     }
     
-    render_diagnostics(board);
+    // render_diagnostics(board);
     
     let render_end_time = Date.now();
 
@@ -4000,7 +3998,6 @@ function game_loop() {
 
                 match_end_timeout -= game_delta_time;
                 ending_game = true;
-                board.attempt_energy_conservation = false;
                 
                 if (searching) {
                     match_end_timeout -= game_delta_time * 10;

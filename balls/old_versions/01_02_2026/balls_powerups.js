@@ -27,9 +27,6 @@ class Powerup extends WeaponBall {
         this.grant_powerup_to = null;
 
         this.display = false;
-
-        this.collides_cooldown = 0.2;
-        this.collision = false;
     }
 
     late_setup() {
@@ -48,18 +45,8 @@ class Powerup extends WeaponBall {
         this.position = this.position.add(new Vector2(0, -1024 * time_delta));
     }
 
-    collides_countdown(time_delta) {
-        if (!this.collision && this.board.in_bounds(this.position)) {
-            this.collides_cooldown -= time_delta;
-            if (this.collides_cooldown <= 0) {
-                this.collision = true;
-            }
-        }
-    }
-
     weapon_step(board, time_delta) {
         this.powerup_movement(board, time_delta);
-        this.collides_countdown(time_delta);
 
         this.linked_particle.position = this.position;
     }
