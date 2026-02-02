@@ -1,8 +1,6 @@
 const BASE_URL = "https://plaao.net/balls";
 
-/** @type {Board} */
 let board = null;
-
 let last_replay = "";
 let last_replay_compressed = "";
 let fps_checks = [
@@ -391,7 +389,14 @@ function collapse_replay(replay) {
     
     let cols_matched = replay_collapsed.cols?.every((c, i) => Colour.from_array(c).eq(default_cols[i]));
     
-    let sample_player = make_default_player(-1);
+    let sample_player = {
+        id: -1,
+        stats: {
+            damage_bonus: 1,
+            defense_bonus: 1,
+            ailment_resistance: 1,
+        }
+    }
 
     let players_matched = replay_collapsed.players?.every((p, i) => {
         let pc = sample_player;
@@ -447,10 +452,6 @@ function collapse_replay(replay) {
         replay_collapsed.board_size = null;
     }
 
-    if (!replay_collapsed.powerups) {
-        replay_collapsed.powerups = null;
-    }
-
     // then rename all the elements to shorter names (compress_replay)
     let compressed = compress_replay(replay_collapsed);
 
@@ -470,7 +471,6 @@ const REPLAY_VALUES = {
     "starting_hp": "h",
     "time_recorded": "t",
     "board_size": "z",
-    "powerups":"w",
 };
 
 function compress_replay(replay) {
@@ -521,8 +521,6 @@ function exit_battle(save_replay=true) {
             players: board.starting_players,
             cols: board.starting_cols,
             skins: board.starting_skins,
-
-            powerups: board.powerups_enabled,
 
             seed: board.random_seed,
 
@@ -629,7 +627,14 @@ function load_replay(replay_as_text) {
         }
     } else {
         for (let i=0; i<ball_classes.length; i++) {
-            players.push(make_default_player(i))
+            players.push({
+                id: i,
+                stats: {
+                    damage_bonus: 1,
+                    defense_bonus: 1,
+                    ailment_resistance: 1,
+                }
+            })
             cols.push(default_cols[i]);
         }
     }
@@ -658,16 +663,13 @@ function load_replay(replay_as_text) {
         board_size = replay.board_size;
     }
 
-    let powerups = replay.powerups ? true : false;
-
     replaying = true;
     start_game(
         framespeed, seed,
         cols, positions,
         ball_classes, ball_levels,
         players, skins, starting_hp,
-        max_game_duration, board_size,
-        powerups
+        max_game_duration, board_size
     );
 }
 
@@ -714,7 +716,14 @@ function spawn_selected_balls() {
 
     let players = [];
     for (let i=0; i<cols.length; i++) {
-        players.push(make_default_player(cols_indexes[i]))
+        players.push({
+            id: cols_indexes[i],
+            stats: {
+                damage_bonus: 1,
+                defense_bonus: 1,
+                ailment_resistance: 1,
+            }
+        })
     }
 
     let skins = [];
@@ -730,15 +739,14 @@ function spawn_selected_balls() {
         cols, positions,
         ball_classes, ball_levels,
         players, skins, STARTING_HP,
-        default_max_game_duration, BOARD_SIZE,
-        document.querySelector("#enable_powerups_checkbox").checked
+        default_max_game_duration, BOARD_SIZE
     );
 }
 
 let christmas = false;
 let new_year = false;
 
-function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels, players, skins, starting_hp, max_game_duration, board_size, powerups) {
+function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels, players, skins, starting_hp, max_game_duration, board_size) {
     document.activeElement.blur();
     lmb_down = false;
     
@@ -747,8 +755,6 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
         STARTING_HP = starting_hp;
     
         board = new Board(new Vector2(board_size, board_size));
-
-        board.powerups_enabled = powerups;
 
         screen_to_game_scaling_factor = board.size.x / canvas_width;
 
@@ -821,7 +827,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
             render_victory_enabled = true;
         }
 
-        starting_fullpause_timeout = skipping ? 0 : (document.querySelector("#extend_intro_checkbox").checked ? 6 : 2.25);
+        starting_fullpause_timeout = skipping ? 0 : (document.querySelector("#extend_intro_checkbox").checked ? 6 : 3);
         fullpause_timeout = starting_fullpause_timeout;
         opening_state = {};
         if (skipping) {
@@ -1959,8 +1965,7 @@ function gambling_display_loop() {
                     gambling_current_match_data.levels,
                     [0, 1].map(pid => make_default_player(pid)),
                     ["Default", "Default"],
-                    100, gambling_current_match_data.duration, BOARD_SIZE,
-                    false
+                    100, gambling_current_match_data.duration, BOARD_SIZE
                 )
 
                 gambling_current_match_data = null;
@@ -2184,18 +2189,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
         if (document.querySelector("#graphics_loading")) {
             document.querySelector("#graphics_loading").textContent = `${num_textures_loaded}/${num_textures_needed}`;
-            document.querySelector("#audios_loading").textContent = `${audios_loaded}/${audios_required}`;
             if (audios_loaded >= audios_required && num_textures_loaded >= num_textures_needed) {
                 document.querySelector("#loading_prompt").classList.add("hidden");
                 document.querySelectorAll(".enable-on-full-load").forEach(e => e.disabled = false);
             }
         }
 
-        handle_resize();
-
         if (audios_loaded >= audios_required && num_textures_loaded >= num_textures_needed) {
-            document.getElementById("game-container").style.visibility = "";
-            document.querySelector("#loading_reminder_text").style.display = "none";
+            document.getElementById("game-container").style.display = "";
             clearInterval(interval);
             
             handle_resize();
@@ -2389,10 +2390,6 @@ document.addEventListener("DOMContentLoaded", function() {
     randomise_ball_info("ball1", "random-ball");
     randomise_ball_info("ball2", "random-ball");
 
-    // force ball in slot 1 and slot 2
-    // selected_ball_info.ball1.name = "Fishing Rod";
-    // selected_ball_info.ball2.name = "Dummy";
-
     for (let i=1; i<=4; i++) {
         refresh_ballinfo(`ball${i}`);
     }
@@ -2509,7 +2506,7 @@ document.addEventListener("DOMContentLoaded", function() {
 })
 
 // entity_sprites late setup
-main_selectable_balls.map(b => b.ball_name.toLowerCase()).forEach(n => {
+selectable_balls_for_random.map(b => b.ball_name.toLowerCase()).forEach(n => {
     let t = new Image(128, 128);
     let ts = [];
 
@@ -2563,8 +2560,8 @@ if (force_ball1) {
 
 let ball2_index = 0;
 
-let ball1_start_level = 100;
-let ball2_start_level = 100;
+let ball1_start_level = 1;
+let ball2_start_level = 1;
 
 let win_matrix = [];
 selectable_balls_for_random.forEach(_ => win_matrix.push(new Array(selectable_balls_for_random.length).fill(0)));

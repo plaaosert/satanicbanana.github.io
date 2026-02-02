@@ -2,10 +2,17 @@ let GOD = null;
 
 function setup_god(board) {
     GOD = new WeaponBall(
-        board, 1, 1, Colour.white, 1, 1, make_default_player(-2), 0
+        board, 1, 1, Colour.white, 1, 1, {
+            id: -1,
+            stats: {
+                damage_bonus: 1,
+                defense_bonus: 1,
+                ailment_resistance: 1,
+            }
+        }, 0
     );
 
-    GOD.id = -2;
+    GOD.id = -1;
 }
 
 const MYSTERIOUS_POWERS = {

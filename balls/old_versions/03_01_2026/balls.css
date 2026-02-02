@@ -52,13 +52,6 @@
 
   margin-left: 2vw;
   margin-right: 2vw;
-
-  display: grid;
-}
-
-.game-supercontainer>* {
-  grid-row: 1;
-  grid-column: 1;
 }
 
 .everything-container>* {

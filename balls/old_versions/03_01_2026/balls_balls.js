@@ -234,8 +234,8 @@ const TAGS_INFO = {
         display_ingame: true,
     },
     [TAGS.CHILDREN]: {
-        name: "Sub-balls",
-        desc: "Creates other sub-balls to defend, attack or support the main ball.",
+        name: "Children",
+        desc: "Creates other child balls to defend, attack or support the main ball.",
         display_ingame: true,
     },
     [TAGS.SCALING]: {
@@ -326,7 +326,7 @@ class WeaponBall extends Ball {
 
     static AVAILABLE_SKINS = [];
 
-    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed, skip_aero_lookup=false) {
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor);
 
         this.name = "No Weapon";
@@ -428,10 +428,7 @@ class WeaponBall extends Ball {
         this.aero_light_lookup_table = null;
         this.aero_radius_table = null;
 
-        if (!skip_aero_lookup)
-            this.setup_aero_light_lookup_table();
-
-        this.independent_random = get_seeded_randomiser(this.board.random_seed);
+        this.setup_aero_light_lookup_table();
     }
 
     late_setup() {
@@ -809,7 +806,7 @@ class WeaponBall extends Ball {
         }
 
         super.physics_step(time_delta);
-        this.weapon_step(board, time_delta * (this.player.stats.timespeed_mult ?? 1));
+        this.weapon_step(board, time_delta);
         this.ailments_step(board, time_delta);
 
         this.invuln_duration -= time_delta;
@@ -1531,7 +1528,7 @@ class HammerBall extends WeaponBall {
         ];
 
         this.weapon_data = [
-            new BallWeapon(0.75 + (level * 0), "hamer2", [
+            new BallWeapon(0.8 + (level * 0), "hamer2", [
                 {pos: new Vector2(104, 32), radius: 24},
                 {pos: new Vector2(104, 48), radius: 24},
                 {pos: new Vector2(104, 64), radius: 24},
@@ -1541,7 +1538,7 @@ class HammerBall extends WeaponBall {
         ];
 
         if (this.level >= AWAKEN_LEVEL) {
-            this.weapon_data.push(new BallWeapon(0.75 / 2, "hamer2", [
+            this.weapon_data.push(new BallWeapon(0.8 / 2, "hamer2", [
                 {pos: new Vector2(104, 32), radius: 24},
                 {pos: new Vector2(104, 48), radius: 24},
                 {pos: new Vector2(104, 64), radius: 24},
@@ -1876,7 +1873,9 @@ class DaggerBall extends WeaponBall {
         this.proj_damage_base = 1;
         this.proj_speed = 0;
 
-        this.hit_decay_max = 1.55 + (0.025 * this.level);
+        this.hit_decay_max = 1.5 + (0.025 * this.level);
+
+        this.explosions_random = get_seeded_randomiser(this.board.random_seed);
 
         this.explosions_num = 1;
         this.explosions_range_per_sord = [1,1];
@@ -1939,14 +1938,14 @@ class DaggerBall extends WeaponBall {
                     let wp_offset = this.get_weapon_offset(wp);
                     let hitboxes = this.get_hitboxes_offsets(wp);
 
-                    let times = random_int(...this.explosions_range_per_sord, this.independent_random);
+                    let times = random_int(...this.explosions_range_per_sord, this.explosions_random);
                     for (let n=0; n<times; n++) {
-                        let hitbox_index = random_int(0, hitboxes.length, this.independent_random);
+                        let hitbox_index = random_int(0, hitboxes.length, this.explosions_random);
 
                         let pos = this.position.add(wp_offset.add(hitboxes[hitbox_index]));
                         pos = pos.add(random_on_circle(
-                            random_float(0, this.weapon_data[wp].hitboxes[hitbox_index].radius, this.independent_random),
-                            this.independent_random
+                            random_float(0, this.weapon_data[wp].hitboxes[hitbox_index].radius, this.explosions_random),
+                            this.explosions_random
                         ))
 
                         let dir = pos.sub(this.position);
@@ -1954,7 +1953,7 @@ class DaggerBall extends WeaponBall {
                         dir = dir.div(mag).mul(Math.min(0.8, this.radius / mag) * 5000);
 
                         this.board.spawn_particle(new MovingFrictionParticle(
-                            pos, random_float(0, Math.PI * 2, this.independent_random), 0.1,
+                            pos, random_float(0, Math.PI * 2, this.explosions_random), 0.1,
                             entity_sprites.get("explosion").slice(3), 24, 3, false, dir, 5000, 0, true
                         ), pos);
                     }
@@ -1977,11 +1976,9 @@ class DaggerBall extends WeaponBall {
     hit_other_with_projectile(other, with_projectile) {
         let result = super.hit_other_with_projectile(other, with_projectile);
 
-        if (with_projectile.source_weapon_index != 999) {
-            this.hitstop = 0;
-            other.hitstop = 0;
-            other.invuln_duration = 0;
-        }
+        this.hitstop = 0;
+        other.hitstop = 0;
+        other.invuln_duration = 0;
 
         return result;
     }
@@ -2060,11 +2057,11 @@ class BowBall extends WeaponBall {
         this.arrow_size_mult = 1 + (this.level * 0.005);
         this.arrow_speed = 10000 + (this.level * 250);
 
-        this.shot_cooldown_max = 0.85 + (this.level * -0.005);
+        this.shot_cooldown_max = 0.69 + (this.level * -0.005);
         this.shot_cooldown = this.shot_cooldown_max;
 
         this.multishots = 0;
-        this.multishots_max = 2;
+        this.multishots_max = 1;
         this.multishots_levelup_req = 1;
 
         if (this.level >= AWAKEN_LEVEL) {
@@ -2074,6 +2071,8 @@ class BowBall extends WeaponBall {
         this.multishot_cooldown = 0;
         // 1/2th of the cooldown or 0.05, whichever is lower
         this.multishot_cooldown_max = Math.min(0.05, (this.shot_cooldown_max / 2) / this.multishots_max);
+
+        this.bow_sound_random = get_seeded_randomiser(this.board.random_seed);
     }
 
     weapon_step(board, time_delta) {
@@ -2113,7 +2112,7 @@ class BowBall extends WeaponBall {
                 )
             }
 
-            let snd_rand = this.independent_random();
+            let snd_rand = this.bow_sound_random();
             if (snd_rand < 0.5) {
                 play_audio("bow1");
             } else {
@@ -2129,16 +2128,14 @@ class BowBall extends WeaponBall {
     hit_other_with_projectile(other, with_projectile) {
         let result = super.hit_other_with_projectile(other, with_projectile);
 
-        if (with_projectile.source_weapon_index != 999) {
-            this.multishots_levelup_req--;
-            if (this.multishots_levelup_req <= 0) {
-                this.multishots_max++;
-                this.proj_damage_base += 1;
+        this.multishots_levelup_req--;
+        if (this.multishots_levelup_req <= 0) {
+            this.multishots_max++;
+            this.proj_damage_base += 1;
 
-                this.multishots_levelup_req = Math.max(1, Math.pow(this.multishots_max - 1, 2) * 0.25);
+            this.multishots_levelup_req = Math.max(1, this.multishots_max * this.multishots_max * 0.25);
 
-                this.multishot_cooldown_max = Math.min(0.05, (this.shot_cooldown_max / 2) / this.multishots_max);
-            }
+            this.multishot_cooldown_max = Math.min(0.05, (this.shot_cooldown_max / 2) / this.multishots_max);
         }
 
         return result;
@@ -2401,7 +2398,7 @@ class NeedleBall extends WeaponBall {
         this.rupture_base = 0.5 * (can_clone ? 1 : 0.5);
         this.poison_duration_base = 1;
 
-        this.speed_base = 340;
+        this.speed_base = 330;
         this.split_chance = 0.5 + (this.level * 0.005);
         this.split_ratio = 0.125;
         this.split_hp_save = (this.level * 0.005)
@@ -2581,7 +2578,7 @@ class RailgunBall extends WeaponBall {
 
         this.proj_damage_base = 15;
         if (this.level >= AWAKEN_LEVEL) {
-            this.proj_damage_base *= (2/3);
+            this.proj_damage_base *= 1.5;
         }
 
         this.speed_base = 100;
@@ -2592,13 +2589,6 @@ class RailgunBall extends WeaponBall {
         this.shot_cooldown = this.shot_cooldown_max;
 
         this.hit_decay = 0;
-    }
-
-    randomise_weapon_rotations() {
-        super.randomise_weapon_rotations();
-        if (this.weapon_data[1]) {
-            this.weapon_data[1].angle = this.weapon_data[0].angle - Math.PI;
-        }
     }
 
     set_skin(skin_name) {
@@ -2682,23 +2672,19 @@ class RailgunBall extends WeaponBall {
     }
 
     hit_other_with_projectile(other, with_projectile) {
-        if (with_projectile.source_weapon_index != 999) {
-            this.shot_cooldown = this.shot_cooldown_rapidfire;
-            this.speed_base *= 1.5;
-            this.hit_decay = 0.6;
-        }
+        this.shot_cooldown = this.shot_cooldown_rapidfire;
+        this.speed_base *= 1.5;
+        this.hit_decay = 0.6;
 
         let result = super.hit_other_with_projectile(other, with_projectile);
 
-        if (with_projectile.source_weapon_index != 999) {
-            other.apply_invuln(0.015, true);
+        other.apply_invuln(0.015, true);
 
-            for (let i=0; i<8; i++) {
-                this.board.spawn_particle(new EnergyBurstParticle(
-                    other.position, 0.6, entity_sprites.get("railgun_point"), 0, 16, true,
-                    25000, 120000, this, new Colour(18, 175, 175, 255), 4, 2, 0, true
-                ), other.position)
-            }
+        for (let i=0; i<8; i++) {
+            this.board.spawn_particle(new RailgunParticle(
+                other.position, 1, entity_sprites.get("railgun_point"), 0, 16, true,
+                25000, 120000, this, 0, true
+            ), other.position)
         }
 
         return result;
@@ -3019,7 +3005,7 @@ class GrenadeBall extends WeaponBall {
             new Vector2(48, 0)
         ]
 
-        this.grenade_damage_base = 16;
+        this.grenade_damage_base = 15;
         this.grenade_fuse = this.level >= AWAKEN_LEVEL ? 30 : 3;
         this.damage_base = 2;
 
@@ -3031,7 +3017,7 @@ class GrenadeBall extends WeaponBall {
         }
 
         this.shot_cooldown = this.shot_cooldown_max;
-        this.self_grenade_reduction = 0.8;
+        this.self_grenade_reduction = 0.7;
     }
 
     set_skin(skin_name) {
@@ -3096,14 +3082,11 @@ class GrenadeBall extends WeaponBall {
         if (other.id == this.id && with_projectile instanceof GrenadeExplosionProjectile) {
             dmg *= this.self_grenade_reduction;
         }
-
         let result = other.get_hit_by_projectile(this, dmg * (this.player?.stats?.damage_bonus ?? 1), hitstop);
         
-        if (with_projectile.source_weapon_index != 999) {
-            this.apply_hitstop(hitstop);
+        this.apply_hitstop(hitstop);
 
-            result.hitstop = hitstop;
-        }
+        result.hitstop = hitstop;
 
         this.board.register_hit(this, other);
         return result;
@@ -3245,7 +3228,7 @@ class GlassBall extends WeaponBall {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
         this.name = "Glass";
-        this.description_brief = "Normal strikes apply rupture but deal no damage. On hit, charges up based on the rupture on the target before the strike. At max charge, next hit consumes all charge to deal a vorpal strike with damage equal to 12x base rupture. Parries release glass shards that apply minor rupture.";
+        this.description_brief = "Normal strikes apply rupture but deal no damage. On hit, charges up based on the rupture on the target before the strike. At max charge, next hit consumes all charge to deal a vorpal strike with damage equal to 12x base rupture.";
         this.level_description = "Increases base rupture and makes the weapon rotate faster.";
         this.max_level_description = "Multiplies the target's rupture by 2x after each hit.";
         this.quote = "[unintelligible animalistic grunting]";
@@ -3265,7 +3248,7 @@ class GlassBall extends WeaponBall {
         ];
 
         this.weapon_data = [
-            new BallWeapon(0.925, "glass1", [
+            new BallWeapon(1, "glass1", [
                 {pos: new Vector2(76, 64), radius: 6},
                 {pos: new Vector2(64, 64), radius: 12},
                 {pos: new Vector2(48, 64), radius: 16},
@@ -3276,10 +3259,6 @@ class GlassBall extends WeaponBall {
 
         this.damage_base = 3 + (0.025 * level);
         this.speed_base = 330 + (2.25 * level);
-
-        this.shard_rupture_amt = 1;
-        this.shard_limit_max = 16;
-        this.shard_limit = this.shard_limit_max;
 
         this.charge = 0;
         this.charge_decay_per_sec = 0;
@@ -3320,8 +3299,6 @@ class GlassBall extends WeaponBall {
         // rotate the weapon
         this.rotate_weapon(0, this.speed_base * time_delta);
 
-        this.shard_limit = Math.min(this.shard_limit + time_delta * 8, this.shard_limit_max);
-
         this.charge = Math.max(0, this.charge - (this.charge_decay_per_sec * time_delta));
         if (this.charge >= this.charge_threshold) {
             this.weapon_data[0].sprite = "glass_angry";
@@ -3361,50 +3338,6 @@ class GlassBall extends WeaponBall {
         return result;
     }
 
-    fire_glass_shards(amt) {
-        let wp_offset = this.get_weapon_offset(0);
-        let hitboxes = this.get_hitboxes_offsets(0);
-
-        for (let i=0; i<amt; i++) {
-            if (this.shard_limit <= 1) {
-                break;
-            }
-            
-            this.shard_limit -= 1;
-
-            let hitbox_index = random_int(0, hitboxes.length, this.board.random);
-            let pos = this.position.add(wp_offset.add(hitboxes[hitbox_index]));
-            pos = pos.add(random_on_circle(
-                random_float(0, this.weapon_data[0].hitboxes[hitbox_index].radius, this.board.random),
-                this.board.random
-            ))
-
-            let angle = this.weapon_data[0].angle;
-            let modifier = random_float(Math.PI * 0.1, Math.PI * 0.7, this.board.random);
-            modifier *= !(this.weapon_data[0].reversed ^ this.reversed) ? 1 : -1;
-            
-            let dir = new Vector2(1, 0).rotate(angle + modifier);
-
-            let proj = new GlassProjectile(
-                this.board, this, 0, pos, 0, 0.5,
-                dir, random_int(4000, 9000, this.board.random),
-                this.board.gravity, this.board.random() < 0.5, this.skin_suffix
-            )
-
-            this.board.spawn_projectile(proj, pos);
-        }
-    }
-
-    parry_weapon(with_weapon_index, other_ball, other_weapon_id) {
-        super.parry_weapon(with_weapon_index, other_ball, other_weapon_id);
-        this.fire_glass_shards(6);
-    }
-
-    parry_projectile(with_weapon_index, projectile) {
-        super.parry_projectile(with_weapon_index, projectile);
-        this.fire_glass_shards(3);
-    }
-
     render_stats(canvas, ctx, x_anchor, y_anchor) {
         this.start_writing_desc(ctx, x_anchor, y_anchor);
 
@@ -3434,9 +3367,6 @@ class GlassBall extends WeaponBall {
         }
         this.write_desc_line(
             `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`
-        )
-        this.write_desc_line(
-            `Shard rupture: ${this.shard_rupture_amt.toFixed(2)}`
         )
         this.write_desc_line(
             `Normal strikes apply rupture instead of damage.`, true, 10
@@ -3602,7 +3532,7 @@ class HandBall extends WeaponBall {
             {stored_velocity: null, ball: null, amount_to_rotate: null, rotated_so_far: null, speed: 0}
         ] // X
     
-        this.post_grab_cooldown = 8;
+        this.post_grab_cooldown = 8.5;
         this.post_block_cooldown = 2;
         this.tired_delays = [0, 0]; // X
 
@@ -3995,7 +3925,7 @@ class HandBall extends WeaponBall {
             other.set_velocity(new_other_velocity);
 
             other.apply_invuln(BALL_INVULN_DURATION * 2);
-        } else if (this.hands_sprites[with_weapon_index] == "hand_open" && !(other instanceof Powerup)) {
+        } else if (this.hands_sprites[with_weapon_index] == "hand_open") {
             // GRAB!!!!!!!
             result = super.hit_other(other, with_weapon_index, this.grab_damage_initial);
             this.grab_ball(with_weapon_index, other);
@@ -4248,7 +4178,7 @@ class ChakramBall extends WeaponBall {
 
         this.chakram_damage_base = 6 + (0.025 * level);
         this.chakram_rotation_speed = Math.PI * 4;
-        this.chakram_orbit_time = 3.6 + (0.025 * level);
+        this.chakram_orbit_time = 3.75 + (0.025 * level);
         this.chakram_min_dist = this.radius * 0.75;
         this.chakram_max_dist = this.radius * 4;
 
@@ -4373,15 +4303,13 @@ class ChakramBall extends WeaponBall {
         let dmg = with_projectile.damage * (this.player?.stats?.damage_bonus ?? 1);
         let result = other.get_hit_by_projectile(this, dmg, hitstop);
         
-        if (with_projectile.source_weapon_index != 999) {
-            if (this.level >= AWAKEN_LEVEL) {
-                this.apply_rupture(other, dmg, "");
-            }
-
-            this.apply_hitstop(hitstop);
-
-            result.hitstop = hitstop;
+        if (this.level >= AWAKEN_LEVEL) {
+            this.apply_rupture(other, dmg, "");
         }
+
+        this.apply_hitstop(hitstop);
+
+        result.hitstop = hitstop;
 
         this.board.register_hit(this, other);
         return result;
@@ -4476,7 +4404,7 @@ class WandBall extends WeaponBall {
         this.damage_base = 1;
         this.speed_base = 180;
 
-        this.cast_delay_max = [1.6 - (this.level * 0.011), 3.175 - (this.level * 0.022)];
+        this.cast_delay_max = [1.575 - (this.level * 0.011), 3.15 - (this.level * 0.022)];
         this.cast_delay = random_float(...this.cast_delay_max, this.board.random);
 
         this.cast_flash_timeout = 0;
@@ -4492,31 +4420,31 @@ class WandBall extends WeaponBall {
         if (this.board)
             this.pick_next_spell();
 
-        this.icicle_damage = 10;
+        this.icicle_damage = 5;
         this.additional_icicle_count = 2;  // 2 on each side plus the main one so 5 total
         this.icicle_velocity = 10000;
         this.icicle_velocity_per_additional = -1000;
         this.icicle_angle_per_additional = deg2rad(7.5);
         this.icicle_delay_per_additional = 0.05;
 
-        this.fireball_damage = 16;
+        this.fireball_damage = 12;
         this.fireball_size_mult = 1;
-        this.fireball_velocity = 3000;
+        this.fireball_velocity = 4000;
 
         this.poison_barb_count = 3;
-        this.poison_barb_intensity = 2;
+        this.poison_barb_intensity = 1;
         this.poison_barb_hp = 1;
-        this.poison_barb_duration = 2;
+        this.poison_barb_duration = 4;
         this.poison_barb_velocity = 2500;
         
-        this.chain_lightning_chain_chance = 0.175;
-        this.chain_lightning_damage = 10;
+        this.chain_lightning_chain_chance = 0.15;
+        this.chain_lightning_damage = 4;
         this.chain_lightning_distance = 1000;
         this.chain_lightning_spread = deg2rad(45);
         this.chain_lightning_delay_per_chain = 0.015;
 
         this.black_ball_damage = 8;
-        this.black_ball_duration = 24;
+        this.black_ball_duration = 16;
         this.black_ball_velocity = 15000;
 
         if (this.level >= AWAKEN_LEVEL) {
@@ -5073,7 +5001,6 @@ class AxeBall extends WeaponBall {
     }
 
     weapon_step(board, time_delta) {
-        this.reversed = false;
         this.weapon_data[0].reversed = false;
 
         // rotate the weapon
@@ -5202,7 +5129,7 @@ class ShotgunBall extends WeaponBall {
         this.proj_damage_base = 3 + (this.level * 0.03);
         this.speed_base = 80;
 
-        this.shot_cooldown_max = 0.775;
+        this.shot_cooldown_max = 0.8;
         this.shot_cooldown = this.shot_cooldown_max;
 
         this.num_bullets = 8;
@@ -5213,12 +5140,14 @@ class ShotgunBall extends WeaponBall {
         this.width_range = [12, 20];
 
         this.bullet_spread = deg2rad(22.5);
+
+        this.sound_random = get_seeded_randomiser(this.board.random_seed);
     }
 
     recoil_movement() {
         let new_angle = this.weapon_data[0].angle;
         let diff_vec = new Vector2(-1, 0).rotate(new_angle);
-        let share = 0.8;
+        let share = 0.25;
 
         let diff_add = diff_vec.mul(share);
 
@@ -5258,12 +5187,12 @@ class ShotgunBall extends WeaponBall {
                         width, col
                     ), fire_pos
                 )
-            }
 
-            this.recoil_movement();
-            
-            let snd_rand = Math.floor(this.independent_random() * 3);
-            play_audio(["shotgun", "shotgun", "shotgun3"][snd_rand], 0.2);
+                this.recoil_movement();
+                
+                let snd_rand = Math.floor(this.sound_random() * 3);
+                play_audio(["shotgun", "shotgun", "shotgun3"][snd_rand], 0.04);
+            }
         }
     }
 
@@ -5335,7 +5264,7 @@ class SpearBall extends WeaponBall {
         
         this.weapon_stats = [];
 
-        this.spear_replenish_delay_max = 1.41 - (this.level * 0.004);
+        this.spear_replenish_delay_max = 1.45 - (this.level * 0.004);
         this.spear_replenish_delay = this.spear_replenish_delay_max;
 
         this.spear_projectile_speed_range = [10000, 13000];
@@ -5431,9 +5360,7 @@ class SpearBall extends WeaponBall {
     hit_other_with_projectile(other, with_projectile) {
         let result = super.hit_other_with_projectile(other, with_projectile);
 
-        if (with_projectile.source_weapon_index != 999) {
-            this.replenish_spear();
-        }
+        this.replenish_spear();
 
         return result;
     }
@@ -5668,11 +5595,7 @@ class RosaryBall extends WeaponBall {
     }
 
     hit_other_with_projectile(other, with_projectile) {
-        if (with_projectile.source_weapon_index != 999) {
-            return {hitstop: 0, mute: true}
-        } else {
-            return super.hit_other_with_projectile(other, with_projectile);
-        }
+        return {hitstop: 0, mute: true}
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor) {
@@ -5693,423 +5616,6 @@ class RosaryBall extends WeaponBall {
         this.write_desc_line(
             `Summon count: ${this.children.length}`
         )
-    }
-}
-
-class FishingRodBall extends WeaponBall {
-    static ball_name = "Fishing Rod";
-
-    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
-        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
-    
-        this.name = "Fishing Rod";
-        this.description_brief = "Always rotates clockwise. Casts a fishing hook that bounces around and attaches to the first ball it hits, applying rupture. After attaching, reels in the hooked ball, applying more rupture and setting up a strike with a club. Hooks can be destroyed by attacks.";
-        this.level_description = "Increases rupture intensity. Every 25 levels adds another hook cast at once.";
-        this.max_level_description = "Hooks now create a small fire blast when they are destroyed.";
-        this.quote = "I am alone. I am empty. And yet... I fish.";
-
-        this.tier = TIERS.A;
-        if (level >= AWAKEN_LEVEL) {
-            this.tier = TIERS.APLUS;
-        }
-
-        this.category = CATEGORIES.STANDARD;
-        this.tags = [
-            TAGS.RANGED,
-            TAGS.OFFENSIVE,
-            TAGS.PROJECTILES,
-            TAGS.LEVELS_UP,
-            TAGS.CAN_AWAKEN,
-        ];
-
-        this.entry_animation = "teleport";
-        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
-        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
-
-        this.weapon_data = [
-            new BallWeapon(1, "fishing_rod", [
-                {pos: new Vector2(16, 72-16), radius: 12},
-                {pos: new Vector2(16, 72), radius: 12},
-            ]),
-        ];
-
-        this.firing_offsets = [
-            new Vector2(64, 24)
-        ]
-
-        this.speed_base = 150;
-        this.speed = this.speed_base;
-
-        this.hook_hit_rupture = 1;
-        this.hook_reel_rupture = 4;
-        this.rod_base_dmg = 1;
-        this.club_damage = 8;
-
-        this.swing_cur_duration = 0;
-        this.swing_max_duration = 0.3;
-
-        this.swing_accel_amt = deg2rad(360 * 480);
-
-        this.club_accel_amt = 360 * 16;
-        this.club_accel_dur = 0.3;
-        this.club_dur = 0.45;
-        this.club_friction_amt = 360 * 6;
-
-        this.shot_cooldown_max = 0.75;
-        this.shot_cooldown = this.shot_cooldown_max;
-
-        this.multishot = 1 + Math.floor((this.level + 1) / 25);
-        this.spread = deg2rad(22.5);
-
-        this.fire_blast_dmg = 0.5;
-
-        this.clubs_info = [];
-
-        this.children = [];
-        
-        this.rod_thrown_offset = new Vector2(96, -14);
-    }
-
-    reel_ball(own_hook, other) {
-        // apply reverse knockback force to both
-        // remove own_hook from children list
-        this.children = this.children.filter(c => c.id != own_hook.id);
-
-        if (other) {
-            // rupture
-            super.hit_other(other, 0, 0);
-            this.apply_rupture(other, this.hook_reel_rupture);
-            play_audio("impact");
-
-            // explosive force
-            let diff_vec = other.position.sub(this.position).normalize();
-
-            let share = 0.75;
-
-            let ball_diff_add = diff_vec.mul(-share);
-            let other_diff_add = ball_diff_add.mul(-1);
-
-            let ball_mag = -this.velocity.magnitude();
-            let other_mag = -other.velocity.magnitude();
-
-            let new_ball_velocity = this.velocity.div(ball_mag).mul(1 - share).add(ball_diff_add).normalize().mul(ball_mag)
-            let new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
-
-            this.set_velocity(new_ball_velocity);
-            other.set_velocity(new_other_velocity);
-
-            // setup club
-            let club_weapon = new BallWeapon(
-                0, "fishing_rod_club", [
-                    {pos: new Vector2(96, 64), radius: 14},
-                    {pos: new Vector2(80, 64), radius: 13},
-                    {pos: new Vector2(64, 64), radius: 12},
-                    {pos: new Vector2(48, 64), radius: 11},
-                    {pos: new Vector2(32, 64), radius: 9},
-                    {pos: new Vector2(16, 64), radius: 8},
-                ]
-            )
-            club_weapon.angle = diff_vec.angle() - (Math.PI * 1);
-
-            this.clubs_info.push({
-                weapon: club_weapon,
-                lifetime: 0,
-                speed: 0,
-            });
-            this.weapon_data.push(club_weapon);
-            this.cache_weapon_offsets();
-            this.cache_hitboxes_offsets();
-        }
-
-        if (this.level >= AWAKEN_LEVEL && !other) {
-            let blast = new FishingRodFireBlast(
-                this.board, this, 0, own_hook.position, 2.5, this.fire_blast_dmg
-            );
-
-            this.board.spawn_projectile(blast, own_hook.position);
-        }
-    }
-
-    weapon_step(board, time_delta) {
-        this.reversed = false;
-        this.weapon_data.forEach(w => w.reversed = false);
-
-        // rotate the weapon
-        if (this.children.length > 0) {
-            // hook out behaviour
-            // set the angle of the fishing rod to the average of all the hook positions
-            // note that the club is completely separate
-            this.weapon_data[0].sprite = "fishing_rod_thrown";
-
-            let dirs = this.children.map(c => c.position.sub(this.position).normalize());
-            let avg_dir = dirs.reduce((p, c) => p.add(c), Vector2.zero).div(dirs.length);
-            this.weapon_data[0].angle = avg_dir.angle() - deg2rad(45);
-        } else {
-            this.weapon_data[0].sprite = "fishing_rod";
-
-            let shooting = false;
-            if (this.swing_cur_duration >= 0) {
-                this.swing_cur_duration -= time_delta;
-                this.speed += this.swing_accel_amt * time_delta;
-            } else {
-                if (this.shot_cooldown < 0) {
-                    this.shot_cooldown = this.shot_cooldown_max;
-                    shooting = true;
-                    this.speed = this.speed_base;
-                } else {
-                    this.shot_cooldown -= time_delta;
-                    if (this.shot_cooldown < 0) {
-                        this.swing_cur_duration = this.swing_max_duration;
-                    }
-                }
-            }
-
-            // normal
-            this.rotate_weapon(0, this.speed * time_delta);
-
-            if (shooting) {
-                // schut
-                let firing_offset = this.firing_offsets[0].mul(this.weapon_data[0].size_multiplier).rotate(this.weapon_data[0].angle);
-                let fire_pos = this.position.add(firing_offset);
-
-                for (let i=0; i<this.multishot; i++) {
-                    let shot_angle = this.weapon_data[0].angle + deg2rad(90) + random_float(
-                        -this.spread, this.spread, this.board.random
-                    );
-
-                    let new_ball = new FishingRodHookProjectileBall(
-                        this.board, this.mass * 0.1, this.radius * 0.15,
-                        this.colour, this.bounce_factor, this.friction_factor,
-                        this.player, this.level, this.hook_hit_rupture
-                    )
-
-                    new_ball.add_velocity(Vector2.from_angle(shot_angle, random_float(6000, 10000, this.board.random)));
-
-                    new_ball.hp = 1;
-                    new_ball.max_hp = 1;
-
-                    new_ball.apply_invuln(BALL_INVULN_DURATION);
-                    new_ball.show_stats = false;
-
-                    new_ball.parent = this;
-                    this.children.push(new_ball);
-
-                    let part1 = new Particle(new_ball.position, 0, 1.5, entity_sprites.get("fishing_rod_hook"), 0, 999999);
-                    board.spawn_particle(part1, new_ball.position);
-                    new_ball.linked_particle = part1;
-
-                    let part2 = new LineParticle(this.position, fire_pos, 0.1, Colour.white, 99999, 0, true);
-                    board.spawn_particle(part2, this.position);
-                    new_ball.linked_particle_2 = part2;
-
-                    this.board.spawn_ball(new_ball, fire_pos);
-                }
-            }
-        }
-
-        // clubs:
-        // rapidly grow to 1x size
-        // accel until lifetime above threshold
-        // rapidly shrink after total duration
-        // are removed when size <= 0
-        let recache = false;
-        let remove_indexes = [];
-        this.clubs_info.forEach((info, index) => {
-            recache = true;
-
-            if (info.lifetime < this.club_dur) {
-                info.weapon.size_multiplier = Math.min(
-                    1 * WEAPON_SIZE_MULTIPLIER,
-                    info.weapon.size_multiplier + (10 * WEAPON_SIZE_MULTIPLIER * time_delta)
-                )
-            } else {
-                info.weapon.size_multiplier -= (10 * WEAPON_SIZE_MULTIPLIER * time_delta)
-            }
-
-            if (info.weapon.size_multiplier <= 0) {
-                remove_indexes.push(index);
-            } else {
-                if (info.lifetime < this.club_accel_dur) {
-                    info.speed += this.club_accel_amt * time_delta;
-                }
-
-                info.speed = Math.max(0, info.speed - (this.club_friction_amt * time_delta));
-
-                info.weapon.rotate(info.speed * time_delta);
-            }
-
-            info.lifetime += time_delta;
-        });
-
-        remove_indexes.forEach(idx => {
-            this.clubs_info.splice(idx, 1);
-            this.weapon_data.splice(idx+1, 1);
-        });
-
-        if (recache) {
-            this.cache_weapon_offsets();
-            this.cache_hitboxes_offsets();
-        }
-    }
-
-    hit_other(other, with_weapon_index) {
-        return super.hit_other(other, with_weapon_index, with_weapon_index == 0 ? this.rod_base_dmg : this.club_damage);
-    }
-
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
-
-        this.write_desc_line(
-            `Rod base damage: ${this.rod_base_dmg.toFixed(2)}`
-        )
-        this.write_desc_line(
-            `Club swing damage: ${this.club_damage.toFixed(2)}`
-        )
-        this.write_desc_line(
-            `Hooks cast: ${this.multishot}x`
-        )
-        this.write_desc_line(
-            `Hook rupture on hit: ${this.hook_hit_rupture.toFixed(2)}`
-        )
-        this.write_desc_line(
-            `Hook rupture on reel: ${this.hook_reel_rupture.toFixed(2)}`
-        )
-        if (this.level >= AWAKEN_LEVEL) {
-            this.write_desc_line(
-                `Destroyed hooks create a fireblast for ${this.fire_blast_dmg.toFixed(1)} burn.`, true, 10
-            )
-        }
-    }
-}
-
-class FishingRodHookProjectileBall extends WeaponBall {
-    static ball_name = "Fishing Rod Hook Projectile";
-
-    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, damage_rupture) {
-        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, false);
-
-        this.name = "Fishing Rod Hook Projectile";
-        this.description_brief = "Fired from the fishing rod ball";
-        this.level_description = "-";
-        this.max_level_description = "-";
-
-        this.tags = [];
-
-        this.weapon_data = [
-            new BallWeapon(1, "fishing_rod_hook", [
-                {pos: new Vector2(64, 64), radius: 12},
-            ])
-        ];
-
-        this.weapon_data[0].offset = new Vector2(-52.5, 0);
-
-        this.pre_hit_lifetime = 0;
-        this.pre_hit_duration = 8;
-
-        this.post_hit_lifetime = 0;
-        this.duration = 0.33;
-        
-        this.damage_rupture = damage_rupture;
-
-        this.hp = 1;
-        this.max_hp = 1;
-        this.show_stats = false;
-
-        this.parent = null;
-
-        this.hit_ball = null;
-
-        this.linked_particle = null;
-        this.linked_particle_2 = null;
-
-        this.display = false;
-    }
-
-    update_particles(time_delta) {
-        super.update_particles(time_delta);
-
-        this.linked_particle.set_pos(this.position);
-
-        // TODO make it so it matches the angle between the hook and the fishing rod tip
-        let origin_pos = this.parent.position.add(this.parent.rod_thrown_offset.mul(this.parent.weapon_data[0].size_multiplier).rotate(this.parent.weapon_data[0].angle))
-        
-        this.linked_particle.rotation_angle = this.position.sub(origin_pos).angle();
-
-        this.linked_particle_2.position = origin_pos;
-
-        let pos_adjusted = this.position.add(new Vector2(-64, 0).rotate(this.linked_particle.rotation_angle - deg2rad(90)))
-
-        this.linked_particle_2.target_position = pos_adjusted;
-    }
-
-    weapon_step(board, time_delta) {
-        if (this.hit_ball) {
-            this.position = this.hit_ball.position;
-            this.post_hit_lifetime += time_delta;
-            if (this.post_hit_lifetime >= this.duration) {
-                this.hp = 0;
-            }
-        } else {
-            this.pre_hit_lifetime += time_delta;
-            if (this.pre_hit_lifetime >= this.pre_hit_duration) {
-                this.hp = 0;
-            }
-        }
-
-        if (this.parent.hp <= 0) {
-            this.hit_ball = null;
-            this.hp = 0;
-        }
-    }
-
-    hit_other(other, with_weapon_index) {
-        // additionally poison
-        let dmg = 0;
-
-        let result = super.hit_other(other, with_weapon_index, dmg);
-        this.parent.apply_rupture(other, this.damage_rupture);
-
-        if (!(other instanceof Powerup)) {
-            this.hit_ball = other;
-            this.weapon_data = [];
-            this.collision = false;
-            this.takes_damage = false;
-        } else {
-            this.hp = 0;
-        }
-
-        return result;
-    }
-
-    parry_weapon(with_weapon_index, other_ball, other_weapon_id) {
-        // this deliberately does not call its super
-        // because we don't want these to count for tension
-        
-        this.hp = 0;
-
-        other_ball.weapon_data[other_weapon_id]?.reverse()
-    }
-
-    parry_projectile(with_weapon_index, projectile) {
-        // this deliberately does not call its super
-        // because we don't want these to count for tension
-
-        this.hp = 0;
-    }
-
-    die() {
-        this.linked_particle.lifetime = Number.POSITIVE_INFINITY;
-        this.linked_particle_2.lifetime = Number.POSITIVE_INFINITY;
-
-        this.parent.reel_ball(this, this.hit_ball);
-
-        this.board.spawn_particle(new Particle(
-            this.position, 0, 0.35, entity_sprites.get("explosion_small"), 24, 3, false
-        ), this.position);
-
-        // TODO sound
-
-        return {skip_default_explosion: true};
     }
 }
 
@@ -6142,7 +5648,6 @@ class Projectile {
         this.parriable = true;
         this.collides_other_projectiles = true;
         this.play_parried_audio = true;
-        this.respects_invuln_for_parry = false;
 
         // TODO
         // need to add source_player and source_ball
@@ -6152,7 +5657,6 @@ class Projectile {
         this.can_hit_allied = false;
         this.can_hit_source = false; // specifically for hit/parry from SOURCE ball
         this.can_hit_enemy = true;
-        this.can_hit_source_projs = false; // turn on when you want projectiles from self to collide with each other but not the parent
 
         this.ignore_balls = new Set();
 
@@ -6182,29 +5686,11 @@ class Projectile {
     can_hit_ball(ball) {
         return (
             this.active && 
-            (ball.invuln_duration <= 0 || !this.respects_invuln_for_parry) &&
             !this.ignore_balls.has(ball.id) && 
-            (!ball.allied_with(this.source) || this.can_hit_allied || this.can_hit_source) &&
+            (!ball.allied_with(this.source) || this.can_hit_allied) &&
             (this.can_hit_enemy || ball.allied_with(this.source)) &&
             (ball.id != this.source.id || this.can_hit_source)
         )
-    }
-
-    can_hit_projectile(other) {
-        return (
-            this.id !== other.id &&
-            other.parriable && other.collides_other_projectiles &&
-            (
-                !other.source.allied_with(this.source) ||
-                (this.can_hit_allied && other.can_hit_allied) ||
-                (this.can_hit_source && other.can_hit_source) ||
-                (this.can_hit_source_projs && other.can_hit_source_projs)
-            ) &&
-            (this.source.id != other.source.id || (
-                (this.can_hit_source && other.can_hit_source) ||
-                (this.can_hit_source_projs && other.can_hit_source_projs)
-            ))
-        );
     }
 
     collides_line(line) {
@@ -6480,7 +5966,7 @@ class MagnumProjectile extends HitscanProjectile {
             this.parriable = false;
         }
 
-        this.can_hit_source_projs = true;
+        this.can_hit_allied = true;
     }
 
     // Override so that it will return collisions with MagnumCoins
@@ -6630,7 +6116,7 @@ class MagnumCoinProjectile extends Projectile {
         this.frame = 0;
         this.framecount = 5;
         this.sprites = entity_sprites.get("coin");
-        this.sprite = this.sprites[0];
+        this.sprite = this.sprite[0];
         this.lifetime = 0;
         this.frame_speed = 12;
 
@@ -6638,7 +6124,7 @@ class MagnumCoinProjectile extends Projectile {
             {pos: new Vector2(0, 0), radius: 8},
         ]);
 
-        this.can_hit_source_projs = true;
+        this.can_hit_allied = true;
     }
 
     physics_step(time_delta) {
@@ -6736,7 +6222,7 @@ class PotionPuddleProjectile extends Projectile {
             case 0: {
                 // rupture
                 this.source.apply_rupture(
-                    ball, 6 * this.intensity * delta_time
+                    ball, 5 * this.intensity * delta_time
                 )
 
                 break;
@@ -6744,8 +6230,8 @@ class PotionPuddleProjectile extends Projectile {
 
             case 1: {
                 // poison
-                let dur = 2 * this.intensity * delta_time;
-                let amt = 0.9 * this.intensity * delta_time;
+                let dur = 2.5 * this.intensity * delta_time;
+                let amt = 1.5 * this.intensity * delta_time;
                 this.source.apply_poison(
                     ball, amt, dur
                 );
@@ -6760,7 +6246,7 @@ class PotionPuddleProjectile extends Projectile {
                 let dmg_mul = this.player?.stats?.damage_bonus ?? 1;
                 let def_mul = ball.player?.stats?.defense_bonus ?? 1;
 
-                let dmg = (7.25 * this.intensity * dmg_mul * delta_time) / def_mul;
+                let dmg = (7 * this.intensity * dmg_mul * delta_time) / def_mul;
 
                 ball.get_hit(this.source, dmg, 0, 0, false);
                
@@ -6837,39 +6323,6 @@ class PotionBottleProjectile extends Projectile {
         super.get_parried(by);
 
         this.make_splash();
-    }
-}
-
-class GlassProjectile extends Projectile {
-    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, gravity, reversed, sprite_suffix="") {
-        super(board, source, source_weapon_index, position, damage, size, direction, speed);
-
-        this.gravity = gravity;
-        this.proj_velocity = this.direction.mul(this.speed);
-
-        this.sprite = `glass_shard${sprite_suffix}`;
-
-        this.set_hitboxes([
-            {pos: new Vector2(0, 0), radius: 12},
-        ]);
-
-        this.rotation_speed = random_float(270, 540, this.board.random);
-
-        this.reversed = reversed;
-    }
-
-    physics_step(time_delta) {
-        this.set_pos(this.position.add(this.proj_velocity.mul(time_delta)));
-
-        this.proj_velocity = this.proj_velocity.add(this.gravity.mul(time_delta));
-    
-        let new_direction_angle = this.direction_angle + ((this.rotation_speed * (Math.PI / 180)) * (this.reversed ? -1 : 1) * time_delta);
-        this.set_dir(new Vector2(1, 0).rotate(new_direction_angle));
-    }
-
-    hit_ball(ball, delta_time) {
-        super.hit_ball(ball, delta_time);
-        this.source.apply_rupture(ball, this.source.shard_rupture_amt);
     }
 }
 
@@ -7028,8 +6481,6 @@ class ChakramProjectile extends Projectile {
         this.hitstop = 0;
 
         this.sprite_suffix = sprite_suffix;
-
-        this.respects_invuln_for_parry = true;
     }
 
     physics_step(time_delta) {
@@ -7075,8 +6526,6 @@ class ChakramProjectile extends Projectile {
 
     get_parried(by) {
         this.active = true;
-
-        by.apply_invuln(BALL_INVULN_DURATION);
     }
 
     hit_ball(ball, delta_time) {
@@ -7255,36 +6704,6 @@ class RosaryHealingBurstProjectile extends PersistentAoEProjectile {
     }
 }
 
-class FishingRodFireBlast extends PersistentAoEProjectile {
-    constructor(board, source, source_weapon_index, position, size, burn_amt) {
-        super(board, source, source_weapon_index, position, 0, size, 0.6, "fire_blast");
-
-        this.hitboxes_by_frame = [
-            [],
-            [{pos: new Vector2(0, 0), radius: 6}],
-            [{pos: new Vector2(0, 0), radius: 12}],
-            [{pos: new Vector2(0, 0), radius: 18}],
-            [{pos: new Vector2(0, 0), radius: 24}],
-            [],
-            [],
-        ]
-
-        this.can_hit_allied = false;
-        this.can_hit_source = false;
-        this.can_hit_enemy = true;
-
-        this.has_played_sound = false;
-
-        this.burn_amt = burn_amt;
-    }
-
-    hit_ball(ball, delta_time) {
-        super.hit_ball(ball, delta_time);
-
-        this.source.apply_burn(ball, this.burn_amt);
-    }
-}
-
 
 let main_selectable_balls = [
     DummyBall,
@@ -7293,5 +6712,5 @@ let main_selectable_balls = [
     RailgunBall, PotionBall, GrenadeBall,
     GlassBall, HandBall, ChakramBall,
     WandBall, AxeBall, ShotgunBall,
-    SpearBall, RosaryBall, FishingRodBall
+    SpearBall, RosaryBall
 ]

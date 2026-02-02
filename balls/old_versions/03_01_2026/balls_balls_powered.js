@@ -186,6 +186,8 @@ class SmartBowBall extends WeaponBall {
         // 1/2th of the cooldown or 0.05, whichever is lower
         this.multishot_cooldown_max = Math.min(0.001, (this.shot_cooldown_max / 20) / this.multishots_max);
 
+        this.bow_sound_random = get_seeded_randomiser(this.board.random_seed);
+    
         this.arrow_proto = ArrowProjectile;
 
         this.speed_spread = 0;
@@ -291,6 +293,9 @@ class SmartBowBall extends WeaponBall {
             let fire_pos = this.position.add(firing_offset);
 
             let times = 1;
+            if (this.level >= AWAKEN_LEVEL) {
+                times += 1;
+            }
 
             for (let i=0; i<times; i++) {
                 board.spawn_projectile(
@@ -303,7 +308,7 @@ class SmartBowBall extends WeaponBall {
                 )
             }
 
-            let snd_rand = this.independent_random();
+            let snd_rand = this.bow_sound_random();
             if (snd_rand < 0.5) {
                 play_audio("bow1");
             } else {
@@ -380,6 +385,8 @@ class MissileLauncherBall extends WeaponBall {
         this.multishot_cooldown = 0;
         // 1/2th of the cooldown or 0.05, whichever is lower
         this.multishot_cooldown_max = Math.min(0.05, (this.shot_cooldown_max / 2) / this.multishots_max);
+
+        this.bow_sound_random = get_seeded_randomiser(this.board.random_seed);
     }
 
     weapon_step(board, time_delta) {
@@ -404,6 +411,9 @@ class MissileLauncherBall extends WeaponBall {
             let fire_pos = this.position.add(firing_offset);
 
             let times = 1;
+            if (this.level >= AWAKEN_LEVEL) {
+                times += 1;
+            }
 
             for (let i=0; i<times; i++) {
                 board.spawn_projectile(

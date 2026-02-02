@@ -1,8 +1,8 @@
 game_id = "balls";
 
-const FILES_PREFIX = "";
+const FILES_PREFIX = "../../";
 
-const GAME_VERSION = "01/02/2026";
+const GAME_VERSION = "03/01/2026";
 
 const AILMENT_CHARS = "➴☣♨";
 
@@ -13,7 +13,6 @@ const layer_names = [
     "ui1",
     "ui2",
     "ui3",
-    "ui4",
     "fg1",
     "fg2_raster",
     "fg2",
@@ -143,8 +142,6 @@ const board_obstacles = [
     }
 ]
 
-const DEFAULT_POWERUPS_FREQUENCY = [10, 20];
-
 const entity_sprites = new Map([
     // Vista - https://www.reddit.com/r/FrutigerAero/comments/1eqwt3s/windows_vistainspired_wallpapers_i_made_in_about/
     ["vista", 1, "etc/"],
@@ -158,24 +155,6 @@ const entity_sprites = new Map([
     ["entry_load", 16, "entries/load/"],
     ["entry_rift_front", 16, "rift/front/"],
     ["entry_rift_back", 16, "rift/back/"],
-
-    // powerups
-    ["powerup_empty", 1, "powerups/"],
-    ["powerup_coin_blast", 1, "powerups/"],
-    ["powerup_enhancement", 1, "powerups/"],
-    ["powerup_enhancement_star", 1, "powerups/"],
-
-    ["powerup_gift", 1, "powerups/"],
-    ["powerup_heal", 1, "powerups/"],
-    ["powerup_rock", 1, "powerups/"],
-    ["rock", 1, "etc/"],
-
-    ["powerup_burst_white", 1, "powerups/bursts/"],
-    ["powerup_burst_gold", 1, "powerups/bursts/"],
-    ["powerup_burst_pink", 1, "powerups/bursts/"],
-    ["powerup_burst_red", 1, "powerups/bursts/"],
-    ["powerup_burst_green", 1, "powerups/bursts/"],
-    ["powerup_burst_rock", 1, "powerups/bursts/"],
 
     // effects
     ["parry", 9, "etc/parry/"],
@@ -264,15 +243,12 @@ const entity_sprites = new Map([
     ["glass4", 1, "weapon/"],
     ["glass5", 1, "weapon/"],
     ["glass_angry", 1, "weapon/"],
-    ["glass_shard", 1, "weapon/"],
 
     ["glass_paper", 1, "weapon/"],
     ["glass_angry_paper", 1, "weapon/"],
-    ["glass_shard_paper", 1, "weapon/"],
 
     ["glass_chainsaw", 1, "weapon/"],
     ["glass_angry_chainsaw", 1, "weapon/"],
-    ["glass_shard_chainsaw", 1, "weapon/"],
 
     ["hand_neutral", 1, "weapon/hands/"],
     ["hand_open", 1, "weapon/hands/"],
@@ -332,13 +308,6 @@ const entity_sprites = new Map([
     ["rosary", 1, "weapon/"],
     ["rosary_halo", 1, "weapon/"],
     ["healing_burst", 11, "healing_burst/"],
-
-    ["fishing_rod", 1, "weapon/"],
-    ["fishing_rod_thrown", 1, "weapon/"],
-    ["fishing_rod_hook", 1, "weapon/"],
-    ["fishing_rod_club", 1, "weapon/"],
-    
-    ["fire_blast", 6, "fire_blast/"],
 
     ["explosion", 16, "explosion/"],  // Game Maker Classic
 
@@ -526,7 +495,6 @@ let audios_list = [
     ["disc_fire", "snd/disc_fire.wav"],
     ["eyebeam_fire", "snd/eyebeam_fire.wav"],
     ["jump", "snd/jump.wav"],
-    ["earthquake", "snd/earthquake.mp3"],
     // dragon ball z (explosion.wav)
     ["wall_smash", "snd/wall_smash.mp3"],
     // johnny test
@@ -593,19 +561,6 @@ let audios_list = [
 
     // https://www.myinstants.com/en/instant/slot-machine-44998/
     ["WINNER", "snd/WINNER.mp3"],
-
-    // The Legend of Zelda: A Link to the Past -- zol.wav
-    ["zol", "snd/zol.wav"],
-
-    // Final Fantasy 6
-    ["BlueMagic", "snd/00BlueMagic.wav"],
-    ["EsperRoar", "snd/6CEsperRoar.wav"],
-
-    // Persona 2: Innocent Sin Portable
-    ["slot_win", "snd/SE_SLOT_00008.wav"],
-
-    // Wario Land 4
-    ["FullHealthItemA", "snd/FullHealthItem_A.wav"],
 ]
 
 
@@ -864,28 +819,20 @@ class MovingFrictionParticle extends MovingParticle {
     }
 }
 
-class EnergyBurstParticle extends MovingParticle {
-    constructor(position, size, sprites, frame_speed, duration, looping, velocity_mag, friction, linked_ball, trail_col, granularity, speed_mul, delay=0, render_behind=false) {
+class RailgunParticle extends MovingParticle {
+    constructor(position, size, sprites, frame_speed, duration, looping, velocity_mag, friction, linked_ball, delay=0, render_behind=false) {
         super(position, 0, size, sprites, frame_speed, duration, looping, random_on_circle(velocity_mag), delay, render_behind)
     
-        this.trail_col = trail_col;
-
         this.friction = friction;
         this.linked_ball = linked_ball;
 
         this.trail_cooldown_max = 0.0001;
         this.trail_cooldown = this.trail_cooldown_max;
-
-        this.last_pos = position;
-        this.last_last_pos = position;
-
-        this.granularity = granularity;
-        this.speed_mul = speed_mul;
     }
 
     pass_time(time_delta) {
-        let times = this.granularity;
-        let speed_mul = this.speed_mul;
+        let times = 4;
+        let speed_mul = 2;
         let time_delta_section = speed_mul * (time_delta / times);
         let last_result = true;
 
@@ -903,10 +850,10 @@ class EnergyBurstParticle extends MovingParticle {
                 if (this.trail_cooldown <= 0) {
                     this.trail_cooldown = this.trail_cooldown_max;
 
-                    this.linked_ball.board.spawn_particle(new FadingLineParticle(
-                        this.last_last_pos, this.position, this.size / 1,
-                        this.trail_col, 0.25, 0, true
-                    ), this.last_last_pos)
+                    this.linked_ball.board.spawn_particle(new AilmentParticle(
+                        this.position, 0, this.size / PARTICLE_SIZE_MULTIPLIER,
+                        this.sprites, 0.2
+                    ), this.position)
                 }
 
                 // friction force is the same direction (signs) as velocity
@@ -921,9 +868,6 @@ class EnergyBurstParticle extends MovingParticle {
                 // then apply force towards linked ball
                 let propel_vector = this.linked_ball.position.sub(this.position).normalize();
                 this.velocity = this.velocity.add(propel_vector.mul(200000 * time_delta_section));
-
-                this.last_last_pos = this.last_pos;
-                this.last_pos = this.position;
             }
             
             last_result = result;
@@ -1092,79 +1036,6 @@ class HammerMogulMoneyParticle extends Particle {
     }
 }
 
-class LineParticle extends Particle {
-    constructor(position, target_position, width, colour, duration, delay=0, render_behind=false) {
-        super(position, 0, width, [null], 0, duration, false, delay, render_behind);
-
-        /** @type {Vector2} */
-        this.target_position = target_position;
-
-        /** @type {Colour} */
-        this.colour = colour;
-    }
-
-    pass_time(time_delta) {
-        let result = super.pass_time(time_delta);
-        if (result) {
-            // effectively disable cur_frame
-            this.cur_frame = 0;
-        }
-
-        return result;
-    }
-}
-
-class FadingLineParticle extends LineParticle {
-    constructor(position, target_position, width, colour, duration, delay=0, render_behind=false) {
-        super(position, target_position, width, colour, duration, delay, render_behind);
-    
-        this.base_width = width;
-        this.get_current_width()
-    }
-
-    get_current_width() {
-        let proportion = this.lifetime / this.duration;
-        // let siz = 1 - (2 * Math.abs(proportion - 0.5));
-        let siz = 1 - proportion;
-
-        this.size = Math.max(0, siz) * this.base_width;
-    }
-
-    pass_time(time_delta) {
-        let result = super.pass_time(time_delta);
-        if (result) {
-            this.get_current_width();
-        }
-
-        return result;
-    }
-}
-
-class OrbitingParticle extends Particle {
-    constructor(position, rotation_angle, size, sprites, frame_speed, duration, looping, orbit_target, orbit_speed, orbit_distance_factor, orbit_offset, delay=0, render_behind=false) {
-        super(position, rotation_angle, size, sprites, frame_speed, duration, looping, delay, render_behind);
-
-        this.orbit_target = orbit_target;
-        this.orbit_speed = orbit_speed;
-        this.orbit_distance_factor = orbit_distance_factor;
-        this.orbit_offset = orbit_offset;
-    }
-
-    pass_time(time_delta) {
-        let result = super.pass_time(time_delta);
-        if (result) {
-            let amt = this.orbit_speed * this.lifetime;
-            this.position = this.orbit_target.position.add(
-                new Vector2(1, 0).mul(
-                    this.orbit_target.radius * this.orbit_distance_factor
-                ).rotate(amt - this.orbit_offset)
-            )
-        }
-        
-        return result;
-    }
-}
-
 class Timer {
     static id_inc = 0;
 
@@ -1299,14 +1170,6 @@ class Board {
         this.tension = 0;
         this.time_since_parry = 0;
         this.time_since_hit = 0;
-
-        this.powerups_enabled = false;
-        this.powerups_pool = DEFAULT_POWERUPS_POOL;
-        this.powerups_frequency = DEFAULT_POWERUPS_FREQUENCY;
-        this.powerups_timeout = DEFAULT_POWERUPS_FREQUENCY[0] * 0.25;
-        this.powerups_last_delay = this.powerups_timeout;
-        this.powerups_last_spawned = null;
-        this.powerups_next = null;
 
         this.max_game_duration = default_max_game_duration;
     }
@@ -1552,33 +1415,6 @@ class Board {
         this.time_since_hit += time_delta;
     }
 
-    powerups_step(time_delta) {
-        if (!this.powerups_enabled)
-            return;
-
-        this.powerups_timeout -= time_delta;
-        if (this.powerups_timeout <= 0) {
-            this.powerups_timeout = random_float(...this.powerups_frequency, this.random);
-            this.powerups_last_delay = this.powerups_timeout;
-
-            let powerup_proto = this.powerups_next;
-            this.powerups_next = null;
-            this.powerups_last_spawned = powerup_proto;
-
-            let powerup = new powerup_proto(this, 512, 2/3);
-            this.spawn_ball(powerup, new Vector2(this.size.x / 2, this.size.y + 1000));
-        }
-
-        if (!this.powerups_next) {
-            let powerup_proto = null;
-            while (!powerup_proto || powerup_proto.name == this.powerups_last_spawned?.name) {
-                powerup_proto = weighted_seeded_random_from_arr(this.powerups_pool, this.random)[1];
-            }
-
-            this.powerups_next = powerup_proto;
-        }
-    }
-
     timers_step(time_delta) {
         this.timers.forEach(timer => timer.trigger_time -= time_delta);
         /*
@@ -1592,9 +1428,9 @@ class Board {
             
             // console.log(`Triggering timer ID ${trigger.id}`);
 
-            let result = trigger.func(this);
+            trigger.func(this);
 
-            if (trigger.repeat && result) {
+            if (trigger.repeat) {
                 trigger.reset();
                 this.set_timer(trigger);
             }
@@ -1689,10 +1525,6 @@ class Board {
                 if (ball1.skip_physics || ball2.skip_physics)
                     return;  // skip_physics balls should completely stop
 
-                if (!ball1.collision || !ball2.collision) {
-                    return;
-                }
-
                 if (ball1.id == ball2.id) {
                     return;
                 }
@@ -1725,7 +1557,7 @@ class Board {
 
         // check wall and ground bounces
         this.balls.forEach(ball => {
-            if (ball.skip_physics || ball.ignore_bounds_checking || !ball.collision)
+            if (ball.skip_physics || ball.ignore_bounds_checking)
                 return;  // skip_physics balls should completely stop
             /*
             ball.check_ground_bounce(sthis);
@@ -1790,7 +1622,6 @@ class Ball {
         this.last_pos = new Vector2(0, 0);
 
         this.skip_physics = false;
-        this.collision = true;
     }
 
     set_pos(to) {
@@ -2033,57 +1864,6 @@ function handle_resize(event) {
     // layers.bg2.ctx.drawImage(
     //     document.getElementById("map-clean"), 0, 0, canvas_width, canvas_height
     // )
-}
-
-function render_powerup_info(board) {
-    layers.ui4.ctx.clearRect(0, 0, canvas_width, canvas_height);
-
-    let last_powerup = board.powerups_last_spawned;
-
-    write_pp_bordered_text(
-        layers.ui4.ctx,
-        `Last bonus:`,
-        20, 32,
-        "white",
-        CANVAS_FONTS, 20, false, 2, "black"
-    );
-
-    let col = last_powerup?.burst_line_col?.lerp(Colour.white, 0.5).css() ?? "#888";
-    let subcol = last_powerup?.burst_line_col?.css() ?? "#555";
-
-    write_pp_bordered_text(
-        layers.ui4.ctx,
-        `${last_powerup?.title ?? "None"}`,
-        20, 32 + 22,
-        col,
-        CANVAS_FONTS, 16, false, 2, "black"
-    );
-
-    write_pp_bordered_text(
-        layers.ui4.ctx,
-        `${last_powerup?.desc ?? "-"}`,
-        20, 32 + 20 + 20,
-        subcol,
-        CANVAS_FONTS, 12, false, 2, "black"
-    );
-
-    write_pp_bordered_text(
-        layers.ui4.ctx,
-        `Next: ${(board.powerups_timeout.toFixed(1) + "s").padEnd(5)} [${"=".repeat(Math.ceil(24 * board.powerups_timeout / board.powerups_last_delay)).padEnd(24)}]`,
-        20, 32 + 20 + 20 + 32,
-        "#ccc",
-        CANVAS_FONTS, 12, false, 2, "black"
-    );
-
-    if (board.powerups_next) {
-        write_pp_bordered_text(
-            layers.ui4.ctx,
-            `${board.powerups_next.title}`,
-            20, 32 + 20 + 20 + 32 + 16,
-            board.powerups_next.burst_line_col.css(),
-            CANVAS_FONTS, 12, false, 2, "black"
-        );
-    }
 }
 
 function render_watermark() {
@@ -2448,7 +2228,10 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
             return;
         }
 
-        let particle_screen_pos = particle.position.mul(screen_scaling_factor);
+        let particle_screen_pos = new Vector2(
+            (particle.position.x) * screen_scaling_factor,
+            (particle.position.y) * screen_scaling_factor,
+        );
 
         let siz = particle.size * screen_scaling_factor * 128;
 
@@ -2456,32 +2239,18 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
 
         let sprite = particle.sprites[particle.cur_frame];
 
-        let canvas_entry = particle.render_behind ? layers.bg2 : layers.fg1;
-        
-        /** @type {CanvasRenderingContext2D} */
-        let ctx = canvas_entry.ctx;
+        let canvas = particle.render_behind ? layers.bg2 : layers.fg1;
 
         if (typeof sprite === "string") {
             write_pp_bordered_text(
-                ctx, sprite,
+                canvas.ctx, sprite,
                 particle_screen_pos.x, particle_screen_pos.y,
                 particle.text_col.css(), CANVAS_FONTS, (particle.text_size * particle.size) / PARTICLE_SIZE_MULTIPLIER,
                 true, 1, particle.text_border_col.css(), particle.text_modifiers
             );
-        } else if (particle instanceof LineParticle) {
-            let particle_end_pos = particle.target_position.mul(screen_scaling_factor);
-
-            ctx.lineWidth = particle.size;
-            ctx.strokeStyle = particle.colour.css();
-
-            ctx.beginPath();
-            ctx.moveTo(particle_screen_pos.x, particle_screen_pos.y);
-            ctx.lineTo(particle_end_pos.x, particle_end_pos.y);
-            ctx.stroke();
-            ctx.closePath();
         } else {
             write_rotated_image(
-                canvas_entry.canvas, ctx,
+                canvas.canvas, canvas.ctx,
                 particle_screen_pos.x, particle_screen_pos.y,
                 sprite,
                 siz, siz, particle.rotation_angle
@@ -2536,7 +2305,6 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
             let remaining_line_segs = segments - line_start_point;
             let initial_pos = projectile_screen_start_pos.lerp(projectile_screen_end_pos, line_start_point / segments);
             let last_pos = initial_pos;
-            let last_last_pos = last_pos;
 
             for (let i=line_start_point+1; i<segments; i++) {
                 let pos = projectile_screen_start_pos.lerp(projectile_screen_end_pos, i / segments);
@@ -2557,12 +2325,11 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
                 proj_layer.ctx.lineWidth = w_factor * max_width;
 
                 proj_layer.ctx.beginPath();
-                proj_layer.ctx.moveTo(last_last_pos.x, last_last_pos.y);
+                proj_layer.ctx.moveTo(last_pos.x, last_pos.y);
                 proj_layer.ctx.lineTo(pos.x, pos.y);
                 proj_layer.ctx.stroke();
                 proj_layer.ctx.closePath();
 
-                last_last_pos = last_pos;
                 last_pos = pos;
             }
         }
@@ -2581,7 +2348,7 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
                 layers.debug_back.ctx.beginPath();
                 layers.debug_back.ctx.arc(
                     hitbox_screen_pos.x, hitbox_screen_pos.y, 
-                    Math.max(0, (hitbox.radius * projectile.size * screen_scaling_factor) - (w2/2)),
+                    (hitbox.radius * projectile.size * screen_scaling_factor) - (w2/2),
                     0, 2 * Math.PI, false
                 );
                 layers.debug_back.ctx.fillStyle = new Colour(255, 255, 0, 128).css();
@@ -2794,7 +2561,7 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
                         layers.debug_back.ctx.beginPath();
                         layers.debug_back.ctx.arc(
                             hitbox_screen_pos.x, hitbox_screen_pos.y, 
-                            Math.max(0, (hitbox.radius * weapon.size_multiplier * screen_scaling_factor) - (w2/2)),
+                            (hitbox.radius * weapon.size_multiplier * screen_scaling_factor) - (w2/2),
                             0, 2 * Math.PI, false
                         );
                         layers.debug_back.ctx.fillStyle = new Colour(0, 255, 0, 128).css();
@@ -2837,15 +2604,15 @@ function render_descriptions(board) {
                 Math.round(l_base[1] + ball.desc_shake_offset[1]),
             ]
 
-            // if (BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO)
-            //     l[1] += 48;
+            if (BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO)
+                l[1] += 48;
 
             let ball_col = ball.get_current_desc_col().css();
             let ball_border_col = ball.get_current_border_col().css();
 
             write_pp_bordered_text(
                 layers.ui2.ctx,
-                `${ball.name}  LV ${ball instanceof UnarmedBall ? "???" : ball.level+1}`.padEnd(18) + `| HP: ${Math.ceil(ball.hp)}`,
+                `${ball.name}  LV ${ball instanceof UnarmedBall ? "???" : ball.level+1}`.padEnd(17) + `| HP: ${Math.ceil(ball.hp)}`,
                 l[0], l[1], ball_col, CANVAS_FONTS, 16,
                 false, BALL_DESC_BORDER_SIZE, ball_border_col
             )
@@ -2961,7 +2728,7 @@ function render_opening(board, time_delta) {
 
     let balls_num = board.balls.length;
     if (opening_state.balls < balls_num) {
-        let req = opening_state.balls * (1.2 / balls_num);
+        let req = opening_state.balls * (2 / balls_num);
         if (t > req) {
             let ball = board.balls[opening_state.balls]
             let pos = ball.position.add(
@@ -3024,8 +2791,8 @@ function render_opening(board, time_delta) {
         }
     });
 
-    let ball_stagger = 1.2;
-    let base_delay = 0.4;
+    let ball_stagger = 2;
+    let base_delay = 0.6;
 
     board.balls.forEach((ball, i) => {
         let req = base_delay + 0.25 + (i * (ball_stagger / balls_num));
@@ -3264,8 +3031,6 @@ function make_default_player(pid) {
             damage_bonus: 1,
             defense_bonus: 1,
             ailment_resistance: 1,
-
-            timespeed_mult: 1,
         }
     }
 }
@@ -3339,11 +3104,8 @@ function game_loop() {
                 render_watermark();  // new year uses watermark code to fade it so need to rerun it during games
         }
 
-        if (board.powerups_enabled)
-            render_powerup_info(board);
-
-        // if (BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO)
-        //     render_just_playing_around_warning();
+        if (BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO)
+            render_just_playing_around_warning();
     }
     
     // render_diagnostics(board);
@@ -3443,13 +3205,7 @@ function game_loop() {
                     // if multiple weapons collide, the first one takes priority
                     let hitstop = 0;
 
-                    // tension
                     board.tension_step(coll_game_delta_time);
-
-                    // powerups (test code for the moment)
-                    if (board.powerups_enabled) {
-                        board.powerups_step(coll_game_delta_time);
-                    }
 
                     // triggers
                     board.timers_step(coll_game_delta_time);
@@ -3714,13 +3470,13 @@ function game_loop() {
 
                     // hitting (weapon on ball)
                     board.balls.forEach(ball => {
-                        if (ball.skip_physics || !ball.collision)
+                        if (ball.skip_physics)
                             return;  // skip_physics balls should completely stop
 
                         if (ball.invuln_duration <= 0) {
                             // OK to check for hits (not in invuln window)
                             board.balls.forEach(other => {
-                                if (other.skip_physics || !other.collision)
+                                if (other.skip_physics)
                                     return;  // skip_physics balls should completely stop
 
                                 // make sure we don't check collisions with our own team
@@ -3793,7 +3549,7 @@ function game_loop() {
 
                     // projectile hitting (projectile on ball)
                     board.balls.forEach(ball => {
-                        if (ball.skip_physics || !ball.collision)
+                        if (ball.skip_physics)
                             return;  // skip_physics balls should completely stop
 
                         if (ball.invuln_duration <= 0) {
@@ -3870,7 +3626,9 @@ function game_loop() {
                             return;
 
                         let projectiles_in_scope = board.projectiles.filter(other => 
-                            projectile.can_hit_projectile(other)
+                            projectile.id !== other.id &&
+                            other.parriable && other.collides_other_projectiles &&
+                            (!other.source.allied_with(projectile.source) || (projectile.can_hit_allied && other.can_hit_allied))
                         );
 
                         let projectiles_colliding = projectile.check_projectiles_colliding(projectiles_in_scope);
@@ -3993,8 +3751,6 @@ function game_loop() {
                 if (players.length > 0) {
                     board.get_all_player_balls(players[0]).forEach(ball => ball.takes_damage = false);
                 }
-
-                muted = match_end_timeout < 14000;
 
                 match_end_timeout -= game_delta_time;
                 ending_game = true;

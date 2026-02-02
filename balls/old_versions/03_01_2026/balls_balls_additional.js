@@ -625,11 +625,9 @@ class SuperDaggerBall extends WeaponBall {
     hit_other_with_projectile(other, with_projectile) {
         let result = super.hit_other_with_projectile(other, with_projectile);
 
-        if (with_projectile.source_weapon_index != 999) {
-            this.hitstop = 0;
-            other.hitstop = 0;
-            other.invuln_duration = 0;
-        }
+        this.hitstop = 0;
+        other.hitstop = 0;
+        other.invuln_duration = 0;
 
         return result;
     }
@@ -981,10 +979,8 @@ class GamblerBall extends WeaponBall {
     hit_other_with_projectile(other, with_projectile) {
         let result = super.hit_other_with_projectile(other, with_projectile);
 
-        if (with_projectile.source_weapon_index != 999) {
-            if (!this.weakness) {
-                this.weakness_cnt = this.weakness_cnt_max;
-            }
+        if (!this.weakness) {
+            this.weakness_cnt = this.weakness_cnt_max;
         }
 
         return result;
@@ -1135,11 +1131,9 @@ class NotSoSuperDaggerBall extends WeaponBall {
     hit_other_with_projectile(other, with_projectile) {
         let result = super.hit_other_with_projectile(other, with_projectile);
 
-        if (with_projectile.source_weapon_index != 999) {
-            this.hitstop = 0;
-            other.hitstop = 0;
-            other.invuln_duration = 0;
-        }
+        this.hitstop = 0;
+        other.hitstop = 0;
+        other.invuln_duration = 0;
 
         return result;
     }
@@ -1535,8 +1529,6 @@ class ThwompBall extends WeaponBall {
         this.down_slam_cooldown_max = 5;
         this.down_slam_cooldown = this.down_slam_cooldown_max;
 
-        this.skip_retract = false;
-
         this.slamming = false;
 
         this.spike_motion = 0;  // 1 - extend, 2 - retract
@@ -1557,10 +1549,8 @@ class ThwompBall extends WeaponBall {
         }
 
         if (this.spike_motion != 0) {
-            if (!this.skip_retract) {
-                this.spike_motion_amt -= time_delta * this.spike_motion_per_second * Math.sign(this.spike_motion - 1.5);
-                this.spike_motion_amt = Math.max(0, Math.min(1, this.spike_motion_amt))
-            }
+            this.spike_motion_amt -= time_delta * this.spike_motion_per_second * Math.sign(this.spike_motion - 1.5);
+            this.spike_motion_amt = Math.max(0, Math.min(1, this.spike_motion_amt))
 
             if (this.weapon_data.length == 0 && this.spike_motion_amt > 0) {
                 this.weapon_data = new Array(12).fill(0).map(() => new BallWeapon(
@@ -1609,11 +1599,6 @@ class ThwompBall extends WeaponBall {
 
             this.spike_motion = 2;
             this.spike_motion_amt = 1;
-            if (this.board.random() < 0.1) {
-                this.skip_retract = true;
-            } else {
-                this.skip_retract = false;
-            }
         }
     }
 
@@ -1915,12 +1900,14 @@ class ShotgunMagnumBall extends WeaponBall {
 
         this.coin_shot_cooldown_max = 0.5 + (this.level * -0.001);
         this.coin_shot_cooldown = this.coin_shot_cooldown_max;
+
+        this.sound_random = get_seeded_randomiser(this.board.random_seed);
     }
 
     recoil_movement() {
         let new_angle = this.weapon_data[0].angle;
         let diff_vec = new Vector2(-1, 0).rotate(new_angle);
-        let share = 0.8;
+        let share = 0.25;
 
         let diff_add = diff_vec.mul(share);
 
@@ -1957,18 +1944,18 @@ class ShotgunMagnumBall extends WeaponBall {
                 let width = random_float(...this.width_range, this.board.random);
 
                 board.spawn_projectile(
-                    new MagnumProjectile(
-                        this.board,
-                        this, 0, fire_pos, this.proj_damage_base,
-                        new Vector2(1, 0).rotate(shot_angle).mul(10000).add(fire_pos), 0
-                    ), fire_pos
-                )
+                new MagnumProjectile(
+                    this.board,
+                    this, 0, fire_pos, this.proj_damage_base,
+                    new Vector2(1, 0).rotate(shot_angle).mul(10000).add(fire_pos), 0
+                ), fire_pos
+            )
 
                 this.recoil_movement();
+                
+                let snd_rand = Math.floor(this.sound_random() * 3);
+                play_audio(["shotgun", "shotgun", "shotgun3"][snd_rand], 0.04);
             }
-
-            let snd_rand = Math.floor(this.independent_random() * 3);
-            play_audio(["shotgun", "shotgun", "shotgun3"][snd_rand], 0.2);
         }
 
         if (this.coin_shot_cooldown < 0) {

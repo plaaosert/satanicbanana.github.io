@@ -11,7 +11,7 @@
     <meta content="#cccccc" data-react-helmet="true" name="theme-color" />
 	<meta name="viewport" content="width=device-width, initial-scale=0.1, user-scalable=yes" />
 
-    <link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=02"/>
+    <link rel="stylesheet" type="text/css" href="../../../shared/css/games.css?v=02"/>
 	<link rel="stylesheet" type="text/css" href="balls.css?v=33"/>
 </head>
 <body>
@@ -51,8 +51,7 @@
             </div>
 
             <div class="game-supercontainer">
-                <span id="loading_reminder_text" style="align-self: center; justify-self: center;">please be patient while the game loads :3</span>
-                <div class="game-container" id="game-container" style="visibility: hidden;">
+                <div class="game-container" id="game-container" style="display: none;">
                     <div class="sandbox sandbox-menu behind-canvases withborder">
                         <div class="old-ballselect nodisplay">
                             <div id="ball1_settings" class="row ballsettings" style="--col: rgb(255, 0, 0)">
@@ -199,11 +198,6 @@
 
                             <input type="checkbox" id="extend_intro_checkbox">
                             <span onclick="document.querySelector('#extend_intro_checkbox').click()">Extended intro?</span>
-
-                            <span>&nbsp;</span>
-
-                            <input type="checkbox" id="enable_powerups_checkbox">
-                            <span onclick="document.querySelector('#enable_powerups_checkbox').click()">Enable bonuses?</span>
 
                             <span>&nbsp;</span>
 
@@ -361,9 +355,6 @@
                         This canvas needs to be viewed to be displayed.
                     </canvas>
                     <canvas class="game-canvas" id="game-canvas-fg1">
-                        This canvas needs to be viewed to be displayed.
-                    </canvas>
-                    <canvas class="game-canvas" id="game-canvas-ui4">
                         This canvas needs to be viewed to be displayed.
                     </canvas>
                     <canvas class="game-canvas" id="game-canvas-ui3">
@@ -774,27 +765,25 @@
         </div>
     </div>
 
-    <script src="../shared/js/helpers.js?v=10"></script>
-	<script src="../shared/js/canvas_helpers.js?v=05"></script>
+    <script src="../../../shared/js/helpers.js?v=09"></script>
+	<script src="../../../shared/js/canvas_helpers.js?v=05"></script>
 	
-    <script src="balls_core.js?v=48"></script>
+    <script src="balls_core.js?v=47"></script>
 
-    <script src="balls_balls.js?v=51"></script>
-    <script src="balls_balls_additional.js?v=45"></script>
-    <script src="balls_balls_powered.js?v=07"></script>
+    <script src="balls_balls.js?v=50"></script>
+    <script src="balls_balls_additional.js?v=44"></script>
+    <script src="balls_balls_powered.js?v=06"></script>
 
-    <script src="balls_powerups.js?v=00"></script>
+    <script src="balls_gambling_info.js?v=01"></script>
 
-    <script src="balls_gambling_info.js?v=02"></script>
-
-    <script src="balls_replay_parsing.js?v=10"></script>
-    <script src="balls_launcher.js?v=71"></script>
+    <script src="balls_replay_parsing.js?v=09"></script>
+    <script src="balls_launcher.js?v=70"></script>
     
-    <script src="balls_campaign.js?v=08"></script>
+    <script src="balls_campaign.js?v=07"></script>
 
-    <script src="balls_mysterious_powers.js?v=04"></script>
+    <script src="balls_mysterious_powers.js?v=03"></script>
 
-	<script src="../shared/js/playtime.js?v=00"></script>
+	<script src="../../../shared/js/playtime.js?v=00"></script>
 
     <div id="desktop_mode_prompt" class="nodisplay">
         <span>if you're on mobile, it'd probably be best if you turned on <span class="important">"desktop site"</span> mode for this page.</span>
