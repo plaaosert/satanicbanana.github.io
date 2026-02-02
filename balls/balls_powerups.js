@@ -178,7 +178,7 @@ class PowerupEnhancement extends Powerup {
     static burst_line_col = new Colour(198, 27, 228, 255);
 
     static title = "Enhancement";
-    static desc = "All allies gain double defense and attack speed.";
+    static desc = "Gain double defense and attack speed.";
 
     constructor(board, base_radius, radius_mul) {
         super(board, base_radius, radius_mul);
@@ -225,11 +225,10 @@ class PowerupEnhancement extends Powerup {
         // do nothing
         play_audio("EsperRoar", 0.2);
         
-        let old_player_settings = JSON.parse(JSON.stringify(to.player.stats))
         // new_player_settings.stats.damage_bonus *= 2;
-        to.player.stats.defense_bonus *= 2;
-        to.player.stats.ailment_resistance *= 2;
-        to.player.stats.timespeed_mult *= 2;
+        to.temp_stat_modifiers.defense_bonus *= 2;
+        to.temp_stat_modifiers.ailment_resistance *= 2;
+        to.temp_stat_modifiers.timespeed_mult *= 2;
 
         let particles_angle_diff = deg2rad(22.5);
         let dur = 10;
@@ -252,7 +251,9 @@ class PowerupEnhancement extends Powerup {
             }
 
             // return stats to normal
-            to.player.stats = old_player_settings;
+            to.temp_stat_modifiers.defense_bonus /= 2;
+            to.temp_stat_modifiers.ailment_resistance /= 2;
+            to.temp_stat_modifiers.timespeed_mult /= 2;
 
             return false;
         }, dur))

@@ -352,6 +352,15 @@ class WeaponBall extends Ball {
             unique_level   [int]
         */
         this.player = player;
+        this.temp_stat_modifiers = {
+
+        }
+
+        if (this.player.stats) {
+            Object.keys(this.player.stats).forEach(k => {
+                this.temp_stat_modifiers[k] = 1;
+            })
+        }
 
         // weaponballs have a set of weapons that spin around them
         this.weapon_data = [
@@ -432,6 +441,10 @@ class WeaponBall extends Ball {
             this.setup_aero_light_lookup_table();
 
         this.independent_random = get_seeded_randomiser(this.board.random_seed);
+    }
+
+    get_stat(name) {
+        return (this.player?.stats[name] ?? 1) * (this.temp_stat_modifiers[name] ?? 1);
     }
 
     late_setup() {
@@ -809,7 +822,7 @@ class WeaponBall extends Ball {
         }
 
         super.physics_step(time_delta);
-        this.weapon_step(board, time_delta * (this.player.stats.timespeed_mult ?? 1));
+        this.weapon_step(board, time_delta * this.get_stat("timespeed_mult"));
         this.ailments_step(board, time_delta);
 
         this.invuln_duration -= time_delta;
@@ -1053,7 +1066,7 @@ class WeaponBall extends Ball {
         
         let hitstop = BASE_HITSTOP_TIME;
 
-        let result = other.get_hit(this, damage * (this.player?.stats?.damage_bonus ?? 1), hitstop);
+        let result = other.get_hit(this, damage * this.get_stat("damage_bonus"), hitstop);
         this.apply_hitstop(hitstop);
 
         result.hitstop = hitstop;
@@ -1064,7 +1077,7 @@ class WeaponBall extends Ball {
 
     get_hit(source, damage, hitstop, invuln=null, round_up=true) {
         // defense_bonus is a simple "divide damage by this" value
-        let def = this.player?.stats?.defense_bonus ?? 1;
+        let def = this.get_stat("defense_bonus");
 
         // reduce def by burn
         let burn_dmg_mult = 1 + Math.max(0, this.burn_intensity * 0.2);
@@ -1086,7 +1099,7 @@ class WeaponBall extends Ball {
 
         let hitstop = BASE_HITSTOP_TIME;
 
-        let result = other.get_hit_by_projectile(this, with_projectile.damage * (this.player?.stats?.damage_bonus ?? 1), hitstop);
+        let result = other.get_hit_by_projectile(this, with_projectile.damage * this.get_stat("damage_bonus"), hitstop);
         
         this.apply_hitstop(hitstop);
 
@@ -1112,7 +1125,7 @@ class WeaponBall extends Ball {
     apply_rupture(other, amt, scales_with_stat="damage_bonus") {
         let final_amt = amt;
         if (scales_with_stat) {
-            final_amt *= this.player?.stats[scales_with_stat] ?? 1;
+            final_amt *= this.get_stat(scales_with_stat);
         }
 
         other.receive_rupture(this, final_amt);
@@ -1120,7 +1133,7 @@ class WeaponBall extends Ball {
 
     receive_rupture(other, amt) {
         let final_amt = amt;
-        final_amt /= this.player?.stats?.ailment_resistance ?? 1;
+        final_amt /= this.get_stat("ailment_resistance");
 
         this.rupture_intensity += final_amt;
 
@@ -1131,7 +1144,7 @@ class WeaponBall extends Ball {
         // amt scales with damage
         let final_amt = amt;
         if (scales_with_stat) {
-            final_amt *= this.player?.stats[scales_with_stat] ?? 1;
+            final_amt *= this.get_stat(scales_with_stat);
         }
 
         other.receive_poison(this, final_amt, duration);
@@ -1140,7 +1153,7 @@ class WeaponBall extends Ball {
     receive_poison(other, amt, duration) {
         // duration scales with resistance
         let final_duration = duration;
-        final_duration /= this.player?.stats?.ailment_resistance ?? 1;
+        final_duration /= this.get_stat("ailment_resistance");
 
         this.poison_intensity += amt;
         this.poison_duration = Math.max(
@@ -1154,7 +1167,7 @@ class WeaponBall extends Ball {
     apply_burn(other, amt, scales_with_stat="damage_bonus") {
         let final_amt = amt;
         if (scales_with_stat) {
-            final_amt *= this.player?.stats[scales_with_stat] ?? 1;
+            final_amt *= this.get_stat(scales_with_stat);
         }
 
         other.receive_burn(this, final_amt);
@@ -1162,7 +1175,7 @@ class WeaponBall extends Ball {
 
     receive_burn(other, amt) {
         let final_amt = amt;
-        final_amt /= this.player?.stats?.ailment_resistance ?? 1;
+        final_amt /= this.get_stat("ailment_resistance");
 
         this.burn_intensity += final_amt;
 
@@ -3097,7 +3110,7 @@ class GrenadeBall extends WeaponBall {
             dmg *= this.self_grenade_reduction;
         }
 
-        let result = other.get_hit_by_projectile(this, dmg * (this.player?.stats?.damage_bonus ?? 1), hitstop);
+        let result = other.get_hit_by_projectile(this, dmg * this.get_stat("damage_bonus"), hitstop);
         
         if (with_projectile.source_weapon_index != 999) {
             this.apply_hitstop(hitstop);
@@ -4370,7 +4383,7 @@ class ChakramBall extends WeaponBall {
 
         let hitstop = BASE_HITSTOP_TIME;
 
-        let dmg = with_projectile.damage * (this.player?.stats?.damage_bonus ?? 1);
+        let dmg = with_projectile.damage * this.get_stat("damage_bonus");
         let result = other.get_hit_by_projectile(this, dmg, hitstop);
         
         if (with_projectile.source_weapon_index != 999) {
@@ -6757,8 +6770,8 @@ class PotionPuddleProjectile extends Projectile {
                 // damage
 
                 // orig. effect
-                let dmg_mul = this.player?.stats?.damage_bonus ?? 1;
-                let def_mul = ball.player?.stats?.defense_bonus ?? 1;
+                let dmg_mul = this.get_stat("damage_bonus");
+                let def_mul = ball.get_stat("defense_bonus");
 
                 let dmg = (7.25 * this.intensity * dmg_mul * delta_time) / def_mul;
 
