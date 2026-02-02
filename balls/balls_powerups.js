@@ -244,18 +244,11 @@ class PowerupEnhancement extends Powerup {
             board.spawn_particle(part, pos);
         }
 
-        let end_time = board.duration + dur;
         board.set_timer(new Timer(b => {
-            if (b.duration < end_time) {
-                return true;
-            }
-
             // return stats to normal
             to.temp_stat_modifiers.defense_bonus /= 2;
             to.temp_stat_modifiers.ailment_resistance /= 2;
             to.temp_stat_modifiers.timespeed_mult /= 2;
-
-            return false;
         }, dur))
     }
 }
