@@ -1337,8 +1337,10 @@ function randomise_ball_info(ballid, rand_type) {
         }
 
         case "random-everything": {
-            let cats = Object.keys(CATEGORIES)
-            let cat = random_from_array(cats);
+            let cats = Object.keys(CATEGORIES);
+            let cats_weighted = balance_weighted_array(cats.map(c => [category_to_balls_list[c].length, c]))
+
+            let cat = weighted_random_from_arr(cats_weighted)[1];
 
             category = cat;
 
