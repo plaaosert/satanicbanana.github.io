@@ -213,7 +213,7 @@ class PowerupEnhancement extends Powerup {
 
     get_dir() {
         let from_center = this.board.size.mul(0.5).sub(this.position);
-        let from_center_mag = from_center.magnitude();
+        let from_center_mag = from_center.magnitude() + Number.EPSILON;
         let from_center_vec = from_center.div(from_center_mag);
 
         return random_on_circle(1, this.board.random).add(new Vector2(0, -1)).add(

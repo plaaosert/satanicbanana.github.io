@@ -1634,9 +1634,11 @@ class HammerBall extends WeaponBall {
 
         let other_mag = other.velocity.magnitude();
 
-        let new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
+        if (other_mag != 0) {
+            let new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
 
-        other.set_velocity(new_other_velocity);
+            other.set_velocity(new_other_velocity);
+        }
 
         other.apply_invuln(BALL_INVULN_DURATION * 2);
 
@@ -1963,7 +1965,7 @@ class DaggerBall extends WeaponBall {
                         ))
 
                         let dir = pos.sub(this.position);
-                        let mag = dir.magnitude();
+                        let mag = dir.magnitude() + Number.EPSILON;
                         dir = dir.div(mag).mul(Math.min(0.8, this.radius / mag) * 5000);
 
                         this.board.spawn_particle(new MovingFrictionParticle(
@@ -2032,6 +2034,10 @@ class DaggerBall extends WeaponBall {
 class BowBall extends WeaponBall {
     static ball_name = "Bow";
 
+    static AVAILABLE_SKINS = [
+        "Cross",  // Refticus
+    ];
+
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
@@ -2087,6 +2093,20 @@ class BowBall extends WeaponBall {
         this.multishot_cooldown = 0;
         // 1/2th of the cooldown or 0.05, whichever is lower
         this.multishot_cooldown_max = Math.min(0.05, (this.shot_cooldown_max / 2) / this.multishots_max);
+    
+        this.sprite_suffix = "";
+    }
+
+    set_skin(skin_name) {
+        super.set_skin(skin_name);
+
+        switch (skin_name) {
+            case "Cross": {
+                this.weapon_data[0].sprite = "bow_crossbow";
+                this.sprite_suffix = "_crossbow";
+                break;
+            }
+        }
     }
 
     weapon_step(board, time_delta) {
@@ -2121,7 +2141,8 @@ class BowBall extends WeaponBall {
                         this.board,
                         this, 0, fire_pos, this.proj_damage_base, 1 * this.arrow_size_mult,
                         new Vector2(1, 0).rotate(this.weapon_data[0].angle + (random_float(-10, 10, this.board.random) * (Math.PI / 180))),
-                        this.arrow_speed * random_float(0.85, 1.15, this.board.random), this.velocity.mul(0)
+                        this.arrow_speed * random_float(0.85, 1.15, this.board.random), Vector2.zero,
+                        this.sprite_suffix
                     ), fire_pos
                 )
             }
@@ -4003,9 +4024,11 @@ class HandBall extends WeaponBall {
 
             let other_mag = other.velocity.magnitude();
 
-            let new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
+            if (other_mag != 0) {
+                let new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
 
-            other.set_velocity(new_other_velocity);
+                other.set_velocity(new_other_velocity);
+            }
 
             other.apply_invuln(BALL_INVULN_DURATION * 2);
         } else if (this.hands_sprites[with_weapon_index] == "hand_open" && !(other instanceof Powerup)) {
@@ -4240,10 +4263,19 @@ class ChakramBall extends WeaponBall {
         this.tags = [
             TAGS.HYBRID,
             TAGS.DEFENSIVE,
-            TAGS.AILMENTS,
             TAGS.LEVELS_UP,
             TAGS.CAN_AWAKEN,
         ];
+
+        if (this.level >= AWAKEN_LEVEL) {
+            this.tags = [
+                TAGS.HYBRID,
+                TAGS.DEFENSIVE,
+                TAGS.AILMENTS,
+                TAGS.LEVELS_UP,
+                TAGS.CAN_AWAKEN,
+            ];
+        }
 
         this.entry_animation = "teleport";
         this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
@@ -4443,6 +4475,7 @@ class WandBall extends WeaponBall {
 
     static AVAILABLE_SKINS = [
         "Whimsy",  // Boggy
+        "Brush",   // Refticus
     ];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
@@ -4550,6 +4583,13 @@ class WandBall extends WeaponBall {
             case "Whimsy": {
                 this.weapon_data[0].sprite = "wand_black_whimsy";
                 this.sprite_suffix = "_whimsy";
+
+                break;
+            }
+
+            case "Brush": {
+                this.weapon_data[0].sprite = "wand_black_brush";
+                this.sprite_suffix = "_brush";
 
                 break;
             }
@@ -4856,9 +4896,11 @@ class WandBlackBall extends WeaponBall {
 
         let other_mag = other.velocity.magnitude();
 
-        let new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
+        if (other_mag != 0) {
+            let new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
 
-        other.set_velocity(new_other_velocity);
+            other.set_velocity(new_other_velocity);
+        }
 
         other.apply_invuln(BALL_INVULN_DURATION * 2);
 
@@ -5077,9 +5119,11 @@ class AxeBall extends WeaponBall {
 
         let this_mag = this.velocity.magnitude();
 
-        let new_this_velocity = this.velocity.div(this_mag).mul(1 - share).add(diff_add).normalize().mul(this_mag)
+        if (this_mag != 0) {
+            let new_this_velocity = this.velocity.div(this_mag).mul(1 - share).add(diff_add).normalize().mul(this_mag)
 
-        this.set_velocity(new_this_velocity);
+            this.set_velocity(new_this_velocity);
+        }
 
         let particle = new Particle(this.position, new_angle, 1.5, entity_sprites.get("hand_punch_particles"), 16, 0.4, false);
         this.board.spawn_particle(particle, this.position);
@@ -5237,9 +5281,11 @@ class ShotgunBall extends WeaponBall {
 
         let this_mag = this.velocity.magnitude();
 
-        let new_this_velocity = this.velocity.div(this_mag).mul(1 - share).add(diff_add).normalize().mul(this_mag)
+        if (this_mag != 0) {
+            let new_this_velocity = this.velocity.div(this_mag).mul(1 - share).add(diff_add).normalize().mul(this_mag)
 
-        this.set_velocity(new_this_velocity);
+            this.set_velocity(new_this_velocity);
+        }
     }
 
     weapon_step(board, time_delta) {
@@ -5731,6 +5777,7 @@ class FishingRodBall extends WeaponBall {
             TAGS.RANGED,
             TAGS.OFFENSIVE,
             TAGS.PROJECTILES,
+            TAGS.AILMENTS,
             TAGS.LEVELS_UP,
             TAGS.CAN_AWAKEN,
         ];
@@ -5805,11 +5852,15 @@ class FishingRodBall extends WeaponBall {
             let ball_mag = -this.velocity.magnitude();
             let other_mag = -other.velocity.magnitude();
 
-            let new_ball_velocity = this.velocity.div(ball_mag).mul(1 - share).add(ball_diff_add).normalize().mul(ball_mag)
-            let new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
+            if (ball_mag != 0) {
+                let new_ball_velocity = this.velocity.div(ball_mag).mul(1 - share).add(ball_diff_add).normalize().mul(ball_mag)
+                this.set_velocity(new_ball_velocity);
+            }
 
-            this.set_velocity(new_ball_velocity);
-            other.set_velocity(new_other_velocity);
+            if (other_mag != 0) {
+                let new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
+                other.set_velocity(new_other_velocity);
+            }
 
             // setup club
             let club_weapon = new BallWeapon(
@@ -6126,6 +6177,246 @@ class FishingRodHookProjectileBall extends WeaponBall {
     }
 }
 
+class FryingPanBall extends WeaponBall {
+    static ball_name = "Frying Pan";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Frying Pan";
+        this.description_brief = "Cooks up delicious delicacies that heal allies or self and burn enemies. The pan does a lot of damage on hit too!";
+        this.level_description = "Reduces cooking time and increases the chance of making multiple foods at once.";
+        this.max_level_description = "+1 base delicacy per toss. Delicacies bounce on hit, giving them a chance to hit again.";
+        this.quote = "You disrupted my energy balance. I had to do this.";
+
+        this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
+        this.category = CATEGORIES.STANDARD;
+        this.tags = [
+            TAGS.HYBRID,
+            TAGS.BALANCED,
+            TAGS.PROJECTILES,
+            TAGS.AILMENTS,
+            TAGS.LEVELS_UP,
+            TAGS.CAN_AWAKEN,
+        ];
+
+        if (this.reversed) {
+            this.weapon_data = [
+                new BallWeapon(1, "frying_pan_r", [
+                    {pos: new Vector2(44, 58), radius: 7},
+                    {pos: new Vector2(56, 58), radius: 10},
+                    {pos: new Vector2(68, 58), radius: 10},
+                    {pos: new Vector2(80, 58), radius: 7},
+                ])
+            ];
+        } else {
+            this.weapon_data = [
+                new BallWeapon(1, "frying_pan", [
+                    {pos: new Vector2(44, 70), radius: 7},
+                    {pos: new Vector2(56, 70), radius: 10},
+                    {pos: new Vector2(68, 70), radius: 10},
+                    {pos: new Vector2(80, 70), radius: 7},
+                ])
+            ];
+        }
+
+        this.custom_parry_sound = "frying_pan";
+        this.custom_projectile_parry_sound = "frying_pan";
+        this.parry_gain_mul = 0.04;
+
+        this.pan_toss_time_max = [0.5, 0.7];
+        this.pan_toss_time = random_float(...this.pan_toss_time_max, this.board.random);
+        this.last_pan_toss_time = this.pan_toss_time;
+
+        this.toss_projectile_delay_max = 0.04;
+        this.toss_projectile_delay = 0;
+
+        this.pan_toss_speed_modifier = deg2rad(300);
+
+        this.pan_toss_projectile_speed = [5000, 10000];
+        this.pan_toss_projectile_count_base = 1;
+        this.pan_toss_projectile_count_inc_chance = 0.5 + (this.level * 0.0025);
+        this.pan_toss_projectile_count_chance_reduction = 0.5 + (this.level * 0.001);
+
+        this.predicted_projectiles = this.calculate_predicted_projectiles();
+
+        this.speed_modifier_decay = deg2rad(360 * 3);
+        this.speed_modifier = 0;
+
+        this.damage_base = 6;
+        this.speed_base = 100;
+
+        this.proj_damage_base = 0.3;
+        this.proj_heal_base = 3;
+
+        this.projectile_bounces = 0;
+        if (this.level >= AWAKEN_LEVEL) {
+            this.pan_toss_projectile_count_base += 1;
+            this.projectile_bounces += Number.POSITIVE_INFINITY;
+        }
+
+        this.possible_projectiles = balance_weighted_array([
+            [1, PanAppleProjectile],
+            [0.85, PanAvocadoProjectile],
+            [1, PanBaconProjectile],
+            [1, PanBananaProjectile],
+            [0.3, PanBurgerProjectile],
+            [1, PanCarrotProjectile],
+            [0.9, PanCeleryProjectile],
+            [0.4, PanCoconutProjectile],
+            [0.9, PanCucumberProjectile],
+            [0.1, PanDubiousDelicacyProjectile],
+            [0.95, PanEggProjectile],
+            [1, PanGoldfishProjectile],
+            [0.1, PanLoafProjectile],
+            [0.5, PanMeatProjectile],
+            [0.5, PanMushroomProjectile],
+            [0.6, PanPepperProjectile],
+            [0.6, PanSoupProjectile],
+            [0.5, PanSushiProjectile],
+        ])
+    }
+
+    calculate_predicted_projectiles() {
+        let temp_random = get_seeded_randomiser(this.board.random_seed);
+
+        let projs = 0;
+        let cnt = 10000;
+        for (let i=0; i<cnt; i++) {
+            projs += this.get_projectiles_from_toss(temp_random);
+        }
+
+        return projs / cnt;
+    }
+
+    get_projectiles_from_toss(random_source) {
+        let cnt = this.pan_toss_projectile_count_base;
+        let chance = this.pan_toss_projectile_count_inc_chance;
+        while (random_source() < chance) {
+            cnt++;
+            chance *= this.pan_toss_projectile_count_chance_reduction;
+        }
+
+        return cnt;
+    }
+
+    weapon_step(board, time_delta) {
+        // rotate the weapon
+        this.rotate_weapon(0, this.speed_base * time_delta);
+
+        // speed modifier ignores weapon reverse, only cares about ball reverse
+        this.weapon_data[0].angle += (this.speed_modifier * time_delta) * (this.reversed ? 1 : -1);
+
+        this.speed_modifier = Math.max(0, this.speed_modifier - (this.speed_modifier_decay * time_delta));
+
+        this.pan_toss_time = Math.max(0, this.pan_toss_time - time_delta);
+        if (this.pan_toss_time <= 0) {
+            if (this.toss_projectile_delay > 0) {
+                this.toss_projectile_delay -= time_delta;
+
+                if (this.toss_projectile_delay <= 0) {
+                    this.pan_toss_time = random_float(...this.pan_toss_time_max, this.board.random);
+                    this.last_pan_toss_time = this.pan_toss_time;
+
+                    let projs = this.get_projectiles_from_toss(this.board.random);
+                    for (let i=0; i<projs; i++) {
+                        let hitbox_index = this.board.random() < 0.5 ? 1 : 2;
+                        let pos = this.position.add(
+                            this.get_weapon_offset(0)
+                        ).add(
+                            this.get_hitboxes_offsets(0)[hitbox_index]
+                        ).add(
+                            random_on_circle(
+                                this.weapon_data[0].hitboxes[hitbox_index].radius * this.weapon_data[0].size_multiplier,
+                                this.board.random
+                            )
+                        );
+
+                        /** @type {typeof PanFoodProjectile} */
+                        let proj_proto = weighted_seeded_random_from_arr(
+                            this.possible_projectiles, this.board.random
+                        )[1];
+
+                        let angle = this.weapon_data[0].angle - (Math.PI * 0.5);
+                        if (this.reversed) {
+                            angle += Math.PI;
+                        }
+
+                        angle += deg2rad(random_float(-20, 20, this.board.random));
+
+                        this.board.spawn_projectile(new proj_proto(
+                            this.board, this, 0, pos,
+                            this.proj_damage_base, this.proj_heal_base,
+                            0.5, new Vector2(1, 0).rotate(angle),
+                            random_float(...this.pan_toss_projectile_speed, this.board.random),
+                            this.board.gravity, this.projectile_bounces,
+                            Vector2.zero,
+                            this.board.random() < 0.5
+                        ), pos)
+                    }
+                }
+            } else {
+                this.toss_projectile_delay = this.toss_projectile_delay_max;
+                this.speed_modifier = this.pan_toss_speed_modifier;
+            }
+        }
+    }
+
+    hit_other(other, with_weapon_index) {
+        // additionally knock the other ball away
+        let dmg = this.damage_base;
+
+        let result = super.hit_other(other, with_weapon_index, dmg);
+
+        result.snd = "frying_pan";
+        result.gain = 0.04;
+
+        return result;
+    }
+
+    hit_other_with_projectile(other, with_projectile) {
+        let result = super.hit_other_with_projectile(other, with_projectile);
+
+        if (with_projectile.source_weapon_index != 999) {
+            if (with_projectile instanceof PanFoodProjectile) {
+                if (this.allied_with(other)) {
+                    result.snd = "munch";
+                }
+            }
+        }
+
+        return result;
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Pan damage on hit: ${this.damage_base.toFixed(2)}`
+        );
+
+        this.write_desc_line(
+            `Food burn on enemy: ${this.proj_damage_base.toFixed(2)}`
+        );
+
+        this.write_desc_line(
+            `Food heal on ally:  ${this.proj_heal_base.toFixed(2)}`
+        );
+
+        this.write_desc_line(
+            `Toss cooldown: ${this.pan_toss_time.toFixed(1)}s [${"#".repeat(Math.ceil((this.pan_toss_time / this.last_pan_toss_time) * 12)).padEnd(12)}]`
+        );
+
+        this.write_desc_line(
+            `Average food count per toss: ${this.predicted_projectiles.toFixed(2)}`
+        );
+    }
+}
+
 class Projectile {
     // projectiles have a position, a damage stat, a direction, speed and some hitboxes
     static id_inc = 0;
@@ -6167,6 +6458,8 @@ class Projectile {
         this.can_hit_enemy = true;
         this.can_hit_source_projs = false; // turn on when you want projectiles from self to collide with each other but not the parent
 
+        this.allied_parriable = true;
+
         this.ignore_balls = new Set();
 
         this.cached_hitboxes_offsets = [];
@@ -6192,13 +6485,15 @@ class Projectile {
         this.cache_hitboxes_offsets();
     }
 
-    can_hit_ball(ball) {
+    can_hit_ball(ball, parry=false) {
+        let ally = ball.allied_with(this.source);
         return (
             this.active && 
             (ball.invuln_duration <= 0 || !this.respects_invuln_for_parry) &&
             !this.ignore_balls.has(ball.id) && 
-            (!ball.allied_with(this.source) || this.can_hit_allied || this.can_hit_source) &&
-            (this.can_hit_enemy || ball.allied_with(this.source)) &&
+            (!ally || this.can_hit_allied || this.can_hit_source) &&
+            (this.can_hit_enemy || ally) &&
+            (!parry || (this.allied_parriable || !ally)) &&
             (ball.id != this.source.id || this.can_hit_source)
         )
     }
@@ -6208,10 +6503,13 @@ class Projectile {
             this.id !== other.id &&
             other.parriable && other.collides_other_projectiles &&
             (
-                !other.source.allied_with(this.source) ||
-                (this.can_hit_allied && other.can_hit_allied) ||
-                (this.can_hit_source && other.can_hit_source) ||
-                (this.can_hit_source_projs && other.can_hit_source_projs)
+                !other.source.allied_with(this.source) || (
+                    this.allied_parriable && (
+                        (this.can_hit_allied && other.can_hit_allied) ||
+                        (this.can_hit_source && other.can_hit_source) ||
+                        (this.can_hit_source_projs && other.can_hit_source_projs)
+                    )
+                )
             ) &&
             (this.source.id != other.source.id || (
                 (this.can_hit_source && other.can_hit_source) ||
@@ -6688,10 +6986,10 @@ class DaggerAwakenProjectile extends InertiaRespectingStraightLineProjectile {
 }
 
 class ArrowProjectile extends InertiaRespectingStraightLineProjectile {
-    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
+    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel, sprite_suffix="") {
         super(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
     
-        this.sprite = "arrow";
+        this.sprite = "arrow" + sprite_suffix;
         this.set_hitboxes([
             {pos: new Vector2(-20, 0), radius: 4},
             {pos: new Vector2(-16, 0), radius: 4},
@@ -7299,6 +7597,363 @@ class FishingRodFireBlast extends PersistentAoEProjectile {
 }
 
 
+class PanFoodProjectile extends Projectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, 0, size, direction, speed);
+
+        this.burn_amt = damage;
+
+        this.gravity = gravity;
+        this.proj_velocity = this.direction.mul(this.speed);
+
+        this.proj_velocity = this.proj_velocity.add(inertia);
+
+        this.sprite = `burger`;
+
+        this.hitboxes = [];
+    
+        this.active_hitboxes = [];
+        this.hitboxes_active_timeout = 0.05;
+
+        this.rotation_speed = random_float(135, 270, this.board.random);
+
+        // random starting rotation
+        this.set_dir(random_on_circle(1, this.board.random));
+
+        this.reversed = reversed;
+
+        this.heal = heal;
+
+        this.bounces_max = bounces;
+        this.bounces = this.bounces_max;
+
+        this.source_hit_timeout = 1;
+
+        this.can_hit_allied = true;
+        this.allied_parriable = false;
+
+        this.can_hit_source = false;
+        this.can_hit_source_projs = false;
+    }
+
+    physics_step(time_delta) {
+        this.hitboxes_active_timeout -= time_delta;
+        if (this.hitboxes_active_timeout <= 0) {
+            if (this.hitboxes.length == 0)
+                this.set_hitboxes(this.active_hitboxes);
+            
+            this.hitboxes_active_timeout = Number.POSITIVE_INFINITY;
+        }
+
+        this.source_hit_timeout -= time_delta;
+        if (this.source_hit_timeout <= 0) {
+            this.can_hit_source = true;
+            this.source_hit_timeout = Number.POSITIVE_INFINITY;
+        }
+
+        this.set_pos(this.position.add(this.proj_velocity.mul(time_delta)));
+
+        this.proj_velocity = this.proj_velocity.add(this.gravity.mul(time_delta));
+    
+        let new_direction_angle = this.direction_angle + ((this.rotation_speed * (Math.PI / 180)) * (this.reversed ? -1 : 1) * time_delta);
+        this.set_dir(new Vector2(1, 0).rotate(new_direction_angle));
+    }
+
+    try_bounce() {
+        this.active = true;
+
+        if (this.bounces <= 0) {
+            this.active = false;
+        } else {
+            // bounce and disable hitboxes for 0.2s
+            this.proj_velocity = random_on_circle(1, this.board.random).add(new Vector2(0, -1.5)).normalize().mul(this.speed);
+            this.hitboxes_active_timeout = 0.1;
+            this.set_hitboxes([]);
+        }
+        
+        this.bounces--;
+    }
+
+    hit_other_projectile(other_projectile) {
+        super.hit_other_projectile(other_projectile);
+        this.try_bounce();
+    }
+
+    hit_ball(ball, delta_time) {
+        super.hit_ball(ball, delta_time);
+
+        if (this.source.allied_with(ball)) {
+            ball.gain_hp(this.heal, this.source);
+        } else {
+            this.source.apply_burn(ball, this.burn_amt);
+        }
+
+        this.try_bounce();
+    }
+
+    get_parried(by) {
+        super.get_parried(by);
+        this.try_bounce();
+    }
+}
+
+
+class PanAppleProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "apple";
+        this.active_hitboxes = [
+            {pos: new Vector2(0, 0), radius: 16},
+        ]
+    }
+}
+
+class PanAvocadoProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "avocado";
+        this.active_hitboxes = [
+            {pos: new Vector2(-12, 0), radius: 12},
+            {pos: new Vector2(6, 0), radius: 20},
+        ]
+    }
+}
+
+class PanBaconProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "bacon";
+        this.active_hitboxes = [
+            {pos: new Vector2(-24, 0), radius: 10},
+            {pos: new Vector2(-12, 0), radius: 10},
+            {pos: new Vector2(0, 0), radius: 10},
+            {pos: new Vector2(12, -3), radius: 10},
+            {pos: new Vector2(24, -6), radius: 10},
+        ]
+    }
+}
+
+class PanBananaProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "banana";
+        this.active_hitboxes = [
+            {pos: new Vector2(-24, -12), radius: 10},
+            {pos: new Vector2(-22, 0), radius: 10},
+            {pos: new Vector2(0, 12), radius: 10},
+            {pos: new Vector2(12, 14), radius: 10},
+            {pos: new Vector2(24, 18), radius: 10},
+        ]
+    }
+}
+
+class PanBurgerProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "burger";
+        this.active_hitboxes = [
+            {pos: new Vector2(0, 0), radius: 34},
+        ]
+    }
+}
+
+class PanCarrotProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "carrot";
+        this.active_hitboxes = [
+            {pos: new Vector2(8, -16), radius: 4},
+            {pos: new Vector2(4, -8), radius: 6},
+            {pos: new Vector2(0, 0), radius: 6},
+            {pos: new Vector2(-4, 8), radius: 6},
+            {pos: new Vector2(-8, 16), radius: 4},
+        ]
+    }
+}
+
+class PanCeleryProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "celery";
+        this.active_hitboxes = [
+            {pos: new Vector2(10, -16), radius: 8},
+            {pos: new Vector2(4, 0), radius: 8},
+            {pos: new Vector2(0, 16), radius: 8},
+            {pos: new Vector2(-8, 16), radius: 8},
+            {pos: new Vector2(-14, 20), radius: 8},
+        ]
+    }
+}
+
+class PanCoconutProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "coconut";
+        this.active_hitboxes = [
+            {pos: new Vector2(0, 0), radius: 28},
+        ]
+    }
+}
+
+class PanCucumberProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "cucumber";
+        this.active_hitboxes = [
+            {pos: new Vector2(-24, 8), radius: 10},
+            {pos: new Vector2(-12, 4), radius: 10},
+            {pos: new Vector2(0, 0), radius: 10},
+            {pos: new Vector2(12, -5), radius: 10},
+            {pos: new Vector2(24, -10), radius: 10},
+        ]
+    }
+}
+
+class PanDubiousDelicacyProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "dubious delicacy";
+        this.active_hitboxes = [
+            {pos: new Vector2(-16, 0), radius: 24},
+            {pos: new Vector2(16, 0), radius: 24},
+        ]
+    }
+}
+
+class PanEggProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "egg";
+        this.active_hitboxes = [
+            {pos: new Vector2(4, -14), radius: 16},
+            {pos: new Vector2(6, 6), radius: 16},
+            {pos: new Vector2(-8, 12), radius: 12},
+        ]
+    }
+}
+
+class PanGoldfishProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "goldfish";
+        this.active_hitboxes = [
+            {pos: new Vector2(-8, 0), radius: 6},
+            {pos: new Vector2(4, 0), radius: 8},
+        ]
+    }
+}
+
+class PanLoafProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "loaf";
+        this.active_hitboxes = [
+            {pos: new Vector2(0, 0), radius: 28},
+        ]
+    }
+}
+
+class PanMeatProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "meat";
+        this.active_hitboxes = [
+            {pos: new Vector2(-18, 0), radius: 10},
+            {pos: new Vector2(0, 0), radius: 12},
+            {pos: new Vector2(16, 0), radius: 16},
+        ]
+    }
+}
+
+class PanMushroomProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "mushroom";
+        this.active_hitboxes = [
+            {pos: new Vector2(0, 0), radius: 24},
+        ]
+    }
+}
+
+class PanPancakesProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "pancakes";
+        this.active_hitboxes = [
+            {pos: new Vector2(-20, 3), radius: 14},
+            {pos: new Vector2(0, 0), radius: 20},
+            {pos: new Vector2(20, 3), radius: 14},
+        ]
+    }
+}
+
+class PanPepperProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "pepper";
+        this.active_hitboxes = [
+            {pos: new Vector2(-14, 12), radius: 12},
+            {pos: new Vector2(0, 0), radius: 12},
+            {pos: new Vector2(12, -10), radius: 12},
+        ]
+    }
+}
+
+class PanSoupProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "soup";
+        this.active_hitboxes = [
+            {pos: new Vector2(-10, 2), radius: 14},
+            {pos: new Vector2(10, 2), radius: 14},
+        ]
+    }
+}
+
+class PanSushiProjectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "sushi";
+        this.active_hitboxes = [
+            {pos: new Vector2(0, 0), radius: 16},
+        ]
+    }
+}
+
+class Pan_Projectile extends PanFoodProjectile {
+    constructor(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed) {
+        super(board, source, source_weapon_index, position, damage, heal, size, direction, speed, gravity, bounces, inertia, reversed);
+
+        this.sprite = "_";
+        this.active_hitboxes = [
+            {pos: new Vector2(-24, 0), radius: 10},
+            {pos: new Vector2(-12, 0), radius: 10},
+            {pos: new Vector2(0, 0), radius: 10},
+            {pos: new Vector2(12, -3), radius: 10},
+            {pos: new Vector2(24, -6), radius: 10},
+        ]
+    }
+}
+
 let main_selectable_balls = [
     DummyBall,
     HammerBall, SordBall, DaggerBall,
@@ -7306,5 +7961,6 @@ let main_selectable_balls = [
     RailgunBall, PotionBall, GrenadeBall,
     GlassBall, HandBall, ChakramBall,
     WandBall, AxeBall, ShotgunBall,
-    SpearBall, RosaryBall, FishingRodBall
+    SpearBall, RosaryBall, FishingRodBall,
+    FryingPanBall
 ]

@@ -209,6 +209,8 @@ const entity_sprites = new Map([
     ["pellet", 1, "weapon/"],
     ["bow", 1, "weapon/"],
     ["arrow", 1, "weapon/"],
+    ["bow_crossbow", 1, "weapon/"],
+    ["arrow_crossbow", 1, "weapon/"],
     
     ["gun", 1, "weapon/"],
 
@@ -314,6 +316,13 @@ const entity_sprites = new Map([
     ["wand_red_whimsy", 1, "weapon/"],
     ["wand_white_whimsy", 1, "weapon/"],
 
+    ["wand_black_brush", 1, "weapon/"],
+    ["wand_cyan_brush", 1, "weapon/"],
+    ["wand_green_brush", 1, "weapon/"],
+    ["wand_magenta_brush", 1, "weapon/"],
+    ["wand_red_brush", 1, "weapon/"],
+    ["wand_white_brush", 1, "weapon/"],
+
     ["wand_fireball", 1, "weapon/"],
     ["wand_icicle", 1, "weapon/"],
     ["wand_poison_barb", 1, "weapon/"],
@@ -338,6 +347,31 @@ const entity_sprites = new Map([
     ["fishing_rod_hook", 1, "weapon/"],
     ["fishing_rod_club", 1, "weapon/"],
     
+    ["frying_pan", 1, "weapon/"],
+    ["frying_pan_r", 1, "weapon/"],
+
+    // FOODS...
+    ["apple", 1, "weapon/frying_pan/"],
+    ["avocado", 1, "weapon/frying_pan/"],
+    ["bacon", 1, "weapon/frying_pan/"],
+    ["banana", 1, "weapon/frying_pan/"],
+    ["burger", 1, "weapon/frying_pan/"],
+    ["carrot", 1, "weapon/frying_pan/"],
+    ["celery", 1, "weapon/frying_pan/"],
+    ["coconut", 1, "weapon/frying_pan/"],
+    ["cucumber", 1, "weapon/frying_pan/"],
+    ["dubious delicacy", 1, "weapon/frying_pan/"],
+    ["egg", 1, "weapon/frying_pan/"],
+    ["goldfish", 1, "weapon/frying_pan/"],
+    ["ice cube", 1, "weapon/frying_pan/"],
+    ["loaf", 1, "weapon/frying_pan/"],
+    ["meat", 1, "weapon/frying_pan/"],
+    ["mushroom", 1, "weapon/frying_pan/"],
+    ["pancakes", 1, "weapon/frying_pan/"],
+    ["pepper", 1, "weapon/frying_pan/"],
+    ["soup", 1, "weapon/frying_pan/"],
+    ["sushi", 1, "weapon/frying_pan/"],
+
     ["fire_blast", 6, "fire_blast/"],
 
     ["explosion", 16, "explosion/"],  // Game Maker Classic
@@ -606,6 +640,12 @@ let audios_list = [
 
     // Wario Land 4
     ["FullHealthItemA", "snd/FullHealthItem_A.wav"],
+
+    // TF2 - Frying Pan
+    ["frying_pan", "snd/melee_frying_pan_01.mp3"],
+
+    // i have NO idea
+    ["munch", "snd/munch.mp3"],
 ]
 
 
@@ -1443,7 +1483,7 @@ class Board {
             }
 
             let part = new DamageNumberParticle(
-                on.position, 1, `${AILMENT_CHARS[2]} ${amt.toFixed(1)}`, on.get_current_desc_col(), on.velocity, this, size
+                on.position, 1, `${AILMENT_CHARS[2]} ${Number(amt.toFixed(2))}`, on.get_current_desc_col(), on.velocity, this, size
             );
 
             this.spawn_particle(part, on.position);
@@ -2990,7 +3030,7 @@ function render_opening(board, time_delta) {
         let frame = board.balls[i].entry_animation_keyframes[cur_anim_snd];
         while (frame && p.cur_frame >= frame.frame) {
             if (frame.snd) {
-                play_audio(frame.snd, 0.075);
+                play_audio(frame.snd, 0.04);
             }
 
             if (frame.display !== undefined) {
@@ -3552,11 +3592,15 @@ function game_loop() {
                                         let ball_mag = ball.velocity.magnitude();
                                         let other_mag = other.velocity.magnitude();
 
-                                        new_ball_velocity = ball.velocity.div(ball_mag).mul(1 - share).add(ball_diff_add).normalize().mul(ball_mag)
-                                        new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
+                                        if (ball_mag != 0) {
+                                            new_ball_velocity = ball.velocity.div(ball_mag).mul(1 - share).add(ball_diff_add).normalize().mul(ball_mag)
+                                            ball.set_velocity(new_ball_velocity);
+                                        }
 
-                                        ball.set_velocity(new_ball_velocity);
-                                        other.set_velocity(new_other_velocity);
+                                        if (other_mag != 0) {
+                                            new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
+                                            other.set_velocity(new_other_velocity);
+                                        }
 
                                         ball.last_hit = 1;
                                         other.last_hit = 1;
@@ -3567,8 +3611,9 @@ function game_loop() {
                                         // if either ball has a custom parry sound, use that - if both do, use the first
                                         if (ball.custom_parry_sound || other.custom_parry_sound) {
                                             let snd = ball.custom_parry_sound || other.custom_parry_sound;
+                                            let gain_mul = (ball.parry_gain_mul || other.parry_gain_mul) || null;
                                             if (snd) {
-                                                play_audio(snd);
+                                                play_audio(snd, gain_mul);
                                             }
                                         } else {
                                             play_audio("parry");
@@ -3586,7 +3631,7 @@ function game_loop() {
 
                         // don't check our own team's projectiles
                         let projectiles = board.projectiles.filter(projectile => 
-                            projectile.can_hit_ball(ball)
+                            projectile.can_hit_ball(ball, true)
                         );
                         
                         let intersecting_projectiles = ball.check_weapon_to_projectiles_hits(projectiles);
@@ -3647,7 +3692,8 @@ function game_loop() {
 
                             // there is a very low chance that multiple projectiles will hit a breaking potion in the same frame.
                             // this will crash if we don't protect here against it
-                            if (ball_hitbox) {
+                            // OR FOOD PROJECTILES
+                            if (ball_hitbox && proj_hitbox) {
                                 let total_hitbox_size = (ball_hitbox.radius * ball_weapon_data.size_multiplier) + (proj_hitbox.radius * projectile.size);
                                 let hitbox_distance = ball_hitbox_position.distance(proj_hitbox_position);
 
@@ -3695,8 +3741,11 @@ function game_loop() {
 
                             let ball_diff_add = diff_vec.mul(share);
                             let ball_mag = ball.velocity.magnitude();
-                            new_ball_velocity = ball.velocity.div(ball_mag).mul(1 - share).add(ball_diff_add).normalize().mul(ball_mag);
-                            ball.set_velocity(new_ball_velocity);
+
+                            if (ball_mag != 0) {
+                                new_ball_velocity = ball.velocity.div(ball_mag).mul(1 - share).add(ball_diff_add).normalize().mul(ball_mag);
+                                ball.set_velocity(new_ball_velocity);
+                            }
                             
                             ball.last_hit = 1;
                             
@@ -3780,7 +3829,7 @@ function game_loop() {
                                         } else {
                                             // always play special impact sounds
                                             impact_sounds++;
-                                            play_audio(result.snd);
+                                            play_audio(result.snd, result.gain);
                                         }
 
                                         // TODO - need to at this point do accounting on damage taken/dealt,
@@ -3854,9 +3903,20 @@ function game_loop() {
                                 ball.last_damage_source = projectile.source;
 
                                 if (!result.mute) {
-                                    if (impact_sounds < 4) {
+                                    if (!result.snd) {
+                                        if (impact_sounds < 4) {
+                                            if (result.dmg >= 8) {
+                                                impact_sounds++;
+                                                play_audio("impact_heavy");
+                                            } else {
+                                                impact_sounds++;
+                                                play_audio("impact");
+                                            }
+                                        }
+                                    } else {
+                                        // always play special impact sounds
                                         impact_sounds++;
-                                        play_audio("impact");
+                                        play_audio(result.snd, result.gain);
                                     }
                                 }
 
@@ -3881,6 +3941,9 @@ function game_loop() {
                         projectiles_colliding.forEach(proj_data => {
                             let proj = proj_data[0];
 
+                            let proj_hitboxes = structuredClone(proj.hitboxes);
+                            let projectile_hitboxes = structuredClone(projectile.hitboxes);
+
                             if (proj.parriable) {
                                 projectile.hit_other_projectile(proj);
                             }
@@ -3890,7 +3953,8 @@ function game_loop() {
                             colliding_proj2projs.add(proj.id + (1000000 * projectile.id));
 
                             // if either projectile was active and now isn't, play a thud and show the particle effect
-                            if (!proj.active || !projectile.active) {
+                            // Also do this if either set of hitboxes is now blank
+                            if ((!proj.active || !projectile.active) && !(proj_hitboxes.length == 0 || projectile_hitboxes == 0)) {
                                 // 
                                 //  ## Particle effects and hit position calculation
                                 //
@@ -3902,8 +3966,8 @@ function game_loop() {
 
                                 // impact position is:
                                 // source position + (difference vector * size proportion * distance proportion)
-                                let projectile_hitbox = projectile.hitboxes[projectile_coll_index];
-                                let proj_hitbox = proj.hitboxes[proj_coll_index];
+                                let projectile_hitbox = projectile_hitboxes[projectile_coll_index];
+                                let proj_hitbox = proj_hitboxes[proj_coll_index];
 
                                 let total_hitbox_size = (projectile_hitbox.radius * projectile.size) + (proj_hitbox.radius * proj.size);
                                 let hitbox_distance = projectile_hitbox_position.distance(proj_hitbox_position);
@@ -3996,7 +4060,9 @@ function game_loop() {
                     board.get_all_player_balls(players[0]).forEach(ball => ball.takes_damage = false);
                 }
 
-                // muted = match_end_timeout < 14000;
+                if (window.location.href.startsWith("file://")) {
+                    // muted = match_end_timeout < 14000;
+                }
 
                 match_end_timeout -= game_delta_time;
                 ending_game = true;

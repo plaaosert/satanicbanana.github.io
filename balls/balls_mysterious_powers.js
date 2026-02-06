@@ -64,7 +64,7 @@ const MYSTERIOUS_POWER_INFO = {
             // pull all balls in
             board.balls.forEach(ball => {
                 let pointing_vector = gamepos.sub(ball.position);
-                let distance = pointing_vector.magnitude();
+                let distance = pointing_vector.magnitude() + Number.EPSILON;
                 let max_distance = 10000;
 
                 let distance_prop = 1 - (distance / max_distance);
@@ -91,7 +91,7 @@ const MYSTERIOUS_POWER_INFO = {
             // push all balls out
             board.balls.forEach(ball => {
                 let pointing_vector = gamepos.sub(ball.position);
-                let distance = pointing_vector.magnitude();
+                let distance = pointing_vector.magnitude() + Number.EPSILON;
                 let max_distance = 10000;
 
                 let distance_prop = 1 - (distance / max_distance);

@@ -817,13 +817,13 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
         } else {
             match_end_timeout = 5 * 1000;
             if (window.location.href.startsWith("file://") && screen_open == "sandbox") {
-                match_end_timeout = 10 * 1000;
+                // match_end_timeout = 10 * 1000;
             }
             
             render_victory_enabled = true;
         }
 
-        starting_fullpause_timeout = skipping ? 0 : (document.querySelector("#extend_intro_checkbox").checked ? 6 : 2.25);
+        starting_fullpause_timeout = skipping ? 0 : (document.querySelector("#extend_intro_checkbox").checked ? 6 : 2.35);
         fullpause_timeout = starting_fullpause_timeout;
         opening_state = {};
         if (skipping) {
@@ -2400,7 +2400,7 @@ document.addEventListener("DOMContentLoaded", function() {
     randomise_ball_info("ball2", "random-ball");
 
     // force ball in slot 1 and slot 2
-    // selected_ball_info.ball1.name = "Fishing Rod";
+    // selected_ball_info.ball1.name = "Frying Pan";
     // selected_ball_info.ball2.name = "Dummy";
 
     for (let i=1; i<=4; i++) {
@@ -2573,8 +2573,8 @@ if (force_ball1) {
 
 let ball2_index = 0;
 
-let ball1_start_level = 100;
-let ball2_start_level = 100;
+let ball1_start_level = 1;
+let ball2_start_level = 1;
 
 let win_matrix = [];
 selectable_balls_for_random.forEach(_ => win_matrix.push(new Array(selectable_balls_for_random.length).fill(0)));

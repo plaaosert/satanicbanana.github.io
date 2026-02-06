@@ -1926,9 +1926,11 @@ class ShotgunMagnumBall extends WeaponBall {
 
         let this_mag = this.velocity.magnitude();
 
-        let new_this_velocity = this.velocity.div(this_mag).mul(1 - share).add(diff_add).normalize().mul(this_mag)
+        if (this_mag != 0) {
+            let new_this_velocity = this.velocity.div(this_mag).mul(1 - share).add(diff_add).normalize().mul(this_mag)
 
-        this.set_velocity(new_this_velocity);
+            this.set_velocity(new_this_velocity);
+        }
     }
 
     weapon_step(board, time_delta) {
