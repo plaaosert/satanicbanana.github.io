@@ -1280,7 +1280,7 @@ class DummyBall extends WeaponBall {
                         lerp(
                             0, 
                             this.shake_intensity_max, 
-                            random_float(0, 1) * (Math.max(0, (this.shake_current - this.shake_shake_start) / this.shake_shake_duration))
+                            random_float(0, 1, this.independent_random) * (Math.max(0, (this.shake_current - this.shake_shake_start) / this.shake_shake_duration))
                         ),
                         this.board.random
                     )
@@ -1610,10 +1610,10 @@ class HammerBall extends WeaponBall {
         let size = this.weapon_data[with_weapon_index].size_multiplier / WEAPON_SIZE_MULTIPLIER;
 
         for (let i=0; i<times; i++) {
-            let pos = this.position.add(this.get_hitboxes_offsets(with_weapon_index)[random_int(0, 5)]).add(this.get_weapon_offset(with_weapon_index));
+            let pos = this.position.add(this.get_hitboxes_offsets(with_weapon_index)[random_int(0, 5, this.independent_random)]).add(this.get_weapon_offset(with_weapon_index));
             let part = new HammerMogulMoneyParticle(
                 pos, size,
-                random_on_circle(750).add(new Vector2(0, random_float(-6000, -8000))),
+                random_on_circle(750, this.independent_random).add(new Vector2(0, random_float(-6000, -8000, this.independent_random))),
                 this.board
             )
 
@@ -1649,7 +1649,7 @@ class HammerBall extends WeaponBall {
         if (this.skin_name == "Mogul") {
             // make 4-8 monies on hit
             // don't want it to affect randomness, so it's not board.random
-            let times = random_int(4, 9);
+            let times = random_int(4, 9, this.independent_random);
             this.spawn_monies(times, with_weapon_index);
         }
 
@@ -1662,7 +1662,7 @@ class HammerBall extends WeaponBall {
         if (this.skin_name == "Mogul") {
             // make 1-3 monies on hit
             // don't want it to affect randomness, so it's not board.random
-            let times = random_int(1, 4);
+            let times = random_int(1, 4, this.independent_random);
             this.spawn_monies(times, with_weapon_index);
         }
     }
@@ -1673,7 +1673,7 @@ class HammerBall extends WeaponBall {
         if (this.skin_name == "Mogul") {
             // make 1-3 monies on hit
             // don't want it to affect randomness, so it's not board.random
-            let times = random_int(1, 4);
+            let times = random_int(1, 4, this.independent_random);
             this.spawn_monies(times, with_weapon_index);
         }
     }
@@ -6108,7 +6108,7 @@ class FishingRodHookProjectileBall extends WeaponBall {
 
     weapon_step(board, time_delta) {
         if (this.hit_ball) {
-            this.position = this.hit_ball.position;
+            this.set_pos(this.hit_ball.position);
             this.post_hit_lifetime += time_delta;
             if (this.post_hit_lifetime >= this.duration) {
                 this.hp = 0;
@@ -6414,6 +6414,1061 @@ class FryingPanBall extends WeaponBall {
         this.write_desc_line(
             `Average food count per toss: ${this.predicted_projectiles.toFixed(2)}`
         );
+
+        if (this.level >= AWAKEN_LEVEL) {
+            this.write_desc_line(
+                `Foods bounce on hit or parry.`, true
+            )
+        }
+    }
+}
+
+class CardsBall extends WeaponBall {
+    static ball_name = "Cards";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Cards";
+        this.description_brief = "Draws random cards from a deck which rotate around as damaging projectiles. Hits with rotating cards speed up draws. Once five cards are drawn, evokes an effect based on the best poker hand in the set. Completing a Pair or Two Pair grants +1 luck permanently. Junk grants +2.";
+        this.level_description = "Increases card draw and reshuffle speed. Every 25 levels allows another hand draw from the deck before shuffling.";
+        this.max_level_description = "Starts with +8 luck.";
+        this.quote = "...Is this your card? Well, I suppose it doesn't matter now.";
+
+        this.tier = TIERS.A;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.APLUS;
+        }
+
+        this.category = CATEGORIES.STANDARD;
+        this.tags = [
+            TAGS.HYBRID,
+            TAGS.BALANCED,
+            TAGS.PROJECTILES,
+            TAGS.CHILDREN,
+            TAGS.LEVELS_UP,
+            TAGS.CAN_AWAKEN,
+        ];
+
+        this.weapon_data = [
+            new BallWeapon(1, "deck", [])
+        ];
+
+        this.draw_delay_max = 1 - (this.level * 0.0035);
+        this.draw_delay = this.draw_delay_max;
+
+        this.shuffle_delay_max = 1 - (this.level * 0.0075);
+        this.shuffle_delay = this.shuffle_delay_max;
+
+        this.draws = 0;
+        this.draws_max = 1 + Math.floor((this.level+1) / 25);
+
+        this.handsize = 7;
+
+        this.luck_lookahead_cnt = this.handsize;
+        this.luck_lookahead_amt = 1;
+        if (this.level >= AWAKEN_LEVEL) {
+            this.luck_lookahead_amt += 8;
+        }
+
+        this.orbital_dmg = 2;
+        this.orbital_cnt = this.handsize;
+
+        this.orbital_offset_per_card = deg2rad(360 / this.orbital_cnt);
+        this.orbital_speed = deg2rad(360 * 0.5);
+        this.orbital_distance = this.radius * 2;
+
+        this.cdr_on_hit = 0.1;
+
+        this.deck_ordered = [];
+        this.deck = [];
+
+        this.setup_deck();
+        this.reshuffle_deck();
+
+        this.projs = [];
+        this.hand = [];
+
+        this.particle_sets = [];
+
+        this.particle_delay_max = 0.2;
+        this.particle_delay = this.particle_delay_max;
+
+        this.cur_calced_hand = null;
+        this.cur_calced_hand_string = "";
+    
+        this.cardsiz = 1 * 0.825;
+
+        // begin huge stat block
+        this.pair_proj_damage = 5;
+        this.pair_proj_speed = 10000;
+        this.pair_rank_speed_bonus = 500;
+
+        this.twopair_proj_damage = 6;
+
+        this.threekind_chain_lightning_chain_chance = 0.275;
+        this.threekind_chain_lightning_damage = 6;
+        this.threekind_chain_lightning_damage_rank_bonus = 0.2;
+        this.threekind_chain_lightning_delay_per_chain = 0.015;
+        this.threekind_chain_lightning_distance = 1000;
+        this.threekind_chain_lightning_spread = deg2rad(45);
+    
+        this.straight_buff_dur = 8;
+
+        this.flush_projs = 2;
+        this.flush_proj_angle_start = deg2rad(-22.5);
+        this.flush_proj_angle_end = deg2rad(22.5);
+    
+        this.fullhouse_proto = SordBall;
+        this.fullhouse_hp = 25;
+        this.fullhouse_hp_per_rank = 1;
+        this.fullhouse_num = 5;
+
+        this.fourkind_rock_dmg = 3;
+        this.fourkind_rock_size = 3;
+
+        this.straightflush_hits_cnt = 75;
+        this.straightflush_hits_delay = 0.1;
+        this.straightflush_hits_dmg = 1;
+        this.straightflush_finisher_dmg = 20;
+    }
+
+    late_setup() {
+        this.weapon_data[0].angle = !this.reversed ? 0 : Math.PI;
+
+        super.late_setup();
+    }
+
+    hit_other_with_projectile(other, with_projectile) {
+        let result = super.hit_other_with_projectile(other, with_projectile);
+
+        if (with_projectile.source_weapon_index != 999) {
+            if (with_projectile instanceof CardsCardOrbitalProjectile)
+                this.draw_delay -= this.cdr_on_hit;
+
+            if (with_projectile instanceof CardsStraightFlushStrikeProjectile)
+                other.invuln_duration = 0;
+        }
+
+        return result;
+    }
+
+    setup_deck() {
+        this.deck_ordered = new Array(52).fill(0).map((_, i) => i + 4);  // cardback1, cardback2, joker1, joker2, card1, ...
+        /*
+        if (this.level >= AWAKEN_LEVEL) {
+            this.deck_ordered = this.deck_ordered.filter(c => {
+                let rank = (c - 4) % 13;
+                return !(rank == 2 || rank == 3);
+            })
+        }
+        */
+    }
+
+    reshuffle_deck() {
+        this.deck = random_shuffle(this.deck_ordered, this.board.random);
+    }
+
+    get_hand_string(hand=null) {
+        let hand_objs = (hand ? hand : this.hand).map(c => {
+            if (c == 2 || c == 3) {
+                // joker (UNIMPLEMENTED)
+                return {rank: "*", suit: "*"}
+            } else {
+                // h, c, d, s
+                let suit = Math.floor((c - 4) / 13);
+                let rank = (c - 4) % 13;
+
+                return {rank: rank, suit: suit};
+            }
+        });
+
+        let suit_names = ["h", "c", "d", "s"];
+        let rank_names = ["A", 2, 3, 4, 5, 6, 7, 8, 9, 10, "J", "Q", "K", "A"];
+
+        return hand_objs.map(c => `${rank_names[c.rank]}${suit_names[c.suit].toUpperCase()}`);
+    }
+
+    get_best_hand(hand=null) {
+        let hand_objs_unsorted = (hand ? hand : this.hand).map(c => {
+            if (c == 2 || c == 3) {
+                // joker (UNIMPLEMENTED)
+                return {rank: "*", suit: "*"}
+            } else {
+                // h, c, d, s
+                let suit = Math.floor((c - 4) / 13);
+                let rank = (c - 4) % 13;
+
+                if (rank == 0) {
+                    rank = 13;
+                }
+
+                return {rank: rank, suit: suit};
+            }
+        });
+
+        let hand_objs = [...hand_objs_unsorted].sort((a, b) => a.rank - b.rank);
+
+        /** @type {[number, string, boolean, number, [number]]} */
+        let hands = [
+            // Value, Name, Satisfied, Card rank, Indexes
+            [0, "Junk", true, 0, []],
+            [1, "Pair", true, 0, []],
+            [2, "Two Pair", true, 0, []], // eclipsable
+            [3, "Three of a Kind", true, 0, []], // eclipsable
+            [4, "Straight", true, 0, []],
+            [5, "Flush", true, 0, []],
+            [6, "Full House", true, 0, []], // eclipsable
+            [7, "Four of a Kind", true, 0, []],
+            [8, "Straight Flush", true, 0, []],
+            [9, "Royal Flush", true, 0, []],
+            [10, "Five of a Kind", true, 0, []],
+            [11, "Flush House", true, 0, []],
+            [12, "Flush Five", true, 0, []],
+        ]
+        // our saving grace is that we only look at 5 cards at a time
+        // so we can make searching for flushes and straights a bit simpler
+
+        // TODO -- if we have more than 5 cards in a hand,
+        // get permutations of those cards and check each one separately
+        // then get the best version
+
+        let suit_counts = {};
+        let rank_counts = {};
+        // Rank, Count
+        let highest_count = [null, 0];
+
+        let rankmap = [
+            new Set(),
+            new Set(),
+            new Set(),
+            new Set(),
+            new Set()
+        ]
+
+        for (let i=0; i<hand_objs.length; i++) {
+            let card = hand_objs[i];
+            let rank = card.rank;
+            let suit = card.suit;
+
+            rankmap[0].add(rank);
+            rankmap[suit+1].add(rank);
+
+            rank_counts[rank] = (rank_counts[rank] ?? 0) + 1;
+            if (rank_counts[rank] > highest_count[1] || (rank_counts[rank] == highest_count[1] && rank > highest_count[0])) {
+                highest_count = [rank, rank_counts[rank]];
+            }
+
+            suit_counts[suit] = (suit_counts[suit] ?? 0) + 1;
+        }
+
+        let straight = [];
+        let straight_build = [];
+        ([13,12,11,10,9,8,7,6,5,4,3,2,1,13]).forEach((rank,i) => {
+            if (straight.length < 5) {
+                if (rankmap[0].has(rank)) {
+                    straight_build.push(rank);
+                } else {
+                    if (straight_build.length > straight.length) {
+                        straight = straight_build
+                    }
+                    straight_build = [];
+                }
+            }
+        })
+
+        if (straight_build.length > straight.length) {
+            straight = straight_build
+        }
+
+        let sflushes = {};
+        let sflush_builds = {};
+
+        [0,1,2,3].forEach(suit => {
+            sflushes[suit] = [];
+            sflush_builds[suit] = [];
+
+            ([13,12,11,10,9,8,7,6,5,4,3,2,1,13]).forEach(rank => {
+                if (sflushes[suit].length < 5) {
+                    if (rankmap[suit+1].has(rank)) {
+                        sflush_builds[suit].push(rank);
+                    } else {
+                        if (sflush_builds[suit].length > sflushes[suit].length) {
+                            sflushes[suit] = sflush_builds[suit]
+                        }
+                        sflush_builds[suit] = [];
+                    }
+                }
+            })
+
+            if (sflush_builds[suit].length > sflushes[suit].length) {
+                sflushes[suit] = sflush_builds[suit]
+            }
+        })
+
+        let straight_adjusted = straight.filter((v,i,a) => a.indexOf(v) == i);
+        let straight_capped = [...straight_adjusted].sort((a,b)=>b-a).slice(0, 5);
+        
+        let sflushes_capped = [0,1,2,3].map(s => {
+            let adjusted = sflushes[s].filter((v,i,a) => a.indexOf(v) == i);
+            let sorted = [...adjusted].sort((a,b)=>b-a).slice(0, 5);
+            return sorted;
+        });
+
+        let melds = Object.keys(rank_counts).reduce(
+            (p, ck) => {
+                if (!p[rank_counts[ck]]) {
+                    p[rank_counts[ck]] = [];
+                }
+                p[rank_counts[ck]].push(Number.parseInt(ck));
+                p[rank_counts[ck]].sort((a,b) => b-a);
+                return p
+            }, {}
+        )
+
+        for (let i=1; i<this.handsize+1; i++) {
+            if (!melds[i]) {
+                melds[i] = [];
+            }
+        }
+
+        let valid_flushes = Object.keys(suit_counts).filter(k => suit_counts[k] >= 5);
+        let flush_capped = [];
+        let flush_suit = null;
+        if (valid_flushes.length > 0) {
+            let flush_ranks = valid_flushes.map(suit => Math.max(...hand_objs.filter(h => h.suit == suit).map(h => h.rank)));
+            flush_suit = Number.parseInt(valid_flushes[flush_ranks.indexOf(Math.max(...flush_ranks))]);
+            let flush_cards = hand_objs.filter(h => h.suit == flush_suit);
+            flush_capped = flush_cards.slice(flush_cards.length-5);
+        }
+
+        // pair
+        hands[1][2] = melds[2].length >= 1;
+        hands[1][4] = hand_objs_unsorted.map((c, i) => melds[2].slice(0, 1).includes(c.rank) ? i : -1).filter(v => v != -1);
+        // hands[2][3] = Math.max(hands[1][4].map(idx => hand_objs_unsorted[idx].rank));
+
+        // two pair
+        hands[2][2] = melds[2].length >= 2;
+        hands[2][4] = hand_objs_unsorted.map((c, i) => melds[2].slice(0, 2).includes(c.rank) ? i : -1).filter(v => v != -1);
+        // hands[2][3] = Math.max(hands[2][4].map(idx => hand_objs_unsorted[idx].rank));
+
+        // 3ok
+        hands[3][2] = melds[3].length >= 1;
+        // hands[3][3] = highest_count[0];
+        hands[3][4] = hand_objs_unsorted.map((c, i) => melds[3].slice(0, 1).includes(c.rank) ? i : -1).filter(v => v != -1);
+
+        // straight
+        hands[4][2] = straight_capped.length >= 5;
+        // hands[4][3] = Math.max(...straight);
+        let added = new Set();
+        hands[4][4] = hand_objs_unsorted.map((c, i) => {
+            if (straight_capped.includes(c.rank)) {
+                if (!added.has(c.rank)) {
+                    added.add(c.rank);
+                    return i;
+                } else {
+                    return -1;
+                }
+            }
+
+            return -1;
+        }).filter(v => v != -1);
+
+        // flush
+        hands[5][2] = flush_capped.length >= 5;
+        // hands[5][3] = highest_count[0];
+        let cnt = 0;
+        hands[5][4] = hand_objs_unsorted.map((c, i) => {
+            if (c.suit == flush_suit) {
+                if (cnt < 5) {
+                    cnt++;
+                    return i;
+                } else {
+                    return -1;
+                }
+            }
+
+            return -1;
+        }).filter(v => v != -1);
+
+        // full house
+        hands[6][2] = melds[2]?.length >= 1 && melds[3]?.length >= 1;
+        // hands[6][3] = highest_count[0];
+        hands[6][4] = hand_objs_unsorted.map((c, i) => (melds[2].slice(0, 1).includes(c.rank) || melds[3].slice(0, 1).includes(c.rank)) ? i : -1).filter(v => v != -1);
+
+        // 4ok
+        hands[7][2] = melds[4]?.length >= 1;
+        // hands[7][3] = highest_count[0];
+        hands[7][4] = hand_objs_unsorted.map((c, i) => melds[4].slice(0, 1).includes(c.rank) ? i : -1).filter(v => v != -1);
+        
+        // straightflush
+        // get the sflush with len>5 and highest max
+        let sflush_v = [-999];
+        let sflush_suit = 0;
+        sflushes_capped.forEach((sflush,suit) => {
+            if (!sflush_v) {
+                sflush_v = sflush;
+                sflush_suit = suit;
+                return;
+            }
+
+            if (sflush.length >= 5 && sflush[0] > sflush_v[0]) {
+                sflush_v = sflush;
+                sflush_suit = suit;
+                return;
+            }
+        })
+        hands[8][2] = sflush_v.length >= 5;
+        // hands[8][3] = Math.max(...straight);
+        added = new Set();
+        cnt = 0;
+        hands[8][4] = hand_objs_unsorted.map((c, i) => {
+            if (c.suit == sflush_suit && sflush_v.includes(c.rank)) {
+                if (cnt < 5 && !added.has(c.rank)) {
+                    cnt++;
+                    added.add(c.rank);
+                    return i;
+                } else {
+                    return -1;
+                }
+            }
+
+            return -1;
+        }).filter(v => v != -1);
+
+        // royalflush. if straightflush is true, it will always be the same
+        hands[9][2] = hands[8][2] && sflush_v[0] == 13 && sflush_v[1] == 12;
+        // hands[9][3] = highest_count[0];
+        hands[9][4] = hands[8][4];
+
+        /*
+        // 5ok
+        hands[10][2] = melds[5]?.length >= 1;
+        // hands[10][3] = highest_count[0];
+        hands[10][4] = hand_objs_unsorted.map((c, i) => melds[5].slice(0, 1).includes(c.rank) ? i : -1).filter(v => v != -1);
+        
+        // flush house
+        hands[11][2] = flush_capped.length >= 5 && melds[2]?.length >= 1 && melds[3]?.length >= 1;
+        // hands[11][3] = highest_count[0];
+        hands[11][4] = hand_objs_unsorted.map((c, i) => (straight.includes(c.rank) && flush_suit == c.suit && (rank_counts[c.rank] == 2 || rank_counts[c.rank] == 3)) ? i : -1).filter(v => v != -1);
+    
+        // flushfive
+        hands[12][2] = melds[5]?.length >= 1 && flush_capped.length >= 5;
+        // hands[12][3] = highest_count[0];
+        hands[12][4] = hand_objs_unsorted.map((c, i) => melds[5].slice(0, 1).includes(c.rank) ? i : -1).filter(v => v != -1);
+        */
+        hands[10][2] = false;
+        hands[11][2] = false;
+        hands[12][2] = false;
+
+        for (let i=0; i<hands.length; i++) {
+            if (hands[i][2] && hands[i][4].length > 0) {
+                hands[i][3] = Math.max(
+                    ...hands[i][4].map(idx => hand_objs_unsorted[idx].rank)
+                );
+            }
+        }
+        
+        let valid_hands = hands.filter(h => h[2]);
+        let best_hand = valid_hands.reduce((p, c) => (!p || c[0] > p[0]) ? c : p, null);
+        if (!best_hand) {
+            best_hand = hands[0];
+        }
+        
+        // if (hand_objs.length >= 5) {
+        //     debugger;
+        // }
+
+        /*
+        let suit_names = ["h", "c", "d", "s"];
+        let rank_names = ["A", 2, 3, 4, 5, 6, 7, 8, 9, 10, "J", "Q", "K"];
+        console.log(hand_objs.map(c => `${rank_names[c.rank]}${suit_names[c.suit].toUpperCase()}`).join("\n"));
+        console.log("");
+        */
+        // console.log(`${best_hand[1]}`);
+
+        return best_hand;
+    }
+
+    make_lightnings() {
+        let hand = structuredClone(this.cur_calced_hand);
+        hand[4].forEach(idx => {
+            let lightnings = [[this.projs[idx].position, this.projs[idx].position.sub(this.position).angle()]];
+
+            let loops = 0;
+            while (lightnings.length > 0) {
+                let new_lightnings = [];
+                lightnings.forEach(lgt => {
+                    let pos = lgt[0];
+                    let angle = lgt[1];
+
+                    if (!board.in_bounds(pos)) {
+                        return;
+                    }
+
+                    let repeats = 1;
+                    if (random_float(0, 1, this.board.random) < this.threekind_chain_lightning_chain_chance) {
+                        repeats = 2;
+                    }
+
+                    for (let i=0; i<repeats; i++) {
+                        let new_angle = angle + (random_float(-1, 1, this.board.random) * this.threekind_chain_lightning_spread);
+
+                        let direction = new Vector2(this.threekind_chain_lightning_distance, 0).rotate(new_angle);
+
+                        let newpos = pos.add(direction);
+
+                        // make a timer to create a hitscan projectile from pos to pos+direction
+                        // then append the new lightning node
+                        let timer = new Timer(() => {
+                            let proj = new WandMagentaProjectile(
+                                this.board,
+                                this, 0, pos,
+                                this.threekind_chain_lightning_damage + (this.threekind_chain_lightning_damage_rank_bonus * hand[3]),
+                                newpos
+                            );
+
+                            board.spawn_projectile(proj, pos);
+                        }, this.threekind_chain_lightning_delay_per_chain * loops);
+
+                        board.set_timer(timer);
+
+                        new_lightnings.push([newpos, new_angle]);
+                    }
+                })
+
+                loops++;
+                lightnings = new_lightnings;
+            }
+        })
+    }
+
+    weapon_step(board, time_delta) {
+        // rotate the weapon
+        this.weapon_data[0].angle = !this.reversed ? 0 : Math.PI;
+
+        if (this.cur_calced_hand) {
+            this.particle_delay -= time_delta;
+            while (this.particle_delay <= 0) {
+                this.particle_delay += this.particle_delay_max;
+
+                this.cur_calced_hand[4].forEach(idx => {
+                    let proj = this.projs[idx];
+                    for (let i=0; i<1; i++) {
+                        this.board.spawn_particle(new EnergyBurstParticle(
+                            proj.position, 0.4, entity_sprites.get("railgun_point"), 0, 16, true,
+                            random_float(15000, 25000, this.independent_random), 120000, this, new Colour(18, 175, 175, 255), 4, 1, 0, true
+                        ), proj.position)
+                    }
+                });
+            }
+        }
+
+        if (this.draws >= this.draws_max) {
+            this.shuffle_delay -= time_delta;
+            if (this.shuffle_delay <= 0) {
+                this.shuffle_delay = this.shuffle_delay_max;
+                this.reshuffle_deck();
+                this.draws = 0;
+            }
+        } else {
+            this.draw_delay -= time_delta;
+            while (this.draw_delay <= 0) {
+                if (this.projs.length >= this.handsize) {
+                    this.draw_delay += this.draw_delay_max;
+                    this.draws += 1;
+                    // figure out hand and activate effect
+                    
+                    // shuffle always happens after this so play that now
+                    this.board.set_timer(new Timer(b => play_audio("cardshuffle", 0.3), 0.4));
+
+                    /** @type {[number, string, boolean, number, [number]]} */
+                    let hand = this.cur_calced_hand;
+                    if (hand[1] == "Junk") {
+                        play_audio("evokefail", 0.25);
+                    } else {
+                        play_audio("evoke", 0.25);
+                    }
+
+                    // TODO sounds for all
+                    switch (hand[1]) {
+                        case "Junk":
+                            break;
+
+                        case "Pair": {
+                            this.cur_calced_hand[4].forEach(idx => {
+                                let proj = new CardsCardBouncingProjectile(
+                                    this.board, this, 0, this.cardsiz, this.pair_proj_damage,
+                                    0, this.projs[idx].position.sub(this.position).normalize(),
+                                    this.pair_proj_speed + (this.pair_rank_speed_bonus * this.cur_calced_hand[3])
+                                );
+
+                                this.board.spawn_projectile(
+                                    proj, this.projs[idx].position
+                                );
+                            })
+                            break;
+                        }
+
+                        case "Two Pair": {
+                            this.cur_calced_hand[4].forEach(idx => {
+                                let proj = new CardsCardBouncingProjectile(
+                                    this.board, this, 0, this.cardsiz, this.twopair_proj_damage,
+                                    0, this.projs[idx].position.sub(this.position).normalize(),
+                                    this.pair_proj_speed + (this.pair_rank_speed_bonus * this.cur_calced_hand[3])
+                                );
+
+                                this.board.spawn_projectile(
+                                    proj, this.projs[idx].position
+                                );
+                            })
+                            break;
+                        }
+
+                        case "Three of a Kind": {
+                            this.make_lightnings();
+                            break;
+                        }
+
+                        case "Straight": {
+                            play_audio("EsperRoar", 0.2);
+
+                            this.cur_calced_hand[4].forEach(idx => {
+                                let proj = this.projs[idx];
+                                for (let i=0; i<8; i++) {
+                                    this.board.spawn_particle(new EnergyBurstParticle(
+                                        proj.position, 0.4, entity_sprites.get("powerup_burst_pink"), 0, 16, true,
+                                        random_float(20000, 30000, this.independent_random), 120000, this, new Colour(198, 27, 228, 255), 4, 1.25, 0, true
+                                    ), proj.position)
+                                }
+                            });
+
+                            this.temp_stat_modifiers.damage_bonus *= 2;
+                            this.temp_stat_modifiers.defense_bonus *= 2;
+                            this.temp_stat_modifiers.ailment_resistance *= 2;
+                            this.temp_stat_modifiers.timespeed_mult *= 2;
+
+                            let particles_angle_diff = deg2rad(22.5);
+                            let dur = this.straight_buff_dur;
+                            let num = 3;
+
+                            for (let i=num-1; i>=0; i--) {
+                                let pos = this.position;
+                                let part = new OrbitingParticle(
+                                    pos, 0, 2 * ((num-i)/num), entity_sprites.get("powerup_enhancement_star"),
+                                    0, dur, false, this, Math.PI * 2, 1.5, particles_angle_diff * i
+                                )
+
+                                board.spawn_particle(part, pos);
+                            }
+
+                            board.set_timer(new Timer(b => {
+                                // return stats to normal
+                                this.temp_stat_modifiers.damage_bonus /= 2;
+                                this.temp_stat_modifiers.defense_bonus /= 2;
+                                this.temp_stat_modifiers.ailment_resistance /= 2;
+                                this.temp_stat_modifiers.timespeed_mult /= 2;
+                            }, dur))
+
+                            break;
+                        }
+
+                        case "Flush": {
+                            this.threekind_chain_lightning_chain_chance += 0.0;
+                            this.make_lightnings();
+                            this.threekind_chain_lightning_chain_chance -= 0.0;
+
+                            this.cur_calced_hand[4].forEach(idx => {
+                                for (let i=0; i<this.flush_projs; i++) {
+                                    let angle = this.flush_proj_angle_start + (
+                                        (i / (this.flush_projs-1)) * (this.flush_proj_angle_end - this.flush_proj_angle_start)
+                                    );
+
+                                    let proj = new CardsCardBouncingProjectile(
+                                        this.board, this, 0, this.cardsiz, this.twopair_proj_damage,
+                                        0, this.projs[idx].position.sub(this.position).normalize().rotate(angle),
+                                        this.pair_proj_speed + (this.pair_rank_speed_bonus * this.cur_calced_hand[3])
+                                    );
+
+                                    this.board.spawn_projectile(
+                                        proj, this.projs[idx].position
+                                    );
+                                }
+                            })
+
+                            break;
+                        }
+
+                        case "Full House":
+                            // summon five sordballs
+                            let n = this.fullhouse_num;
+                            let proto = SordBall;
+                            for (let i=0; i<n; i++) {
+                                let proj = this.projs[i];
+                                let new_ball = new proto(
+                                    board, this.mass * 0.6, this.radius * 0.6, this.colour,
+                                    this.bounce_factor, this.friction_factor, this.player, 0,
+                                    i % 2 == 0
+                                )
+
+                                let pos = proj.position.add(new Vector2(1, 0).mul(this.radius * 2).rotate(deg2rad(360 * (i/n))));
+
+                                board.spawn_particle(new Particle(
+                                    pos, 0, 0.6, entity_sprites.get("explosion_small"),
+                                    12, 3, false
+                                ), pos);
+
+                                new_ball.add_velocity(proj.position.sub(this.position).mul(-5));
+
+                                new_ball.show_stats = false;
+                                new_ball.die = () => {
+                                    board.spawn_particle(new Particle(
+                                        new_ball.position, 0, 0.6, entity_sprites.get("explosion_small"), 16, 3, false
+                                    ), new_ball.position);
+
+                                    return {skip_default_explosion: true};
+                                }
+
+                                new_ball.max_hp = this.fullhouse_hp + (this.fullhouse_hp_per_rank * this.cur_calced_hand[3]);
+                                new_ball.hp = this.fullhouse_hp + (this.fullhouse_hp_per_rank * this.cur_calced_hand[3]);
+
+                                new_ball.randomise_weapon_rotations();
+
+                                new_ball.weapon_data[0].size_multiplier *= 0.75;
+                                new_ball.cache_weapon_offsets();
+                                new_ball.cache_hitboxes_offsets();
+
+                                new_ball.set_skin(seeded_random_from_array(["Default", ...proto.AVAILABLE_SKINS], this.board.random))
+
+                                board.spawn_ball(new_ball, pos);
+                            }
+
+                            break;
+
+                        case "Four of a Kind":
+                            play_audio("earthquake", 0.2);
+
+                            [[2,4], [2,6], [3,5], [3,7]].forEach(times => {
+                                this.board.set_timer(new Timer(b => {
+                                    let pos = new Vector2(random_float(0, b.size.x, b.random), -1750);
+                                    let proj = new RockPowerupProjectile(
+                                        b, this, 999, pos, this.fourkind_rock_dmg,
+                                        this.fourkind_rock_size,
+                                        new Vector2(1, 0).rotate(deg2rad(random_float(-15, 15, b.random))), 0
+                                    )
+
+                                    b.spawn_projectile(proj, pos);
+                                }, random_float(...times, this.board.random), true));
+                            });
+
+                            break;
+
+                        case "Straight Flush":
+                            this.takes_damage = false;
+                            this.cur_calced_hand[4].forEach(idx => {
+                                let proj = this.projs[idx];
+                                for (let i=0; i<8; i++) {
+                                    this.board.balls.forEach(ball => {
+                                        // do nothing to allies
+                                        if (ball.id != this.id && ball.allied_with(this))
+                                            return;
+
+                                        let burst = `powerup_burst_${ball.id == this.id ? "rock" : "red"}`;
+                                        let col = ball.id == this.id ? new Colour(255, 255, 255, 255) : new Colour(228, 27, 37, 255);
+                                        this.board.spawn_particle(new EnergyBurstParticle(
+                                            proj.position, 0.4, entity_sprites.get(burst), 0, 16, true,
+                                            random_float(20000, 30000, this.independent_random), 120000, ball, col,
+                                            4, 1.25, 0, true
+                                        ), proj.position)
+                                    });
+                                }
+                            });
+
+                            let times = 0;
+                            let fn = (b => {
+                                times++;
+                                if (times <= this.straightflush_hits_cnt) {
+                                    b.balls.forEach(ball => {
+                                        ball.apply_hitstop(0.2);
+
+                                        if (!ball.allied_with(this)) {
+                                            ball.invuln_duration = 0;
+                                            let dir = random_on_circle(1, b.random);
+                                            let siz = random_float(2, 5, b.random);
+                                            b.spawn_projectile(new CardsStraightFlushStrikeProjectile(
+                                                b, this, 0, siz, this.straightflush_hits_dmg,
+                                                entity_sprites.get("cards_straightflush_strike"),
+                                                24, dir
+                                            ), ball.position)
+                                            
+                                            b.spawn_particle(new Particle(
+                                                ball.position, dir.angle(), siz, entity_sprites.get("cards_straightflush_strike"),
+                                                24, 999, false
+                                            ), ball.position)
+
+                                            let burst = `powerup_burst_red`;
+                                            let col = new Colour(228, 27, 37, 255);
+                                            b.spawn_particle(new EnergyBurstParticle(
+                                                this.position, 0.4, entity_sprites.get(burst), 0, 16, true,
+                                                random_float(20000, 30000, this.independent_random), 120000, ball, col,
+                                                4, 4, 0, true
+                                            ), this.position)
+                                        }
+                                    })
+
+                                    let new_delay = (1 - (times / this.straightflush_hits_cnt)) * this.straightflush_hits_delay;
+                                    this.board.set_timer(new Timer(fn, new_delay));
+                                } else {
+                                    // do nothing
+                                    this.takes_damage = true;
+                                    b.balls.forEach(ball => {
+                                        if (!ball.allied_with(this)) {
+                                            ball.invuln_duration = 0;
+                                            play_audio("explosion");
+                                            let proj = new GrenadeExplosionProjectile(
+                                                b, this, 0, ball.position, this.straightflush_finisher_dmg, 2
+                                            );
+                                            proj.can_hit_allied = false;
+                                            proj.can_hit_source = false;
+
+                                            b.spawn_projectile(proj, ball.position);
+                                        }
+                                    });
+                                }
+                            });
+
+                            this.apply_hitstop(0.2);
+                            this.board.set_timer(new Timer(fn, this.straightflush_hits_delay));
+                            break;
+
+                        case "Royal Flush":
+                            this.takes_damage = false;
+                            let this_team = this.player.id;
+                            let cnt = 0;
+                            stop_music();
+                            play_audio("poweroff");
+                            play_audio("static", 0.7);
+                            this.board.set_timer(new Timer(board => {
+                                board.balls.forEach(b => {
+                                    b.apply_hitstop(0.1);
+                                    if (b.player.id != this_team) {
+                                        b.set_colour(b.colour.lerp(Colour.black, 0.04))
+                                        b.set_velocity(new Vector2(0, -board.gravity.y * 0.1))
+                                        b.hp -= random_int(0, 2, board.random);
+                                        if (cnt >= 200) {
+                                            b.hp = 0;
+                                        }
+                                    }
+                                })
+
+                                if (cnt >= 500) {
+                                    return false;
+                                }
+
+                                cnt++;
+
+                                return true;
+                            }, 0.03, true))
+                            break;
+
+                        case "Five of a Kind":
+                            break;
+
+                        case "Flush House":
+                            break;
+
+                        case "Flush Five":
+                            break;
+                    }
+
+                    let luck_gain = 0;
+                    if (hand[0] <= 0) {
+                        luck_gain = 2;
+                    } else if (hand[0] <= 2) {
+                        luck_gain = 1;
+                    }
+
+                    this.luck_lookahead_amt += luck_gain;
+
+                    // show text particle
+                    let pos = this.position.sub(new Vector2(0, this.radius * 1.75));
+                    this.board.spawn_particle(new FadingFollowingTextParticle(
+                        pos, 1, `- ${hand[1]} -`, this.get_current_col(), this.board, 24, 2, this
+                    ), pos);
+
+                    let pos2 = pos.add(new Vector2(0, this.radius * 0.5));
+                    this.board.spawn_particle(new FadingFollowingTextParticle(
+                        pos2, 1, `Luck +${luck_gain}`, this.get_current_col(), this.board, 16, 2, this
+                    ), pos2);
+
+                    // for now just pop out funniy
+                    this.projs.forEach((proj, index) => {
+                        proj.active = false;
+                        
+                        this.board.spawn_particle(new Particle(
+                            proj.position, 0, 0.5, entity_sprites.get("explosion_small"), 24, 3, false
+                        ), proj.position);
+                    });
+
+                    this.projs = [];
+                    this.hand = [];
+                    this.particle_sets = [];
+                    this.cur_calced_hand = null;
+                    this.cur_calced_hand_string = "";
+                } else {
+                    this.draw_delay += this.draw_delay_max;
+
+                    let card = null;
+                    let lookahead = this.luck_lookahead_cnt;
+                    let times = this.luck_lookahead_amt;
+                    if (this.hand.length + lookahead == this.handsize) {
+                        // console.log(`Doing lookahead: ${lookahead} x${times}`)
+                        // try 3 times to pick a card, choose the one with the best hand
+                        // Hand, DrawIndex
+                        // console.log(`Looking ahead ${lookahead} x${times}`)
+                        let best_hand = [[0, "Junk", true, 0, []], null];
+                        for (let i=0; i<times; i++) {
+                            // normal order on first check
+                            let card_indexes = new Array(lookahead).fill(0).map((_, idx) => {
+                                return this.deck.length-1-idx;
+                            })
+
+                            if (i != 0) {
+                                card_indexes = [random_int(0, this.deck.length, this.board.random)];
+                                for (let i=0; i<lookahead-1; i++) {
+                                    let new_idx = card_indexes[0];
+                                    while (card_indexes.some(idx => idx == new_idx)) {
+                                        new_idx = random_int(0, this.deck.length, this.board.random);
+                                    }
+
+                                    card_indexes.push(new_idx);
+                                }
+                            }
+                            
+                            let cards = card_indexes.map(idx => this.deck[idx]);
+
+                            let produced_hand = this.get_best_hand([...this.hand, ...cards]);
+                            // console.log(cards);
+                            // console.log(produced_hand[1]);
+                            if (produced_hand[0] > best_hand[0][0] || (produced_hand[0] == best_hand[0][0] && produced_hand[3] >= best_hand[0][3])) {
+                                best_hand = [produced_hand, card_indexes];
+                            }
+                        }
+
+                        // then reshuffle the deck to have those cards on top
+                        // remember to take from end first so we don't disrupt indexes
+                        let indexes_sorted = best_hand[1].sort((a, b) => b-a);
+                        let cards = indexes_sorted.map(idx => this.deck.splice(idx, 1));
+                        
+                        this.deck.push(...cards);
+                    }
+                    card = this.deck.pop();
+
+                    let proj = new CardsCardOrbitalProjectile(
+                        this.board, this, 0, this.cardsiz, this.orbital_dmg,
+                        card, this.projs.length * this.orbital_offset_per_card,
+                        this.orbital_speed, this.orbital_distance
+                    );
+
+                    if (this.projs[0]) {
+                        proj.lifetime = this.projs[0].lifetime;
+                    }
+
+                    this.board.spawn_projectile(proj, this.position);
+                    this.projs.push(proj);
+                    this.hand.push(card);
+                    this.particle_sets.push([]);
+
+                    this.cur_calced_hand = this.get_best_hand();
+                    this.cur_calced_hand_string = this.get_hand_string();
+
+                    play_audio(`card${random_int(1, 8, this.board.random)}`);
+
+                    /*
+                    for (let i=0; i<this.projs.length; i++) {
+                        if (this.cur_calced_hand[4].includes(i)) {
+                            if (this.particle_sets[i].length != 2) {
+                                this.particle_sets[i].forEach(part => part.duration = 0);
+                                this.particle_sets[i] = [];
+                            }
+
+                            for (let t=0; t<2; t++) {
+                                let part = new FollowParticle(
+                                    this.projs[i].position, 0, this.cardsiz,
+                                    entity_sprites.get("playingcard_glow"), 12,
+                                    Number.POSITIVE_INFINITY, true, this.projs[i], t * 0.5
+                                )
+
+                                this.board.spawn_particle(part, this.projs[i].position);
+                                this.particle_sets[i].push(part);
+                            }
+                        } else {
+                            if (this.particle_sets[i].length == 2) {
+                                this.particle_sets[i].forEach(part => part.duration = 0);
+                                this.particle_sets[i] = [];
+                            }
+                        }
+                    }
+                    */
+                }
+            }
+        }
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Card damage: ${this.orbital_dmg.toFixed(2) * this.temp_stat_modifiers.damage_bonus}`
+        )
+
+        this.write_desc_line(
+            `Luck: +${(this.luck_lookahead_amt-1).toFixed(0)}`
+        )
+
+        let state = "Drawing...";
+        if (this.draws >= this.draws_max) {
+            state = "Shuffling...";
+        } else if (this.projs.length >= this.handsize) {
+            state = "Evoking!"
+        }
+        this.write_desc_line(
+            `State: ${state.padEnd(12)}`
+        )
+
+        let delay_c = null;
+        let delay_m = null;
+        if (this.draws >= this.draws_max) {
+            delay_c = this.shuffle_delay;
+            delay_m = this.shuffle_delay_max;
+        } else {
+            delay_c = this.draw_delay;
+            delay_m = this.draw_delay_max;
+        }
+
+        delay_c = Math.max(0, Math.min(delay_m, delay_c));
+        this.write_desc_line(
+            `Delay: ${delay_c.toFixed(1)}s [${"#".repeat(Math.ceil((delay_c / delay_m) * 12)).padEnd(12)}]`
+        )
+
+        if (this.cur_calced_hand) {
+            this.write_desc_line(
+                ``
+            )
+
+            for (let i=0; i<this.handsize; i++) {
+                let x_offset = (0 * 6) + (6 * i * 6);
+                let in_hand = this.cur_calced_hand[4].includes(i);
+                this.write_desc_line(
+                    `${in_hand ? "[" : " "}${(this.cur_calced_hand_string[i] ?? " ? ").padEnd(3)}${in_hand ? "]" : " "}`,
+                    false, null, this.cur_calced_hand_string[i] ? (in_hand ? null : this.get_current_desc_col().lerp(Colour.black, 0.5).css()) : "#444", true, x_offset
+                )
+            }
+
+            this.write_desc_line(
+                `(${this.cur_calced_hand[1]}, ${this.cur_calced_hand[3]})`, false, null, this.cur_calced_hand[0] <= 0 ? "#666" : null
+            )
+        }
     }
 }
 
@@ -7954,6 +9009,215 @@ class Pan_Projectile extends PanFoodProjectile {
     }
 }
 
+class CardsCardOrbitalProjectile extends Projectile {
+    constructor(board, source, source_weapon_index, size, damage, sprite_index, angle_offset, rotation_speed, orbit_distance) {
+        super(board, source, source_weapon_index, Vector2.zero, damage, size, new Vector2(1, 0), 0);
+
+        this.sprite = entity_sprites.get("playingcard")[sprite_index];
+
+        this.set_hitboxes([
+            {pos: new Vector2(0, -10), radius: 16},
+            {pos: new Vector2(0, 0), radius: 16},
+            {pos: new Vector2(0, 10), radius: 16},
+        ])
+
+        this.angle_offset = angle_offset;
+        this.rotation_speed = rotation_speed;
+        this.orbit_distance = orbit_distance;
+
+        this.ease_in_time = 1;
+
+        this.parriable = false;
+
+        this.lifetime = 0;
+
+        /*
+        this.velocity = random_on_circle(10, this.board.random);
+        this.friction = 20000;
+        this.force = 125000;
+        this.minforce = this.force * 0.5;
+        this.maxdist = 1024;
+        this.maxvel = 10000;
+        */
+    }
+
+    physics_step(time_delta) {
+        // do nothing
+        if (this.source.hitstop > 0) {
+            // time_delta *= HITSTOP_DELTATIME_PENALTY;
+        }
+
+        // this.set_pos(this.position.add(this.velocity.mul(time_delta)));
+        this.lifetime += time_delta;
+
+        let angle = this.angle_offset + (this.rotation_speed * this.lifetime);
+        let pos = this.source.position.add(new Vector2(this.orbit_distance * this.ease_in_time, 0).rotate(angle));
+
+        for (let i=0; i<4; i++) {
+            this.set_pos(this.position.lerp(pos, 1 - compat_pow(0.0001, time_delta)))
+        }
+
+        /*
+        let friction_force = this.velocity.normalize().mul(-1 * this.friction * time_delta);
+        if (friction_force.sqr_magnitude() > this.velocity.sqr_magnitude()) {
+            friction_force = this.velocity.mul(-1);
+        }
+
+        this.velocity = this.velocity.add(friction_force);
+
+        let angle = this.angle_offset + (this.rotation_speed * this.lifetime);
+        let pos = this.source.position.add(new Vector2(this.orbit_distance * this.ease_in_time, 0).rotate(angle));
+
+        let vec_abs = pos.sub(this.position);
+        let vec_mag = vec_abs.magnitude();
+        if (vec_mag >= 0) {
+            let vec = vec_abs.div(vec_mag);
+            let dist_factor = 1 - (Math.sqrt(1 - Math.max(0, Math.min(1, vec_mag / this.maxdist))));
+            let force_diff = this.force - this.minforce;
+            let force_dist = this.minforce + (force_diff * dist_factor);
+            let force = vec.mul(force_dist * time_delta);
+
+            this.velocity = this.velocity.add(force);
+        }
+
+        let vel_mag = this.velocity.magnitude();
+        let new_vel_mag = Math.min(this.maxvel, vel_mag);
+        if (new_vel_mag != vel_mag) {
+            this.velocity = this.velocity.div(vel_mag).mul(new_vel_mag);
+        }
+        */
+
+        if (this.source.hp <= 0) {
+            this.active = false;
+        }
+    }
+
+    hit_other_projectile(other_projectile) {
+        super.hit_other_projectile(other_projectile);
+        this.active = true;
+    }
+
+    get_parried(by) {
+        super.get_parried(by);
+        this.active = true;
+    }
+
+    hit_ball(ball, delta_time) {
+        super.hit_ball(ball, delta_time);
+        this.active = true;
+    }
+
+    collide_wall(pos) {
+        super.collide_wall(pos);
+        this.active = true;
+    }
+}
+
+class CardsCardBouncingProjectile extends Projectile {
+    constructor(board, source, source_weapon_index, size, damage, sprite_index, move_dir, speed) {
+        super(board, source, source_weapon_index, Vector2.zero, damage, size, new Vector2(1, 0), speed);
+
+        this.sprite = entity_sprites.get("playingcard")[sprite_index];
+
+        this.set_hitboxes([
+            {pos: new Vector2(0, -10), radius: 16},
+            {pos: new Vector2(0, 0), radius: 16},
+            {pos: new Vector2(0, 10), radius: 16},
+        ]);
+
+        this.speed = speed;
+        this.move_dir = move_dir;
+
+        this.parriable = false;
+
+        this.particle_delay_max = 0.1;
+        this.particle_delay = this.particle_delay_max;
+    }
+
+    physics_step(time_delta) {
+        this.set_pos(this.position.add(this.move_dir.mul(this.speed * time_delta)));
+
+        if (this.position.x < 0) {
+            this.position.x = 0;
+            this.move_dir.x *= -1;
+        } else if (this.position.x >= this.board.size.x) {
+            this.position.x = this.board.size.x;
+            this.move_dir.x *= -1;
+        }
+
+        if (this.position.y < 0) {
+            this.position.y = 0;
+            this.move_dir.y *= -1;
+        } else if (this.position.y >= this.board.size.y) {
+            this.position.y = this.board.size.y;
+            this.move_dir.y *= -1;
+        }
+
+        this.particle_delay -= time_delta;
+        if (this.particle_delay <= 0) {
+            this.particle_delay += this.particle_delay_max;
+
+            this.board.spawn_particle(new Particle(
+                this.position, 0, this.size / PROJ_SIZE_MULTIPLIER,
+                entity_sprites.get("playingcard_glow"), 12,
+                9999, false
+            ), this.position)
+        }
+    }
+
+    hit_other_projectile(other_projectile) {
+        // each projectile is responsible for destroying itself
+        // so piercing projectiles just... don't
+        this.active = true;
+    }
+}
+
+class CardsStraightFlushStrikeProjectile extends Projectile {
+    constructor(board, source, source_weapon_index, size, damage, sprites, framespeed, dir) {
+        super(board, source, source_weapon_index, Vector2.zero, damage, size, dir, 0);
+
+        this.sprites = sprites;
+        this.framecount = this.sprites.length;
+
+        this.cur_frame = 0;
+        this.sprite = this.sprites[this.cur_frame];
+
+        this.framespeed = framespeed;
+
+        this.lifetime = 0;
+
+        this.set_hitboxes([
+            
+        ]);
+
+        this.active_hitboxes = [
+            {pos: new Vector2(-10, 10), radius: 10},
+            {pos: new Vector2(0, 0), radius: 10},
+            {pos: new Vector2(10, 10), radius: 10},
+        ]
+
+        this.parriable = false;
+    }
+
+    physics_step(time_delta) {
+        this.lifetime += time_delta;
+        this.cur_frame = Math.floor(this.lifetime * this.framespeed);
+        if (this.cur_frame >= this.framecount) {
+            this.active = false;
+        } else {
+            this.sprite = this.sprites[this.cur_frame];
+            let new_hitboxes = [];
+            if (this.cur_frame >= 3 && this.cur_frame <= 5) {
+                new_hitboxes = this.active_hitboxes;
+            }
+
+            if (this.hitboxes.length != new_hitboxes.length) {
+                this.set_hitboxes(new_hitboxes);
+            }
+        }
+    }
+}
+
 let main_selectable_balls = [
     DummyBall,
     HammerBall, SordBall, DaggerBall,
@@ -7962,5 +9226,5 @@ let main_selectable_balls = [
     GlassBall, HandBall, ChakramBall,
     WandBall, AxeBall, ShotgunBall,
     SpearBall, RosaryBall, FishingRodBall,
-    FryingPanBall
+    FryingPanBall, CardsBall
 ]

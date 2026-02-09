@@ -817,7 +817,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
         } else {
             match_end_timeout = 5 * 1000;
             if (window.location.href.startsWith("file://") && screen_open == "sandbox") {
-                // match_end_timeout = 10 * 1000;
+                match_end_timeout = 5 * 1000;
             }
             
             render_victory_enabled = true;
@@ -1315,6 +1315,49 @@ function randomise_ball_info(ballid, rand_type) {
     let info = selected_ball_info[ballid];
 
     switch (rand_type) {
+        case "random-ball-plus-team-plus-skin": {
+            li = category_to_balls_list[info.category].filter(t => !banned_for_random.some(s => t.ball_name == s.ball_name));
+
+            let newball = null
+            while (!newball || newball == info.name)
+                newball = random_from_array(li).ball_name;
+            
+            ball = newball;
+
+            let proto = selectable_balls.find(b => b.ball_name == ball);
+            li = ["Default", ...proto.AVAILABLE_SKINS];
+
+            let newskin = null;
+            while (!newskin || (li.length > 1 && newskin == info.skin))
+                newskin = random_from_array(li);
+            
+            skin = newskin;
+
+            let done = false;
+            while (!done) {
+                col = random_int(0, default_cols.length)
+
+                done = Object.keys(selected_ball_info).every(k => {
+                    return (k == ballid) || (selected_ball_info[k].team != col)
+                })
+            }
+
+            break;
+        }
+
+        case "random-team": {
+            let done = false;
+            while (!done) {
+                col = random_int(0, default_cols.length)
+
+                done = Object.keys(selected_ball_info).every(k => {
+                    return (selected_ball_info[k].team != col)
+                })
+            }
+
+            break;
+        }
+
         case "random-ball": {
             li = category_to_balls_list[info.category].filter(t => !banned_for_random.some(s => t.ball_name == s.ball_name));
 
@@ -1331,7 +1374,7 @@ function randomise_ball_info(ballid, rand_type) {
             li = ["Default", ...proto.AVAILABLE_SKINS];
 
             let newskin = null
-            while (!newskin || newskin == info.skin)
+            while (!newskin || (li.length > 1 && newskin == info.skin))
                 newskin = random_from_array(li);
             
             skin = newskin;
@@ -1365,7 +1408,7 @@ function randomise_ball_info(ballid, rand_type) {
 
             skin = newskin;
 
-            col = random_int(0, default_cols.length)
+            col = random_int(0, default_cols.length);
 
             break;
         }
@@ -1518,7 +1561,7 @@ function setup_match_search_params(num_candidates, tension_threshold, winning_te
 
 function cancel_match_search() {
     if (board) {
-        exit_battle(false);
+        match_cancel_enqueued = true;
     }
 
     searching = false;
@@ -2400,7 +2443,7 @@ document.addEventListener("DOMContentLoaded", function() {
     randomise_ball_info("ball2", "random-ball");
 
     // force ball in slot 1 and slot 2
-    // selected_ball_info.ball1.name = "Frying Pan";
+    // selected_ball_info.ball1.name = "Cards";
     // selected_ball_info.ball2.name = "Dummy";
 
     for (let i=1; i<=4; i++) {

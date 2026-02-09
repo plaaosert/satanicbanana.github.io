@@ -288,7 +288,7 @@ function weighted_seeded_random_from_arr(arr, rand) {
 // https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
 function shuffle(arr, random=null) {
     return arr
-        .map(value => ({ value, sort: random ? random : Math.random() }))
+        .map(value => ({ value, sort: random ? random() : Math.random() }))
         .sort((a, b) => a.sort - b.sort)
         .map(({ value }) => value)
 }
@@ -327,7 +327,7 @@ function obj_weighted_seeded_random_from_arr(arr, rand) {
 }
 
 function obj_random_shuffle(arr, rand) {
-    return shuffle(arr, rand.random());
+    return shuffle(arr, rand.random);
 }
 
 /*

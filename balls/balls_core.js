@@ -372,6 +372,12 @@ const entity_sprites = new Map([
     ["soup", 1, "weapon/frying_pan/"],
     ["sushi", 1, "weapon/frying_pan/"],
 
+    ["deck", 1, "weapon/"],
+    ["deck_r", 1, "weapon/"],
+    ["playingcard", 56, "cards/"],  // https://drawsgood.itch.io/8bit-deck-card-assets
+    ["playingcard_glow", 5, "cards/effects/glow/"],
+    ["cards_straightflush_strike", 7, "cards/effects/straightflush_strike/"],
+
     ["fire_blast", 6, "fire_blast/"],
 
     ["explosion", 16, "explosion/"],  // Game Maker Classic
@@ -497,6 +503,8 @@ gain_node.gain.setValueAtTime(gain, audio_context.currentTime);
 
 let audio_playing = [];
 let music_audio = null;
+
+let match_cancel_enqueued = false;
 
 function reset_audio_buffer() {
     audio_context.close();
@@ -634,6 +642,8 @@ let audios_list = [
     // Final Fantasy 6
     ["BlueMagic", "snd/00BlueMagic.wav"],
     ["EsperRoar", "snd/6CEsperRoar.wav"],
+    ["evoke", "snd/1CIdk.wav"],
+    ["evokefail", "snd/97Bark.wav"],
 
     // Persona 2: Innocent Sin Portable
     ["slot_win", "snd/SE_SLOT_00008.wav"],
@@ -646,6 +656,21 @@ let audios_list = [
 
     // i have NO idea
     ["munch", "snd/munch.mp3"],
+
+    ["static", "snd/static.mp3"],  // https://pixabay.com/sound-effects/technology-fuzzy-powerdown-27852/
+    ["poweroff", "snd/poweroff.mp3"],  // https://pixabay.com/sound-effects/film-special-effects-power-off-96139/
+
+    // https://pixabay.com/sound-effects/film-special-effects-card-mixing-48088/
+    ["card1", "snd/card1.mp3"],
+    ["card2", "snd/card2.mp3"],
+    ["card3", "snd/card3.mp3"],
+    ["card4", "snd/card4.mp3"],
+    ["card5", "snd/card5.mp3"],
+    ["card6", "snd/card6.mp3"],
+    ["card7", "snd/card7.mp3"],
+
+    // http://pixabay.com/sound-effects/film-special-effects-card-shuffle-94662/
+    ["cardshuffle", "snd/cardshuffle.mp3"],
 ]
 
 
@@ -836,6 +861,7 @@ class Particle {
         this.render_behind = render_behind;
 
         this.unarmed_cinematic_played = false;
+        this.opacity = 1;
     }
 
     set_pos(to) {
@@ -1032,6 +1058,49 @@ class PersistentParticle extends Particle {
     }
 }
 
+class FadingTextParticle extends Particle {
+    constructor(position, size, text, col, board, text_size, duration) {
+        super(position, 0, size, [text], 0, 2, false);
+
+        this.board = board;
+
+        this.base_col = col;
+        this.text_col = col;
+        this.text_border_col = this.base_col.lerp(Colour.black, 0.6);
+
+        this.text_size = text_size;
+        this.text_modifiers = "";
+
+        this.duration = duration;
+    }
+
+    pass_time(time_delta) {
+        this.lifetime += time_delta;
+        
+        this.opacity = 1 - (this.lifetime / this.duration);
+        
+        return true;
+    }
+}
+
+class FadingFollowingTextParticle extends FadingTextParticle {
+    constructor(position, size, text, col, board, text_size, duration, follow_target) {
+        super(position, size, text, col, board, text_size, duration);
+
+        this.follow_target = follow_target;
+        this.offset = this.position.sub(this.follow_target.position);
+    }
+
+    pass_time(time_delta) {
+        let result = super.pass_time(time_delta);
+        if (result) {
+            this.position = this.follow_target.position.add(this.offset);
+        }
+
+        return result;
+    }
+}
+
 class DamageNumberParticle extends Particle {
     constructor(position, size, number, col, inertia_force, board, text_size) {
         super(position, 0, size, [number], 0, 2, false);
@@ -1180,6 +1249,29 @@ class FadingLineParticle extends LineParticle {
     }
 }
 
+class FollowParticle extends Particle {
+    constructor(position, rotation_angle, size, sprites, frame_speed, duration, looping, target, delay=0, render_behind=false) {
+        super(position, rotation_angle, size, sprites, frame_speed, duration, looping, delay, render_behind);
+
+        this.target = target;
+    }
+
+    pass_time(time_delta) {
+        let result = super.pass_time(time_delta);
+        if (result) {
+            this.position = this.target.position;
+
+            if (this.target instanceof WeaponBall && this.target.hp <= 0) {
+                this.lifetime = Number.POSITIVE_INFINITY;
+            } else if (this.target instanceof Projectile && !this.target.active) {
+                this.lifetime = Number.POSITIVE_INFINITY;
+            }
+        }
+        
+        return result;
+    }
+}
+
 class OrbitingParticle extends Particle {
     constructor(position, rotation_angle, size, sprites, frame_speed, duration, looping, orbit_target, orbit_speed, orbit_distance_factor, orbit_offset, delay=0, render_behind=false) {
         super(position, rotation_angle, size, sprites, frame_speed, duration, looping, delay, render_behind);
@@ -1199,6 +1291,10 @@ class OrbitingParticle extends Particle {
                     this.orbit_target.radius * this.orbit_distance_factor
                 ).rotate(amt - this.orbit_offset)
             )
+
+            if (this.orbit_target instanceof WeaponBall && this.orbit_target.hp <= 0) {
+                this.lifetime = Number.POSITIVE_INFINITY;
+            }
         }
         
         return result;
@@ -2503,6 +2599,9 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
         /** @type {CanvasRenderingContext2D} */
         let ctx = canvas_entry.ctx;
 
+        let old_alpha = ctx.globalAlpha;
+        ctx.globalAlpha = particle.opacity ?? 1;
+
         if (typeof sprite === "string") {
             write_pp_bordered_text(
                 ctx, sprite,
@@ -2529,6 +2628,8 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
                 siz, siz, particle.rotation_angle
             );
         }
+
+        ctx.globalAlpha = old_alpha;
     })
 
     // then the projectiles. put them on fg3, same as weapons
@@ -3350,6 +3451,11 @@ function game_loop() {
     fps_current = 1000/avg_frame_time;
 
     let frame_start_time = Date.now();
+
+    if (match_cancel_enqueued) {
+        match_cancel_enqueued = false;
+        exit_battle(false);
+    }
 
     if (board && render) {
         if (balls_need_aero_recache) {
