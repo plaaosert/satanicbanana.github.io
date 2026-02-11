@@ -55,12 +55,16 @@ const BALL_RENDERING_METHODS = {
 const AERO_LIGHTING_CONFIGS = {
     SIMPLE: "SIMPLE",
     WHATS_WRONG_BRO: "WHATS_WRONG_BRO",
+    NEON: "NEON",
 }
 
 const AERO_BACKGROUNDS = {
     RENDERED: "RENDERED",
     VISTA: "VISTA",
+    PARALLAX_GRID: "PARALLAX_GRID",
 }
+
+let render_data = {};
 
 let BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.VECTOR;
 let AERO_LIGHTING_CONFIG = AERO_LIGHTING_CONFIGS.WHATS_WRONG_BRO;
@@ -2178,10 +2182,15 @@ function render_powerup_info(board) {
 
     let last_powerup = board.powerups_last_spawned;
 
+    let yoffset = 0;
+    if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID) {
+        yoffset += 48;
+    }
+
     write_pp_bordered_text(
         layers.ui4.ctx,
         `Last bonus:`,
-        20, 32,
+        20, 32 + yoffset,
         "white",
         CANVAS_FONTS, 20, false, 2, "black"
     );
@@ -2192,7 +2201,7 @@ function render_powerup_info(board) {
     write_pp_bordered_text(
         layers.ui4.ctx,
         `${last_powerup?.title ?? "None"}`,
-        20, 32 + 22,
+        20, 32 + yoffset + 22,
         col,
         CANVAS_FONTS, 16, false, 2, "black"
     );
@@ -2200,7 +2209,7 @@ function render_powerup_info(board) {
     write_pp_bordered_text(
         layers.ui4.ctx,
         `${last_powerup?.desc ?? "-"}`,
-        20, 32 + 20 + 20,
+        20, 32 + yoffset + 20 + 20,
         subcol,
         CANVAS_FONTS, 12, false, 2, "black"
     );
@@ -2208,7 +2217,7 @@ function render_powerup_info(board) {
     write_pp_bordered_text(
         layers.ui4.ctx,
         `Next: ${(board.powerups_timeout.toFixed(1) + "s").padEnd(5)} [${"=".repeat(Math.ceil(24 * board.powerups_timeout / board.powerups_last_delay)).padEnd(24)}]`,
-        20, 32 + 20 + 20 + 32,
+        20, 32 + yoffset + 20 + 20 + 32,
         "#ccc",
         CANVAS_FONTS, 12, false, 2, "black"
     );
@@ -2217,7 +2226,7 @@ function render_powerup_info(board) {
         write_pp_bordered_text(
             layers.ui4.ctx,
             `${board.powerups_next.title}`,
-            20, 32 + 20 + 20 + 32 + 16,
+            20, 32 + yoffset + 20 + 20 + 32 + 16,
             board.powerups_next.burst_line_col.css(),
             CANVAS_FONTS, 12, false, 2, "black"
         );
@@ -2427,7 +2436,7 @@ function render_victory(board, time_until_end) {
     }
 }
 
-function render_game(board, collision_boxes=false, velocity_lines=false, background_tint=null) {
+function render_game(board, time_delta, collision_boxes=false, velocity_lines=false, background_tint=null) {
     layers.fg1.ctx.clearRect(0, 0, canvas_width, canvas_height);
     layers.fg3.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
@@ -2496,6 +2505,64 @@ function render_game(board, collision_boxes=false, velocity_lines=false, backgro
                     layers.bg3.canvas, layers.bg3.ctx,
                     canvas_width/2, canvas_height/2, entity_sprites.get("vista")[0], canvas_width, canvas_height, 0
                 )
+            } else if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID) {
+                if (background_tint) {
+                    layers.bg3.ctx.fillStyle = background_tint.lerp(Colour.cyan, 0.01).css();
+                    layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height);
+                } else {
+                    layers.bg3.ctx.fillStyle = game_normal_col.lerp(Colour.cyan, 0.01).css();
+                    layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height);
+                }
+
+                let grids = 2;
+                for (let i=grids-1; i>=0; i--) {
+                    let grid_pos = render_data[`grid${i}`] ?? Vector2.zero;
+                    let grid_velocity = render_data[`grid${i}velocity`] ?? [
+                        new Vector2(-40, -40),
+                        new Vector2(16, 20),
+                        new Vector2(1, 1),
+                    ][i];
+                    let grid_colour = [Colour.green.lerp(Colour.black, 0.7), Colour.green.lerp(Colour.cyan, 0.5).lerp(Colour.black, 0.85), Colour.white][i];
+                    let grid_freq = 128 + (i * 16)
+                    let grid_size = 2;
+
+                    // grid is real simple. it's got a colour and a frequency
+                    // start at the lowest x value, increment by freq until > canvas size
+                    // then repeat for y
+                    /** @type {CanvasRenderingContext2D} */
+                    let ctx = layers.bg3.ctx;
+
+                    ctx.lineWidth = grid_size;
+                    ctx.strokeStyle = grid_colour.css();
+
+                    ctx.beginPath();
+
+                    let posx = grid_pos.x - canvas_width;
+                    while (posx < canvas_width) {
+                        ctx.moveTo(posx, 0);
+                        ctx.lineTo(posx, canvas_height);
+
+                        posx += grid_freq;
+                    }
+
+                    let posy = grid_pos.y - canvas_width;
+                    while (posy < canvas_width) {
+                        ctx.moveTo(0, posy);
+                        ctx.lineTo(canvas_width, posy);
+
+                        posy += grid_freq;
+                    }
+
+                    ctx.stroke();
+                    ctx.closePath();
+
+                    render_data[`grid${i}`] = new Vector2(
+                        (grid_pos.x + (grid_velocity.x * (time_delta / (1000 * 2)))) % grid_freq,
+                        (grid_pos.y + (grid_velocity.y * (time_delta / (1000 * 2)))) % grid_freq,
+                    );
+                }
+
+                bg_changed = true;
             }
         } else {
             if (background_tint) {
@@ -2980,8 +3047,8 @@ function render_descriptions(board) {
                 Math.round(l_base[1] + ball.desc_shake_offset[1]),
             ]
 
-            // if (BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO)
-            //     l[1] += 48;
+            if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID)
+                l[1] += 48;
 
             let ball_col = ball.get_current_desc_col().css();
             let ball_border_col = ball.get_current_border_col().css();
@@ -3469,9 +3536,9 @@ function game_loop() {
         if (board.duration > board.max_game_duration && !switched_to_endgame_col) {
             switched_to_endgame_col = true;
             bg_changed = true;
-            render_game(board, keys_down["KeyQ"], false, game_end_col);
+            render_game(board, (frame_start_time - last_frame_start), keys_down["KeyQ"], false, game_end_col);
         } else {
-            render_game(board, keys_down["KeyQ"], false);
+            render_game(board, (frame_start_time - last_frame_start), keys_down["KeyQ"], false);
         }
 
         if (fullpause_timeout > 0) {
@@ -3490,8 +3557,8 @@ function game_loop() {
         if (board.powerups_enabled)
             render_powerup_info(board);
 
-        // if (BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO)
-        //     render_just_playing_around_warning();
+        if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID)
+            render_just_playing_around_warning();
     }
     
     // render_diagnostics(board);

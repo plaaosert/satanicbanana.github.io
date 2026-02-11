@@ -2163,6 +2163,26 @@ document.addEventListener("DOMContentLoaded", function() {
 
             case "Digit4": {
                 BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.AERO;
+                AERO_LIGHTING_CONFIG = AERO_LIGHTING_CONFIGS.WHATS_WRONG_BRO;
+                AERO_BACKGROUND = AERO_BACKGROUNDS.VISTA;
+                if (board) {
+                    board.balls.forEach(b => b.setup_aero_light_lookup_table());
+                }
+                handle_resize();
+                get_canvases();
+                render_watermark();
+                BALL_DESC_BORDER_SIZE = BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO ? 2 : 1;
+                bg_changed = true;
+                break;
+            }
+
+            case "Digit5": {
+                BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.AERO;
+                AERO_LIGHTING_CONFIG = AERO_LIGHTING_CONFIGS.NEON;
+                AERO_BACKGROUND = AERO_BACKGROUNDS.PARALLAX_GRID;
+                if (board) {
+                    board.balls.forEach(b => b.setup_aero_light_lookup_table());
+                }
                 handle_resize();
                 get_canvases();
                 render_watermark();

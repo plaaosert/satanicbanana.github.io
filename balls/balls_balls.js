@@ -437,8 +437,9 @@ class WeaponBall extends Ball {
         this.aero_light_lookup_table = null;
         this.aero_radius_table = null;
 
-        if (!skip_aero_lookup)
+        if (!skip_aero_lookup) {
             this.setup_aero_light_lookup_table();
+        }
 
         this.independent_random = get_seeded_randomiser(this.board.random_seed);
     }
@@ -496,7 +497,8 @@ class WeaponBall extends Ball {
                 break;
             }
 
-            case AERO_LIGHTING_CONFIGS.WHATS_WRONG_BRO: {
+            case AERO_LIGHTING_CONFIGS.WHATS_WRONG_BRO:
+            case AERO_LIGHTING_CONFIGS.NEON: {
                 let light_centers = [
                     [new Vector2(-ball_siz_scaled * 0.5, -ball_siz_scaled * 0.5), 1],
                     [new Vector2(-ball_siz_scaled * 0, -ball_siz_scaled * 0), -0.2],
@@ -545,6 +547,26 @@ class WeaponBall extends Ball {
                         shiny_max_sqr: null,
                     },
                 ]
+                
+                if (AERO_LIGHTING_CONFIG == AERO_LIGHTING_CONFIGS.NEON) {
+                    // replace with neon effect
+                    light_centers = [
+                        [new Vector2(-ball_siz_scaled * 0.15, -ball_siz_scaled * 0.3), 1]
+                    ];
+
+                    auroras = [
+                        {
+                            shiny_level: -1,
+                            shiny_min: ball_siz_scaled * 1,
+                            shiny_max: ball_siz_scaled * 0.75,
+                            shiny_diff: null,
+                            angles: [deg2rad(0)],
+                            angles_length: deg2rad(36000),
+                            shiny_min_sqr: null,
+                            shiny_max_sqr: null,
+                        },
+                    ];
+                }
 
                 auroras.forEach(a => {
                     a.shiny_diff = a.shiny_max - a.shiny_min;
