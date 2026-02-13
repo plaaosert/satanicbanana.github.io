@@ -660,6 +660,13 @@
                             </select>
                         </div>
                         <div class="text-option">
+                            <span>Bonuses</span>
+                            <select id="text_bonuses_rendering" onchange="set_graphics_option('bonusestext', 'text_bonuses_rendering')">
+                                <option selected>Full</option>
+                                <option>None</option>
+                            </select>
+                        </div>
+                        <div class="text-option">
                             <span>Hide watermark</span>
                             <input type="checkbox" id="text_hide_watermark" onchange="hide_watermark = !hide_watermark; update_graphics_options();">
                         </div>

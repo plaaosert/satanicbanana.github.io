@@ -129,6 +129,7 @@ const BALL_STATS_DISPLAY_LEVELS = {
 }
 
 let ball_stats_display_level = BALL_STATS_DISPLAY_LEVELS.FULL;
+let ball_bonuses_display_level = BALL_STATS_DISPLAY_LEVELS.FULL;
 let hide_watermark = false;
 
 let old_graphics_options = {
@@ -2294,6 +2295,10 @@ function handle_resize(event) {
 
 function render_powerup_info(board) {
     layers.ui4.ctx.clearRect(0, 0, canvas_width, canvas_height);
+
+    if (ball_bonuses_display_level == BALL_STATS_DISPLAY_LEVELS.NONE) {
+        return;
+    }
 
     let last_powerup = board.powerups_last_spawned;
 

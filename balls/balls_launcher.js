@@ -1778,6 +1778,13 @@ function set_graphics_option(typ, elemid) {
             break;
         }
 
+        case "bonusestext": {
+            ball_bonuses_display_level = BALL_STATS_DISPLAY_LEVELS[
+                val.toUpperCase().replace(" ", "_")
+            ]
+            break;
+        }
+
         case "rendering": {
             BALL_RENDERING_METHOD = BALL_RENDERING_METHODS[
                 val.toUpperCase().replace(" ", "_")
