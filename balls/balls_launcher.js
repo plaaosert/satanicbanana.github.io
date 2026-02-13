@@ -47,6 +47,8 @@ let default_positions = [
     new Vector2(512*11, 512*4),
 ]
 
+let POSITIONS = [...default_positions];
+
 let last_winner = null;
 let last_board = null;
 let search_stored_replays = [];
@@ -417,6 +419,11 @@ function collapse_replay(replay) {
         replay_collapsed.skins = null;
     }
 
+    let positions_matched = replay_collapsed.positions?.every((p,i) => new Vector2(...p).equals(default_positions[i]));
+    if (positions_matched) {
+        replay_collapsed.positions = null;
+    }
+
     // rename the balls from their names to codes
     replay_collapsed.balls = replay_collapsed.balls.map(b => {
         let list_index = -1;
@@ -471,6 +478,7 @@ const REPLAY_VALUES = {
     "time_recorded": "t",
     "board_size": "z",
     "powerups":"w",
+    "positions":"n",
 };
 
 function compress_replay(replay) {
@@ -514,6 +522,8 @@ function exit_battle(save_replay=true) {
             duration: board.duration,
             max_game_duration: board.max_game_duration,
             board_size: board.size.x,
+
+            positions: board.starting_positions.map(p => [p.x, p.y]),
 
             framespeed: board.forced_time_deltas && Math.round(1000 / board.forced_time_deltas),
             balls: board.starting_balls,
@@ -678,7 +688,7 @@ function spawn_selected_balls() {
     
     let seed = document.querySelector("#sandbox-random-seed").value || Math.random().toString().slice(2);
     
-    let positions = default_positions;
+    let positions = POSITIONS;
 
     let infos = [
         selected_ball_info.ball1,
@@ -793,6 +803,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
 
         board.starting_system_energy = board.calculate_system_energy();
 
+        board.starting_positions = [...positions];
         board.starting_balls = ball_classes.map(c => c?.name);
         board.starting_levels = ball_levels;
         board.starting_players = players;
