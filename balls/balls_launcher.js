@@ -2742,7 +2742,7 @@ main_selectable_balls.map(b => b.ball_name.toLowerCase()).forEach(n => {
 
 // TODO make levelling information exist somewhere - probably need to think about that when we come to RPG theming really
 
-let searching = true;
+let searching = false;
 let winrate_tracking = searching;
 let searched_games = 0;
 
@@ -2769,8 +2769,8 @@ if (force_ball1) {
 
 let ball2_index = 0;
 
-let ball1_start_level = 100;
-let ball2_start_level = 100;
+let ball1_start_level = 1;
+let ball2_start_level = 1;
 
 let win_matrix = [];
 selectable_balls_for_random.forEach(_ => win_matrix.push(new Array(selectable_balls_for_random.length).fill(0)));
