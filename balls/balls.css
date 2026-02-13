@@ -1515,6 +1515,10 @@ button.sandbox-ball-random {
   margin-top: 3vmin;
 }
 
+.graphics-options .options .option.cols {
+  flex-direction: column;
+}
+
 .graphics-options .options .option .desc {
   font-size: 1.5vmin;
   color: #bbb;
@@ -1523,6 +1527,15 @@ button.sandbox-ball-random {
 .graphics-options .options .option.disabled {
   pointer-events: none;
   opacity: 0.25;
+}
+
+.graphics-options .text-options-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 6vmin;
+
+  font-size: 1.5vmin;
 }
 
 /*

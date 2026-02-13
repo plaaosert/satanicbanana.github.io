@@ -25,6 +25,8 @@ const layer_names = [
 
 let imgs = {};
 
+const local = window.location.href.startsWith("file://");
+
 const prerender_canvas = document.getElementById("hidden-prerender-canvas");
 const prerender_ctx = prerender_canvas.getContext("2d");
 
@@ -119,6 +121,15 @@ let BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.VECTOR;
 let AERO_LIGHTING_CONFIG = AERO_LIGHTING_CONFIGS.VISTA;
 let AERO_BACKGROUND = AERO_BACKGROUNDS.NONE;
 let pixelate_canvas = true;
+
+const BALL_STATS_DISPLAY_LEVELS = {
+    FULL: "FULL",
+    REDUCED: "REDUCED",
+    NONE: "NONE",
+}
+
+let ball_stats_display_level = BALL_STATS_DISPLAY_LEVELS.FULL;
+let hide_watermark = false;
 
 let old_graphics_options = {
     BALL_RENDERING_METHOD: BALL_RENDERING_METHOD,
@@ -2287,7 +2298,7 @@ function render_powerup_info(board) {
     let last_powerup = board.powerups_last_spawned;
 
     let yoffset = 0;
-    if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID) {
+    if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID && local) {
         yoffset += 48;
     }
 
@@ -2339,6 +2350,9 @@ function render_powerup_info(board) {
 
 function render_watermark() {
     layers.front.ctx.clearRect(0, 0, canvas_width, canvas_height);
+
+    if (hide_watermark)
+        return;
 
     if (new_year) {
         layers.front.ctx.globalAlpha = Math.max(0, 0.66 - ((board?.duration ?? 0) * 2));
@@ -3135,12 +3149,28 @@ function render_descriptions(board) {
     // layers.ui1.ctx.clearRect(0, 0, canvas_width, canvas_height);
     layers.ui2.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
-    let layouts = [
-        [[canvas_width - 256, 28]],
-        [[canvas_width - 256, 28], [canvas_width - 256, 28 + 144]],
-        [[canvas_width - 256, 28], [canvas_width - 256, 28 + 144], [canvas_width - 256, 28 + 144 + 144]],
-        [[canvas_width - 256, 28], [canvas_width - 256, 28 + 144], [canvas_width - 256, 28 + 144 + 144], [canvas_width - 256, 28 + 144 + 144 + 144]],
-    ]
+    if (ball_stats_display_level == BALL_STATS_DISPLAY_LEVELS.NONE) {
+        return;
+    }
+
+    let layouts = [];
+    let reduced = ball_stats_display_level == BALL_STATS_DISPLAY_LEVELS.REDUCED;
+
+    if (reduced) {
+        layouts = [
+            [[canvas_width - 256, 28]],
+            [[canvas_width - 256, 28], [canvas_width - 256, 28 + 40]],
+            [[canvas_width - 256, 28], [canvas_width - 256, 28 + 40], [canvas_width - 256, 28 + 40 + 40]],
+            [[canvas_width - 256, 28], [canvas_width - 256, 28 + 40], [canvas_width - 256, 28 + 40 + 40], [canvas_width - 256, 28 + 40 + 40 + 40]],
+        ]
+    } else {
+        layouts = [
+            [[canvas_width - 256, 28]],
+            [[canvas_width - 256, 28], [canvas_width - 256, 28 + 144]],
+            [[canvas_width - 256, 28], [canvas_width - 256, 28 + 144], [canvas_width - 256, 28 + 144 + 144]],
+            [[canvas_width - 256, 28], [canvas_width - 256, 28 + 144], [canvas_width - 256, 28 + 144 + 144], [canvas_width - 256, 28 + 144 + 144 + 144]],
+        ]
+    }
 
     let filtered_balls = board.balls.filter(ball => ball.show_stats);
     let layout = layouts[filtered_balls.length-1];
@@ -3154,9 +3184,10 @@ function render_descriptions(board) {
                 Math.round(l_base[1] + ball.desc_shake_offset[1]),
             ]
 
-            if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID)
+            if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID && local) {
                 l[1] += 48;
-
+            }
+                
             let ball_col = ball.get_current_desc_col().css();
             let ball_border_col = ball.get_current_border_col().css();
 
@@ -3172,7 +3203,7 @@ function render_descriptions(board) {
             // we want to write first the healthy hp, then the poison hp, then the rupture hp
             // #####===:::
             
-            let max_segments = 40;
+            let max_segments = 46;
             let chars = "#<=: ";
 
             // step 1: get the health vs empty
@@ -3240,7 +3271,8 @@ function render_descriptions(board) {
                 )
             }
 
-            ball.render_stats(layers.ui2.canvas, layers.ui2.ctx, l[0], l[1] + 12 + 12 + 16);
+            if (!reduced)
+                ball.render_stats(layers.ui2.canvas, layers.ui2.ctx, l[0], l[1] + 12 + 12 + 16);
         })
     }
 }
@@ -3664,7 +3696,7 @@ function game_loop() {
         if (board.powerups_enabled)
             render_powerup_info(board);
 
-        if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID)
+        if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID && local)
             render_just_playing_around_warning();
     }
     

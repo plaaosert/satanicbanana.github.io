@@ -1771,6 +1771,13 @@ function set_graphics_option(typ, elemid) {
     let val = document.querySelector(`#${elemid}`).value;
     
     switch (typ) {
+        case "statstext": {
+            ball_stats_display_level = BALL_STATS_DISPLAY_LEVELS[
+                val.toUpperCase().replace(" ", "_")
+            ]
+            break;
+        }
+
         case "rendering": {
             BALL_RENDERING_METHOD = BALL_RENDERING_METHODS[
                 val.toUpperCase().replace(" ", "_")
@@ -1805,6 +1812,9 @@ function update_graphics_popup() {
     document.querySelector("#shading-method").value = AERO_LIGHTING_CONFIG[0].toUpperCase() + AERO_LIGHTING_CONFIG.slice(1).toLowerCase();
     document.querySelector("#background").value = AERO_BACKGROUND[0].toUpperCase() + AERO_BACKGROUND.slice(1).replace("_", " ").toLowerCase();
     document.querySelector("#canvas_pixelation").checked = pixelate_canvas;
+
+    document.querySelector("#text_hide_watermark").checked = hide_watermark;
+    document.querySelector("#text_ball_rendering").value = ball_stats_display_level[0].toUpperCase() + ball_stats_display_level.slice(1).replace("_", " ").toLowerCase();
 
     if (BALL_RENDERING_METHOD != BALL_RENDERING_METHODS.AERO) {
         document.querySelector("#graphics_options .shading.option").classList.add("disabled");

@@ -12,7 +12,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=0.1, user-scalable=yes" />
 
     <link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=02"/>
-	<link rel="stylesheet" type="text/css" href="balls.css?v=35"/>
+	<link rel="stylesheet" type="text/css" href="balls.css?v=36"/>
 </head>
 <body>
 	<div class="topbar">
@@ -648,6 +648,26 @@
                 <div class="option small">
                     <span class="desc" id="background_desc">Forces the canvas to render with pixelated scaling. I advise you keep this turned on unless you like blurry text more than you hate mixels.</span>
                 </div>
+                <div class="option">
+                    <span>Text display</span>
+                    <div class="text-options-row">
+                        <div class="text-option">
+                            <span>Ball stats</span>
+                            <select id="text_ball_rendering" onchange="set_graphics_option('statstext', 'text_ball_rendering')">
+                                <option selected>Full</option>
+                                <option>Reduced</option>
+                                <option>None</option>
+                            </select>
+                        </div>
+                        <div class="text-option">
+                            <span>Hide watermark</span>
+                            <input type="checkbox" id="text_hide_watermark" onchange="hide_watermark = !hide_watermark; update_graphics_options();">
+                        </div>
+                    </div>
+                </div>
+                <div class="option small">
+                    <span class="desc" id="background_desc">Turn off text elements. If you upload gameplay without the watermark enabled I will find you.</span>
+                </div>
             </div>
             <br><br>
             <span class="desc">Presets</span>
@@ -846,7 +866,7 @@
     <script src="../shared/js/helpers.js?v=11"></script>
 	<script src="../shared/js/canvas_helpers.js?v=06"></script>
 	
-    <script src="balls_core.js?v=53"></script>
+    <script src="balls_core.js?v=54"></script>
 
     <script src="balls_balls.js?v=56"></script>
     <script src="balls_balls_additional.js?v=45"></script>
@@ -857,7 +877,7 @@
     <script src="balls_gambling_info.js?v=04"></script>
 
     <script src="balls_replay_parsing.js?v=10"></script>
-    <script src="balls_launcher.js?v=77"></script>
+    <script src="balls_launcher.js?v=78"></script>
     
     <script src="balls_campaign.js?v=08"></script>
 
