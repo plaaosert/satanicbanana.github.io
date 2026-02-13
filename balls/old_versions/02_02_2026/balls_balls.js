@@ -499,7 +499,7 @@ class WeaponBall extends Ball {
                 break;
             }
 
-            case AERO_LIGHTING_CONFIGS.VISTA:
+            case AERO_LIGHTING_CONFIGS.WHATS_WRONG_BRO:
             case AERO_LIGHTING_CONFIGS.NEON: {
                 let light_centers = [
                     [new Vector2(-ball_siz_scaled * 0.5, -ball_siz_scaled * 0.5), 1],
@@ -1667,7 +1667,7 @@ class HammerBall extends WeaponBall {
         ];
 
         this.weapon_data = [
-            new BallWeapon(0.8 + (level * 0), "hamer2", [
+            new BallWeapon(0.75 + (level * 0), "hamer2", [
                 {pos: new Vector2(104, 32), radius: 24},
                 {pos: new Vector2(104, 48), radius: 24},
                 {pos: new Vector2(104, 64), radius: 24},
@@ -1677,7 +1677,7 @@ class HammerBall extends WeaponBall {
         ];
 
         if (this.level >= AWAKEN_LEVEL) {
-            this.weapon_data.push(new BallWeapon(0.8 / 2, "hamer2", [
+            this.weapon_data.push(new BallWeapon(0.75 / 2, "hamer2", [
                 {pos: new Vector2(104, 32), radius: 24},
                 {pos: new Vector2(104, 48), radius: 24},
                 {pos: new Vector2(104, 64), radius: 24},
@@ -2014,7 +2014,7 @@ class DaggerBall extends WeaponBall {
         this.proj_damage_base = 1;
         this.proj_speed = 0;
 
-        this.hit_decay_max = 1.45 + (0.025 * this.level);
+        this.hit_decay_max = 1.55 + (0.025 * this.level);
 
         this.explosions_num = 1;
         this.explosions_range_per_sord = [1,1];
@@ -2224,7 +2224,7 @@ class BowBall extends WeaponBall {
         this.arrow_size_mult = 1 + (this.level * 0.005);
         this.arrow_speed = 10000 + (this.level * 250);
 
-        this.shot_cooldown_max = 0.775 + (this.level * -0.005);
+        this.shot_cooldown_max = 0.85 + (this.level * -0.005);
         this.shot_cooldown = this.shot_cooldown_max;
 
         this.multishots = 0;
@@ -2419,10 +2419,10 @@ class MagnumBall extends WeaponBall {
         this.coin_damage_base = 1;
         this.speed_base = 90;
 
-        this.shot_cooldown_max = 0.525 + (this.level * -0.001);
+        this.shot_cooldown_max = 0.55 + (this.level * -0.001);
         this.shot_cooldown = this.shot_cooldown_max;
 
-        this.coin_shot_cooldown_max = 0.475 + (this.level * -0.001);
+        this.coin_shot_cooldown_max = 0.5 + (this.level * -0.001);
         this.coin_shot_cooldown = this.coin_shot_cooldown_max;
     }
 
@@ -2991,7 +2991,7 @@ class PotionBall extends WeaponBall {
         this.speed_range = [135, 225]
         this.speeds = [180, 180, 180, 180].map(_ => random_float(...this.speed_range, this.board.random));
 
-        this.shot_cooldown_max_range = [0.55, 1.1];
+        this.shot_cooldown_max_range = [0.45, 1];
         this.shot_cooldowns = [0, 0, 0, 0].map(_ => random_float(...this.shot_cooldown_max_range, this.board.random));
         this.weapon_regeneration_times = [0,0,0,0];
         this.max_weapon_regeneration_time = 1.6;
@@ -3204,7 +3204,7 @@ class GrenadeBall extends WeaponBall {
 
         this.speed_base = 135;
 
-        this.shot_cooldown_max = 1.55 - (0.005 * this.level);
+        this.shot_cooldown_max = 1.58 - (0.005 * this.level);
         if (this.level >= AWAKEN_LEVEL) {
             this.shot_cooldown_max /= 1.5;
         }
@@ -3781,8 +3781,8 @@ class HandBall extends WeaponBall {
             {stored_velocity: null, ball: null, amount_to_rotate: null, rotated_so_far: null, speed: 0}
         ] // X
     
-        this.post_grab_cooldown = 7.5;
-        this.post_block_cooldown = 1.75;
+        this.post_grab_cooldown = 8;
+        this.post_block_cooldown = 2;
         this.tired_delays = [0, 0]; // X
 
         this.hand_sprout_timeout = 0;
@@ -4438,7 +4438,7 @@ class ChakramBall extends WeaponBall {
 
         this.chakram_damage_base = 6 + (0.025 * level);
         this.chakram_rotation_speed = Math.PI * 4;
-        this.chakram_orbit_time = 3.55 + (0.025 * level);
+        this.chakram_orbit_time = 3.6 + (0.025 * level);
         this.chakram_min_dist = this.radius * 0.75;
         this.chakram_max_dist = this.radius * 4;
 
@@ -5215,7 +5215,7 @@ class AxeBall extends WeaponBall {
         this.speed_base = 100 + (1 * level);
         this.speed_cur = this.speed_base;
 
-        this.lunge_cooldowns_max = [2 - (0.005 * level), 3.8 - (0.02 * level)];
+        this.lunge_cooldowns_max = [1.8 - (0.005 * level), 3.6 - (0.02 * level)];
         this.lunge_cooldown = random_float(...this.lunge_cooldowns_max, this.board.random);
         this.last_lunge_cooldown = this.lunge_cooldown;
 
@@ -5404,17 +5404,17 @@ class ShotgunBall extends WeaponBall {
         this.proj_damage_base = 3 + (this.level * 0.03);
         this.speed_base = 80;
 
-        this.shot_cooldown_max = 0.77;
+        this.shot_cooldown_max = 0.775;
         this.shot_cooldown = this.shot_cooldown_max;
 
-        this.num_bullets = 9;
+        this.num_bullets = 8;
         if (this.level >= AWAKEN_LEVEL) {
             this.num_bullets *= 2;
         }
 
         this.width_range = [12, 20];
 
-        this.bullet_spread = deg2rad(25);
+        this.bullet_spread = deg2rad(22.5);
     }
 
     recoil_movement() {
@@ -5948,7 +5948,7 @@ class FishingRodBall extends WeaponBall {
         this.hook_hit_rupture = 1;
         this.hook_reel_rupture = 4;
         this.rod_base_dmg = 1;
-        this.club_damage = 10;
+        this.club_damage = 8;
 
         this.swing_cur_duration = 0;
         this.swing_max_duration = 0.3;
@@ -6373,7 +6373,7 @@ class FryingPanBall extends WeaponBall {
         this.custom_projectile_parry_sound = "frying_pan";
         this.parry_gain_mul = 0.04;
 
-        this.pan_toss_time_max = [0.6, 0.8];
+        this.pan_toss_time_max = [0.5, 0.7];
         this.pan_toss_time = random_float(...this.pan_toss_time_max, this.board.random);
         this.last_pan_toss_time = this.pan_toss_time;
 
@@ -6392,10 +6392,10 @@ class FryingPanBall extends WeaponBall {
         this.speed_modifier_decay = deg2rad(360 * 3);
         this.speed_modifier = 0;
 
-        this.damage_base = 5;
+        this.damage_base = 6;
         this.speed_base = 100;
 
-        this.proj_damage_base = 0.2;
+        this.proj_damage_base = 0.3;
         this.proj_heal_base = 3;
 
         this.projectile_bounces = 0;
@@ -6602,7 +6602,7 @@ class CardsBall extends WeaponBall {
         this.draw_delay_max = 1 - (this.level * 0.0035);
         this.draw_delay = this.draw_delay_max;
 
-        this.shuffle_delay_max = 1.25 - (this.level * 0.0075);
+        this.shuffle_delay_max = 1 - (this.level * 0.0075);
         this.shuffle_delay = this.shuffle_delay_max;
 
         this.draws = 0;
@@ -6616,7 +6616,7 @@ class CardsBall extends WeaponBall {
             this.luck_lookahead_amt += 8;
         }
 
-        this.orbital_dmg = 1;
+        this.orbital_dmg = 2;
         this.orbital_cnt = this.handsize;
 
         this.orbital_offset_per_card = deg2rad(360 / this.orbital_cnt);
@@ -6645,14 +6645,14 @@ class CardsBall extends WeaponBall {
         this.cardsiz = 1 * 0.825;
 
         // begin huge stat block
-        this.pair_proj_damage = 4;
+        this.pair_proj_damage = 5;
         this.pair_proj_speed = 10000;
         this.pair_rank_speed_bonus = 500;
 
-        this.twopair_proj_damage = 5;
+        this.twopair_proj_damage = 6;
 
         this.threekind_chain_lightning_chain_chance = 0.275;
-        this.threekind_chain_lightning_damage = 5;
+        this.threekind_chain_lightning_damage = 6;
         this.threekind_chain_lightning_damage_rank_bonus = 0.2;
         this.threekind_chain_lightning_delay_per_chain = 0.015;
         this.threekind_chain_lightning_distance = 1000;
@@ -7118,10 +7118,7 @@ class CardsBall extends WeaponBall {
             }
         } else {
             this.draw_delay -= time_delta;
-            let max_draws = 2;
-            while (this.draw_delay <= 0 && max_draws > 0) {
-                max_draws++;
-                
+            while (this.draw_delay <= 0) {
                 if (this.projs.length >= this.handsize) {
                     this.draw_delay += this.draw_delay_max;
                     this.draws += 1;

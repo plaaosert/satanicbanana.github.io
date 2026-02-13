@@ -1736,147 +1736,6 @@ function setup_load_menu(replay_as_text) {
     })
 }
 
-function set_preset(index) {
-    switch (index) {
-        case 0: {
-            BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.VECTOR;
-            AERO_LIGHTING_CONFIG = AERO_LIGHTING_CONFIGS.VISTA;
-            AERO_BACKGROUND = AERO_BACKGROUNDS.NONE;
-
-            break;
-        }
-
-        case 1: {
-            BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.AERO;
-            AERO_LIGHTING_CONFIG = AERO_LIGHTING_CONFIGS.VISTA;
-            AERO_BACKGROUND = AERO_BACKGROUNDS.VISTA;
-
-            break;
-        }
-
-        case 2: {
-            BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.AERO;
-            AERO_LIGHTING_CONFIG = AERO_LIGHTING_CONFIGS.SIMPLE;
-            AERO_BACKGROUND = AERO_BACKGROUNDS.PARALLAX_GRID;
-
-            break;
-        }
-    }
-
-    update_graphics_popup();
-    update_graphics_options();
-}
-
-function set_graphics_option(typ, elemid) {
-    let val = document.querySelector(`#${elemid}`).value;
-    
-    switch (typ) {
-        case "rendering": {
-            BALL_RENDERING_METHOD = BALL_RENDERING_METHODS[
-                val.toUpperCase().replace(" ", "_")
-            ]
-            break;
-        }
-
-        case "shading": {
-            AERO_LIGHTING_CONFIG = AERO_LIGHTING_CONFIGS[
-                val.toUpperCase().replace(" ", "_")
-            ]
-            break;
-        }
-
-        case "bg": {
-            AERO_BACKGROUND = AERO_BACKGROUNDS[
-                val.toUpperCase().replace(" ", "_")
-            ]
-            break;
-        }
-    }
-
-    update_graphics_options();
-}
-
-function update_graphics_popup() {
-    document.querySelector("#render_method_desc").textContent = BALL_RENDERING_METHODS_INFO[BALL_RENDERING_METHOD].desc;
-    document.querySelector("#shading_method_desc").textContent = AERO_LIGHTING_CONFIGS_INFO[AERO_LIGHTING_CONFIG].desc;
-    document.querySelector("#background_desc").textContent = AERO_BACKGROUNDS_INFO[AERO_BACKGROUND].desc;
-
-    document.querySelector("#rendering-method").value = BALL_RENDERING_METHOD[0].toUpperCase() + BALL_RENDERING_METHOD.slice(1).toLowerCase();
-    document.querySelector("#shading-method").value = AERO_LIGHTING_CONFIG[0].toUpperCase() + AERO_LIGHTING_CONFIG.slice(1).toLowerCase();
-    document.querySelector("#background").value = AERO_BACKGROUND[0].toUpperCase() + AERO_BACKGROUND.slice(1).replace("_", " ").toLowerCase();
-    document.querySelector("#canvas_pixelation").checked = pixelate_canvas;
-
-    if (BALL_RENDERING_METHOD != BALL_RENDERING_METHODS.AERO) {
-        document.querySelector("#graphics_options .shading.option").classList.add("disabled");
-        document.querySelector("#graphics_options .shadingsmall.option").classList.add("disabled");
-        document.querySelector("#shading_method_desc").textContent = "Option not applicable unless using \"Aero\" rendering method."
-    } else {
-        document.querySelector("#graphics_options .shading.option").classList.remove("disabled");
-        document.querySelector("#graphics_options .shadingsmall.option").classList.remove("disabled");
-    }
-}
-
-function update_graphics_options() {
-    if (board) {
-        board.balls.forEach(b => b.setup_aero_light_lookup_table());
-    }
-    handle_resize();
-    get_canvases();
-    render_watermark();
-    BALL_DESC_BORDER_SIZE = BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO ? 2 : 1;
-    bg_changed = true;
-
-    if (pixelate_canvas) {
-        document.querySelector(".everything-container").classList.remove("depixelate-canvases");
-    } else {
-        document.querySelector(".everything-container").classList.add("depixelate-canvases");
-    }
-
-    update_graphics_popup();
-}
-
-function show_graphics_options() {
-    old_graphics_options = {
-        BALL_RENDERING_METHOD: BALL_RENDERING_METHOD,
-        AERO_LIGHTING_CONFIG: AERO_LIGHTING_CONFIG,
-        AERO_BACKGROUND: AERO_BACKGROUND,
-        pixelate_canvas: pixelate_canvas,
-    }
-
-    update_graphics_popup();
-    document.querySelector("#graphics_options").classList.remove("nodisplay");
-    if (!game_paused) {
-        game_paused = true;
-    }
-}
-
-function save_graphics_options() {
-    document.querySelector("#graphics_options").classList.add("nodisplay");
-
-    if (game_paused) {
-        game_paused = false;
-    }
-}
-
-function cancel_graphics_options() {
-    // revert
-    BALL_RENDERING_METHOD = old_graphics_options.BALL_RENDERING_METHOD
-    AERO_LIGHTING_CONFIG = old_graphics_options.AERO_LIGHTING_CONFIG
-    AERO_BACKGROUND = old_graphics_options.AERO_BACKGROUND
-    pixelate_canvas = old_graphics_options.pixelate_canvas
-
-    update_graphics_options();
-
-    save_graphics_options();
-}
-
-function temp_hide_graphics_options() {
-    document.querySelector("#graphics_options").classList.add("hidden");
-    setTimeout(() => {
-        document.querySelector("#graphics_options").classList.remove("hidden");
-    }, 1000)
-}
-
 function check_next_gambling_fight_id(screen_config) {
     let next_fight_index = Math.floor((Date.now() / 1000) / screen_config.fight_frequency);
     let time_until_fight = ((next_fight_index+1) * 1000 * screen_config.fight_frequency) - Date.now();
@@ -2284,7 +2143,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
             case "Digit2": {
                 BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.VECTOR;
-                AERO_BACKGROUND = AERO_BACKGROUNDS.NONE;
                 handle_resize();
                 get_canvases();
                 render_watermark();
@@ -2293,9 +2151,19 @@ document.addEventListener("DOMContentLoaded", function() {
                 break;
             }
 
+            case "Digit3": {
+                BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.RASTER;
+                handle_resize();
+                get_canvases();
+                render_watermark();
+                BALL_DESC_BORDER_SIZE = BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO ? 2 : 1;
+                bg_changed = true;
+                break;
+            }
+
             case "Digit4": {
                 BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.AERO;
-                AERO_LIGHTING_CONFIG = AERO_LIGHTING_CONFIGS.VISTA;
+                AERO_LIGHTING_CONFIG = AERO_LIGHTING_CONFIGS.WHATS_WRONG_BRO;
                 AERO_BACKGROUND = AERO_BACKGROUNDS.VISTA;
                 if (board) {
                     board.balls.forEach(b => b.setup_aero_light_lookup_table());
@@ -2742,9 +2610,8 @@ main_selectable_balls.map(b => b.ball_name.toLowerCase()).forEach(n => {
 
 // TODO make levelling information exist somewhere - probably need to think about that when we come to RPG theming really
 
-let searching = true;
+let searching = false;
 let winrate_tracking = searching;
-let searched_games = 0;
 
 // hide all graphics
 let render = true;
@@ -2769,8 +2636,8 @@ if (force_ball1) {
 
 let ball2_index = 0;
 
-let ball1_start_level = 100;
-let ball2_start_level = 100;
+let ball1_start_level = 1;
+let ball2_start_level = 1;
 
 let win_matrix = [];
 selectable_balls_for_random.forEach(_ => win_matrix.push(new Array(selectable_balls_for_random.length).fill(0)));

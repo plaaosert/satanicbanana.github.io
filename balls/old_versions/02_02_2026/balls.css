@@ -29,10 +29,6 @@
   font-size: 2vmin;
 }
 
-.everything-container.depixelate-canvases canvas {
-  image-rendering: unset !important;
-}
-
 .everything-subcontainer {
   display: flex;
 
@@ -174,7 +170,7 @@
   width: 100%;
 }
 
-.behind-canvases select, .popup select {
+.behind-canvases select {
   background-color: black;
   color: white;
 
@@ -390,11 +386,6 @@ button:disabled {
 
 #fps-select {
   font-size: 1.4vmin;
-}
-
-.everything-container .sandbox-start-button {
-  color: #8f8;
-  font-weight: bold;
 }
 
 .sandbox-speed-buttons {
@@ -1233,19 +1224,6 @@ button.sandbox-ball-random {
 .bottomcontainer .center {
   flex-basis: 50%;
   min-width: 50%;
-
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-}
-
-.bottomcontainer .center .options.button {
-  max-width: 12vmin;
-}
-
-.style-options-button {
-  background-color: #050;
 }
 
 .campaign-button {
@@ -1491,38 +1469,6 @@ button.sandbox-ball-random {
 
 .campaign-ball-info .resources-spent {
   font-size: 2vmin;
-}
-
-.graphics-options {
-  display: flex;
-  flex-direction: column;
-
-  min-width: 90vmin;
-  max-width: 90vmin;
-}
-
-.graphics-options .title {
-  font-size: 2.25vmin;
-  margin-bottom: 1vmin;
-  text-align: center;
-}
-
-.graphics-options .options .option:not(.small) {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-
-  margin-top: 3vmin;
-}
-
-.graphics-options .options .option .desc {
-  font-size: 1.5vmin;
-  color: #bbb;
-}
-
-.graphics-options .options .option.disabled {
-  pointer-events: none;
-  opacity: 0.25;
 }
 
 /*

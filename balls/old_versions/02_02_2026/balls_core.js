@@ -1,8 +1,8 @@
 game_id = "balls";
 
-const FILES_PREFIX = "";
+const FILES_PREFIX = "../../";
 
-const GAME_VERSION = "12/02/2026";
+const GAME_VERSION = "02/02/2026";
 
 const AILMENT_CHARS = "➴☣♨";
 
@@ -52,80 +52,23 @@ const BALL_RENDERING_METHODS = {
     AERO: "AERO",
 }
 
-const BALL_RENDERING_METHODS_INFO = {
-    [BALL_RENDERING_METHODS.VECTOR]: {
-        desc: "Default, fastest rendering mode."
-    },
-
-    [BALL_RENDERING_METHODS.RASTER]: {
-        desc: "You shouldn't use this.",
-        disabled: true
-    },
-
-    [BALL_RENDERING_METHODS.AERO]: {
-        desc: "More advanced shading that supports non-flat ball colours."
-    }
-}
-
 const AERO_LIGHTING_CONFIGS = {
     SIMPLE: "SIMPLE",
-    VISTA: "VISTA",
+    WHATS_WRONG_BRO: "WHATS_WRONG_BRO",
     NEON: "NEON",
 }
 
-const AERO_LIGHTING_CONFIGS_INFO = {
-    [AERO_LIGHTING_CONFIGS.SIMPLE]: {
-        desc: "Single light source with simple shading.",
-    },
-
-    [AERO_LIGHTING_CONFIGS.VISTA]: {
-        desc: "Shading with multiple light sources to emulate the Aero style.",
-    },
-
-    [AERO_LIGHTING_CONFIGS.NEON]: {
-        desc: "Incomplete!",
-        disabled: true
-    }
-}
-
 const AERO_BACKGROUNDS = {
-    NONE: "NONE",
     RENDERED: "RENDERED",
     VISTA: "VISTA",
     PARALLAX_GRID: "PARALLAX_GRID",
 }
 
-const AERO_BACKGROUNDS_INFO = {
-    [AERO_BACKGROUNDS.NONE]: {
-        desc: "No background.",
-    },
-
-    [AERO_BACKGROUNDS.RENDERED]: {
-        desc: "A simple cube-like render.",
-    },
-
-    [AERO_BACKGROUNDS.VISTA]: {
-        desc: "An edited version of a Vista-style wallpaper: https://www.reddit.com/r/FrutigerAero/comments/1eqwt3s/windows_vistainspired_wallpapers_i_made_in_about/",
-    },
-
-    [AERO_BACKGROUNDS.PARALLAX_GRID]: {
-        desc: "A slowly moving parallax grid.",
-    },
-}
-
 let render_data = {};
 
 let BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.VECTOR;
-let AERO_LIGHTING_CONFIG = AERO_LIGHTING_CONFIGS.VISTA;
-let AERO_BACKGROUND = AERO_BACKGROUNDS.NONE;
-let pixelate_canvas = true;
-
-let old_graphics_options = {
-    BALL_RENDERING_METHOD: BALL_RENDERING_METHOD,
-    AERO_LIGHTING_CONFIG: AERO_LIGHTING_CONFIG,
-    AERO_BACKGROUND: AERO_BACKGROUND,
-    pixelate_canvas: pixelate_canvas,
-}
+let AERO_LIGHTING_CONFIG = AERO_LIGHTING_CONFIGS.WHATS_WRONG_BRO;
+let AERO_BACKGROUND = AERO_BACKGROUNDS.VISTA;
 
 let bg_changed = true;
 let switched_to_endgame_col = false;
@@ -2549,7 +2492,7 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
     if (bg_changed) {
         bg_changed = false;
 
-        if (AERO_BACKGROUND != AERO_BACKGROUNDS.NONE) {
+        if (BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO) {
             if (AERO_BACKGROUND == AERO_BACKGROUNDS.RENDERED) {
                 let imagedata = layers.bg3.ctx.getImageData(0, 0, canvas_width, canvas_height);
 
@@ -4356,13 +4299,10 @@ function game_loop() {
                 render_victory(board, match_end_timeout);
 
                 if (match_end_timeout <= 0) {
-                    if (!muted)
-                        reset_audio_buffer();
-                    
+                    reset_audio_buffer();
                     document.querySelector("#loading_prompt").classList.add("hidden");
 
                     if (board.remaining_players().length == 1 && winrate_tracking) {
-                        searched_games++;
                         let winning_balls = board.get_all_player_balls(board.remaining_players()[0]).filter(ball => ball.show_stats);
                         if (winning_balls.length >= 1) {
                             let winning_ball = winning_balls[0];
@@ -4395,16 +4335,7 @@ function game_loop() {
                                 let lerp_to = winrate > 0.5 ? Colour.blue : Colour.red;
                                 let lerp_amt = Math.min(1, Math.max(Math.abs(winrate-0.5)-0.02, 0) * 20);
 
-                                let remarks = "";
-                                if (index == 0) {
-                                    remarks = `               ${searched_games.toLocaleString()} total games`
-                                }
-
-                                if (index == 2) {
-                                    remarks = `               ~${Math.round(searched_games / selectable_balls_for_random.length).toLocaleString()} per ball`
-                                }
-
-                                html += `${classobj.name.padEnd(24)}${wins.toFixed(0).padStart(4)} / ${total.toFixed(0).padEnd(8)}<span style="background-color: ${Colour.dgreen.lerp(lerp_to, lerp_amt).css()}">${isNaN(winrate) ? "   -   " : ((winrate * 100).toFixed(2)+"%").padEnd(8)}</span><span>${remarks}</span><br>`;
+                                html += `${classobj.name.padEnd(24)}${wins.toFixed(0).padStart(4)} / ${total.toFixed(0).padEnd(8)}<span style="background-color: ${Colour.dgreen.lerp(lerp_to, lerp_amt).css()}">${isNaN(winrate) ? "   -   " : ((winrate * 100).toFixed(2)+"%").padEnd(8)}</span><br>`;
                             });
 
                             document.querySelector("#game_winrates").innerHTML = html;

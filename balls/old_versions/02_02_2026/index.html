@@ -11,8 +11,8 @@
     <meta content="#cccccc" data-react-helmet="true" name="theme-color" />
 	<meta name="viewport" content="width=device-width, initial-scale=0.1, user-scalable=yes" />
 
-    <link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=02"/>
-	<link rel="stylesheet" type="text/css" href="balls.css?v=35"/>
+    <link rel="stylesheet" type="text/css" href="../../../shared/css/games.css?v=02"/>
+	<link rel="stylesheet" type="text/css" href="balls.css?v=34"/>
 </head>
 <body>
 	<div class="topbar">
@@ -184,7 +184,7 @@
                                 <option>1/480</option>
                                 <option>Realtime (no replay)</option>
                             </select>
-                            <button class="enable-on-full-load sandbox-start-button" disabled onclick="replaying=false; spawn_selected_balls()">Start!</button>
+                            <button class="enable-on-full-load" disabled onclick="replaying=false; spawn_selected_balls()">Start</button>
                             <button class="enable-on-full-load" disabled onclick="load_replay_button()">Load replay</button>
                             <!-- <button style="font-size: 20px;" onclick="document.querySelector('#modding_frame').classList.toggle('hidden')">"Modding" -></button> -->
                         </div>
@@ -426,16 +426,12 @@
                 <span class="sandbox-button button modeswitch">&lt;&lt; Sandbox</span>
             </div>
             <div class="center section">
-                <span class="style-options-button button options hidden">Fake</span>
-                <div class="speed-section">
-                    <div class="sandbox-speed-buttons">
-                        <span class="speed-control button" onclick="mod_simulation_speed(event, 0.5)">-</span>
-                        <span class="speed-control label" onclick="toggle_pause_simulation();" ondblclick="reset_simulation_speed()" id="speed_display">- Paused -</span>
-                        <span class="speed-control button" onclick="mod_simulation_speed(event, 2)">+</span>
-                    </div>
-                    <p class="speed-alert hidden" id="speed_alert_main">This game is running at <span class="alert-item" id="fps_original">144fps</span> but you seem to be rendering at <span class="alert-item" id="fps_user">60fps</span>.<br>Speed has been adjusted to compensate.</p>
+                <div class="sandbox-speed-buttons">
+                    <span class="speed-control button" onclick="mod_simulation_speed(event, 0.5)">-</span>
+                    <span class="speed-control label" onclick="toggle_pause_simulation();" ondblclick="reset_simulation_speed()" id="speed_display">- Paused -</span>
+                    <span class="speed-control button" onclick="mod_simulation_speed(event, 2)">+</span>
                 </div>
-                <span class="style-options-button button options" onclick="show_graphics_options()">Graphics</span>
+                <p class="speed-alert hidden" id="speed_alert_main">This game is running at <span class="alert-item" id="fps_original">144fps</span> but you seem to be rendering at <span class="alert-item" id="fps_user">60fps</span>.<br>Speed has been adjusted to compensate.</p>
             </div>
             <div class="rightside section campaign">
                 <span class="sandbox-button button modeswitch">Sandbox &gt;&gt;</span>
@@ -606,70 +602,6 @@
             </div>
         </div>
 
-        <div id="graphics_options" class="popup graphics-options nodisplay">
-            <span class="title">Graphics options</span>
-            <div class="options">
-                <div class="option">
-                    <span>Rendering method</span>
-                    <select id="rendering-method" onchange="set_graphics_option('rendering', 'rendering-method')">
-                        <option>Vector</option>
-                        <option>Aero</option>
-                    </select>
-                </div>
-                <div class="option small">
-                    <span class="desc" id="render_method_desc">Default, fastest rendering mode.</span>
-                </div>
-                <div class="shading option disabled">
-                    <span>Aero ball shading</span>
-                    <select id="shading-method" onchange="set_graphics_option('shading', 'shading-method')">
-                        <option>Simple</option>
-                        <option selected>Vista</option>
-                    </select>
-                </div>
-                <div class="option small shadingsmall">
-                    <span class="desc" id="shading_method_desc">Shading with multiple light sources at once.</span>
-                </div>
-                <div class="option">
-                    <span>Background</span>
-                    <select id="background" onchange="set_graphics_option('bg', 'background')">
-                        <option>None</option>
-                        <option>Rendered</option>
-                        <option>Vista</option>
-                        <option>Parallax grid</option>
-                    </select>
-                </div>
-                <div class="option small">
-                    <span class="desc" id="background_desc">No background.</span>
-                </div>
-                <div class="option">
-                    <span>Canvas pixelation</span>
-                    <input type="checkbox" id="canvas_pixelation" onchange="pixelate_canvas = !pixelate_canvas; update_graphics_options();" checked="true">
-                </div>
-                <div class="option small">
-                    <span class="desc" id="background_desc">Forces the canvas to render with pixelated scaling. I advise you keep this turned on unless you like blurry text more than you hate mixels.</span>
-                </div>
-            </div>
-            <br><br>
-            <span class="desc">Presets</span>
-            <div class="action-buttons">
-                <span class="clickable info" onclick="set_preset(0)">Simple</span>
-                <span class="spc">&nbsp;</span>
-                <span class="clickable info" onclick="set_preset(1)">Vista</span>
-                <span class="spc">&nbsp;</span>
-                <span class="clickable info" onclick="set_preset(2)">Grid</span>
-            </div>
-            <br>
-            <div class="action-buttons">
-                <span class="clickable ok" onclick="temp_hide_graphics_options()">Peek at game</span>
-            </div>
-            <br>
-            <div class="action-buttons">
-                <span class="clickable save" onclick="save_graphics_options()">Save</span>
-                <span class="spc">&nbsp;</span>
-                <span class="clickable cancel" onclick="cancel_graphics_options()">Cancel</span>
-            </div>
-        </div>
-
         <div id="sandbox_ball_selector" class="popup generic-ball-selector sandbox-ball-selector behind-canvases nodisplay">
             <span class="title">Select ball and level:</span>
             <div class="category-selection-menu">
@@ -818,7 +750,7 @@
             -->
         </a>
 		<p class="right-text" style="bottom:40px; font-size: 2vmin; color:#ccc;">join the discord! <a href="https://discord.gg/83zvDFbpNH" style="position: unset; color: #0cf">https://discord.gg/83zvDFbpNH</a> -- after some demand <a style="position: unset; color: lime" href="https://ko-fi.com/plaao">here is my ko-fi</a></p>
-		<p style="font-size: 2vmin"><a class="right-text" style="bottom: 16px; color:#f20; font-size: 2vmin" href="../index.html" > << go back >> </a></p>
+		<p style="font-size: 2vmin"><a class="right-text" style="bottom: 16px; color:#f20; font-size: 2vmin" href="../../../index.html" > << go back >> </a></p>
 	</div>
 	
     <div class="templates nodisplay">
@@ -843,27 +775,27 @@
         </div>
     </div>
 
-    <script src="../shared/js/helpers.js?v=11"></script>
-	<script src="../shared/js/canvas_helpers.js?v=06"></script>
+    <script src="../../../shared/js/helpers.js?v=11"></script>
+	<script src="../../../shared/js/canvas_helpers.js?v=06"></script>
 	
-    <script src="balls_core.js?v=53"></script>
+    <script src="balls_core.js?v=52"></script>
 
-    <script src="balls_balls.js?v=56"></script>
+    <script src="balls_balls.js?v=55"></script>
     <script src="balls_balls_additional.js?v=45"></script>
     <script src="balls_balls_powered.js?v=07"></script>
 
     <script src="balls_powerups.js?v=03"></script>
 
-    <script src="balls_gambling_info.js?v=03"></script>
+    <script src="balls_gambling_info.js?v=02"></script>
 
     <script src="balls_replay_parsing.js?v=10"></script>
-    <script src="balls_launcher.js?v=76"></script>
+    <script src="balls_launcher.js?v=75"></script>
     
     <script src="balls_campaign.js?v=08"></script>
 
-    <script src="balls_mysterious_powers.js?v=05"></script>
+    <script src="balls_mysterious_powers.js?v=04"></script>
 
-	<script src="../shared/js/playtime.js?v=00"></script>
+	<script src="../../../shared/js/playtime.js?v=00"></script>
 
     <div id="desktop_mode_prompt" class="nodisplay">
         <span>if you're on mobile, it'd probably be best if you turned on <span class="important">"desktop site"</span> mode for this page.</span>
