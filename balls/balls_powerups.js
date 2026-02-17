@@ -436,6 +436,10 @@ class PowerupRock extends Powerup {
     }
 }
 
+class PowerupClone extends Powerup {
+    
+}
+
 class RockPowerupProjectile extends StraightLineProjectile {
     constructor(board, source, source_weapon_index, position, damage, size, direction, speed) {
         super(board, source, source_weapon_index, position, damage, size, direction, speed);

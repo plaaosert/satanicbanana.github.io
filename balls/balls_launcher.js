@@ -827,8 +827,8 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
             render_victory_enabled = false;
         } else {
             match_end_timeout = 5 * 1000;
-            if (window.location.href.startsWith("file://") && screen_open == "sandbox") {
-                match_end_timeout = 5 * 1000;
+            if (local && screen_open == "sandbox") {
+                match_end_timeout = 10 * 1000;
             }
             
             render_victory_enabled = true;
@@ -2002,6 +2002,7 @@ function get_next_gambling_fight(screen_config) {
     if (ball1.name != ball2.name) {
         // apply variance in the odds
         odds *= random_float(...screen_config.odds_variance, randomness);
+        odds = Math.max(0.01, Math.min(0.99, odds));
     }
 
     odds = Math.round((1 - odds) * 1000) / 1000;
@@ -2054,6 +2055,8 @@ function update_gambling_screen(match_data) {
     }
 
     document.querySelector("#gambling_countdown").textContent = countdown_text;
+
+    document.querySelector("#gambling_fight_index").textContent = match_data.id;
 
     for (let i=0; i<match_data.balls.length; i++) {
         let ballinfo_elem = document.querySelector(`.gambling-container #gambling_ball_info_${i+1}`);

@@ -243,12 +243,15 @@ const entity_sprites = new Map([
     ["powerup_rock", 1, "powerups/"],
     ["rock", 1, "etc/"],
 
+    ["powerup_clone", 1, "powerups/"],
+
     ["powerup_burst_white", 1, "powerups/bursts/"],
     ["powerup_burst_gold", 1, "powerups/bursts/"],
     ["powerup_burst_pink", 1, "powerups/bursts/"],
     ["powerup_burst_red", 1, "powerups/bursts/"],
     ["powerup_burst_green", 1, "powerups/bursts/"],
     ["powerup_burst_rock", 1, "powerups/bursts/"],
+    ["powerup_burst_cyan", 1, "powerups/bursts/"],
 
     // effects
     ["parry", 9, "etc/parry/"],
@@ -3933,7 +3936,7 @@ function game_loop() {
                                                 play_audio(snd, gain_mul);
                                             }
                                         } else {
-                                            play_audio("parry");
+                                            play_audio("parry", 0.07);
                                         }
                                     }
                                 }
@@ -4073,7 +4076,7 @@ function game_loop() {
                             if (ball.custom_projectile_parry_sound) {
                                 play_audio(ball.custom_projectile_parry_sound);
                             } else {
-                                play_audio("parry2");
+                                play_audio("parry2", 0.07);
                             }
                         }
                     });
@@ -4378,7 +4381,7 @@ function game_loop() {
                 }
 
                 if (window.location.href.startsWith("file://")) {
-                    // muted = match_end_timeout < 14000;
+                    muted = match_end_timeout < 14000;
                 }
 
                 match_end_timeout -= game_delta_time;

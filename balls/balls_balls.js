@@ -6735,6 +6735,10 @@ class CardsBall extends WeaponBall {
     }
 
     get_best_hand(hand=null) {
+        if (!hand && this.hand.length <= 0) {
+            return [0, "Junk", true, 0, []];
+        }
+
         let hand_objs_unsorted = (hand ? hand : this.hand).map(c => {
             if (c == 2 || c == 3) {
                 // joker (UNIMPLEMENTED)
@@ -7121,7 +7125,7 @@ class CardsBall extends WeaponBall {
             let max_draws = 2;
             while (this.draw_delay <= 0 && max_draws > 0) {
                 max_draws++;
-                
+
                 if (this.projs.length >= this.handsize) {
                     this.draw_delay += this.draw_delay_max;
                     this.draws += 1;
