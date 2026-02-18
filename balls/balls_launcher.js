@@ -1834,6 +1834,8 @@ function update_graphics_popup() {
     document.querySelector("#text_hide_watermark").checked = hide_watermark;
     document.querySelector("#text_ball_rendering").value = ball_stats_display_level[0].toUpperCase() + ball_stats_display_level.slice(1).replace("_", " ").toLowerCase();
 
+    document.querySelector("#text_hide_hp").checked = !draw_ball_hp;
+
     if (BALL_RENDERING_METHOD != BALL_RENDERING_METHODS.AERO) {
         document.querySelector("#graphics_options .shading.option").classList.add("disabled");
         document.querySelector("#graphics_options .shadingsmall.option").classList.add("disabled");

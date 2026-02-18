@@ -26,6 +26,7 @@ const layer_names = [
 let imgs = {};
 
 const local = window.location.href.startsWith("file://");
+const show_playingaround_warning = false;
 
 const prerender_canvas = document.getElementById("hidden-prerender-canvas");
 const prerender_ctx = prerender_canvas.getContext("2d");
@@ -131,6 +132,7 @@ const BALL_STATS_DISPLAY_LEVELS = {
 let ball_stats_display_level = BALL_STATS_DISPLAY_LEVELS.FULL;
 let ball_bonuses_display_level = BALL_STATS_DISPLAY_LEVELS.FULL;
 let hide_watermark = false;
+let draw_ball_hp = true;
 
 let old_graphics_options = {
     BALL_RENDERING_METHOD: BALL_RENDERING_METHOD,
@@ -2306,7 +2308,7 @@ function render_powerup_info(board) {
     let last_powerup = board.powerups_last_spawned;
 
     let yoffset = 0;
-    if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID && local) {
+    if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID && local && show_playingaround_warning) {
         yoffset += 48;
     }
 
@@ -3064,7 +3066,7 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
                         screen_scaling_factor * (ball.position.y - ball.radius)
                     )
 
-                    if (ball.hp !== null) {
+                    if (ball.hp !== null && draw_ball_hp) {
                         let hp = Math.max(0, ball.hp);
 
                         let original_text_alpha = ctx_normal.globalAlpha;
@@ -3086,7 +3088,7 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
                 }
             }
 
-            if (ball.hp !== null) {
+            if (ball.hp !== null && draw_ball_hp) {
                 let hp = Math.max(0, ball.hp);
 
                 ctx_normal.fillStyle = "black";
@@ -3192,7 +3194,7 @@ function render_descriptions(board) {
                 Math.round(l_base[1] + ball.desc_shake_offset[1]),
             ]
 
-            if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID && local) {
+            if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID && local && show_playingaround_warning) {
                 l[1] += 48;
             }
                 
@@ -3704,7 +3706,7 @@ function game_loop() {
         if (board.powerups_enabled)
             render_powerup_info(board);
 
-        if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID && local)
+        if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID && local && show_playingaround_warning)
             render_just_playing_around_warning();
     }
     
