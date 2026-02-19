@@ -827,7 +827,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
             render_victory_enabled = false;
         } else {
             match_end_timeout = 5 * 1000;
-            if (local && screen_open == "sandbox") {
+            if (local && screen_open == "sandbox" && extend_end_for_vote) {
                 match_end_timeout = 10 * 1000;
             }
             

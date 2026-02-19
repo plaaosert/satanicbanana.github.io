@@ -134,6 +134,8 @@ let ball_bonuses_display_level = BALL_STATS_DISPLAY_LEVELS.FULL;
 let hide_watermark = false;
 let draw_ball_hp = true;
 
+let extend_end_for_vote = false;
+
 let old_graphics_options = {
     BALL_RENDERING_METHOD: BALL_RENDERING_METHOD,
     AERO_LIGHTING_CONFIG: AERO_LIGHTING_CONFIG,
@@ -656,7 +658,7 @@ let audios_list = [
     // guilty gear: strive (ADV_057.ogg)
     ["grab", "snd/grab.mp3"],
     // heat haze shadow 2nd from tekken 7
-    ["unarmed_theme", "https://scrimblo.foundation/uploads/heat_haze_shadow.mp3", "Heat Haze Shadow 2nd", "Tekken 7", true],
+    ["unarmed_theme", "https://pinchyourbellybutton.com/uploads/heat_haze_shadow.mp3", "Heat Haze Shadow 2nd", "Tekken 7", true],
     // berserk (2016)
     ["CLANG", "snd/CLANG.mp3"],
     // edited versions of the originals
@@ -762,7 +764,7 @@ let titles = [
 
 if (new URLSearchParams(window.location.search).get("nomusic") !== "true") {
     for (let i=1; i<=13; i++) {
-        audios_list.push([`2048_${i}`, `https://scrimblo.foundation/uploads/2048_${i}.mp3`, titles[i], "2048 (3DS)", true]);
+        audios_list.push([`2048_${i}`, `https://pinchyourbellybutton.com/uploads/2048_${i}.mp3`, titles[i], "2048 (3DS)", true]);
     }
 }
 
@@ -4382,7 +4384,7 @@ function game_loop() {
                     board.get_all_player_balls(players[0]).forEach(ball => ball.takes_damage = false);
                 }
 
-                if (window.location.href.startsWith("file://")) {
+                if (window.location.href.startsWith("file://") && extend_end_for_vote) {
                     muted = match_end_timeout < 14000;
                 }
 
