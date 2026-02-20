@@ -411,6 +411,13 @@ function collapse_replay(replay) {
         replay_collapsed.players = null;
     }
 
+    // also collapse player stats if they match
+    replay_collapsed.players?.forEach(p => {
+        if (JSON.stringify(p.stats) == JSON.stringify(sample_player.stats)) {
+            p.stats = 0;
+        }
+    })
+
     if (levels_matched) {
         replay_collapsed.levels = null;
     }
@@ -643,6 +650,13 @@ function load_replay(replay_as_text) {
             cols.push(default_cols[i]);
         }
     }
+
+    let sample_player = make_default_player(-1);
+    players.forEach(p => {
+        if (p.stats == 0) {
+            p.stats = JSON.parse(JSON.stringify(sample_player.stats));
+        }
+    })
 
     let skins = [];
     if (replay.skins) {
