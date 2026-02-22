@@ -7716,6 +7716,8 @@ class TranslocatorBall extends WeaponBall {
         this.knife_spread = deg2rad(30);
         this.knife_delay = 0.05;
         this.knife_velocity_range = [10000, 17000];
+
+        this.awaken_knife_count = 24;
     }
 
     weapon_step(board, time_delta) {
@@ -7786,7 +7788,7 @@ class TranslocatorBall extends WeaponBall {
 
             if (ball.level >= AWAKEN_LEVEL) {
                 let cnt = 0;
-                let cnt_max = 24;
+                let cnt_max = ball.awaken_knife_count;
                 let delay = 0;
                 let delay_max = 12;
                 let knife_delay = 0.01;
@@ -7975,6 +7977,12 @@ class TranslocatorBall extends WeaponBall {
         } else {
             this.write_desc_line(
                 `Dodge: cooldown ${this.dodge_cooldown.toFixed(1)}s [${"#".repeat(Math.ceil((this.dodge_cooldown / this.dodge_cooldown_max) * 12)).padEnd(12)}]`
+            )
+        }
+
+        if (this.level >= AWAKEN_LEVEL) {
+            this.write_desc_line(
+                `Knives thrown on teleport: ${this.awaken_knife_count}x${this.knife_damage}dmg`, true
             )
         }
     }
