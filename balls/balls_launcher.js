@@ -2642,8 +2642,8 @@ document.addEventListener("DOMContentLoaded", function() {
     randomise_ball_info("ball2", "random-ball");
 
     // force ball in slot 1 and slot 2
-    selected_ball_info.ball1.name = "Translocator";
-    selected_ball_info.ball2.name = "SORD";
+    // selected_ball_info.ball1.name = "Translocator";
+    // selected_ball_info.ball2.name = "SORD";
 
     for (let i=1; i<=4; i++) {
         refresh_ballinfo(`ball${i}`);
