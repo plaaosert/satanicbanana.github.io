@@ -7868,7 +7868,7 @@ class TranslocatorBall extends WeaponBall {
             // let direction_angle = other.position.angle(this.position);
             // let teleport_pos = null;
             let tries = 10;
-            let best = [0, this.position, 0];
+            let best = [this.position, 0, 0];
             for (let i=0; i<tries; i++) {
                 let direction_angle = random_float(0, Math.PI * 2, this.board.random);
                 let teleport_pos = other.position.add(new Vector2(other.radius * 3, 0).rotate(direction_angle));
