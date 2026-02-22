@@ -2789,7 +2789,7 @@ main_selectable_balls.map(b => b.ball_name.toLowerCase()).forEach(n => {
 
 // TODO make levelling information exist somewhere - probably need to think about that when we come to RPG theming really
 
-let searching = true;
+let searching = false;
 let winrate_tracking = searching;
 let searched_games = 0;
 
@@ -2803,7 +2803,7 @@ if (winrate_tracking)
 let muted = searching;
 
 let repeater_interval = null;
-let force_ball1 = TranslocatorBall;
+let force_ball1 = null;
 
 let displayelement = null;
 
