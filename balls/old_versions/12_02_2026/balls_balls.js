@@ -74,17 +74,6 @@ const ANIMATION_STANDARD_DATA = {
             {frame: 10, pos_offset: new Vector2(2048 * 0.675*0.1, 0)},
         ],
         offset: new Vector2(-2, 0)
-    },
-
-    translocator: {
-        keyframes: [
-            {frame: 0, snd: "kiblast"},
-            {frame: 0, snd: "translocator_dodge", gain: 0.2},
-            {frame: 1, snd: "eyebeam_fire"},
-            {frame: 4, display: true},
-        ],
-        size_mult: 1.6,
-        offset: new Vector2(0, 0.333),
     }
 }
 
@@ -353,7 +342,6 @@ class WeaponBall extends Ball {
         this.entry_animation = "impact";
         this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
         this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
-        this.entry_animation_size_mult = 1;
 
         // player.stats:
         /*
@@ -3782,9 +3770,6 @@ class HandBall extends WeaponBall {
         this.hands_speed_timeouts = [0, 0]; // X
         this.hands_speed_timeout_range = [0.5, 2];
         this.hands_sprites = ["hand_neutral", "hand_neutral"]; // X
-        this.hands_orientations = [1, -1];
-        this.next_hand_orientation = 1;
-
         this.punch_timeout_range = [0.6, 2];
         this.punch_timeouts = [random_float(...this.punch_timeout_range, this.board.random), random_float(...this.punch_timeout_range, this.board.random)]; // X
         this.punch_recovery = 0.4 - (this.level * 0.002);
@@ -3834,9 +3819,6 @@ class HandBall extends WeaponBall {
                 this.grab_info.push({});
                 this.tired_delays.push(0);
 
-                this.hands_orientations.push(this.next_hand_orientation);
-                this.next_hand_orientation *= -1;
-
                 let w = new BallWeapon(this.hand_size, "hand_neutral", []);
                 this.weapon_data.push(w);
                 w.rotate(random_float(0, 360, this.board.random));
@@ -3878,7 +3860,7 @@ class HandBall extends WeaponBall {
 
                             // board.spawn_particle(particle, pos);
                         } else {
-                            this.weapon_data[i].rotate(this.hands_speeds[i] * time_delta, this.hands_orientations[i] == -1);
+                            this.weapon_data[i].rotate(this.hands_speeds[i] * time_delta, i % 2 == 1);
                             this.hands_speed_timeouts[i] -= time_delta;
                             if (this.hands_speed_timeouts[i] <= 0) {
                                 this.hands_speed_timeouts[i] = random_float(...this.hands_speed_timeout_range, this.board.random);
@@ -3959,12 +3941,12 @@ class HandBall extends WeaponBall {
                     this.grab_info[i].speed += 50 * time_delta;
 
                     let rot_amt = this.grab_info[i].speed * time_delta;
-                    this.weapon_data[i].rotate(rad2deg(rot_amt), this.hands_orientations[i] == -1);
+                    this.weapon_data[i].rotate(rad2deg(rot_amt), i % 2 == 1);
                     this.grab_info[i].rotated_so_far += rot_amt;
                     // this.debug_log(`Rotated ${rad2deg(this.grab_info[i].speed * time_delta)}deg, ${rad2deg(this.grab_info[i].amount_to_rotate - this.grab_info[i].rotated_so_far)}deg remaining`)
 
                     this.grab_info[i].ball.weapon_data.forEach(w => {
-                        w.angle += rot_amt * this.hands_orientations[i]
+                        w.angle += rot_amt * (i % 2 == 0 ? 1 : -1)
                     });
 
                     this.grab_info[i].ball.cache_weapon_offsets();
@@ -3974,9 +3956,9 @@ class HandBall extends WeaponBall {
                         let rollback = this.grab_info[i].rotated_so_far - this.grab_info[i].amount_to_rotate;
                         let throwball = this.grab_info[i].ball;
                         
-                        this.weapon_data[i].rotate(rad2deg(rollback), this.hands_orientations[i] == 1);
+                        this.weapon_data[i].rotate(rad2deg(rollback), i % 2 == 0);
                         throwball.weapon_data.forEach(w => {
-                            w.angle += rollback * this.hands_orientations[i]
+                            w.angle += rollback * (i % 2 == 0 ? 1 : -1)
                         });
 
                         // throw it. for now just drop it to show we're doing something
@@ -3990,7 +3972,7 @@ class HandBall extends WeaponBall {
                         // We can get the wall to select by getting the current angle of the weapon
                         throwball.apply_hitstop(1);
 
-                        let vec = new Vector2(0, 1 * this.hands_orientations[i]).rotate(this.weapon_data[i].angle);
+                        let vec = new Vector2(0, 1 * (i % 2 == 0 ? 1 : -1)).rotate(this.weapon_data[i].angle);
                         let new_position = throwball.position.copy();
 
                         if (Math.abs(vec.x) >= 0.5) {
@@ -4025,7 +4007,7 @@ class HandBall extends WeaponBall {
                             }
 
                             let part = new Particle(
-                                cpos, this.weapon_data[i].angle + (this.hands_orientations[i] * Math.PI/2),
+                                cpos, this.weapon_data[i].angle + ((i % 2 == 0 ? 1 : -1) * Math.PI/2),
                                 size_factor, HandBall.lightning_parts, 4 / delay, 
                                 999, false, 0 + (times * delay)
                             );
@@ -4124,7 +4106,7 @@ class HandBall extends WeaponBall {
                 this.weapon_data[i].hitboxes = [];
             }
 
-            this.weapon_data[i].sprite = this.hands_sprites[i] + (this.hands_orientations[i] == 1 ? "" : "_r");
+            this.weapon_data[i].sprite = this.hands_sprites[i] + (i % 2 == 0 ? "" : "_r");
         }
 
 
@@ -4148,7 +4130,6 @@ class HandBall extends WeaponBall {
             this.parry_delays.splice(i, 1);
             this.grab_info.splice(i, 1);
             this.tired_delays.splice(i, 1);
-            this.hands_orientations.splice(i, 1);
 
             this.weapon_data.splice(i, 1);
 
@@ -4230,8 +4211,7 @@ class HandBall extends WeaponBall {
         // rotate to 180deg and 270deg, and check distance from the board side bounds.
         // so for facing to the right, check up/down and that the ball would be in bounds
         // we always want to rotate at least 180deg, so start from the first cardinal angle >= 180deg
-        let rev_orient = this.hands_orientations[with_weapon_index];
-        let rotation_sign = rev_orient;
+        let rotation_sign = with_weapon_index % 2 == 0 ? 1 : -1;
 
         let check_angle_begin = this.weapon_data[with_weapon_index].angle;
         let check_angle_diff = (Math.PI * (7/2) * rotation_sign) + (Math.sign(check_angle_begin) * ((Math.PI / 2) - (Math.abs(check_angle_begin) % (Math.PI / 2))));  // amount to rotate to get to the next cardinal angle
@@ -4300,7 +4280,7 @@ class HandBall extends WeaponBall {
                 if (vec.x < 0) {
                     // left
                     target = 0;
-                    if (rev_orient == 1) {
+                    if (with_weapon_index % 2 == 0) {
                         score_bias = 0.5;
                     } else {
                         score_bias = 2;
@@ -4308,7 +4288,7 @@ class HandBall extends WeaponBall {
                 } else {
                     // right
                     target = this.board.size.x;
-                    if (rev_orient == -1) {
+                    if (with_weapon_index % 2 == 1) {
                         score_bias = 0.5;
                     } else {
                         score_bias = 2;
@@ -4320,7 +4300,7 @@ class HandBall extends WeaponBall {
                 if (vec.y < 0) {
                     // up
                     target = 0;
-                    if (rev_orient == 1) {
+                    if (with_weapon_index % 2 == 0) {
                         score_bias = 0.5;
                     } else {
                         score_bias = 2;
@@ -4328,7 +4308,7 @@ class HandBall extends WeaponBall {
                 } else {
                     // down
                     target = this.board.size.y;
-                    if (rev_orient == -1) {
+                    if (with_weapon_index % 2 == 1) {
                         score_bias = 0.5;
                     } else {
                         score_bias = 2;
@@ -7661,7 +7641,7 @@ class TranslocatorBall extends WeaponBall {
         this.name = "Translocator";
         this.description_brief = "Throws a teleportation device, then teleports to it after a short delay, or when it takes damage. Teleporting into an enemy deals heavy damage. Able to dodge attacks on a cooldown, warping behind the attacker and throwing knives.";
         this.level_description = "Reduces the cooldowns of teleportation and dodging.";
-        this.max_level_description = "Throws a fan of knives after teleporting.";
+        this.max_level_description = "Throws an additional teleportation device when dodging, and throws a fan of knives after teleporting.";
         this.quote = "i] ;fIfeel a lllit'le b@it   uhhhhhh  =2]wooozy/.,";
 
         this.tier = TIERS.A;
@@ -7673,15 +7653,9 @@ class TranslocatorBall extends WeaponBall {
         this.tags = [
             TAGS.HYBRID,
             TAGS.OFFENSIVE,
-            TAGS.PROJECTILES,
             TAGS.LEVELS_UP,
             TAGS.CAN_AWAKEN,
         ];
-
-        this.entry_animation = "translocator";
-        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
-        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
-        this.entry_animation_size_mult = ANIMATION_STANDARD_DATA[this.entry_animation].size_mult;
 
         this.translocator_weapon = new BallWeapon(1, "translocator_weapon", [
             
@@ -7696,16 +7670,16 @@ class TranslocatorBall extends WeaponBall {
         this.damage_base = 1;
         this.speed_base = 160;
         
-        this.teleport_throw_cooldown_max = 1.4 - (this.level * 0.004);
+        this.teleport_throw_cooldown_max = 1.4;
         this.teleport_throw_cooldown = this.teleport_throw_cooldown_max;
         
-        this.teleport_delay_max = 0.75;
+        this.teleport_delay_max = 0.7;
         this.teleport_delay = this.teleport_delay_max;
 
         this.translocator_obj = null;
-        this.translocator_velocity = 7000;
+        this.translocator_velocity = 8000;
 
-        this.dodge_cooldown_max = 10 - (this.level * 0.015);
+        this.dodge_cooldown_max = 10;
         this.dodge_cooldown = 0;
 
         this.telefrag_damage = 7;
@@ -7783,35 +7757,6 @@ class TranslocatorBall extends WeaponBall {
             ball.skip_physics = false;
             ball.set_velocity(vel);
             ball.apply_hitstop(0.15)
-
-            if (ball.level >= AWAKEN_LEVEL) {
-                let cnt = 0;
-                let cnt_max = 24;
-                let delay = 0;
-                let delay_max = 12;
-                let knife_delay = 0.01;
-                b.set_timer(new Timer(b2 => {
-                    delay++;
-                    if (delay < delay_max) {
-                        return true;
-                    }
-
-                    cnt++;
-                    if (cnt < cnt_max) {
-                        let target_vector = random_on_circle(1, b.random);
-
-                        b.spawn_projectile(new TranslocatorKnifeProjectile(
-                            b, ball, 0, ball.position, ball.knife_damage,
-                            0.75, target_vector, random_float(...ball.knife_velocity_range, b.random),
-                            Vector2.zero
-                        ), ball.position)
-                        
-                        return true;
-                    }
-
-                    return false;
-                }, knife_delay, true));
-            }
         }, 0.175))
     }
 
@@ -7828,7 +7773,6 @@ class TranslocatorBall extends WeaponBall {
         this.translocator_obj = null;
 
         this.apply_invuln(BALL_INVULN_DURATION);
-        play_audio("translocator2", 0.275);
     }
 
     throw_translocator() {
@@ -7861,41 +7805,26 @@ class TranslocatorBall extends WeaponBall {
 
     check_dodge(other) {
         if (this.dodge_cooldown <= 0) {
-            play_audio("translocator_dodge", 0.5);
-
             this.dodge_cooldown = this.dodge_cooldown_max;
 
-            // let direction_angle = other.position.angle(this.position);
-            // let teleport_pos = null;
-            let tries = 10;
-            let best = [0, this.position, 0];
-            for (let i=0; i<tries; i++) {
-                let direction_angle = random_float(0, Math.PI * 2, this.board.random);
-                let teleport_pos = other.position.add(new Vector2(other.radius * 3, 0).rotate(direction_angle));
-                if (this.board.in_bounds_with_radius(teleport_pos, this.radius)) {
-                    let dist = teleport_pos.sqr_distance(this.position)
-                    if (dist > best[2] || i >= tries-1) {
-                        best = [teleport_pos, direction_angle, dist];
-                    }
+            let direction_angle = other.position.angle(this.position);
+            let teleport_pos = null;
+            for (let i=0; i<100; i++) {
+                teleport_pos = other.position.add(new Vector2(other.radius * 2, 0).rotate(direction_angle));
+                if (this.board.in_bounds(teleport_pos)) {
+                    break;
+                } else {
+                    direction_angle = random_float(0, Math.PI * 2, this.board.random);
                 }
             }
 
-            let direction_angle = best[1];
-            let teleport_pos = best[0];
-
-            let mov_direction = new Vector2(0, 9000).rotate(this.position.angle(other.position));
+            let mov_direction = new Vector2(0, 6000).rotate(direction_angle );
             let times = 4;
             for (let i=0; i<times; i++) {
-                let afterimages = 4;
-                let afterimage_delay = 0.04;
-                let afterimage_opacity = 0.1;
-                for (let j=0; j<afterimages; j++) {
-                    let d = mov_direction.rotate(deg2rad((360 / times) * i));
-                    let opacity = j==0 ? 1 : 0.4 - (afterimage_opacity * j);
-                    this.board.spawn_particle(new MovingFrictionSqrFadingBallParticle(
-                        this.position, 0.4, this.colour, this.radius, opacity, this.aero_canvases, d, 26000, afterimage_delay * j
-                    ), this.position)
-                }
+                let d = mov_direction.rotate(deg2rad((360 / times) * i));
+                this.board.spawn_particle(new MovingFrictionSqrFadingBallParticle(
+                    this.position, 1, this.colour, this.radius, 0.5, this.aero_canvases, d, 10000
+                ), this.position)
             }
             this.execute_teleport(teleport_pos);
 
@@ -9804,7 +9733,7 @@ class CardsStraightFlushStrikeProjectile extends Projectile {
 
 class TranslocatorExitProjectile extends PersistentAoEProjectile {
     constructor(board, source, source_weapon_index, position, size, damage) {
-        super(board, source, source_weapon_index, position, damage, size, 7 * 0.05, "teleport_exit");
+        super(board, source, source_weapon_index, position, damage, size, 7 * 0.06, "teleport_exit");
 
         this.hitboxes_by_frame = [
             [{pos: new Vector2(0, 0), radius: 12}],
@@ -9829,7 +9758,7 @@ class TranslocatorExitProjectile extends PersistentAoEProjectile {
 
 class TranslocatorEntryProjectile extends PersistentAoEProjectile {
     constructor(board, source, source_weapon_index, position, size, damage) {
-        super(board, source, source_weapon_index, position, damage, size, 13 * 0.05, "teleport_enter");
+        super(board, source, source_weapon_index, position, damage, size, 13 * 0.06, "teleport_enter");
 
         this.hitboxes_by_frame = [
             [],

@@ -1,8 +1,8 @@
 game_id = "balls";
 
-const FILES_PREFIX = "";
+const FILES_PREFIX = "../../";
 
-const GAME_VERSION = "22/02/2026";
+const GAME_VERSION = "12/02/2026";
 
 const AILMENT_CHARS = "➴☣♨";
 
@@ -235,7 +235,6 @@ const entity_sprites = new Map([
     ["entry_load", 16, "entries/load/"],
     ["entry_rift_front", 16, "rift/front/"],
     ["entry_rift_back", 16, "rift/back/"],
-    ["entry_translocator", 14, "entries/translocator/"],
 
     // powerups
     ["powerup_empty", 1, "powerups/"],
@@ -760,13 +759,6 @@ let audios_list = [
 
     // http://pixabay.com/sound-effects/film-special-effects-card-shuffle-94662/
     ["cardshuffle", "snd/cardshuffle.mp3"],
-
-    // Edited together: "ice rod" [Link to the Past - SNES], "X Fade In" + "Misc. dash, jump, move" [Mega Man X - SNES]
-    ["translocator", "snd/translocator.mp3"],
-    ["translocator2", "snd/translocator2.mp3"],
-
-    // Edited together: "54Idk" + "A3Zap" [Final Fantasy 6 - SNES]
-    ["translocator_dodge", "snd/translocator_dodge.mp3"],
 ]
 
 
@@ -1792,14 +1784,6 @@ class Board {
             pos.x < this.size.x &&
             pos.y >= 0 &&
             pos.y < this.size.y)
-    }
-
-    in_bounds_with_radius(pos, radius) {
-        return (
-            (pos.x - radius) >= 0 &&
-            (pos.x + radius) < this.size.x &&
-            (pos.y - radius) >= 0 &&
-            (pos.y + radius) < this.size.y)
     }
 
     remaining_players() {
@@ -3398,12 +3382,7 @@ function render_opening(board, time_delta) {
             let pos = ball.position.add(
                 new Vector2(0, -ball.radius / 3)
             ).add(ball.entry_animation_offset.mul(ball.radius));
-            let part = new PersistentParticle(
-                pos, 0,
-                2.5 * board.balls[opening_state.balls].entry_animation_size_mult,
-                entity_sprites.get("entry_" + board.balls[opening_state.balls].entry_animation),
-                18, 100, false
-            );
+            let part = new PersistentParticle(pos, 0, 2.5, entity_sprites.get("entry_" + board.balls[opening_state.balls].entry_animation), 18, 100, false);
             board.spawn_particle(part, pos);
             opening_state.particles.push(part);
 
@@ -3424,7 +3403,7 @@ function render_opening(board, time_delta) {
         let frame = board.balls[i].entry_animation_keyframes[cur_anim_snd];
         while (frame && p.cur_frame >= frame.frame) {
             if (frame.snd) {
-                play_audio(frame.snd, frame.gain ?? 0.04);
+                play_audio(frame.snd, 0.04);
             }
 
             if (frame.display !== undefined) {
