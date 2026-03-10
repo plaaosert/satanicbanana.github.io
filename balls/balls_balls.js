@@ -1338,9 +1338,13 @@ class WeaponBall extends Ball {
         if (this.special_hit_tag[0] && this.special_hit_tag[1] >= 0) {
             switch (this.special_hit_tag[0]) {
                 case "golden": {
+                    let c = Colour.from_hex("#FFD700")
+                    this.set_colour(c)
+                    this.setup_aero_light_lookup_table()
+
                     // create a gold ballparticle
                     let part = new MovingFrictionFadingBallParticle(
-                        this.position, 12, Colour.from_hex("#FFD700"),
+                        this.position, 12, c,
                         this.radius, 1, this.aero_canvases, this.velocity,
                         8000
                     )
