@@ -558,6 +558,10 @@ class Vector2 {
         )
     }
 
+    pairwise_mul(other) {
+        return new Vector2(this.x * other.x, this.y * other.y);
+    }
+
     compat_round() {
         // multiply by COMPAT_ROUNDING_FACTOR, then round, then div by COMPAT_ROUNDING_FACTOR
         this.x = Math.round(this.x * COMPAT_ROUNDING_FACTOR) / COMPAT_ROUNDING_FACTOR;

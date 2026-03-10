@@ -12,7 +12,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=0.1, user-scalable=yes" />
 
     <link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=02"/>
-	<link rel="stylesheet" type="text/css" href="balls.css?v=36"/>
+	<link rel="stylesheet" type="text/css" href="balls.css?v=37"/>
 </head>
 <body>
 	<div class="topbar">
@@ -216,52 +216,51 @@
                         <span class="mysterious-powers-warning faded">These powers are for joke use only. Please don't take them too seriously.</span>
                     </div>
 
-                    <div class="campaign behind-canvases">
+                    <div class="campaign behind-canvases withborder">
                         <div class="campaign-container">
                             <!-- storage, upgrade, shop, tournament -->
-                            <div class="tab-menu nodisplay">
+                            <div class="header">
+                                <span>Week <span id="campaign_date_week">1</span> | Day <span id="campaign_date_day">1</span></span>
+                                <span id="campaign_timeline_weeks">######################</span>
+                                <span id="campaign_timeline">######################</span>
+                            </div>
+
+                            <div class="tab-menu">
                                 <div class="tab-select-buttons-container">
                                     <div class="tab-select-buttons">
-                                        <span id="select_button_center_storage" class="button selected">Storage</span>
+                                        <span id="select_button_center_action" class="button">Action</span>
                                         <span id="select_button_center_upgrade" class="button">Upgrade</span>
                                         <span id="select_button_center_shop" class="button">Shop</span>
-                                        <span id="select_button_center_tournament" class="button">Tournament</span>
+                                        <span id="select_button_center_tournament" class="button selected">Tournament</span>
                                     </div>
                                 </div>
-                                <div class="tab-content">
+                                <div class="tab-content nodisplay">
                                     <span>Hi</span>
                                 </div>
-                                <div class="tab-content hidden">
+                                <div class="tab-content nodisplay">
                                     <span>Hi2</span>
                                 </div>
-                                <div class="tab-content hidden">
+                                <div class="tab-content nodisplay">
                                     <span>Hi3</span>
                                 </div>
-                                <div class="tab-content hidden">
-                                    <span>Hi4</span>
-                                </div>
-                            </div>
-
-                            <div class="header">
-                                <span>Week 1 | Day 1</span>
-                            </div>
-
-                            <div class="main-content">
-                                <div class="active-tournament-view">
-                                    <span><span class="tournament-name">Tournament Name</span> (<span class="tournament-format">Duel</span>) -- <span class="tournament-stage">Semifinals</span></span>
-                                    <span>Next match: <span class="tournament-next-fight now">3 days</span> <span class="tournament-next-fight-date">(W1D4)</span></span>
-                                    <span>&nbsp;</span>
-                                    <span class="bold">Selected participants:</span>
-                                    <span>&nbsp;</span>
-                                    <div class="player-balls balls-list player">
-                                        <!-- will be filled at load time -->
-                                    </div>
-                                    <span>&nbsp;</span>
-                                    <span class="bold">Opposing participants:</span>
-                                    <span>&nbsp;</span>
-                                    <span class="bye nodisplay">None! (Bye round)</span>
-                                    <div class="player-balls balls-list opponent">
-                                        <!-- will be filled at load time -->
+                                <div class="tab-content">
+                                    <div class="main-content">
+                                        <div class="active-tournament-view">
+                                            <span><span class="tournament-name">Tournament Name</span> (<span class="tournament-format">Duel</span>) -- <span class="tournament-stage">Semifinals</span></span>
+                                            <span>Next match: <span class="tournament-next-fight now">3 days</span> <span class="tournament-next-fight-date">(W1D4)</span></span>
+                                            <span>&nbsp;</span>
+                                            <span class="bold margin-below">Selected participants:</span>
+                                            <div class="player-balls balls-list player">
+                                                <!-- will be filled at load time -->
+                                            </div>
+                                            <span>&nbsp;</span>
+                                            <span class="bold margin-below">Opposing participants:</span>
+                                            <span class="bye nodisplay">None! (Bye round)</span>
+                                            <div class="player-balls balls-list opponent">
+                                                <!-- will be filled at load time -->
+                                            </div>
+                                            <span id="campaign_tournament_fight_button" class="button fight-button green disabled" onclick="try_start_tournament_fight()">Fight!</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -874,27 +873,29 @@
         </div>
     </div>
 
-    <script src="../shared/js/helpers.js?v=11"></script>
-	<script src="../shared/js/canvas_helpers.js?v=06"></script>
+    <script src="../shared/js/helpers.js?v=12"></script>
+	<script src="../shared/js/canvas_helpers.js?v=07"></script>
 	
-    <script src="balls_core.js?v=59"></script>
+    <script src="balls_core.js?v=60"></script>
 
-    <script src="balls_balls.js?v=58"></script>
-    <script src="balls_balls_additional.js?v=45"></script>
-    <script src="balls_balls_powered.js?v=07"></script>
+    <script src="balls_balls.js?v=59"></script>
+    <script src="balls_balls_additional.js?v=46"></script>
+    <script src="balls_balls_powered.js?v=08"></script>
 
-    <script src="balls_powerups.js?v=04"></script>
+    <script src="balls_objects.js?v=01"></script>
 
-    <script src="balls_gambling_info.js?v=05"></script>
+    <script src="balls_powerups.js?v=05"></script>
 
-    <script src="balls_replay_parsing.js?v=10"></script>
-    <script src="balls_launcher.js?v=87"></script>
+    <script src="balls_gambling_info.js?v=06"></script>
+
+    <script src="balls_replay_parsing.js?v=11"></script>
+    <script src="balls_launcher.js?v=88"></script>
     
-    <script src="balls_campaign.js?v=08"></script>
+    <script src="balls_campaign.js?v=09"></script>
 
-    <script src="balls_mysterious_powers.js?v=05"></script>
+    <script src="balls_mysterious_powers.js?v=06"></script>
 
-	<script src="../shared/js/playtime.js?v=00"></script>
+	<script src="../shared/js/playtime.js?v=01"></script>
 
     <div id="desktop_mode_prompt" class="nodisplay">
         <span>if you're on mobile, it'd probably be best if you turned on <span class="important">"desktop site"</span> mode for this page.</span>

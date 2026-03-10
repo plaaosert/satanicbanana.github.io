@@ -195,7 +195,75 @@ function raw_date_to_wd(date) {
     return `W${Math.floor(date / 7)+1}D${(date % 7)+1}`
 }
 
-function set_new_tournament(player, date, tournament) {
+function render_header() {
+    document.querySelector("#campaign_date_week").textContent = Math.floor(campaign_cur_date / 7)+1;
+    document.querySelector("#campaign_date_day").textContent = (campaign_cur_date % 7)+1;
+
+    show_upcoming_events(user_player, campaign_cur_date, )
+}
+
+function show_upcoming_events(player, date) {
+    let lookahead = 7 * 7;  // 7 weeks
+    let content_string = ``;
+
+    let tournament = current_tournament;
+    let info = current_tournament_info;
+
+    // later we might put events, shop restocks, etc here
+    // preload with green | showing where we are
+    let col = "lime";
+    let content = "|";
+    for (let i=1; i<lookahead; i++) {
+        let d = campaign_cur_date + i;
+        let newchar = " ";
+        let newcol = "white";
+        if (d % 7 == 0) {
+            newchar = "|";
+        }
+
+        if (tournament) {
+            if (i >= info.next_match_date && (d - info.next_match_date) == 0) {
+                newcol = "red";
+                newchar = "#";
+            }
+        }
+
+        if (i % 14 == 0) {
+            newchar = "$";
+            newcol = "yellow";
+        }
+
+        if (i % 19 == 0) {
+            newchar = "?";
+            newcol = "lime";
+        }
+
+        // if col is different, flush the last content and add tag to full string
+        if (newcol != col) {
+            content_string += `<span style='color:${col}'>${content}</span>`;
+            content = "";
+            col = newcol;
+        }
+        
+        content += newchar;
+    }
+
+    // plus flush at the end
+    content_string += `<span style='color:${col}'>${content}</span>`;
+    content = "";
+    
+    document.querySelector("#campaign_timeline").innerHTML = content_string;
+
+    let txt = "<span style='color:lime'>|</span>";
+    for (let i=1; i<lookahead; i++) {
+        let d = campaign_cur_date + i;
+        txt += d % 7 == 0 ? "|" : "-";
+    }
+
+    document.querySelector("#campaign_timeline_weeks").innerHTML = txt;
+}
+
+function set_new_tournament(player, start_date, tournament) {
     current_tournament = tournament;
     current_tournament_info = {};
 
@@ -213,10 +281,10 @@ function set_new_tournament(player, date, tournament) {
     current_tournament_info.selected_indexes = current_tournament_info.selected_balls.map((_, i) => i);
     current_tournament_info.selected_slot = 0;
 
-    setup_next_tournament_match(player, date, current_tournament);
+    setup_next_tournament_match(player, start_date, current_tournament);
 }
 
-function setup_next_tournament_match(player, date, tournament) {
+function setup_next_tournament_match(player, start_date, tournament) {
     current_tournament_info.matches = [];
     let building_match = [];
     current_tournament_info.players.forEach(p => {
@@ -245,7 +313,7 @@ function setup_next_tournament_match(player, date, tournament) {
         }
     });
 
-    current_tournament_info.next_match_date = date + tournament.match_frequency;
+    current_tournament_info.next_match_date = start_date + tournament.match_frequency;
 }
 
 function layout_tournament_screen() {
@@ -357,6 +425,24 @@ function layout_tournament_screen() {
             el.classList.add("nodisplay");
         }
     })
+}
+
+function try_start_tournament_fight() {
+    // exit if day not match
+    if (campaign_cur_date != current_tournament_info.next_match_date) {
+        return
+    }
+
+    // else throw them into the arena
+    // after finishing the battle, multiple things need to happen.
+    // 1) if nuzlocke, remove the ball(s) that died from the inventory
+    //    (we can get that by keeping track of each ball when we spawn it, and comparing it to the remaining balls when the match ends)
+    // 2) show end screen (different depending on if we won or lost).
+    //    balls gain xp in both cases (if not nuzlocke). nuzlocke screen should show balls that died too
+    // 3) move up in the tournament. if this means we won, give out prizes
+    // 4) simulate other balls. show a little progress bar here
+    //    note we'll need to keep passing control back to the game loop and using the board end function to return to this control loop
+    // 5) finally, progress the day and return control to the player
 }
 
 function show_campaign_info_popup(index) {
@@ -515,14 +601,14 @@ function cancel_campaign_selection_button() {
 let campaign_cur_date = 0;
 
 let test_tournament = new Tournament(
-    "test", 25, [
+    "Test tournament", 25, [
         Reward.money(500),
         Reward.money(250),
         Reward.money(100),
     ],
     TournamentBracket.SINGLE_ELIM,
     TournamentFormat.DUEL,
-    16, 7, 
+    8, 7, 
     new TournamentGeneratedPlayerSettings(
         3, balance_weighted_array(selectable_balls_for_random.map(b => [1, b.name])), [10, 20],
         [4000, 8000], [100, 150]

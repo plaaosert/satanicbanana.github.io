@@ -316,6 +316,8 @@ class BallWeapon {
         this.unparriable = false;
 
         this.offset = new Vector2(0, 0);
+
+        this.frame = 0;
     }
 
     rotate(by_deg, reverse) {
@@ -397,6 +399,8 @@ class WeaponBall extends Ball {
 
         this.show_stats = true;
         this.display = true;
+        this.display_hp = true;
+
         this.desc_shake_intensity = 0;
         this.desc_shake_offset = Vector2.zero;
         this.desc_shake_offset_freq_max = 0.02;
@@ -456,6 +460,8 @@ class WeaponBall extends Ball {
         this.weapon_opacity = null;
 
         this.independent_random = get_seeded_randomiser(this.board.random_seed + this.id);
+    
+        this.special_hit_tag = [null, 0];
     }
 
     get_stat(name) {
@@ -477,9 +483,7 @@ class WeaponBall extends Ball {
             return;
         }
 
-        let screen_scaling_factor = canvas_width / this.board.size.x;
-
-        let ball_siz_scaled = Math.round(this.radius * screen_scaling_factor);
+        let ball_siz_scaled = Math.round(this.radius * true_zoom_level);
 
         let lb = Math.floor(-ball_siz_scaled / 1);
         let ub = Math.ceil(ball_siz_scaled / 1) + 1;
@@ -639,12 +643,6 @@ class WeaponBall extends Ball {
         }
 
         let w = 25 * screen_scaling_factor;
-        this.aero_radius_table = [
-            Math.pow(this.radius * screen_scaling_factor, 2),
-            Math.pow((this.radius * screen_scaling_factor) - (w * 1.2), 2),
-            (new Vector2(this.radius, this.radius)),
-            Math.round(this.radius * screen_scaling_factor),
-        ]
 
         // test code
         let base_ball_col = this.get_current_col();
@@ -653,8 +651,8 @@ class WeaponBall extends Ball {
             base_ball_col.lerp(Colour.black, 0.75).lerp(Colour.black, 0.1)
         ]
 
-        let sqr_radius = this.aero_radius_table[0];
-        let sqr_inner_radius = this.aero_radius_table[1];
+        let sqr_radius = Math.pow(this.radius * true_zoom_level, 2);
+        let sqr_inner_radius = Math.pow((this.radius * true_zoom_level) - (w * 1.2), 2);
 
         let lightest = Colour.white;
         let lightest_amt = 0.8;
@@ -955,6 +953,8 @@ class WeaponBall extends Ball {
         // do alt-colour stuff to hopefully improve compression
         let lifetime_mod = this.lifetime % this.alt_flash_freq;
         this.render_alt = lifetime_mod < this.alt_flash_dur;
+
+        this.special_hit_tag[1] -= time_delta;
 
         // move linked hat particle if there is one
         this.update_particles(time_delta);
@@ -1333,6 +1333,45 @@ class WeaponBall extends Ball {
         // nothing
     }
 
+    do_default_explosion() {
+        // special hit tag effects
+        if (this.special_hit_tag[0] && this.special_hit_tag[1] >= 0) {
+            switch (this.special_hit_tag[0]) {
+                case "golden": {
+                    // create a gold ballparticle
+                    let part = new MovingFrictionFadingBallParticle(
+                        this.position, 12, Colour.from_hex("#FFD700"),
+                        this.radius, 1, this.aero_canvases, this.velocity,
+                        8000
+                    )
+
+                    this.board.spawn_particle(part, this.position);
+
+                    if (this.show_stats) {
+                        play_audio("turntogold");
+                    } else {
+                        play_audio("turntogold");
+                    }
+                }
+            }
+        } else {
+            if (this.show_stats) {
+                board.spawn_particle(new Particle(
+                    this.position.add(new Vector2(256+64, -512)), 0, 2, entity_sprites.get("explosion"), 12, 3, false
+                ), this.position.add(new Vector2(256+64, -512)));
+
+                play_audio("explosion");
+            } else {
+                board.spawn_particle(new Particle(
+                    this.position.add(new Vector2(144, -512)), 0, 1, entity_sprites.get("explosion"), 12, 3, false
+                ), this.position.add(new Vector2(144, -512)));
+
+                // TODO make this something else thats less impactful
+                play_audio("explosion");
+            }
+        }
+    }
+
     die() {
         return {skip_default_explosion: false};
     }
@@ -1376,6 +1415,7 @@ class DummyBall extends WeaponBall {
 
         this.shake_duration_max = 4.5;
         this.shake_shake_start = 1.5;
+        this.shake_music_start = 0;
         this.shake_shake_duration = this.shake_duration_max - this.shake_shake_start;
         this.shake_flash_start = 3;
         this.shake_flash_duration = this.shake_duration_max - this.shake_flash_start;
@@ -1385,11 +1425,14 @@ class DummyBall extends WeaponBall {
         this.transforming = false;
         this.done = false;
 
+        this.played_music = false;
+
         this.original_colour = this.colour;
 
         this.child = null;
+        this.music_theme = "unarmed_theme"
 
-        prepare_lazy_audio("unarmed_theme");
+        prepare_lazy_audio(this.music_theme);
     }
 
     weapon_step(board, time_delta) {
@@ -1397,6 +1440,11 @@ class DummyBall extends WeaponBall {
             this.shake_current += time_delta
             if (this.board.unarmed_cinematic_played) {
                 this.shake_current += time_delta * 1000;
+            }
+
+            if (!this.played_music && !this.board.unarmed_cinematic_played && this.shake_current >= this.shake_music_start) {
+                play_music(this.music_theme);
+                this.played_music = true;
             }
 
             if (this.shake_current <= this.shake_duration_max) {
@@ -1409,7 +1457,7 @@ class DummyBall extends WeaponBall {
                             this.shake_intensity_max, 
                             random_float(0, 1, this.independent_random) * (Math.max(0, (this.shake_current - this.shake_shake_start) / this.shake_shake_duration))
                         ),
-                        this.board.random
+                        this.independent_random
                     )
                 ))
                 this.set_colour(this.original_colour.lerp(Colour.white, Math.max(0, (this.shake_current - this.shake_flash_start) / this.shake_flash_duration)));
@@ -1431,6 +1479,7 @@ class DummyBall extends WeaponBall {
                 this.done = true;
                 this.skip_physics = false;
                 this.takes_damage = true;
+                this.collision = true;
 
                 let b = this.board;
                 b.set_timer(new Timer(() => {
@@ -1450,19 +1499,20 @@ class DummyBall extends WeaponBall {
 
     start_transforming() {
         if (!this.board.unarmed_cinematic_played) {
-            play_music("unarmed_theme");
+            stop_music();
         }
 
-        this.hp = STARTING_HP;
+        this.hp = this.max_hp;
         this.transforming = true;
         this.shake_origin = this.position;
         this.skip_physics = false;
         this.takes_damage = false;
+        this.collision = false;
         this.ignore_bounds_checking = true;
         this.board?.set_timer(new Timer(() => {
             this.skip_physics = false;
             this.takes_damage = false;
-            this.hp = STARTING_HP;
+            this.hp = this.max_hp;
         }, 0.05))
 
         this.board?.balls.forEach(ball => {
@@ -1579,13 +1629,13 @@ class UnarmedBall extends WeaponBall {
         while (this.name_mutate_cooldown > this.name_mutate_cooldown_max) {
             this.name_mutate_cooldown -= this.name_mutate_cooldown_max
             this.name = [...this.name].map((c, i) => {
-                let rand = random_float(0, 1, this.board.random);
+                let rand = random_float(0, 1, this.independent_random);
                 if (rand < 0.9) {
                     // do nothihng
                     return c;
                 } else if (rand < 0.925) {
                     // set to random symbol
-                    return String.fromCharCode(random_int(32, 256, this.board.random));
+                    return String.fromCharCode(random_int(32, 256, this.independent_random));
                 } else if (rand < 0.95) {
                     // set to uppercase of original name
                     return this.original_name[i].toUpperCase();
@@ -4134,8 +4184,8 @@ class HandBall extends WeaponBall {
             let offset = this.get_weapon_offset(i).mul(2);
             let pos = this.position.add(offset);
             let part = new Particle(
-                pos, this.weapon_data[i].angle + (Math.PI / 2), 1,
-                entity_sprites.get("explosion3"),
+                pos, this.weapon_data[i].angle + (Math.PI / 2), 0.75,
+                entity_sprites.get("explosion_small"),
                 12, 999
             );
 
@@ -6353,6 +6403,10 @@ class FishingRodHookProjectileBall extends WeaponBall {
 class FryingPanBall extends WeaponBall {
     static ball_name = "Frying Pan";
 
+    static AVAILABLE_SKINS = [
+        "Golden",  // plaaosert (me)
+    ];
+
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
@@ -6426,6 +6480,8 @@ class FryingPanBall extends WeaponBall {
         this.proj_damage_base = 0.2;
         this.proj_heal_base = 3;
 
+        this.sprite_suffix = ""
+
         this.projectile_bounces = 0;
         if (this.level >= AWAKEN_LEVEL) {
             this.pan_toss_projectile_count_base += 1;
@@ -6452,6 +6508,19 @@ class FryingPanBall extends WeaponBall {
             [0.6, PanSoupProjectile],
             [0.5, PanSushiProjectile],
         ])
+    }
+
+    set_skin(skin_name) {
+        super.set_skin(skin_name);
+
+        switch (skin_name) {
+            case "Golden": {
+                this.sprite_suffix = "_golden"
+                this.weapon_data[0].sprite += this.sprite_suffix;
+                
+                break;
+            }
+        }
     }
 
     calculate_predicted_projectiles() {
@@ -6529,7 +6598,7 @@ class FryingPanBall extends WeaponBall {
                             this.board.gravity, this.projectile_bounces,
                             Vector2.zero,
                             this.board.random() < 0.5
-                        ), pos)
+                        ), pos).sprite += this.sprite_suffix;
                     }
                 }
             } else {
@@ -6539,6 +6608,20 @@ class FryingPanBall extends WeaponBall {
         }
     }
 
+    parry_weapon(with_weapon_index, other_ball, other_weapon_id) {
+        super.parry_weapon(with_weapon_index, other_ball, other_weapon_id);
+        
+        this.custom_parry_sound = "frying_pan_parry";
+        this.custom_parry_sound += random_int(0, 3, this.independent_random);
+    }
+
+    parry_projectile(with_weapon_index, projectile) {
+        super.parry_projectile(with_weapon_index, projectile);
+        
+        this.custom_parry_sound = "frying_pan_parry";
+        this.custom_parry_sound += random_int(0, 3, this.independent_random);
+    }
+
     hit_other(other, with_weapon_index) {
         // additionally knock the other ball away
         let dmg = this.damage_base;
@@ -6546,7 +6629,11 @@ class FryingPanBall extends WeaponBall {
         let result = super.hit_other(other, with_weapon_index, dmg);
 
         result.snd = "frying_pan";
+        result.snd += random_int(0, 4, this.independent_random);
+
         result.gain = 0.04;
+
+        other.special_hit_tag = ["golden", 0.5];
 
         return result;
     }
@@ -6560,6 +6647,8 @@ class FryingPanBall extends WeaponBall {
                     result.snd = "munch";
                 }
             }
+
+            other.special_hit_tag = ["golden", 0.5];
         }
 
         return result;
@@ -7434,7 +7523,7 @@ class CardsBall extends WeaponBall {
                                     if (b.player.id != this_team) {
                                         b.set_colour(b.colour.lerp(Colour.black, 0.04))
                                         b.set_velocity(new Vector2(0, -board.gravity.y * 0.1))
-                                        b.hp -= random_int(0, 2, board.random);
+                                        b.hp -= random_int(0, 2, board.random) * b.max_hp * 0.01;
                                         if (cnt >= 200) {
                                             b.hp = 0;
                                         }
@@ -8847,11 +8936,15 @@ class PersistentAoEProjectile extends Projectile {
 
         this.hitboxes_by_frame = new Array(this.framecount).fill(0).map(_ => []);
 
+        this.last_frame = null;
+
         this.parriable = false;
         this.collides_other_projectiles = false;
 
         this.lifetime = 0;
         this.duration = duration;
+
+        this.orientation = new Vector2(1, 1);
     }
 
     physics_step(time_delta) {
@@ -8860,7 +8953,10 @@ class PersistentAoEProjectile extends Projectile {
         let frame = Math.floor((this.lifetime / this.duration) * this.framecount);
         this.sprite = this.sprites[frame];
 
-        this.set_hitboxes(this.hitboxes_by_frame[frame]);
+        if (frame != this.last_frame) {
+            this.set_hitboxes(this.hitboxes_by_frame[frame].map(v => { return {pos: v.pos.pairwise_mul(this.orientation), radius: v.radius} }));
+            this.last_frame = frame;
+        }
 
         if (this.lifetime >= this.duration) {
             this.active = false;

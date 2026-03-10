@@ -544,6 +544,8 @@ function exit_battle(save_replay=true) {
             seed: board.random_seed,
 
             starting_hp: STARTING_HP,
+
+            map_config: board.map_config.id,
         }
 
         let replay_compressed = collapse_replay(replay);
@@ -684,6 +686,9 @@ function load_replay(replay_as_text) {
 
     let powerups = replay.powerups ? true : false;
 
+    // standard by default
+    let map_config = map_configs[replay.map_config ?? "S"];
+
     replaying = true;
     start_game(
         framespeed, seed,
@@ -691,7 +696,7 @@ function load_replay(replay_as_text) {
         ball_classes, ball_levels,
         players, skins, starting_hp,
         max_game_duration, board_size,
-        powerups
+        powerups, map_config
     );
 }
 
@@ -749,20 +754,24 @@ function spawn_selected_balls() {
 
     mysterious_powers_enabled = document.querySelector("#mysterious_powers_checkbox").checked;
 
+    // standard map
+    let map_config = map_configs["S"];
+
     start_game(
         framespeed, seed,
         cols, positions,
         ball_classes, ball_levels,
         players, skins, STARTING_HP,
         default_max_game_duration, BOARD_SIZE,
-        document.querySelector("#enable_powerups_checkbox").checked
+        document.querySelector("#enable_powerups_checkbox").checked,
+        map_config
     );
 }
 
 let christmas = false;
 let new_year = false;
 
-function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels, players, skins, starting_hp, max_game_duration, board_size, powerups) {
+function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels, players, skins, starting_hp, max_game_duration, board_size, powerups, map_config) {
     document.activeElement.blur();
     lmb_down = false;
     
@@ -770,7 +779,11 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
         stored_starting_hp = STARTING_HP;
         STARTING_HP = starting_hp;
     
-        board = new Board(new Vector2(board_size, board_size));
+        // if board_size != default, use that - else use map config's board size
+        // backwards compat moment
+        let boardsiz = (board_size != default_board_size) ? board_size : map_config.size
+
+        board = new Board(new Vector2(boardsiz, boardsiz));
 
         board.powerups_enabled = powerups;
 
@@ -796,7 +809,10 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
 
                 ball.randomise_weapon_rotations();
 
-                board.spawn_ball(ball, positions[index])
+                board.spawn_ball(ball, positions[index]);
+                if (ball.START_MUSIC) {
+                    play_music(ball.START_MUSIC);
+                }
                 
                 ball.set_skin(skins[index]);
                 
@@ -832,6 +848,23 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
                 board.random)
             )
         );
+
+        // apply rest of map_config
+        board.map_config = map_config;
+        if (map_config) {
+            board.gravity = map_config.gravity;
+            map_config.extra_walls(board);
+            map_config.extra_objects(board);
+            map_config.extra_balls(board);
+
+            zoom_level = map_config.initial_zoom_level;
+            camera_mode = map_config.camera_mode;
+            camera_data = {};
+        }
+
+        // board.spawn_object(new BaseObject(
+        //     board, 256, new Colour(128, 128, 128, 255)
+        // ), new Vector2(3000, 3000))
     
         if (board.remaining_players().length == 1) {
             match_end_timeout = 3 * 1000;
@@ -2201,7 +2234,7 @@ function gambling_display_loop() {
                     [0, 1].map(pid => make_default_player(pid)),
                     ["Default", "Default"],
                     100, gambling_current_match_data.duration, BOARD_SIZE,
-                    false
+                    false, map_configs["S"]
                 )
 
                 gambling_current_match_data = null;
@@ -2324,6 +2357,20 @@ document.addEventListener("DOMContentLoaded", function() {
         let mysterious_powers_indexmod = 0;
 
         switch (code) {
+            case "Minus": {
+                zoom_level /= 1.25;
+                need_stwp_recache = true;
+                
+                break;
+            }
+
+            case "Equal": {
+                zoom_level *= 1.25;
+                need_stwp_recache = true;
+
+                break;
+            }
+
             case "Digit1": {
                 exit_battle(false);
                 break;
@@ -2424,6 +2471,9 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     let interval = setInterval(function() {
+        if (!entity_sprites)
+            return;
+
         num_textures_loaded = entity_sprites.keys().reduce((p, c) => {
             let loaded = entity_sprites.get(c).reduce((pt, ct) => {
                 return pt + (ct.complete && ct.naturalWidth !== 0 ? 1 : 0);
@@ -2752,16 +2802,25 @@ document.addEventListener("DOMContentLoaded", function() {
     })
 
     // campaign test code
-    set_new_tournament(user_player, campaign_cur_date, test_tournament);
-    layout_tournament_screen();
+    if (local) {
+        set_new_tournament(user_player, campaign_cur_date + 3, test_tournament);
+        layout_tournament_screen();
 
-    console.log(current_tournament_info.players[0].ball_inventory[0]);
+        console.log(current_tournament_info.players[0].ball_inventory[0]);
+
+        document.querySelector(".campaign-button.button.modeswitch.nodisplay").classList.remove("nodisplay");
+    
+        // switch_game_layout("campaign");
+
+        render_header();
+    }
 
     window.requestAnimationFrame(gambling_display_loop);
 })
 
 // entity_sprites late setup
-main_selectable_balls.map(b => b.ball_name.toLowerCase()).forEach(n => {
+let icon_objs = [...main_selectable_balls, CursedEnergyBall];
+icon_objs.map(b => b.ball_name.toLowerCase()).forEach(n => {
     let t = new Image(128, 128);
     let ts = [];
 

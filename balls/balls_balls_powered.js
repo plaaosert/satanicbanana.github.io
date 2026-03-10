@@ -203,9 +203,7 @@ class SmartBowBall extends WeaponBall {
         let pointing_vector = null;
         if (closest_enemy) {
             // debug canvas code
-            let screen_scaling_factor = canvas_width / board.size.x;
             let ctx = layers.debug_front.ctx;
-            let w = 25 * screen_scaling_factor;
 
             let firing_offset = this.firing_offsets[0].mul(this.weapon_data[0].size_multiplier).rotate(this.weapon_data[0].angle);
             let fire_pos = this.position.add(firing_offset);
@@ -233,21 +231,22 @@ class SmartBowBall extends WeaponBall {
 
                 predicted_movement = predicted_velocity.mul(cur_nt);
                 predicted_position = closest_enemy[0].position.add(predicted_movement);
+                let predicted_position_screenpos = wtsp(predicted_position);
                 draw_circle(
-                    ctx, predicted_position.x * screen_scaling_factor, predicted_position.y * screen_scaling_factor,
-                    closest_enemy[0].radius * screen_scaling_factor,
+                    ctx, predicted_position_screenpos.x, predicted_position_screenpos.y,
+                    closest_enemy[0].radius * true_zoom_level,
                     Colour.red.lerp(Colour.green, i / times).css()
                 );
             }
 
             pointing_vector = predicted_position.sub(this.position);
 
-            // draw_circle(ctx, predicted_position.x * screen_scaling_factor, predicted_position.y * screen_scaling_factor, closest_enemy[0].radius * screen_scaling_factor, "white");
-
             ctx.beginPath();
 
-            ctx.moveTo(this.position.x * screen_scaling_factor, this.position.y * screen_scaling_factor);
-            ctx.lineTo(predicted_position.x * screen_scaling_factor, predicted_position.y * screen_scaling_factor);
+            let start_screenpos = wtsp(this.position);
+            let end_screenpos = wtsp(predicted_position);
+            ctx.moveTo(start_screenpos.x, start_screenpos.y);
+            ctx.lineTo(end_screenpos.x, end_screenpos.y);
 
             ctx.strokeStyle = "yellow";
             ctx.stroke();

@@ -145,80 +145,149 @@ let old_graphics_options = {
 
 let bg_changed = true;
 let switched_to_endgame_col = false;
-let balls_need_aero_recache = false;
+let need_stwp_recache = false;
 
 let BALL_DESC_BORDER_SIZE = BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO ? 2 : 1;
 
+let view_offset = new Vector2(0, 0);
+let zoom_level = 1;
+
+let screen_scaling_factor = 1;
+let true_zoom_level = 1;
+let stwp = v => Vector2.zero;
+let wtsp = v => Vector2.zero;
+
+function refresh_wtsp_stwp() {
+    screen_scaling_factor = canvas_width / board.size.x;
+    true_zoom_level = zoom_level * screen_scaling_factor;
+
+    wtsp = vec => vec.add(view_offset).mul(true_zoom_level);
+    stwp = vec => vec.div(true_zoom_level).sub(view_offset);
+}
+
 // TODO - need to fix collision weirdness when hitting sides of lines
-const board_obstacles = [
-    board => [],
-    board => {
-        return [{
-                // ax + by + c = 0
-                id: 2,
+const CAMERA_MODES = {
+    STATIC: "STATIC",
+    BR_FOLLOW: "BR_FOLLOW",
+}
 
-                a: 1,
-                b: 0,
-                c: (-board.size.x / 2) - 512,
+let camera_mode = CAMERA_MODES.STATIC;
+let camera_data = {};
 
-                lbx: null,
-                ubx: null,
-                lby: (board.size.y / 2) - 512,
-                uby: (board.size.y / 2) + 512,
+const map_configs = {
+    "S": {
+        id: "S",
+        name: "Standard",
+        desc: "A map with no features that (at zoom level 1) is the exact size of the canvas.",
+        gravity: new Vector2(0, 9810),
+        size: 512 * 16,
+        extra_walls: board => null,
+        
+        // objects are generalised ball-like objects that optionally have collision,
+        // but do not interact with weapons
+        // they still run weaponsteps, but collision isn't checked with them
+        // they are usually, but may not be, kinematic
+        extra_objects: board => null,
 
-                projectile_solid: true,
-            },
+        extra_balls: board => null,
 
-            {
-                // ax + by + c = 0
-                id: 2,
+        initial_zoom_level: 1,
+        camera_mode: CAMERA_MODES.STATIC,
+    },
 
-                a: 1,
-                b: 0,
-                c: (-board.size.x / 2) + 512,
+    "BR1": {
+        id: "BR1",
+        name: "Battle Royale 1",
+        desc: "A large map designed for 16+ balls that contains hazards and has no gravity.",
+        gravity: new Vector2(0, 9810),
+        size: 512 * 16 * 4,
+        extra_walls: board => null,
+        
+        // objects are generalised ball-like objects that optionally have collision,
+        // but do not interact with weapons
+        // they still run weaponsteps, but collision isn't checked with them
+        // they are usually, but may not be, kinematic
+        extra_objects: board => {
+            board.spawn_object(new BaseObject(
+                board, 256, new Colour(128, 128, 128, 255)
+            ), new Vector2(3000, 3000))
+        },
 
-                lbx: null,
-                ubx: null,
-                lby: (board.size.y / 2) - 512,
-                uby: (board.size.y / 2) + 512,
+        extra_balls: board => null,
 
-                projectile_solid: true,
-            },
+        initial_zoom_level: 4,
+        camera_mode: CAMERA_MODES.BR_FOLLOW,
+    },
+}
 
-            {
-                // ax + by + c = 0
-                id: 2,
+/*
+board => {
+    return [{
+            // ax + by + c = 0
+            id: 2,
 
-                a: 0,
-                b: 1,
-                c: (-board.size.y / 2) - 512,
+            a: 1,
+            b: 0,
+            c: (-board.size.x / 2) - 512,
 
-                lbx: (board.size.x / 2) - 512,
-                ubx: (board.size.x / 2) + 512,
-                lby: null,
-                uby: null,
+            lbx: null,
+            ubx: null,
+            lby: (board.size.y / 2) - 512,
+            uby: (board.size.y / 2) + 512,
 
-                projectile_solid: true,
-            },
+            projectile_solid: true,
+        },
 
-            {
-                // ax + by + c = 0
-                id: 2,
+        {
+            // ax + by + c = 0
+            id: 2,
 
-                a: 0,
-                b: 1,
-                c: (-board.size.y / 2) + 512,
+            a: 1,
+            b: 0,
+            c: (-board.size.x / 2) + 512,
 
-                lbx: (board.size.x / 2) - 512,
-                ubx: (board.size.x / 2) + 512,
-                lby: null,
-                uby: null,
+            lbx: null,
+            ubx: null,
+            lby: (board.size.y / 2) - 512,
+            uby: (board.size.y / 2) + 512,
 
-                projectile_solid: true,
-            }
-        ]
-    }
-]
+            projectile_solid: true,
+        },
+
+        {
+            // ax + by + c = 0
+            id: 2,
+
+            a: 0,
+            b: 1,
+            c: (-board.size.y / 2) - 512,
+
+            lbx: (board.size.x / 2) - 512,
+            ubx: (board.size.x / 2) + 512,
+            lby: null,
+            uby: null,
+
+            projectile_solid: true,
+        },
+
+        {
+            // ax + by + c = 0
+            id: 2,
+
+            a: 0,
+            b: 1,
+            c: (-board.size.y / 2) + 512,
+
+            lbx: (board.size.x / 2) - 512,
+            ubx: (board.size.x / 2) + 512,
+            lby: null,
+            uby: null,
+
+            projectile_solid: true,
+        }
+    ]
+}
+*/
 
 const DEFAULT_POWERUPS_FREQUENCY = [10, 20];
 
@@ -431,6 +500,9 @@ const entity_sprites = new Map([
     ["frying_pan", 1, "weapon/"],
     ["frying_pan_r", 1, "weapon/"],
 
+    ["frying_pan_golden", 1, "weapon/"],
+    ["frying_pan_r_golden", 1, "weapon/"],
+
     // FOODS...
     ["apple", 1, "weapon/frying_pan/"],
     ["avocado", 1, "weapon/frying_pan/"],
@@ -453,6 +525,27 @@ const entity_sprites = new Map([
     ["soup", 1, "weapon/frying_pan/"],
     ["sushi", 1, "weapon/frying_pan/"],
 
+    ["apple_golden", 1, "weapon/frying_pan/golden/"],
+    ["avocado_golden", 1, "weapon/frying_pan/golden/"],
+    ["bacon_golden", 1, "weapon/frying_pan/golden/"],
+    ["banana_golden", 1, "weapon/frying_pan/golden/"],
+    ["burger_golden", 1, "weapon/frying_pan/golden/"],
+    ["carrot_golden", 1, "weapon/frying_pan/golden/"],
+    ["celery_golden", 1, "weapon/frying_pan/golden/"],
+    ["coconut_golden", 1, "weapon/frying_pan/golden/"],
+    ["cucumber_golden", 1, "weapon/frying_pan/golden/"],
+    ["dubious delicacy_golden", 1, "weapon/frying_pan/golden/"],
+    ["egg_golden", 1, "weapon/frying_pan/golden/"],
+    ["goldfish_golden", 1, "weapon/frying_pan/golden/"],
+    ["ice cube_golden", 1, "weapon/frying_pan/golden/"],
+    ["loaf_golden", 1, "weapon/frying_pan/golden/"],
+    ["meat_golden", 1, "weapon/frying_pan/golden/"],
+    ["mushroom_golden", 1, "weapon/frying_pan/golden/"],
+    ["pancakes_golden", 1, "weapon/frying_pan/golden/"],
+    ["pepper_golden", 1, "weapon/frying_pan/golden/"],
+    ["soup_golden", 1, "weapon/frying_pan/golden/"],
+    ["sushi_golden", 1, "weapon/frying_pan/golden/"],
+
     ["deck", 1, "weapon/"],
     ["deck_r", 1, "weapon/"],
     ["playingcard", 56, "cards/"],  // https://drawsgood.itch.io/8bit-deck-card-assets
@@ -466,6 +559,22 @@ const entity_sprites = new Map([
 
     ["teleport_enter", 13, "teleport/enter/"],
     ["teleport_exit", 7, "teleport/exit/"],
+
+    ["spiritflame", 5, "energyball/spiritflame/"],
+    ["spiritflame_c", 5, "energyball/spiritflame/"],
+    ["spiritflame_cr", 5, "energyball/spiritflame/"],
+    
+    ["blackflash", 14, "energyball/blackflash/"],
+    
+    ["blackflash_h", 14, "energyball/blackflash/alt/"],
+    ["blackflash_v", 14, "energyball/blackflash/alt/"],
+    ["blackflash_hv", 14, "energyball/blackflash/alt/"],
+
+    ["blue", 1, "energyball/blue/"],
+    ["red", 1, "energyball/red/"],
+    ["purple", 12, "energyball/purple/"],
+    ["purple_static", 1, "energyball/purple/"],
+    ["purple_trail", 5, "energyball/purple/"],
 
     ["fire_blast", 6, "fire_blast/"],
 
@@ -481,6 +590,8 @@ const entity_sprites = new Map([
 
     // Additionals
     ["LONGSORD", 1, "weapon/additional/"],
+    ["LONGSORD_tentacle", 1, "weapon/additional/"],
+
     ["stick", 1, "weapon/additional/"],
     ["lansator_de_rachete", 1, "weapon/additional/"],
     ["rachete", 1, "weapon/additional/"],
@@ -668,6 +779,8 @@ let audios_list = [
     ["grab", "snd/grab.mp3"],
     // heat haze shadow 2nd from tekken 7
     ["unarmed_theme", "https://scrimblo.foundation/uploads/heat_haze_shadow.mp3", "Heat Haze Shadow 2nd", "Tekken 7", true],
+    // UNIVERSAL COLAPSE by DM DOKURO
+    ["dog_theme", "https://scrimblo.foundation/uploads/dog_theme.mp3", "UNIVERSAL COLLAPSE", "DM DOKURO", true],
     // berserk (2016)
     ["CLANG", "snd/CLANG.mp3"],
     // edited versions of the originals
@@ -741,7 +854,17 @@ let audios_list = [
     ["FullHealthItemA", "snd/FullHealthItem_A.wav"],
 
     // TF2 - Frying Pan
-    ["frying_pan", "snd/melee_frying_pan_01.mp3"],
+    ["frying_pan0", "snd/melee_frying_pan_01.wav"],
+    ["frying_pan1", "snd/melee_frying_pan_02.wav"],
+    ["frying_pan2", "snd/melee_frying_pan_03.wav"],
+    ["frying_pan3", "snd/melee_frying_pan_04.wav"],
+
+    ["frying_pan_parry0", "snd/pan_impact_world1.wav"],
+    ["frying_pan_parry1", "snd/pan_impact_world2.wav"],
+    ["frying_pan_parry2", "snd/pan_impact_world3.wav"],
+
+    // TF2 - Saxxy
+    ["turntogold", "snd/saxxy_impact_gen_03.wav"],
 
     // i have NO idea
     ["munch", "snd/munch.mp3"],
@@ -767,12 +890,24 @@ let audios_list = [
 
     // Edited together: "54Idk" + "A3Zap" [Final Fantasy 6 - SNES]
     ["translocator_dodge", "snd/translocator_dodge.mp3"],
+
+    // Meme
+    ["cat-laugh", "snd/cat-laugh-meme-1.mp3"],
+
+    // https://soundeffect-lab.info/sound/battle/
+    ["big_punch", "snd/big_punch.mp3"],
+    ["slow_motion_stop", "snd/slow_motion_stop.mp3"],
+    ["special_move_hit", "snd/special_move_hit.mp3"],
+
+    // Yoshimasa Terui (Jujutsu Kaisen)
+    ["delirious", "https://scrimblo.foundation/uploads/delirious.mp3", "Delirious", "Yoshimasa Terui (Jujutsu Kaisen)"],
+    ["if_i_am_with_you", "https://scrimblo.foundation/uploads/if_i_am_with_you.mp3", "If I Am With You", "Yoshimasa Terui (Jujutsu Kaisen)"],
 ]
 
 
 let titles = [
     "",
-    "Sunrise", "Winter Morning", "Summer Rain", "Amazon Queen",
+    "Twilight", "Winter Morning", "Summer Rain", "Amazon Queen",
     "Waterfall", "Blossom Time", "Starlight", "Dolphin Play",
     "Underwater Sun", "Ice Tower", "Voyage", "Chronologica",
     "Alice"
@@ -1390,6 +1525,33 @@ class MovingFrictionSqrFadingBallParticle extends SqrFadingBallParticle {
     }
 }
 
+class MovingFrictionFadingBallParticle extends FadingBallParticle {
+    constructor(position, duration, colour, radius, opacity, aero_canvases, velocity, friction, delay=0) {
+        super(position, duration, colour, radius, opacity, aero_canvases, delay);
+    
+        this.velocity = velocity;
+        this.friction = friction;
+    }
+    
+    pass_time(time_delta) {
+        let result = super.pass_time(time_delta);
+        if (result) {
+            this.get_current_opacity();
+
+            this.set_pos(this.position.add(this.velocity.mul(time_delta)));
+        
+            let friction_force = this.velocity.normalize().mul(-1 * this.friction * time_delta);
+            if (friction_force.sqr_magnitude() > this.velocity.sqr_magnitude()) {
+                friction_force = this.velocity.mul(-1);
+            }
+
+            this.velocity = this.velocity.add(friction_force);
+        }
+
+        return result;
+    }
+}
+
 class LineParticle extends Particle {
     constructor(position, target_position, width, colour, duration, delay=0, render_behind=false) {
         super(position, 0, width, [null], 0, duration, false, delay, render_behind);
@@ -1526,13 +1688,15 @@ class Board {
         this.projectiles = [];
         this.particles = [];
         this.timers = [];
+        this.objects = [];
+
         this.lines = [
             // corner walls
             {
                 // ax + by + c = 0
                 id: 0,
                 a: 1, b: 0, c: 0,
-                lbx: null, ubx: null, lby: null, uby: null,
+                lbx: null, ubx: null, lby: 0, uby: this.size.y,
                 projectile_solid: false,
             },
 
@@ -1540,7 +1704,7 @@ class Board {
                 // ax + by + c = 0
                 id: 0,
                 a: 1, b: 0, c: -this.size.x,
-                lbx: null, ubx: null, lby: null, uby: null,
+                lbx: null, ubx: null, lby: 0, uby: this.size.y,
                 projectile_solid: false,
             },
 
@@ -1548,7 +1712,7 @@ class Board {
                 // ax + by + c = 0
                 id: 1,
                 a: 0, b: 1, c: 0,
-                lbx: null, ubx: null, lby: null, uby: null,
+                lbx: 0, ubx: this.size.x, lby: null, uby: null,
                 projectile_solid: false,
             },
 
@@ -1556,7 +1720,7 @@ class Board {
                 // ax + by + c = 0
                 id: 1,
                 a: 0, b: 1, c: -this.size.y,
-                lbx: null, ubx: null, lby: null, uby: null,
+                lbx: 0, ubx: this.size.x, lby: null, uby: null,
                 projectile_solid: false,
             },
         ]
@@ -1579,6 +1743,8 @@ class Board {
         this.starting_balls = null;
         this.starting_levels = null;
         this.starting_players = null;
+
+        this.map_config = null;
 
         this.tension_loss_from_parry_time = 1  // for each second since last parry
         this.tension_loss_from_hit_time = 0.5  // for each second since last hit
@@ -1609,7 +1775,7 @@ class Board {
     }
     
     calculate_system_energy() {
-        return this.balls.filter(ball => !ball.skip_physics).reduce((t, ball) => {
+        return ([...this.balls, ...this.objects]).filter(ball => !ball.skip_physics && ball.moves).reduce((t, ball) => {
             let kinetic_energy = 0.5 * ball.mass * ball.velocity.sqr_magnitude();
 
             let height = this.size.y - ball.position.y;
@@ -1843,6 +2009,17 @@ class Board {
         return ball;
     }
 
+    spawn_object(object, position) {
+        object.set_pos(position);
+        this.objects.push(object);
+
+        object.board = this;
+
+        object.late_setup();
+
+        return object;
+    }
+
     remove_ball(ball) {
         this.balls.splice(
             this.balls.findIndex(b => b.id == ball.id), 1
@@ -1939,8 +2116,15 @@ class Board {
         }
 
         // then, apply gravity to balls
-        this.balls.forEach(ball => {
-            if (ball.skip_physics)
+        // NOTE -- this is regenerated multiple times,
+        // because the list of balls might change throughout
+        // (e.g. due to ball weaponsteps).
+        // so if you're editing this, make sure you replace all
+        // assignments in the function
+        let objs = ([...this.balls, ...this.objects]);
+
+        objs.forEach(ball => {
+            if (ball.skip_physics || !ball.affected_by_gravity)
                 return;  // skip_physics balls should completely stop
 
             if (!ball.at_rest) {
@@ -1954,8 +2138,8 @@ class Board {
         })
 
         // make the balls move
-        this.balls.forEach(ball => {
-            if (ball.skip_physics)
+        objs.forEach(ball => {
+            if (ball.skip_physics || !ball.moves)
                 return;  // skip_physics balls should completely stop
 
             ball.physics_step(this, time_delta);
@@ -2000,8 +2184,12 @@ class Board {
         let collisions_found = new Set();
 
         let sthis = this;
-        this.balls.forEach(ball1 => {
-            sthis.balls.forEach(ball2 => {
+        
+        // regenerate objs because something above may change it
+        objs = ([...this.balls, ...this.objects]);
+
+        objs.forEach(ball1 => {
+            objs.forEach(ball2 => {
                 if (ball1.skip_physics || ball2.skip_physics)
                     return;  // skip_physics balls should completely stop
 
@@ -2039,8 +2227,11 @@ class Board {
             }
         })
 
+        // regenerate objs because something above may change it
+        objs = ([...this.balls, ...this.objects]);
+
         // check wall and ground bounces
-        this.balls.forEach(ball => {
+        objs.forEach(ball => {
             if (ball.skip_physics || ball.ignore_bounds_checking || !ball.collision)
                 return;  // skip_physics balls should completely stop
             /*
@@ -2064,8 +2255,11 @@ class Board {
 
         thud_cooldown -= time_delta;
 
+        // regenerate objs because something above may change it
+        objs = ([...this.balls, ...this.objects]);
+
         // force everything back in bounds
-        this.balls.forEach(ball => {
+        objs.forEach(ball => {
             if (ball.skip_physics || ball.ignore_bounds_checking)
                 return;  // skip_physics balls should completely stop
 
@@ -2107,6 +2301,8 @@ class Ball {
 
         this.skip_physics = false;
         this.collision = true;
+        this.affected_by_gravity = true;
+        this.moves = true;
     }
 
     set_pos(to) {
@@ -2361,7 +2557,7 @@ function handle_resize(event) {
     }
 
     bg_changed = true;
-    balls_need_aero_recache = true;
+    need_stwp_recache = true;
 
     //refresh_wtsp_stwp();
 
@@ -2779,12 +2975,6 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
         layers.debug_back.ctx.clearRect(0, 0, canvas_width, canvas_height);
     }
 
-    // balls can be from 0 to 10000
-    // so need to translate those positions into the canvas space
-    // rely upon it being square... for now
-
-    let screen_scaling_factor = canvas_width / board.size.x;
-
     let layer = layers.fg2;
     if (BALL_RENDERING_METHOD != BALL_RENDERING_METHODS.VECTOR) {
         // layer = layers.fg2_raster;
@@ -2798,14 +2988,63 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
     let ctx = layer.ctx;
     let ctx_normal = layers.fg2.ctx;
 
+    // keep?
     let w = 25 * screen_scaling_factor;
 
-    let balls_to_render = [...board.balls];
+    // test code
+    /*
+    if (true) {
+        let cl = layers.debug_front;
+        let canvas = cl.canvas;
+        let ctx = cl.ctx;
+
+        let id = ctx.getImageData(0, 0, canvas_width, canvas_height);
+
+        for (let x=0; x<canvas_width; x++) {
+            for (let y=0; y<canvas_height; y++) {
+                let idx = ((y * canvas_height) + x) * 4;
+                let pos = stwp(new Vector2(x, y));
+
+                let lowest_dist = board.projectiles.reduce((p, proj) => {
+                    let dist = proj.position.sqr_distance(pos);
+                    if (dist < p[1]) {
+                        return [proj, dist];
+                    }
+
+                    return p;
+                }, [null, Number.POSITIVE_INFINITY]);
+
+                let r = 256;
+                
+                let col = new Colour(0, 0, 0, 0);
+
+                if (lowest_dist[0] && lowest_dist[1] <= (r*r)) {
+                    let real_dist = Math.sqrt(lowest_dist[1]) / r;
+
+                    // let's say col is cyan at 0-0.9, blended at 0.9-0.925 and black at greater
+                    let lerp_amt = Math.max(0, Math.min(1, 5 * (real_dist - 0.7)));
+
+                    col = Colour.cyan.lerp(Colour.white, lerp_amt);
+                }
+
+                for (let c=0; c<4; c++) {
+                    id.data[idx+c] = col.data[c];
+                }
+            }
+        }
+
+        layers.debug_front.ctx.putImageData(id, 0, 0);
+    }
+    */
+
+    let balls_to_render = [...board.objects, ...board.balls];
 
     // board collision lines
-    if (collision_boxes) {
+    if (true) {
         board.lines.forEach(line => {
-            let col = line.projectile_solid ? Colour.red : Colour.green;
+            let col = Colour.white;
+            if (collision_boxes)
+                col = line.projectile_solid ? Colour.red : Colour.green;
 
             // line vector is simply (-b,a)
             // then find a point on the line to start from,
@@ -2817,12 +3056,10 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
             );
             let line_vector_normalised = new Vector2(-line.b, line.a);
         
-            let amt_lb_x = 10000;
-            let amt_lb_y = 10000;
-            let amt_ub_x = 10000;
-            let amt_ub_y = 10000;
-
-            let screen_scaling_factor = canvas_width / board.size.x;
+            let amt_lb_x = 0;
+            let amt_lb_y = 0;
+            let amt_ub_x = 1000000;
+            let amt_ub_y = 1000000;
 
             if (line.lbx)
                 amt_lb_x = (line_point.x - line.lbx) / line_vector_normalised.x;
@@ -2836,8 +3073,8 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
             if (line.uby)
                 amt_ub_y = (line.uby - line_point.y) / line_vector_normalised.y;
 
-            let point1 = line_point.sub(line_vector_normalised.mul(Math.min(amt_lb_x, amt_lb_y))).mul(screen_scaling_factor);
-            let point2 = line_point.add(line_vector_normalised.mul(Math.min(amt_ub_x, amt_ub_y))).mul(screen_scaling_factor);
+            let point1 = wtsp(line_point.sub(line_vector_normalised.mul(Math.min(amt_lb_x, amt_lb_y))));
+            let point2 = wtsp(line_point.add(line_vector_normalised.mul(Math.min(amt_ub_x, amt_ub_y))));
 
             layers.debug_back.ctx.beginPath();
             layers.debug_back.ctx.moveTo(point1.x, point1.y);
@@ -2855,9 +3092,9 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
             return;
         }
 
-        let particle_screen_pos = particle.position.mul(screen_scaling_factor);
+        let particle_screen_pos = wtsp(particle.position)
 
-        let siz = particle.size * screen_scaling_factor * 128;
+        let siz = particle.size * true_zoom_level * 128;
 
         particle_screen_pos = particle_screen_pos.add(new Vector2(-siz, -siz).mul(0));
 
@@ -2879,9 +3116,9 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
                 true, 1, particle.text_border_col.css(), particle.text_modifiers
             );
         } else if (particle instanceof LineParticle) {
-            let particle_end_pos = particle.target_position.mul(screen_scaling_factor);
+            let particle_end_pos = wtsp(particle.target_position);
 
-            ctx.lineWidth = particle.size;
+            ctx.lineWidth = particle.size * zoom_level;
             ctx.strokeStyle = particle.colour.css();
 
             ctx.beginPath();
@@ -2921,12 +3158,9 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
         let proj_layer = projectile.alternative_layer ? layers[projectile.alternative_layer] : layers.fg3;
 
         if (projectile.sprite != "HITSCAN") {
-            let projectile_screen_pos = new Vector2(
-                (projectile.position.x) * screen_scaling_factor,
-                (projectile.position.y) * screen_scaling_factor,
-            );
+            let projectile_screen_pos = wtsp(projectile.position)
 
-            let siz = projectile.size * screen_scaling_factor * 128;
+            let siz = projectile.size * true_zoom_level * 128;
 
             write_rotated_image(
                 proj_layer.canvas, proj_layer.ctx,
@@ -2937,15 +3171,9 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
         } else {
             // draw a line from position to target with given width
             // and colour
-            let projectile_screen_start_pos = new Vector2(
-                (projectile.position.x) * screen_scaling_factor,
-                (projectile.position.y) * screen_scaling_factor,
-            );
+            let projectile_screen_start_pos = wtsp(projectile.position);
 
-            let projectile_screen_end_pos = new Vector2(
-                (projectile.target_position.x) * screen_scaling_factor,
-                (projectile.target_position.y) * screen_scaling_factor,
-            );
+            let projectile_screen_end_pos = wtsp(projectile.target_position);
 
             let projectile_lifetime_proportion = (projectile.lifetime - projectile.render_delay) / (projectile.duration - projectile.render_delay);
             // every line can be 1000 segments. start the line at 1000 * proportion segments down
@@ -2977,7 +3205,7 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
                     w_factor = 1;
                 }
 
-                proj_layer.ctx.lineWidth = w_factor * max_width;
+                proj_layer.ctx.lineWidth = w_factor * max_width * PROJ_SIZE_MULTIPLIER * true_zoom_level;
 
                 proj_layer.ctx.beginPath();
                 proj_layer.ctx.moveTo(last_last_pos.x, last_last_pos.y);
@@ -2998,13 +3226,13 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
             hitboxes.forEach((hitbox_offset, index) => {
                 let hitbox = projectile.hitboxes[index];
 
-                let hitbox_screen_pos = projectile.position.add(hitbox_offset).mul(screen_scaling_factor);
+                let hitbox_screen_pos = wtsp(projectile.position.add(hitbox_offset));
                 let w2 = w / 8;
 
                 layers.debug_back.ctx.beginPath();
                 layers.debug_back.ctx.arc(
                     hitbox_screen_pos.x, hitbox_screen_pos.y, 
-                    Math.max(0, (hitbox.radius * projectile.size * screen_scaling_factor) - (w2/2)),
+                    Math.max(0, (hitbox.radius * projectile.size * true_zoom_level) - (w2/2)),
                     0, 2 * Math.PI, false
                 );
                 layers.debug_back.ctx.fillStyle = new Colour(255, 255, 0, 128).css();
@@ -3030,10 +3258,7 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
         let original_alpha = ctx.globalAlpha;
         ctx.globalAlpha = ball.opacity;
 
-        let ball_screen_pos = new Vector2(
-            (ball_pos.x) * screen_scaling_factor,
-            (ball_pos.y) * screen_scaling_factor,
-        );
+        let ball_screen_pos = wtsp(ball_pos);
 
         if (ball.display) {
             let ball_canvas_idx = 0;
@@ -3046,7 +3271,7 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
             switch (BALL_RENDERING_METHOD) {
                 case BALL_RENDERING_METHODS.VECTOR: {
                     ctx.beginPath();
-                    ctx.arc(ball_screen_pos.x, ball_screen_pos.y, Math.max(0, (ball.radius * screen_scaling_factor) - (w/2)), 0, 2 * Math.PI, false);
+                    ctx.arc(ball_screen_pos.x, ball_screen_pos.y, Math.max(0, (ball.radius * true_zoom_level) - (w/2)), 0, 2 * Math.PI, false);
                     
                     ctx.fillStyle = ball_col.css();
                     ctx.fill();
@@ -3058,87 +3283,15 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
                 }
 
                 case BALL_RENDERING_METHODS.AERO: {
-                    /*
-                    let ball_siz_scaled = ball.aero_radius_table[3];
-
-                    ball_pos = ball_pos.round();  // raster display
-
-                    let lb = Math.floor(-ball_siz_scaled / 1);
-                    let ub = Math.ceil(ball_siz_scaled / 1);
-
-                    let sqr_radius = ball.aero_radius_table[0];
-                    let sqr_inner_radius = ball.aero_radius_table[1];
-
-                    let s = ub - lb;
-                    
-                    let offset = ball_pos.sub(ball.aero_radius_table[2]).mul(screen_scaling_factor).round();
-
-                    let lightest = Colour.white;
-                    let lightest_amt = 0.8;
-                    let darkest = Colour.black;
-                    let darkest_amt = 0.5;
-
-                    let border_col = ball_col.lerp(Colour.white, 0.75);
-
-                    let old_ball_col = ball_col;
-                    ball_col = ball_col.lerp(Colour.black, 0.1);
-
-                    // ball.setup_aero_light_lookup_table();
-
-                    let xmin = -Math.min(0, offset.x);
-                    let xmax = Math.min(offset.x + s, canvas_width) - offset.x;
-
-                    let ymin = -Math.min(0, offset.y);
-                    let ymax = Math.min(offset.y + s, canvas_height) - offset.y;
-
-                    for (let y=ymin; y<ymax; y++) {
-                        for (let x=xmin; x<xmax; x++) {
-                            let idx = (((y + offset.y) * canvas_width) + (x + offset.x)) * 4;
-                            // let sum = Math.pow(xt, 2) + Math.pow(yt, 2);
-
-                            // let dist = Math.sqrt(
-                            //     Math.pow(xt - light_center[0], 2) + Math.pow(yt - light_center[1], 2)
-                            // );
-
-                            let sum = ball.aero_light_lookup_table[y][x][0];
-
-                            let col = null;
-                            if (sum > sqr_radius) {
-                                // col stays blank
-                            } else {
-                                let prop = ball.aero_light_lookup_table[y][x][1];
-                                let val = Math.abs(prop - 0.5) * 2;
-                                col = ball_col.lerp(prop < 0.5 ? lightest : darkest, (prop < 0.5 ? lightest_amt : darkest_amt) * val);
-                                if (sum > sqr_inner_radius)
-                                    col = border_col
-                            }
-
-                            if (col) {
-                                let data = col.data;
-                                data[3] = opacity_256;
-                                let bottom_mult = ball.opacity == 1 ? 0 : (1 - ball.opacity)
-
-                                for (let c=0; c<3; c++) {
-                                    imagedata.data[idx+c] = Math.max(0, Math.min(255, 
-                                        (data[c] * ball.opacity) + (imagedata.data[idx+c] * bottom_mult)
-                                    ))
-                                }
-
-                                imagedata.data[idx+3] = Math.min(255, imagedata.data[idx+3] + data[3])
-                            }
-                        }
-                    }
-
-                    ball_col = old_ball_col;
-                    */
+                    let draw_pos = wtsp(ball.position.sub(new Vector2(ball.radius, ball.radius)));
 
                     ctx.drawImage(
                         ball.aero_canvases[ball_canvas_idx],
-                        screen_scaling_factor * (ball.position.x - ball.radius),
-                        screen_scaling_factor * (ball.position.y - ball.radius)
+                        draw_pos.x,
+                        draw_pos.y
                     )
 
-                    if (ball.hp !== null && draw_ball_hp) {
+                    if (ball.hp !== null && ball.display_hp && draw_ball_hp) {
                         let hp = Math.max(0, ball.hp);
 
                         let original_text_alpha = ctx_normal.globalAlpha;
@@ -3160,7 +3313,7 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
                 }
             }
 
-            if (ball.hp !== null && draw_ball_hp) {
+            if (ball.hp !== null && ball.display_hp && draw_ball_hp) {
                 let hp = Math.max(0, ball.hp);
 
                 ctx_normal.fillStyle = "black";
@@ -3183,14 +3336,14 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
 
                 let offset = ball.get_weapon_offset(index);
 
-                let siz = weapon.size_multiplier * screen_scaling_factor * 128;
-                let pos = ball_pos.add(offset).mul(screen_scaling_factor);
+                let siz = weapon.size_multiplier * true_zoom_level * 128;
+                let pos = wtsp(ball_pos.add(offset));
 
                 let original_weapon_alpha = layers.fg3.ctx.globalAlpha;
                 layers.fg3.ctx.globalAlpha = ball.opacity * (ball.weapon_opacity ?? 1);
 
                 if (weapon.sprite) {
-                    write_rotated_image(layers.fg3.canvas, layers.fg3.ctx, pos.x, pos.y, entity_sprites.get(weapon.sprite)[0], siz, siz, weapon.angle);
+                    write_rotated_image(layers.fg3.canvas, layers.fg3.ctx, pos.x, pos.y, entity_sprites.get(weapon.sprite)[weapon.frame], siz, siz, weapon.angle);
                 }
 
                 if (collision_boxes) {
@@ -3201,13 +3354,13 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
                     weapon.hitboxes.forEach((hitbox, index) => {
                         let hitbox_offset = offset.add(hitboxes_offsets[index]);
 
-                        let hitbox_screen_pos = ball_pos.add(hitbox_offset).mul(screen_scaling_factor);
+                        let hitbox_screen_pos = wtsp(ball_pos.add(hitbox_offset));
                         let w2 = w / 8;
 
                         layers.debug_back.ctx.beginPath();
                         layers.debug_back.ctx.arc(
                             hitbox_screen_pos.x, hitbox_screen_pos.y, 
-                            Math.max(0, (hitbox.radius * weapon.size_multiplier * screen_scaling_factor) - (w2/2)),
+                            Math.max(0, (hitbox.radius * weapon.size_multiplier * true_zoom_level) - (w2/2)),
                             0, 2 * Math.PI, false
                         );
                         layers.debug_back.ctx.fillStyle = new Colour(0, 255, 0, 128).css();
@@ -3364,8 +3517,6 @@ function render_opening(board, time_delta) {
 
     let t_raw = starting_fullpause_timeout - fullpause_timeout;
 
-    let screen_scaling_factor = canvas_width / board.size.x;
-
     // wait for 0.5 seconds to allow me to start recording
     let t = t_raw - 0.5;
 
@@ -3467,9 +3618,9 @@ function render_opening(board, time_delta) {
         let req = base_delay + 0.25 + (i * (ball_stagger / balls_num));
 
         if (t > req) {
-            let pos = ball.position.add(
+            let pos = wtsp(ball.position.add(
                 new Vector2(0, ball.radius * 1.75)
-            ).mul(screen_scaling_factor).add(
+            )).add(
                 new Vector2(0, 44)
             );
 
@@ -3484,8 +3635,8 @@ function render_opening(board, time_delta) {
 
             layers.ui2.ctx.beginPath();
 
-            let start_pos = ball.position.add(ball.velocity.normalize().mul(ball.radius * 1.5)).mul(screen_scaling_factor);
-            let end_pos = ball.position.add(ball.velocity.normalize().mul(ball.radius * (1.5 + (ball.velocity.magnitude() / 3500)))).mul(screen_scaling_factor);
+            let start_pos = wtsp(ball.position.add(ball.velocity.normalize().mul(ball.radius * 1.5)));
+            let end_pos = wtsp(ball.position.add(ball.velocity.normalize().mul(ball.radius * (1.5 + (ball.velocity.magnitude() / 3500)))));
 
             let dir = end_pos.sub(start_pos).normalize();
 
@@ -3515,9 +3666,9 @@ function render_opening(board, time_delta) {
         let req = base_delay + 0 + (i * (ball_stagger / balls_num));
 
         if (t > req) {
-            let pos = ball.position.add(
+            let pos = wtsp(ball.position.add(
                 new Vector2(0, ball.radius * 1.75)
-            ).mul(screen_scaling_factor);
+            ));
 
             let name = ball.name;
             if (ball.level >= AWAKEN_LEVEL) {
@@ -3539,9 +3690,9 @@ function render_opening(board, time_delta) {
         let req = base_delay + 0.125 + (i * (ball_stagger / balls_num));
 
         if (t > req) {
-            let pos = ball.position.add(
+            let pos = wtsp(ball.position.add(
                 new Vector2(0, ball.radius * 1.75)
-            ).mul(screen_scaling_factor).add(
+            )).add(
                 new Vector2(0, 24)
             );
 
@@ -3642,7 +3793,14 @@ function render_postopening(board) {
         if (starting_fullpause_timeout > 0) {
             play_audio("battle_royale_gong");
         }
-        play_music(`2048_${random_int(0, 13, get_seeded_randomiser(board.random_seed))+1}`, 0.2);
+
+        if (!board.balls.some(b => b.START_MUSIC)) {
+            play_music(`2048_${random_int(0, 13, get_seeded_randomiser(board.random_seed))+1}`, 0.2);
+        } else {
+            // consume it?
+            console.log(random_int(0, 13, get_seeded_randomiser(board.random_seed))+1);
+        }
+
         opening_state.cnt = null;
     }
 
@@ -3751,12 +3909,13 @@ function game_loop() {
     }
 
     if (board && render) {
-        if (balls_need_aero_recache) {
+        if (need_stwp_recache) {
+            refresh_wtsp_stwp();
             if (BALL_RENDERING_METHOD != BALL_RENDERING_METHODS.VECTOR) {
                 board.balls.forEach(ball => ball.setup_aero_light_lookup_table());
             }
 
-            balls_need_aero_recache = false;
+            need_stwp_recache = false;
         }
 
         if (board.duration > board.max_game_duration && !switched_to_endgame_col) {
@@ -4423,20 +4582,7 @@ function game_loop() {
                             }
 
                             if (!result.skip_default_explosion) {
-                                if (ball.show_stats) {
-                                    board.spawn_particle(new Particle(
-                                        ball.position.add(new Vector2(256+64, -512)), 0, 2, entity_sprites.get("explosion"), 12, 3, false
-                                    ), ball.position.add(new Vector2(256+64, -512)));
-
-                                    play_audio("explosion");
-                                } else {
-                                    board.spawn_particle(new Particle(
-                                        ball.position.add(new Vector2(144, -512)), 0, 1, entity_sprites.get("explosion"), 12, 3, false
-                                    ), ball.position.add(new Vector2(144, -512)));
-
-                                    // TODO make this something else thats less impactful
-                                    play_audio("explosion");
-                                }
+                                ball.do_default_explosion();
                             }
 
                             return false;
@@ -4466,6 +4612,12 @@ function game_loop() {
                 let players = board.remaining_players();
                 if (players.length > 0) {
                     board.get_all_player_balls(players[0]).forEach(ball => ball.takes_damage = false);
+
+                    board.balls.forEach(ball => {
+                        if (ball.player.id != players[0].id) {
+                            ball.hp = 0;
+                        }
+                    })
                 }
 
                 if (window.location.href.startsWith("file://") && extend_end_for_vote) {
@@ -4561,6 +4713,30 @@ function game_loop() {
                     }
                     
                     exit_battle(true);
+                    break;
+                }
+            }
+        }
+
+        if (board) {
+            switch (camera_mode) {
+                case CAMERA_MODES.BR_FOLLOW: {
+                    let c_random = camera_data.c_random ?? get_seeded_randomiser(board.random_seed);
+                    let follow_target = camera_data.follow_target ?? 0;
+                    let follow_timeout = camera_data.follow_timeout ?? random_float(6000, 14000, c_random);
+                    follow_timeout -= delta_time;
+                    if (follow_timeout < 0) {
+                        follow_timeout = random_float(6000, 14000, c_random);
+                        follow_target = (follow_target + 1) % board.balls.length;
+                        while (!(board.balls[follow_target] && board.balls[follow_target].show_stats)) {
+                            follow_target = (follow_target + 1) % board.balls.length;
+                        }
+                    }
+
+                    view_offset = view_offset.lerp(
+                        board.balls[follow_target].position.mul(-1).add(board.size.mul(0.5 / zoom_level)),
+                        1 - Math.pow(0.01, delta_time / 1000)
+                    );
                     break;
                 }
             }

@@ -1,6 +1,10 @@
 class ThirteenLongswordsBall extends WeaponBall {
     static ball_name = "13 Longswords";
 
+    static AVAILABLE_SKINS = [
+        "Tentacle"
+    ]
+
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
@@ -42,6 +46,18 @@ class ThirteenLongswordsBall extends WeaponBall {
         this.explosions_range_per_sord = [0,4];
         this.explosions_delay_max = 0.02;
         this.explosions_delay = this.explosions_delay_max;
+    }
+
+    set_skin(skin_name) {
+        super.set_skin(skin_name);
+
+        switch (skin_name) {
+            case "Tentacle":
+                this.weapon_data.forEach(w => w.sprite += "_tentacle");
+                // TODO also make it spawn bubble particles instead of fire
+                // TODO add this to all other longsords
+                break;
+        }
     }
 
     weapon_step(board, time_delta) {
@@ -738,7 +754,7 @@ class BerserkerBall extends WeaponBall {
 }
 
 
-class BigBall extends WeaponBall {
+class BigBall extends DummyBall {
     static ball_name = "Big";
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
@@ -746,12 +762,39 @@ class BigBall extends WeaponBall {
     
         this.name = "Big";
         this.description_brief = "Add Big Ball. It's Big Ball. Big Ball.";
+        this.max_level_description = "Wait... it can't be...";
+
         this.quote = "Thanks reft.";
+        if (this.level >= AWAKEN_LEVEL) {
+            this.quote = "It wasn't."
+        }
 
         this.tier = TIERS.DISMAL;
         this.category = CATEGORIES.SILLY;
         this.tags = [
+
         ];
+
+        if (this.level >= AWAKEN_LEVEL) {
+            this.tags.push(TAGS.TRANSFORMING);
+            this.tier = TIERS.ULTRA;
+        }
+
+        this.entry_animation = "load";
+        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
+        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
+
+        this.shake_duration_max = 10.05;
+        this.shake_shake_start = 0.5;
+        this.shake_music_start = 0.5;
+        this.shake_shake_duration = this.shake_duration_max - this.shake_shake_start;
+        this.shake_flash_start = 8.75;
+        this.shake_flash_duration = this.shake_duration_max - this.shake_flash_start;
+        this.shake_current = 0;
+        this.shake_intensity_max = 1000;
+        this.shake_origin = null;
+        this.transforming = false;
+        this.done = false;
 
         this.weapon_data = [
 
@@ -765,10 +808,59 @@ class BigBall extends WeaponBall {
         this.hp = this.max_hp;
 
         this.set_radius(this.radius * 2);
+        
+        this.music_theme = "dog_theme";
+
+        prepare_lazy_audio("dog_theme");
     }
 
     weapon_step(board, time_delta) {
-        this.rotate_weapon(0, this.speed_cur * time_delta);
+        if (this.transforming && !this.done) {
+            this.shake_current += time_delta
+            if (this.board.unarmed_cinematic_played) {
+                this.shake_current += time_delta * 1000;
+            }
+
+            if (!this.played_music && !this.board.unarmed_cinematic_played && this.shake_current >= this.shake_music_start) {
+                play_music(this.music_theme);
+                this.played_music = true;
+            }
+
+            if (this.shake_current <= this.shake_duration_max) {
+                this.set_velocity(Vector2.zero);
+
+                this.set_pos(this.shake_origin.add(
+                    random_on_circle(
+                        lerp(
+                            0, 
+                            this.shake_intensity_max, 
+                            random_float(0, 1, this.independent_random) * (Math.max(0, (this.shake_current - this.shake_shake_start) / this.shake_shake_duration))
+                        ),
+                        this.board.random
+                    )
+                ))
+                this.set_colour(this.original_colour.lerp(Colour.white, Math.max(0, (this.shake_current - this.shake_flash_start) / this.shake_flash_duration)));
+            } else {
+                // die unceremoniously!! lol!!!
+                this.board.unarmed_cinematic_played = true;
+                stop_music();
+                play_audio("cat-laugh", 0.05);
+
+                this.hp = 0;
+                this.transforming = false;
+                this.done = true;
+                this.skip_physics = false;
+                this.takes_damage = true;
+
+                let b = this.board;
+                b.set_timer(new Timer(() => {
+                    b.balls.forEach(ball => {
+                        ball.skip_physics = false;
+                        ball.takes_damage = true;
+                    });
+                }, 0.1))
+            }
+        }
     }
 
     hit_other(other, with_weapon_index) {
@@ -783,6 +875,12 @@ class BigBall extends WeaponBall {
         this.write_desc_line(
             `Big`
         )
+
+        if (this.level >= AWAKEN_LEVEL) {
+            this.write_desc_line(
+                `But wait... it can't be...`, true
+            )
+        }
     }
 }
 
@@ -2066,6 +2164,658 @@ class ShotgunMagnumBall extends WeaponBall {
 }
 
 
+class CursedEnergyBall extends WeaponBall {
+    static ball_name = "Cursed Energy";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Cursed Energy";
+        this.description_brief = "Wields cursed energy to strike foes. 25% chance on hit to produce a flash of powerful black energy. Periodically creates blue and red orbs which bounce and deal damage on hit, or combine into a hollow purple orb if they hit each other.";
+        this.level_description = "This ball has no levelup effect.";
+        this.max_level_description = "This ball has no awakening effect.";
+        this.quote = "Throughout heaven and earth, I alone am the honoured one.";
+
+        this.tier = TIERS.SPLUS;
+        this.category = CATEGORIES.SILLY;
+        this.tags = [
+            TAGS.MELEE,
+            TAGS.OFFENSIVE,
+            TAGS.PROJECTILES,
+            TAGS.AUTOAIM,
+        ];
+
+        this.hitboxes = [
+            {pos: new Vector2(66, 60), radius: 4},
+            {pos: new Vector2(64, 72), radius: 8},
+        ]
+
+        this.weapon_data = [
+            new BallWeapon(1.5, "spiritflame_c", [
+                {pos: new Vector2(66, 60), radius: 8},
+                {pos: new Vector2(64, 72), radius: 8},
+            ]),
+
+            new BallWeapon(1.5, "spiritflame_c", [
+                {pos: new Vector2(66, 60), radius: 8},
+                {pos: new Vector2(64, 72), radius: 8},
+            ]),
+        ];
+        
+        this.weapon_data[0].offset = new Vector2(-32, 0);
+        this.weapon_data[1].offset = new Vector2(-32, 0);
+        this.weapon_data[1].reversed = true;
+
+        this.hitboxes_return_delay = 0;
+        this.collision_return_delay = 0;
+
+        this.weapon_framespeed = 5;
+        this.weapon_framecount = 5;
+
+        this.damage_base = 4;
+        this.speed_base = 180;
+        this.speed_base_2 = 260;
+
+        this.blackflash_damage = 30;
+        this.blackflash_chance = 0.4;
+
+        this.current_ball_blue = false;
+        this.ball_summon_cooldown_max = 7;
+        this.ball_summon_cooldown = this.ball_summon_cooldown_max;
+        this.ball_duration = 13;
+
+        this.red_damage = 8;
+        this.blue_damage = 2;
+        this.purple_damage = 100;
+
+        this.purple_enabled = false;
+
+        this.played_music = false;
+
+        this.START_MUSIC = "delirious";
+
+        prepare_lazy_audio("delirious");
+        prepare_lazy_audio("if_i_am_with_you");
+    }
+
+    weapon_step(board, time_delta) {
+        // rotate the weapon
+        this.rotate_weapon(0, this.speed_base * time_delta);
+        this.rotate_weapon(1, this.speed_base_2 * time_delta);
+
+        for (let i=0; i<2; i++) {
+            this.weapon_data[i].frame = Math.floor((this.lifetime * this.weapon_framespeed) % this.weapon_framecount);
+            this.weapon_data[i].sprite = "spiritflame_c" + (this.weapon_data[i].reversed ^ this.reversed ? "r" : "");
+        }
+
+        this.ball_summon_cooldown -= time_delta;
+        if (this.ball_summon_cooldown <= 0) {
+            this.ball_summon_cooldown = this.ball_summon_cooldown_max;
+            if (false) {
+                // create purple ball
+                let enemies = this.board.balls.filter(
+                    ball => !ball.allied_with(this)
+                );
+
+                let target = null;
+                if (enemies.length > 0) {
+                    target = enemies.reduce((closest, enemy) => closest ? (enemy.position.sqr_distance(this.position) < closest[0] ? [enemy.position.sqr_distance(this.position), enemy] : closest) : [enemy.position.sqr_distance(this.position), enemy], null)[1]
+                }
+
+                if (!target) {
+                    target = {position: this.position.add(random_on_circle(1, this.board.random))}
+                }
+
+                let proj = new CursedEnergyPurpleProjectile(
+                    this.board, this, 0,
+                    this.position, this.purple_damage,
+                    3,
+                    target.position.sub(this.position).normalize(), 26000, Vector2.zero
+                )
+
+                this.board.spawn_projectile(proj, this.position);
+            } else {
+                let position = this.position.add(
+                    this.get_weapon_offset(this.current_ball_blue ? 0 : 1)
+                )
+
+                if (this.purple_enabled) {
+                    this.current_ball_blue = true;
+                }
+
+                let proto = this.current_ball_blue ? CursedEnergyBlueBall : CursedEnergyRedBall;
+                let particle_sprite = entity_sprites.get(this.current_ball_blue ? "blue" : "red");
+            
+                let mass = this.current_ball_blue ? 1 : 6;
+                let radius = this.radius * (this.current_ball_blue ? 0.75 : 0.1);
+
+                let velocity = new Vector2(2500, 0).rotate(this.weapon_data[0].angle)
+                let new_ball = new proto(
+                    this.board,
+                    mass, radius, this.colour,
+                    this.bounce_factor, this.friction_factor,
+                    this.player, this.level,
+                    this.current_ball_blue ? this.blue_damage : this.red_damage,
+                    this.ball_duration
+                )
+
+                new_ball.apply_invuln(BALL_INVULN_DURATION);
+                new_ball.show_stats = false;
+
+                new_ball.set_velocity(velocity);
+                new_ball.parent = this;
+
+                let part = new Particle(
+                    new_ball.position, 0, 1, particle_sprite,
+                    0, 999999
+                );
+                board.spawn_particle(part, new_ball.position);
+                new_ball.linked_particle = part;
+                
+                board.spawn_ball(new_ball, position);
+
+                this.board.spawn_particle(new Particle(
+                    position, 0, this.current_ball_blue ? 0.75 : 0.25, entity_sprites.get("explosion_small"), 12, 3, false
+                ), position);
+
+                this.current_ball_blue = !this.current_ball_blue;
+                if (this.purple_enabled) {
+                    new_ball.stop_others = false;
+                    new_ball.start_transforming();
+                }
+            }
+        }
+
+        this.hitboxes_return_delay -= time_delta;
+        this.collision_return_delay -= time_delta;
+        if (this.hitboxes_return_delay <= 0) {
+            this.hitboxes_return_delay = Number.POSITIVE_INFINITY;
+
+            this.weapon_data[0].hitboxes = this.hitboxes;
+            this.weapon_data[1].hitboxes = this.hitboxes;
+            this.cache_hitboxes_offsets();
+        }
+
+        if (this.collision_return_delay <= 0) {
+            this.collision_return_delay = Number.POSITIVE_INFINITY;
+
+            this.collision = true;
+        }
+    }
+
+    hit_other(other, with_weapon_index) {
+        let dmg = this.damage_base;
+        let result = super.hit_other(other, with_weapon_index, dmg);
+
+        if (random_float(0, 1, this.board.random) <= this.blackflash_chance) {
+            this.weapon_data[0].hitboxes = [];
+            this.weapon_data[1].hitboxes = [];
+            this.collision = false;
+            this.cache_hitboxes_offsets();
+            this.hitboxes_return_delay = 0.5;
+            this.collision_return_delay = 0.15;
+
+            // pick an angle. go down if CW and right side, up if CW and left side, reverse for CCW
+            let ccw = (this.weapon_data[with_weapon_index].reversed ^ this.reversed)
+            
+            // if cw, take away some from own position; if ccw, add
+            let on_right = other.position.x > (this.position.x + (-this.radius * (ccw ? 1 : -1)));
+
+            let orientation = new Vector2(
+                on_right ? 1 : -1,
+                (on_right ^ (!ccw)) ? 1 : -1,
+            )
+
+            let offset = new Vector2(38, -46);
+
+            let forces = [
+                new Vector2(1, -3),
+                new Vector2(-1, -3),
+                new Vector2(1, 3),
+                new Vector2(-1, 3)
+            ]
+
+            let force = forces[0];
+            if (orientation.x == -1 && orientation.y == -1) {
+                force = forces[3];
+            } else if (orientation.y == -1) {
+                force = forces[2];
+            } else if (orientation.x == -1) {
+                force = forces[1];
+            }
+
+            let pos = this.position.add(this.get_weapon_offset(with_weapon_index)).add(
+                offset.pairwise_mul(orientation).mul(2 * PROJ_SIZE_MULTIPLIER)
+            );
+
+            let suffix = `${orientation.x == 1 ? "" : "h"}${orientation.y == 1 ? "" : "v"}`;
+            if (suffix.length > 0) {
+                suffix = "_" + suffix;
+            }
+
+            let proj = new CursedEnergyBlackFlashProjectile(
+                this.board, this, 0, pos,
+                this.blackflash_damage, 2, orientation,
+                suffix
+            );
+
+            this.board.set_timer(new Timer(b => {
+                b.spawn_projectile(proj, pos);
+                play_audio("big_punch", 0.25);
+            }, 0.02))
+
+            other.apply_hitstop(BASE_HITSTOP_TIME * 1);
+            other.apply_invuln(0.1, true);
+            
+            other.set_velocity(force.mul(7000));
+            this.apply_hitstop(BASE_HITSTOP_TIME * 1.5);
+        }
+
+        return result;
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor);
+
+        this.write_desc_line(
+            `Hit damage: ${this.damage_base.toFixed(2)}`
+        )
+
+        this.write_desc_line(
+            `Black flash damage: ${this.blackflash_damage.toFixed(2)}`
+        )
+
+        this.write_desc_line(
+            `Black flash chance: ${(this.blackflash_chance * 100).toFixed(0)}%`
+        )
+
+        this.write_desc_line(
+            `Ball damage: `
+        )
+
+        this.write_desc_line(
+            `${this.red_damage.toFixed(2)}`, false, null, "#f00", true, 13 * 6
+        )
+
+        this.write_desc_line(
+            `|`, false, null, null, true, (13 + 5) * 6
+        )
+
+        this.write_desc_line(
+            `${this.blue_damage.toFixed(2)}`, false, null, "#0ff", true, (13 + 7) * 6
+        )
+
+        this.write_desc_line(
+            `Time to summon ball: ${this.ball_summon_cooldown.toFixed(2)}s`
+        )
+
+        let total = 24;
+        let hashcount = Math.ceil((this.ball_summon_cooldown / this.ball_summon_cooldown_max) * total);
+        this.write_desc_line(
+            `[${"<".repeat(hashcount)}${" ".repeat(total - hashcount)}]`
+        )
+
+        if (this.purple_enabled) {
+            this.write_desc_line(
+                `Purple ball damage: `, true
+            )
+
+            this.write_desc_line(
+                `${this.purple_damage.toFixed(2)}`, false, null, "#f0f", true, (13 + 7) * 6
+            )
+        }
+    }
+}
+
+
+class CursedEnergyBlueBall extends WeaponBall {
+    static ball_name = "Cursed Energy Blue Ball Projectile";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, hit_damage, duration) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, false);
+
+        this.name = "Cursed Energy Blue Ball Projectile";
+        this.description_brief = "Fired from the cursed energy ball";
+        this.level_description = "-";
+        this.max_level_description = "-";
+
+        this.tags = [];
+
+        this.weapon_data = [
+            new BallWeapon(1, "blue", [
+                {pos: new Vector2(64, 64), radius: 26},
+            ])
+        ];
+
+        this.weapon_data[0].offset = new Vector2(-72, 0);
+
+        this.lifetime = 0;
+        this.duration = duration;
+        this.hit_damage = hit_damage;
+
+        this.transforming = false;
+        this.transformation_start = 0;
+        this.transformation_framespeed = 2.5;
+        this.transformation_max_frame = 12;
+        
+        this.transformation_shake_delay_max = 0.04;
+        this.transformation_shake_delay = this.transformation_shake_delay_max;
+        this.transformation_max_point = 5;
+        this.transformation_max_shake_amt = 64;
+        this.transformation_max_size = 2;
+        this.transformation_shake_origin = null;
+        this.transformation_initial_size = 0;
+
+        this.transformation_sound_played = false;
+        this.transformation_sound_point = 3.1;
+
+        this.hp = 100000;
+        this.max_hp = 100000;
+        this.show_stats = false;
+
+        this.parent = null;
+
+        this.linked_particle = null;
+
+        this.display = false;
+
+        this.rotation_speed = 0;
+
+        this.affected_by_gravity = false;
+
+        this.stop_others = true;
+    }
+
+    update_particles(time_delta) {
+        super.update_particles(time_delta);
+
+        this.linked_particle.set_pos(this.position);
+        this.linked_particle.rotation_angle += this.rotation_speed * (time_delta * (Math.PI / 180))
+    }
+
+    start_transforming() {
+        this.transformation_start = this.lifetime + 0.5;
+        this.transforming = true;
+        this.transformation_shake_origin = this.position;
+        this.transformation_initial_size = this.linked_particle.size;
+
+        if (!this.parent.played_music)
+            play_music("if_i_am_with_you");
+    
+        this.parent.played_music = true;
+    }
+
+    weapon_step(board, time_delta) {
+        if (this.parent.hp <= 0) {
+            this.hp = 0;
+        }
+
+        if (this.transforming) {
+            if (this.stop_others) {
+                this.board.balls.forEach(ball => {
+                    if (ball.id != this.id) {
+                        ball.skip_physics = true;
+                    }
+                })
+            }
+
+            this.collision = false;
+
+            this.set_velocity(Vector2.zero);
+
+            this.linked_particle.frame_speed = this.transformation_framespeed; 
+            this.linked_particle.sprites = entity_sprites.get("purple");
+            this.linked_particle.lifetime = Math.max(0, this.lifetime - this.transformation_start);
+            this.linked_particle.framecount = this.linked_particle.sprites.length;
+
+            if (!this.transformation_sound_played && this.linked_particle.lifetime >= this.transformation_sound_point) {
+                play_audio("slow_motion_stop", 0.4);
+                this.transformation_sound_played = true;
+            }
+
+            this.transformation_shake_delay -= time_delta;
+            let factor = Math.max(0, Math.min(1, this.linked_particle.lifetime / this.transformation_max_point))
+            let factor2 = Math.pow(factor, 2);
+            if (this.transformation_shake_delay <= 0) {
+                this.transformation_shake_delay += this.transformation_shake_delay_max;
+                
+                this.set_pos(this.transformation_shake_origin.add(
+                    random_on_circle(this.transformation_max_shake_amt * factor, this.independent_random)
+                ));
+                this.linked_particle.size = this.transformation_initial_size + (this.transformation_initial_size * this.transformation_max_size * factor2);
+            }
+
+            if (this.linked_particle.cur_frame >= this.transformation_max_frame) {
+                this.linked_particle.lifetime = Number.POSITIVE_INFINITY;
+                this.hp = 0;
+
+                // create purple ball
+                if (this.stop_others) {
+                    this.board.balls.forEach(ball => {
+                        if (ball.id != this.id) {
+                            ball.skip_physics = false;
+                        }
+                    });
+                }
+
+                let enemies = this.board.balls.filter(
+                    ball => !ball.allied_with(this.parent)
+                );
+
+                let target = null;
+                if (enemies.length > 0) {
+                    target = enemies.reduce((closest, enemy) => closest ? (enemy.position.sqr_distance(this.position) < closest[0] ? [enemy.position.sqr_distance(this.position), enemy] : closest) : [enemy.position.sqr_distance(this.position), enemy], null)[1]
+                }
+
+                if (!target) {
+                    target = {position: this.position.add(random_on_circle(1, this.board.random))}
+                }
+
+                let proj = new CursedEnergyPurpleProjectile(
+                    this.board, this.parent, 0,
+                    this.position, this.parent.purple_damage,
+                    this.linked_particle.size / PARTICLE_SIZE_MULTIPLIER,
+                    target.position.sub(this.position).normalize(), 32000, Vector2.zero
+                )
+
+                this.board.spawn_projectile(proj, this.position);
+
+                play_audio("special_move_hit", 0.4);
+
+                this.parent.purple_enabled = true;
+            }
+        } else {
+            if (this.lifetime >= this.duration) {
+                this.hp = 0;
+            }
+
+            // gravity to all balls that are not the parent
+            this.board.balls.forEach(ball => {
+                if (ball.id == this.parent.id)
+                    return;
+
+                let pointing_vector = this.position.sub(ball.position);
+                let distance = pointing_vector.magnitude() + Number.EPSILON;
+                let max_distance = 10000;
+
+                let distance_prop = 1 - (distance / max_distance);
+
+                let normalised = pointing_vector.div(distance);
+                let g = 1024 * 48;
+
+                ball.add_impulse(normalised.mul((time_delta * g) * distance_prop));
+            })
+        }
+    }
+
+    hit_other(other, with_weapon_index) {
+        // additionally knock the other ball away
+        let dmg = this.hit_damage;
+
+        let result = super.hit_other(other, with_weapon_index, dmg);
+
+        let diff_vec = other.position.sub(this.position).normalize();
+        let share = 1;
+
+        let other_diff_add = diff_vec.mul(share);
+
+        let other_mag = other.velocity.magnitude();
+
+        if (other_mag != 0) {
+            let new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
+
+            other.set_velocity(new_other_velocity);
+        }
+
+        other.apply_invuln(BALL_INVULN_DURATION * 2);
+
+        return result;
+    }
+
+    die() {
+        this.linked_particle.lifetime = Number.POSITIVE_INFINITY;
+
+        this.board.spawn_particle(new Particle(
+            this.position, 0, 0.75, entity_sprites.get("explosion_small"), 12, 3, false
+        ), this.position);
+
+        // TODO sound
+
+        return {skip_default_explosion: true};
+    }
+}
+
+
+class CursedEnergyRedBall extends WeaponBall {
+    static ball_name = "Cursed Energy Red Ball Projectile";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, hit_damage, duration) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, false);
+
+        this.name = "Cursed Energy Red Ball Projectile";
+        this.description_brief = "Fired from the cursed energy ball";
+        this.level_description = "-";
+        this.max_level_description = "-";
+
+        this.tags = [];
+
+        this.weapon_data = [
+            new BallWeapon(1, "red", [
+                {pos: new Vector2(64, 64), radius: 6},
+            ])
+        ];
+
+        this.weapon_data[0].offset = new Vector2(-52, 0);
+
+        this.lifetime = 0;
+        this.duration = duration;
+        this.hit_damage = hit_damage;
+
+        this.hp = 100000;
+        this.max_hp = 100000;
+        this.show_stats = false;
+
+        this.parent = null;
+
+        this.linked_particle = null;
+
+        this.display = false;
+
+        this.rotation_speed = 0;
+
+        this.affected_by_gravity = false;
+
+        this.particle_cooldown_max = 0.2;
+        this.particle_cooldown = this.particle_cooldown_max;
+    }
+
+    update_particles(time_delta) {
+        super.update_particles(time_delta);
+
+        this.linked_particle.set_pos(this.position);
+        this.linked_particle.rotation_angle += this.rotation_speed * (time_delta * (Math.PI / 180))
+    }
+
+    weapon_step(board, time_delta) {
+        if (this.parent.hp <= 0) {
+            this.hp = 0;
+        }
+
+        if (this.lifetime >= this.duration) {
+            this.hp = 0;
+        }
+    
+        this.particle_cooldown -= time_delta;
+        if (this.particle_cooldown <= 0) {
+            this.particle_cooldown += this.particle_cooldown_max;
+
+            for (let i=0; i<1; i++) {
+                let part = new EnergyBurstParticle(
+                    this.position.add(random_on_circle(128, this.independent_random)), 0.6, entity_sprites.get(`powerup_burst_red`),
+                    0, 9999, false, random_float(20000, 22000, this.independent_random), 120000,
+                    this, new Colour(228, 27, 37, 255), 4, 1.25, 0, true
+                );
+
+                this.board.spawn_particle(part, this.position);
+            }
+        }
+    }
+
+    hit_other(other, with_weapon_index) {
+        // additionally knock the other ball away
+        let dmg = this.hit_damage;
+
+        let result = super.hit_other(other, with_weapon_index, dmg);
+
+        let diff_vec = other.position.sub(this.position).normalize();
+        let share = 1;
+
+        let other_diff_add = diff_vec.mul(share);
+
+        let other_mag = other.velocity.magnitude();
+
+        if (other_mag != 0) {
+            let new_other_velocity = other.velocity.div(other_mag).mul(1 - share).add(other_diff_add).normalize().mul(other_mag)
+
+            other.set_velocity(new_other_velocity);
+        }
+
+        other.apply_invuln(BALL_INVULN_DURATION * 2);
+
+        return result;
+    }
+
+    collide_ball(other) {
+        if (other instanceof CursedEnergyBlueBall && this.allied_with(other.parent)) {
+            this.hp = 0;
+            other.start_transforming();
+
+            for (let i=0; i<8; i++) {
+                let part = new EnergyBurstParticle(
+                    this.position, 0.6, entity_sprites.get(`powerup_burst_red`),
+                    0, 9999, false, random_float(20000, 30000, this.independent_random), 120000,
+                    other, new Colour(228, 27, 37, 255), 4, 1.25, 0, true
+                );
+
+                this.board.spawn_particle(part, this.position);
+            }
+        }
+    }
+
+    die() {
+        this.linked_particle.lifetime = Number.POSITIVE_INFINITY;
+
+        this.board.spawn_particle(new Particle(
+            this.position, 0, 0.25, entity_sprites.get("explosion_small"), 12, 3, false
+        ), this.position);
+
+        // TODO sound
+
+        return {skip_default_explosion: true};
+    }
+}
+
+
 class NormalerBall extends WeaponBall {
     
 }
@@ -2153,11 +2903,101 @@ class BulletProjectile extends InertiaRespectingStraightLineProjectile {
 }
 
 
+class CursedEnergyBlackFlashProjectile extends PersistentAoEProjectile {
+    constructor(board, source, source_weapon_index, position, damage, size, orientation, suffix) {
+        super(board, source, source_weapon_index, position, damage, size, 1, "blackflash"+suffix);
+
+        this.orientation = orientation;
+
+        this.hitboxes_by_frame = [
+            [],
+            [{pos: new Vector2(-16, 16), radius: 24}],
+            [{pos: new Vector2(-16, 16), radius: 24}],
+            [{pos: new Vector2(-16, 16), radius: 36}],
+            [{pos: new Vector2(-16, 16), radius: 36}],
+            [{pos: new Vector2(-16, 16), radius: 48}],
+            [{pos: new Vector2(-16, 16), radius: 48}],
+            [{pos: new Vector2(-16, 16), radius: 48}],
+            [{pos: new Vector2(-16, 16), radius: 48}],
+            [{pos: new Vector2(-16, 16), radius: 48}],
+            [{pos: new Vector2(-16, 16), radius: 48}],
+            [],
+            [],
+            [],
+            [],
+            [],
+        ]
+
+        this.alternative_layer = "fg1";
+    }
+
+    hit_ball(ball, delta_time) {
+        super.hit_ball(ball, delta_time);
+
+        ball.set_velocity(ball.velocity.mul(0.5));
+
+        ball.apply_hitstop(BASE_HITSTOP_TIME * 2);
+    }
+}
+
+
+
+class CursedEnergyPurpleProjectile extends InertiaRespectingStraightLineProjectile {
+    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
+        super(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
+    
+        this.sprite = "purple_static";
+        this.set_hitboxes([
+            {pos: new Vector2(0, 0), radius: 32},
+        ]);
+
+        this.trail_time_max = 0.025;
+        this.trail_time = 0;
+
+        this.parriable = false;
+    }
+
+    physics_step(time_delta) {
+        super.physics_step(time_delta);
+
+        this.trail_time -= time_delta;
+        if (this.trail_time <= 0) {
+            this.trail_time += this.trail_time_max;
+
+            this.board.spawn_particle(new Particle(
+                this.position, 0, this.size / PROJ_SIZE_MULTIPLIER,
+                entity_sprites.get("purple_trail"), 12, 1
+            ), this.position)
+        }
+    }
+
+    hit_other_projectile(other_projectile) {
+        super.hit_other_projectile(other_projectile);
+        this.active = true;
+    }
+
+    get_parried(by) {
+        super.get_parried(by);
+        this.active = true;
+    }
+
+    hit_ball(ball, delta_time) {
+        super.hit_ball(ball, delta_time);
+        this.active = true;
+    }
+
+    collide_wall(pos) {
+        super.collide_wall(pos);
+        this.active = true;
+    }
+} 
+
+
 let additional_selectable_balls = [
     ThirteenLongswordsBall, AStickBall, ThirteenSticksBall, GreatsordBall,
     ExtralongswordBall, SuperDummyBall, SuperNeedleBall, SuperDaggerBall,
     BerserkerBall, BigBall, ShieldBall, GamblerBall, NotSoSuperDaggerBall,
     RailgunIfItLockedIn, SwordAndShieldBall, HornetBall, HyperParrierBall,
     ThwompBall, MachineGunBall, ThiccNeedleBall, FourteenLongswordsBall,
-    ShotgunMagnumBall
+    ShotgunMagnumBall, CursedEnergyBall,
 ]
