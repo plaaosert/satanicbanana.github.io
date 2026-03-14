@@ -3392,12 +3392,24 @@ function render_descriptions(board) {
     let reduced = ball_stats_display_level == BALL_STATS_DISPLAY_LEVELS.REDUCED;
 
     if (reduced) {
+        layouts = []
+        for (let i=0; i<16; i++) {
+            let layout = []
+            for (let j=0; j<i+1; j++) {
+                layout.push([canvas_width - 256, 28 + (40 * j)]);
+            }
+
+            layouts.push(layout);
+        }
+
+        /*
         layouts = [
             [[canvas_width - 256, 28]],
             [[canvas_width - 256, 28], [canvas_width - 256, 28 + 40]],
             [[canvas_width - 256, 28], [canvas_width - 256, 28 + 40], [canvas_width - 256, 28 + 40 + 40]],
             [[canvas_width - 256, 28], [canvas_width - 256, 28 + 40], [canvas_width - 256, 28 + 40 + 40], [canvas_width - 256, 28 + 40 + 40 + 40]],
         ]
+        */
     } else {
         layouts = [
             [[canvas_width - 256, 28]],

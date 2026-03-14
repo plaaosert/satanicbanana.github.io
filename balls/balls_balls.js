@@ -6637,7 +6637,9 @@ class FryingPanBall extends WeaponBall {
 
         result.gain = 0.04;
 
-        other.special_hit_tag = ["golden", 0.5];
+        if (this.skin_name == "Golden") {
+            other.special_hit_tag = ["golden", 0.5];
+        }
 
         return result;
     }
@@ -6652,7 +6654,9 @@ class FryingPanBall extends WeaponBall {
                 }
             }
 
-            other.special_hit_tag = ["golden", 0.5];
+            if (this.skin_name == "Golden") {
+                other.special_hit_tag = ["golden", 0.5];
+            }
         }
 
         return result;
