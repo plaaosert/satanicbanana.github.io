@@ -2474,7 +2474,7 @@ document.addEventListener("DOMContentLoaded", function() {
         if (!entity_sprites)
             return;
 
-        num_textures_loaded = entity_sprites.keys().reduce((p, c) => {
+        num_textures_loaded = [...entity_sprites.keys()].reduce((p, c) => {
             let loaded = entity_sprites.get(c).reduce((pt, ct) => {
                 return pt + (ct.complete && ct.naturalWidth !== 0 ? 1 : 0);
             }, 0)
