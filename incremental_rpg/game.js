@@ -1437,6 +1437,56 @@ class Player {
 }
 
 
+class GameState {
+    constructor(player, location, flags) {
+        this.player = player;
+        this.location = location;
+        this.flags = flags;
+
+        this.events_queue = [];
+
+        this.time_until_encounter = Number.POSITIVE_INFINITY;
+        this.encounter_timeout = -1;
+        this.encounter_index = -1;
+        
+        this.cur_encounter = null;
+    }
+
+    enter_location(location) {
+        this.location = location;
+
+        this.location.events.forEach(e => {
+            if (!e.condition || e.condition(this)) {
+                this.enqueue_event(e);
+            }
+        });
+
+        this.check_events();
+    }
+
+    check_events() {
+        let evt = this.events_queue.shift();
+        if (evt) {
+            resolve_event(evt);
+        }
+    }
+
+    enqueue_event(event, at_start=false) {
+        if (at_start)
+            this.events_queue.unshift(event);
+        else
+            this.events_queue.push(event);
+    }
+    
+    resolve_event(event) {
+        // events can be split into two main categories - encounters and nonencounters.
+        // we need to rework how we deal with encounters before we can write this.
+        // right now the game loop code is too tightly looped. we gotta fix that
+        // also create a Game object to store all that in
+    }
+}
+
+
 const ITEM_TYPE = {
     KNIFE: "Knife",
     SWORD: "Sword",

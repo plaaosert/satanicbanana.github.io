@@ -223,10 +223,24 @@ triggering an event causes a dialogue tree.
 
 let test_location = new GameLocation(
     // TODO look @ the rework above and implement it
-    "Test area", "TST", [], [], false, new Encounter(["training_dummy", "training_dummy_2", "training_dummy_3"], 4), 1
+    "Test area", "TST", [], [
+        new GameEvent.simple_dialogue(
+            new Dialogue(
+                "You", "#ccc", "Damn, I really am feeling like a %%0%% right now... if only a level 1 training dummy would appear right now",
+                new Item("Firecrackers", "blow up!", "---", 1, null, new UseComponent(
+                    true, 1, 0
+                ))
+            ), {
+                "Level 1 Training Dummy: hi": GameEvent.simple_encounter("training_dummy"),
+                "Ignore yourself": null
+            }
+        )
+    ], false, new Encounter(["training_dummy", "training_dummy_2", "training_dummy_3"], 4), 1
 )
 
 let game_state = {
+    player: player,
+
     time_until_encounter: Number.POSITIVE_INFINITY,
     encounter_timeout: -1,
     encounter_index: -1,
@@ -235,6 +249,8 @@ let game_state = {
     cur_encounter: null,
 
     cur_option_state: null,
+
+    flags: {},
 }
 
 
@@ -570,5 +586,7 @@ document.addEventListener("DOMContentLoaded", function() {
             game_state.time_until_encounter = game_state.location.default_encounter_wait_time;
         }
     })
+
+    enter_location(game_state, game_state.location);
 })
 
