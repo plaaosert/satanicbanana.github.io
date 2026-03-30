@@ -94,20 +94,20 @@
         </div>
 
         <div class="panel enemy-panel">
-            <div class="panel-inner" id="map-interaction" style="width: calc(var(--FONTSIZE_HALF) * 48); display: none">
+            <div class="panel-inner" id="map-interaction" style="width: calc(var(--FONTSIZE_HALF) * 48);">
                 <p class="line wrap" style="margin-left: var(--FONTSIZE); margin-right: var(--FONTSIZE)">
-<span style="color: rgb(48, 192, 48)">Old Man Yang</span>:<br>
-"You have learned well, my son. Here's an upgrade."<br>
-It's a <span class="clickable" style="color: var(--col-highlight)">[Sword ass sword]</span>
+<span class="dialogue-speaker" style="color: rgb(48, 192, 48)">Old Man Yang</span>:<br>
+<span class="dialogue-content">You have learned well, my son. Here's an upgrade."<br>
+It's a <span class="clickable" style="color: var(--col-highlight)">[Sword ass sword]</span></span>
                 </p>
                 <p class="line">------------------------------------------------</p>
-                <div class="linelist">
+                <div class="linelist" id="dialogue_options_linelist">
                     <p class="line clickable map-selection-1"><br>                    Take it                     <br><br></p>
                     <p class="line clickable map-selection-2"><br>      Challenge him to a duel to the death      <br><br></p>
                 </div>
             </div>
 
-            <div class="panel-inner" id="enemy-panel" style="width: calc(var(--FONTSIZE_HALF) * 48)">
+            <div class="panel-inner" id="enemy-panel" style="width: calc(var(--FONTSIZE_HALF) * 48); display: none;">
                 <p class="line" id="name">You</p>
                 <div class="line stacked" id="hp">
                     <div class="bar">

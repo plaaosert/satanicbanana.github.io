@@ -7,32 +7,47 @@ class Dialogue {
         this.speaker = speaker;
         this.speaker_col = speaker_col;
         this.text = text;
-        this.mouseover_ctx_items = [];
+        this.mouseover_ctx_items = mouseover_ctx_items;
     }
 }
 
 class GameEvent {
-    constructor(condition, redirect_event_if_fail, dialogue, gain_items, set_flags, options, encounter_enemy_name) {
+    constructor(condition, redirect_event_if_fail, dialogue, gain_items, set_flags, options, encounter) {
         this.condition = condition;
         this.redirect_event_if_fail = redirect_event_if_fail;
+        /** @type {Dialogue} */
         this.dialogue = dialogue;
         this.gain_items = gain_items;
         this.set_flags = set_flags;
         this.options = options;
-        this.encounter_enemy_name = encounter_enemy_name;
+        this.encounter = encounter;
     }
 
     static simple_dialogue(dialogue, options) {
-        return new GameEvent(null, null, dialogue, [], [], options, null);
+        let opt = options;
+        if (!opt)
+            opt = {"OK": {col: new Colour(0, 48, 96), evt: null}}
+
+        return new GameEvent(null, null, dialogue, [], [], opt, null);
     }
 
-    static simple_encounter(encounter_enemy_name) {
-        return new GameEvent(null, null, null, [], [], {}, encounter_enemy_name);
+    static simple_encounter(enemy_name, on_win, on_loss) {
+        return new GameEvent(null, null, null, [], [], {
+            1: {col: Colour.black, evt: on_loss},
+            2: {col: Colour.black, evt: on_win}
+        }, new Encounter(
+            [enemy_name], 0
+        ));
     }
 }
 
 class GameLocation {
+    static id_inc = 0;
+
     constructor(name, short_name, connections, events, is_safe_location, default_encounter, default_encounter_wait_time) {
+        this.id = GameLocation.id_inc;
+        GameLocation.id_inc++;
+
         this.name = name;
         this.short_name = short_name;
         this.connections = connections;
@@ -67,4 +82,16 @@ class Encounter {
             return weighted_seeded_random_from_arr(t, grandom);
         }
     }
+}
+
+class MapNode {
+    constructor(position, connecting_nodes) {
+        this.position = position;
+        this.connecting_nodes = connecting_nodes;
+    }
+}
+
+function setup_map_trees(all_locations) {
+    // todo
+    // fuck
 }

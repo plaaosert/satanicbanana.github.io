@@ -523,6 +523,24 @@ class Entity {
         this.hp = Math.round(Math.max(0, Math.min(this.stats.MHP, this.hp + by)));
     }
 
+    get_other_recharge_multipliers_for_ability(ability, ability_source) {
+        let time_multiplier = 1;
+        if (this.specials.has(ITEM_SPECIAL.faster_inner_artifacts) && ability_source == ITEM_TYPE.INNER_ARTIFACT) {
+            time_multiplier += 0.25;
+        }
+        if (this.specials.has(ITEM_SPECIAL.faster_outer_artifacts) && ability_source == ITEM_TYPE.OUTER_ARTIFACT) {
+            time_multiplier += 0.25;
+        }
+        if (this.specials.has(ITEM_SPECIAL.faster_divine_artifacts) && ability_source == ITEM_TYPE.DIVINE_ARTIFACT) {
+            time_multiplier += 0.25;
+        }
+        if (this.specials.has(ITEM_SPECIAL.inner_artifact_mastery_ender) && this.hp / this.stats.MHP < 0.33 && ability_source == ITEM_TYPE.INNER_ARTIFACT) {
+            time_multiplier += 1;
+        }
+
+        return time_multiplier;
+    }
+
     pass_time(time, include_speed_bonus=false) {
         this.changes.abilities = true;
 
@@ -535,19 +553,10 @@ class Entity {
                 final_time = time_unscaled;
             }
 
-            let time_multiplier = 1;
-            if (this.specials.has(ITEM_SPECIAL.faster_inner_artifacts) && this.template.ability_sources[i] == ITEM_TYPE.INNER_ARTIFACT) {
-                time_multiplier += 0.25;
-            }
-            if (this.specials.has(ITEM_SPECIAL.faster_outer_artifacts) && this.template.ability_sources[i] == ITEM_TYPE.OUTER_ARTIFACT) {
-                time_multiplier += 0.25;
-            }
-            if (this.specials.has(ITEM_SPECIAL.faster_divine_artifacts) && this.template.ability_sources[i] == ITEM_TYPE.DIVINE_ARTIFACT) {
-                time_multiplier += 0.25;
-            }
-            if (this.specials.has(ITEM_SPECIAL.inner_artifact_mastery_ender) && this.hp / this.stats.MHP < 0.33 && this.template.ability_sources[i] == ITEM_TYPE.INNER_ARTIFACT) {
-                time_multiplier += 1;
-            }
+            let time_multiplier = this.get_other_recharge_multipliers_for_ability(
+                this.template.abilities[i],
+                this.template.ability_sources[i]
+            )
 
             final_time *= time_multiplier;
 
@@ -663,6 +672,9 @@ class EntityTemplate {
         this.abilities = abilities;
 
         this.ability_sources = ability_sources;
+        if (!this.ability_sources) {
+            this.ability_sources = new Array(abilities.length).fill(null);
+        }
 
         this.bar_style = new BarStyle(
             BarStyle.DisplayType.BAR_CHANGE_COL,
@@ -1265,7 +1277,7 @@ class Player {
         Object.keys(this.equipped_items).forEach(p => {
             if (this.equipped_items[p]) {
                 let comp = this.equipped_items[p].equip_component;
-                total_item_types[comp.equippable_type] = total_item_types[comp] ? total_item_types[comp] + 1 : 1;
+                total_item_types[comp.equippable_type] = total_item_types[comp.equippable_type] ? (total_item_types[comp.equippable_type] + 1) : 1;
             }
         });
 
@@ -1306,7 +1318,7 @@ class Player {
         // inventory might change as a result
         player.mark_change("inventory");
 
-        console.log(`Skill ${category} levelled up! (${this.skill_levels[category] - 1} => ${this.skill_levels[category]})`);
+        // console.log(`Skill ${category} levelled up! (${this.skill_levels[category] - 1} => ${this.skill_levels[category]})`);
         if (lose_xp) {
             this.skill_xp[category] -= skills_list[category].xp_to_next(this.skill_levels[category] - 1);
         }
@@ -1444,20 +1456,43 @@ class GameState {
         this.flags = flags;
 
         this.events_queue = [];
+        
+        this.encounter_paused_event = null;
 
         this.time_until_encounter = Number.POSITIVE_INFINITY;
         this.encounter_timeout = -1;
         this.encounter_index = -1;
         
         this.cur_encounter = null;
+
+        this.cur_battle = null;
+
+        this.most_recent_safe_location = null;
+        
+        this.last_battle_result = 0;
+
+        this.event_active = false;
+    }
+
+    can_interact_with_inventory() {
+        return (
+            !this.cur_battle
+        ) ? true : false; 
     }
 
     enter_location(location) {
         this.location = location;
+        if (this.location.is_safe_location) {
+            this.most_recent_safe_location = this.location;
+        } else {
+            this.time_until_encounter = this.location.default_encounter_wait_time;
+        }
 
         this.location.events.forEach(e => {
             if (!e.condition || e.condition(this)) {
                 this.enqueue_event(e);
+            } else if (e.redirect_event_if_fail) {
+                this.enqueue_event(e.redirect_event_if_fail);
             }
         });
 
@@ -1467,7 +1502,16 @@ class GameState {
     check_events() {
         let evt = this.events_queue.shift();
         if (evt) {
-            resolve_event(evt);
+            this.resolve_event(evt);
+        }
+
+        // if the events queue is exhausted AND we don't have an encounter AND we didn't resolve anything,
+        // get back to the normal encounters =)
+        if (this.events_queue.length <= 0 && !evt && !this.cur_encounter && !this.cur_battle) {
+            show_battle_view();
+            // TODO clear battle view when switching back to it after an event
+            this.return_to_default_location_encounters();
+            this.event_active = false;
         }
     }
 
@@ -1478,11 +1522,252 @@ class GameState {
             this.events_queue.push(event);
     }
     
+    /**
+     * @param {GameEvent} event 
+     */
     resolve_event(event) {
         // events can be split into two main categories - encounters and nonencounters.
-        // we need to rework how we deal with encounters before we can write this.
-        // right now the game loop code is too tightly looped. we gotta fix that
-        // also create a Game object to store all that in
+
+        // first, do all the other stuff
+        if (event.gain_items) {
+            event.gain_items.forEach(item => {
+                this.player.add_item_to_inventory(item)
+            })
+        }
+
+        if (event.set_flags) {
+            event.set_flags.forEach(f => [
+                this.flags[f[0]] = f[1]
+            ])
+        }
+
+        // then the continuation parts
+        if (event.encounter) {
+            // move this event to the paused event
+            // set up the encounter (note this is a whole encounter!)
+            this.encounter_paused_event = event;
+
+            this.trigger_encounter(event.encounter);
+        } else {
+            // dialogue event - render event's dialogue!
+            render_map_event(this.player, event);
+            show_event_view();
+
+            this.event_active = true;
+        }
+    }
+
+    return_to_default_location_encounters() {
+        this.time_until_encounter = this.location.default_encounter_wait_time;
+                    
+        this.encounter_timeout = 0;
+        this.encounter_index = 0;
+    }
+    
+    trigger_location_default_encounter() {
+        // short-circuit if we're in a safe location
+        if (this.location.is_safe_location || !this.location.default_encounter)
+            return;
+
+        this.trigger_encounter(this.location.default_encounter);
+    }
+
+    trigger_encounter(encounter) {
+        this.time_until_encounter = this.location.default_encounter_wait_time;
+                    
+        this.cur_encounter = encounter;
+        this.encounter_timeout = 0;
+        this.encounter_index = 0;
+
+        show_battle_view();
+
+        this.event_active = false;
+    }
+
+    trigger_fight_by_name(enemy_name) {
+        this.trigger_fight(entity_template_list[enemy_name]);
+    }
+
+    trigger_fight(enemy_template) {
+        if (!enemy_template)
+            return;
+
+        let battle = new Battle(
+            player.stored_entity,
+            new Entity(enemy_template, enemy_template.name, [])
+        );
+
+        this.cur_battle = battle;
+    }
+
+    player_death() {
+        // if there's no event, refresh the player. if there is,
+        // don't get in the event's way just yet
+        if (!this.encounter_paused_event) {
+            if (this.most_recent_safe_location) {
+                this.enter_location(this.most_recent_safe_location);
+            }
+
+            this.player.refresh_entity(null, false, 100);
+        }
+
+        this.cur_encounter = null;
+        this.cur_battle = null;
+    }
+
+    pass_time(delta_time) {
+        if (this.cur_battle) {
+            // there is a battle going on
+            // render the battle ui and perform checks
+            // to see if it should end
+            this.battle_step(delta_time);
+
+            let result = this.check_battle_end();
+            if (result) {
+                this.handle_battle_end(result);
+            }
+        } else if (this.cur_encounter) {
+            // we're not in a battle, but we are in an encounter,
+            if (this.encounter_index >= this.cur_encounter.enemies.length) {
+                // but there are no more enemies in this encounter, so we won!
+                // clean up the encounter and wait for the next one to trigger
+                this.cur_encounter = null;
+                this.cur_battle = null;
+
+                // this.player.refresh_entity(null, false, 100);
+            } else {
+                this.encounter_timeout -= delta_time;
+                if (this.encounter_timeout <= 0) {
+                    this.trigger_fight(
+                        this.cur_encounter.get_entity_at_index(
+                            this.encounter_index
+                        )
+                    );
+
+                    this.encounter_timeout = this.cur_encounter.time_between;
+                    this.encounter_index += 1;
+                }
+            }
+        } else if (this.encounter_paused_event) {
+            // this means the encounter has ended,
+            // but an event has said it cares about the outcome.
+            // if this happens, death will be deferred, and it will be
+            // the event's responsibility to call player_death() after it's done.
+            // all we need to do is enqueue the event at the front,
+            // with the correct option based on the combat end;
+            // 2 for success
+            // 1 for failure
+            let evt = this.encounter_paused_event.options[this.last_battle_result].evt;
+            if (evt)
+                this.enqueue_event(evt, true);
+
+            this.encounter_paused_event = null;
+            this.check_events();
+        } else {
+            // we can FINALLY get back to base behaviour!
+            // ...unless it's a safe location, or there's an active event.
+            if (!this.location.is_safe_location && !this.event_active) {
+                this.time_until_encounter -= delta_time;
+                if (this.time_until_encounter <= 0) {
+                    this.trigger_location_default_encounter();
+                }
+            }
+        }
+    }
+
+    battle_step(delta_time) {
+        render_entity_stats(this.cur_battle.ent2, enemy_stats_parent_elem);
+
+        this.cur_battle.step(delta_time);
+
+        render_entity_stats(this.cur_battle.ent1, player_stats_parent_elem);
+        render_entity_stats(this.cur_battle.ent2, enemy_stats_parent_elem);
+    }
+
+    check_battle_end() {
+        if (this.cur_battle.ent1.hp <= 0) {
+            return 1;
+        } else if (this.cur_battle.ent2.hp <= 0) {
+            return 2;
+        }
+
+        return 0;
+    }
+
+    handle_battle_end(result) {
+        // 1 == player lost
+        // 2 == enemy lost
+        this.last_battle_result = result;
+
+        switch (result) {
+            case 1: {
+                // teleport to most recent safe zone,
+                // cancel encounter,
+                // refresh entity
+                this.player_death();
+                
+                break;
+            }
+
+            case 2: {
+                // we won!
+                // - grant skill XP
+                // - do any relevant item drops
+                // - level cultivation skills
+                // - clean up and refresh the player entity (without restoring hp)
+                let base_xp = this.cur_battle.ent2.template.xp_value;
+
+                this.battle_end_skill_xp(base_xp);
+                this.battle_end_item_drops();
+                this.battle_end_cultivation_skills(base_xp);
+
+                render_entity_stats(this.cur_battle.ent2, enemy_stats_parent_elem);
+
+                this.cur_battle = null;
+                this.player.refresh_entity(null, true);
+
+                break;
+            }
+        }
+    }
+
+    battle_end_skill_xp(base_xp) {
+        let equipped_item_types = this.player.get_equipped_item_types();
+                        
+        // for each skill, check the number of relevant item types and divide by max num applicable items. Combat is ignored and done separately
+        Object.keys(skills_list).forEach(sk => {
+            let skill_info = skills_list[sk];
+
+            if (sk != "unarmed_mastery" && sk != "combat") {
+                let total_relevant_items = skill_info.items_for_proficiency.reduce((prev, cur) => prev + (equipped_item_types[cur] ? equipped_item_types[cur] : 0), 0);
+                
+                let final_xp_mul = total_relevant_items / skill_info.max_num_applicable_items;
+
+                this.player.gain_skill_xp(sk, Math.ceil(final_xp_mul * base_xp));
+            } else {
+                switch (sk) {
+                    case "unarmed_mastery":
+                        // check for unarmed flag
+                        if (equipped_item_types.unarmed) {
+                            this.player.gain_skill_xp(sk, Math.ceil(1 * base_xp));
+                        }
+                        break;
+
+                    case "combat":
+                        // always
+                        this.player.gain_skill_xp(sk, Math.ceil(1 * base_xp));
+                        break;
+                }
+            }
+        });
+    }
+
+    battle_end_item_drops() {
+        // TODO
+    }
+
+    battle_end_cultivation_skills(base_xp) {
+        // TODO
     }
 }
 
@@ -1696,7 +1981,7 @@ let skills_list = {
     "light_armour_mastery": new Skill(
         "light_armour_mastery",
         "Light Armour Mastery", 
-        "Skill at using light armour in combat. Equipped  light armour gains -0.2% reduced weight per skill level.",
+        "Skill at using light armour in combat. Equipped light armour gains -0.2% reduced weight per skill level.",
         1, false, skill_armour_bar_style, 100, 4, 4, [ITEM_TYPE.LIGHT_ARMOUR], [
             {lvl: 10,  per_item: true, req: [ITEM_TYPE.LIGHT_ARMOUR, 1], item: new EquipComponent(null, 0, {DEF: 1}, {}, null, [])},
             {lvl: 20,  req: null,                                        item: new EquipComponent(null, 0, {SPD: 4},  {}, null, [])},
