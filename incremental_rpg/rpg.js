@@ -32,7 +32,7 @@ function equip_button_pressed(keyindex) {
             equipped_unequip(mouseover_item.slot);
         }
     } else if (mouseover_item.skill) {
-        console.log(`Tracking skill ${mouseover_item.skill} in slot ${keyindex-1}`)
+        // console.log(`Tracking skill ${mouseover_item.skill} in slot ${keyindex-1}`)
         player.tracked_skills[keyindex-1] = mouseover_item.skill;
         player.mark_change("skills");
     }
@@ -80,7 +80,7 @@ function ability_mouseover(ent_id, ability_index) {
         let entity = cur_battle ? cur_battle[`ent${ent_id}`] : player.stored_entity;
         let ability = entity.template.abilities[ability_index];
         if (ability) {
-            render_selected_ability(entity, ability);
+            render_selected_ability(entity, ability_index);
 
             mouseover_item.ability_index = ability_index;
             mouseover_item.ability_entity_id = ent_id;
@@ -133,10 +133,22 @@ function inventory_mouseover(index) {
     }
 }
 
+function dialogue_mouseover(e, item) {
+    interactable_item_mouseover();
+
+    // console.log(item);
+
+    render_selected_item(player, item);
+}
+
+function dialogue_mouseout(e, item) {
+    interactable_item_mouseout();
+}
+
 function inventory_equip(index, artifact_target) {
     // artifact_target only matters if the item is an artifact.
     // can only equip while not busy (in a battle, or in an event)
-    if (!(cur_battle || game_state.cur_option_state)) {
+    if (game.can_interact_with_inventory()) {
         let item = player.inventory[index].item;
         let slot = null;
         
@@ -194,7 +206,7 @@ function equipped_mouseover(categ) {
 }
 
 function equipped_unequip(categ) {
-    if (!(cur_battle || game_state.cur_option_state)) {
+    if (game.can_interact_with_inventory()) {
         if (player.inventory.length < player.inventory_max_slots) {
             player.unequip_item_from_slot(categ);
         } else {
@@ -223,20 +235,39 @@ triggering an event causes a dialogue tree.
 
 let test_location = new GameLocation(
     // TODO look @ the rework above and implement it
-    "Test area", "TST", [], [], false, new Encounter(["training_dummy", "training_dummy_2", "training_dummy_3"], 4), 1
+    "Test area", "TST", [], [
+        GameEvent.simple_dialogue(
+            new Dialogue(
+                "You", "#ccc", "Damn, I really am feeling like a %%0%% right now... if only a level 1 training dummy would appear right now", [
+                    new Item("Firecrackers", "blow up!", "---", 1, null, new UseComponent(
+                        true, 1, 0
+                    ))
+                ]
+            ), {
+                "Level 1 Training Dummy: hi": {
+                    col: new Colour(48, 0, 0),
+                    evt: GameEvent.simple_encounter(
+                        "training_dummy",
+                        GameEvent.simple_dialogue(new Dialogue(
+                            "-", Colour.grey, "omg you won :)"
+                        )),
+                        GameEvent.simple_dialogue(new Dialogue(
+                            "-", Colour.grey, "omg you lost :("
+                        ))
+                    )
+                },
+                "Ignore yourself": {
+                    col: new Colour(16, 16, 16), 
+                    evt: null
+                }
+            }
+        )
+    ], false, new Encounter(["training_dummy", "training_dummy_2", "training_dummy_3"], 4), 10
 )
 
-let game_state = {
-    time_until_encounter: Number.POSITIVE_INFINITY,
-    encounter_timeout: -1,
-    encounter_index: -1,
-
-    location: test_location,
-    cur_encounter: null,
-
-    cur_option_state: null,
-}
-
+let game = new GameState(
+    player, test_location, {}
+)
 
 document.addEventListener("DOMContentLoaded", function() {
     enemy_stats_parent_elem = document.querySelector(".panel.enemy-panel .panel-inner#enemy-panel");
@@ -265,99 +296,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
             let final_delta_time = delta_time * game_speed;
             if (adjusted_time_diff >= SMALLEST_ALLOWED_TIME_GAP && calcs <= MAX_CALCS_PER_FRAME) {
-                if (cur_battle) {
-                    render_entity_stats(cur_battle.ent2, enemy_stats_parent_elem);
-
-                    cur_battle.step(final_delta_time);
-
-                    render_entity_stats(cur_battle.ent1, player_stats_parent_elem);
-                    render_entity_stats(cur_battle.ent2, enemy_stats_parent_elem);
-                    
-                    // need to check for victory here and grant skill XP and stuff.
-                    // then, regenerate the entity.
-                    if (cur_battle.ent1.hp == 0) {
-                        // player lost battle - teleport to most recent safe zone and refresh entity
-
-                        // just refresh entity for now
-                        game_state.cur_encounter = null;
-                        cur_battle = null;
-                        player.refresh_entity(null, false, 100);
-                    } else if (cur_battle.ent2.hp == 0) {
-                        // skill XP granted is base XP of enemy, multiplied by number of items equipped that the skill grants proficiency to,
-                        // divided by the maximum number of items that could be
-                        // so, weapon is /1, artifact is /2, armour is /4, Combat is static 1x always
-                        let equipped_item_types = player.get_equipped_item_types();
-                        
-                        // for each skill, check the number of relevant item types and divide by max num applicable items. Combat is ignored and done separately
-                        Object.keys(skills_list).forEach(sk => {
-                            let skill_info = skills_list[sk];
-
-                            if (sk != "unarmed_mastery" && sk != "combat") {
-                                let total_relevant_items = skill_info.items_for_proficiency.reduce((prev, cur) => prev + (equipped_item_types[cur] ? equipped_item_types[cur] : 0), 0);
-                                
-                                let final_xp_mul = total_relevant_items / skill_info.max_num_applicable_items;
-
-                                player.gain_skill_xp(sk, Math.ceil(final_xp_mul * cur_battle.ent2.template.xp_value));
-                            } else {
-                                switch (sk) {
-                                    case "unarmed_mastery":
-                                        // check for unarmed flag
-                                        if (equipped_item_types.unarmed) {
-                                            player.gain_skill_xp(sk, Math.ceil(1 * cur_battle.ent2.template.xp_value));
-                                        }
-                                        break;
-
-                                    case "combat":
-                                        // always
-                                        player.gain_skill_xp(sk, Math.ceil(1 * cur_battle.ent2.template.xp_value));
-                                        break;
-                                }
-                            }
-
-                            // TEST
-                            // player.gain_skill_xp(sk, Math.ceil(Math.random() * 30));
-                        });
-
-                        // TODO item drops, cultivation skills, etc
-
-                        // destroy the battle object and recreate the player entity (skills, effects etc reset but hp not restored)
-                        render_entity_stats(cur_battle.ent2, enemy_stats_parent_elem);
-                        cur_battle = null;
-                        player.refresh_entity(null, true);
-                    }
-                } else if (game_state.cur_encounter) {
-                    game_state.encounter_timeout -= final_delta_time;
-                    if (game_state.encounter_index >= game_state.cur_encounter.enemies.length || game_state.encounter_timeout <= 0) {
-                        if (game_state.encounter_index >= game_state.cur_encounter.enemies.length) {
-                            // end encounter, including rewards(?). for now just destroy it
-                            game_state.cur_encounter = null;
-                            cur_battle = null;
-                            player.refresh_entity(null, false, 100);
-                        } else {
-                            let template = game_state.cur_encounter.get_entity_at_index(game_state.encounter_index);
-                            cur_battle = new Battle(
-                                player.stored_entity,
-                                new Entity(template, template.name, [])
-                            )
-
-                            game_state.encounter_timeout = game_state.cur_encounter.time_between;
-                            game_state.encounter_index += 1;
-                        }
-                    }
-                } else {
-                    // should probably have some kind of Game object that handles this, then would call step() on this
-                    game_state.time_until_encounter -= final_delta_time;
-                    if (game_state.time_until_encounter <= 0) {
-                        game_state.time_until_encounter = game_state.location.default_encounter_wait_time;
-
-                        // start encounter
-                        game_state.cur_encounter = game_state.location.default_encounter;
-                        game_state.encounter_timeout = 0;
-                        game_state.encounter_index = 0;
-
-                        // still need to implement safe zones. will do navigation and movement and all of that once multiple in-a-row battles are tested
-                    }
-                }
+                game.pass_time(final_delta_time);
             } else {
                 looping = false;
             }
@@ -375,20 +314,20 @@ document.addEventListener("DOMContentLoaded", function() {
 
         render_entity_stats(player.stored_entity, player_stats_parent_elem);
 
-        if (game_state.cur_encounter) {
+        if (game.cur_encounter) {
             make_bar_with_text(
                 map_parent_elem.querySelector("#encounter_time p"),
-                `Time until next fight (${game_state.encounter_index} / ${game_state.cur_encounter.enemies.length})|${Math.round(game_state.encounter_timeout * 1) / 1}s`,
+                `Time until next fight (${game.encounter_index} / ${game.cur_encounter.enemies.length})|${Math.round(game.encounter_timeout * 1) / 1}s`,
                 map_parent_elem.querySelector("#encounter_time .bar"),
-                map_intercombat_bar_style, game_state.encounter_timeout, game_state.cur_encounter.time_between, 
+                map_intercombat_bar_style, game.encounter_timeout, game.cur_encounter.time_between, 
                 MAP_PANEL_LENGTH, false, true
             )
         } else {
             make_bar_with_text(
                 map_parent_elem.querySelector("#encounter_time p"),
-                `Time until encounter|${Math.round(game_state.time_until_encounter * 1) / 1}s`,
+                `Time until encounter|${Math.round(game.time_until_encounter * 1) / 1}s`,
                 map_parent_elem.querySelector("#encounter_time .bar"),
-                map_encounter_bar_style, game_state.time_until_encounter, game_state.location.default_encounter_wait_time, 
+                map_encounter_bar_style, game.time_until_encounter, game.location.default_encounter_wait_time, 
                 MAP_PANEL_LENGTH, false, true
             )
         }
@@ -402,7 +341,7 @@ document.addEventListener("DOMContentLoaded", function() {
     player.refresh_entity();
 
     document.addEventListener("keydown", function(e) {
-        console.log(e.code);
+        // console.log(e.code);
         if (e.code == "Equal") {
             game_speed *= 2;
         }
@@ -566,9 +505,14 @@ document.addEventListener("DOMContentLoaded", function() {
             player.mark_change("skills");
 
             // TODO need to also refresh the display of the currently moused over item every time the inventory changes
-
-            game_state.time_until_encounter = game_state.location.default_encounter_wait_time;
         }
     })
+
+    game.enter_location(game.location);
 })
 
+// TODO
+// implement events fully
+// including dialog box
+// rendering items to mouseover in the dialog box
+// Etc

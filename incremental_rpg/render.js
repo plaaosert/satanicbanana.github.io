@@ -45,7 +45,8 @@ function make_bar_with_text(text_element, text_format_string, bar_element, bar_s
         fmt_text = split_text[0] + " ".repeat(num_spaces_needed) + split_text[1];
     }
 
-    text_element.textContent = fmt_text;
+    if (text_element.textContent != fmt_text)
+        text_element.textContent = fmt_text;
 }
 
 function make_bar(element, style, cur_val, max_val, bar_length) {
@@ -68,13 +69,18 @@ function setup_bar(element, style, max_len) {
 function render_bar(element, style, cur_len, max_len) {
     let element_children = element.querySelectorAll("span");
     for (let i=0; i<max_len; i++) {
+        let set_to_text = style.empty_char;
+        let set_to_col = style.empty_col.css();
         if (i < cur_len) {
-            element_children[i].style.color = style.get_col(i, cur_len, max_len);
-            element_children[i].textContent = style.bar_char;
-        } else {
-            element_children[i].style.color = style.empty_col.css()
-            element_children[i].textContent = style.empty_char;
+            set_to_col = style.get_col(i, cur_len, max_len);
+            set_to_text = style.bar_char;
         }
+
+        if (element_children[i].style.color != set_to_col)
+            element_children[i].style.color = set_to_col;
+        
+        if (element_children[i].textContent != set_to_text)
+            element_children[i].textContent = set_to_text;
     }
 }
 
@@ -338,8 +344,9 @@ function render_inventory(player) {
 }
 
 
-function render_selected_ability(entity, ability) {
+function render_selected_ability(entity, ability_index) {
     let elem = document.querySelector("#ability_info_overlay_panel");
+    let ability = entity.template.abilities[ability_index];
     if (!ability) {
         return;
     }
@@ -354,7 +361,14 @@ function render_selected_ability(entity, ability) {
 
     elem.querySelector("#ability_info_base_cooldown").innerHTML = ability.max_delay;
 
-    let final_cd = ability.max_delay / (ability.not_affected_by_spd ? 1 : entity.get_speed_mult());
+    let final_cd_mult = ability.not_affected_by_spd ? 1 : entity.get_speed_mult();
+    // check for other multipliers
+    final_cd_mult *= entity.get_other_recharge_multipliers_for_ability(
+        ability, entity.template.ability_sources[ability_index]
+    );
+
+    let final_cd = ability.max_delay / final_cd_mult;
+
     elem.querySelector("#ability_info_final_cooldown").innerHTML = `${Math.round(final_cd * 100) / 100}`;
 }
 
@@ -620,8 +634,93 @@ function render_selected_item(player, item) {
 }
 
 
+/**
+ * @param {Player} player
+ * @param {GameEvent} map_event
+ */
 function render_map_event(player, map_event) {
+    // this is pretty easy
+    // so the dialogue will have a speaker and some text
+    // render that in the necessary places
+    // the one complication here is that %%N%% strings
+    // are replacement strings for a mouseoverable item;
+    // so need to set up mouseover behaviour for that too.
+    // then just put the options into the linelist
+    let elem = document.querySelector("#map-interaction");
     
+    elem.querySelector(".dialogue-speaker").textContent = map_event.dialogue.speaker;
+    elem.querySelector(".dialogue-speaker").style.color = map_event.dialogue.speaker_col;
+
+    content_build = map_event.dialogue.text.replaceAll(
+        /%%([0-9])%%/gm,
+        (m, p1) => {
+            /** @type {Item} */
+            let idx = Number.parseInt(p1);
+            let ref_item = map_event.dialogue.mouseover_ctx_items[idx];
+            let cols = ref_item.determine_cols(player);
+
+            return parse_format_text(`<span data-mouseoverid=${idx} class="mouseover-item clickable" style="color: ${cols[0]}; background-color: ${cols[1]}">${ref_item.name}</span>`)
+        }
+    )
+
+    elem.querySelector(".dialogue-content").innerHTML = content_build;
+    elem.querySelector(".dialogue-content").querySelectorAll(".mouseover-item").forEach(e => {
+        let ref_item = map_event.dialogue.mouseover_ctx_items[e.getAttribute("data-mouseoverid")];
+        
+        e.addEventListener("mouseover", e2 => {
+            dialogue_mouseover(e2, ref_item);
+        });
+
+        e.addEventListener("mouseout", e2 => {
+            dialogue_mouseout(e2, ref_item);
+        });
+    })
+
+    let linelist = elem.querySelector("#dialogue_options_linelist");
+    clear_linelist("dialogue_options_linelist");
+
+    Object.keys(map_event.options).forEach((k, i) => {
+        let option_text = k;
+        let option_content = map_event.options[k];
+
+        let parent = document.createElement("p");
+        parent.classList.add("line", "clickable", `map-selection-${i}`);
+        parent.style.backgroundColor = option_content.col.css();
+
+        parent.append(document.createElement("br"));
+
+        let span = document.createElement("span");
+        let fmt_text = option_text;
+        let num_spaces_needed = ENTITY_PANEL_LENGTH - fmt_text.length;
+        let spaces_before = Math.floor(num_spaces_needed / 2);
+        let spaces_after = num_spaces_needed - spaces_before;
+        span.textContent = `${" ".repeat(spaces_before)}${fmt_text}${" ".repeat(spaces_after)}`
+
+        parent.append(span);
+
+        parent.append(document.createElement("br"));
+        parent.append(document.createElement("br"));
+
+        parent.addEventListener("click", () => {
+            // activate the GameEvent inside!
+            game.enqueue_event(option_content.evt, true);
+            game.check_events();
+        });
+
+        linelist.append(parent);
+    })
+}
+
+
+function show_event_view() {
+    document.querySelector("#map-interaction").style.display = "";
+    document.querySelector("#enemy-panel").style.display = "none";
+}
+
+
+function show_battle_view() {
+    document.querySelector("#map-interaction").style.display = "none";
+    document.querySelector("#enemy-panel").style.display = "";
 }
 
 
