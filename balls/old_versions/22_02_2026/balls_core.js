@@ -1,8 +1,8 @@
 game_id = "balls";
 
-const FILES_PREFIX = "";
+const FILES_PREFIX = "../../";
 
-const GAME_VERSION = "01/04/2026";
+const GAME_VERSION = "22/02/2026";
 
 const AILMENT_CHARS = "➴☣♨";
 
@@ -780,9 +780,6 @@ async function load_audio_from_url(path, lazy=false) {
 }
 
 let audios_list = [
-    // https://www.youtube.com/watch?v=q4i05EaML44
-    ["glorp", "https://scrimblo.foundation/uploads/glorp.mp3", "Bloopin", "Eddie EWI"],
-
     // ultrakill
     ["parry", 'snd/parry.mp3'],
     ["parry2", 'snd/parry2.mp3'],
@@ -1906,7 +1903,7 @@ class Board {
         this.max_game_duration = default_max_game_duration;
 
         this.starting_system_energy = 0;
-        this.attempt_energy_conservation = false;
+        this.attempt_energy_conservation = true;
         this.energy_conservation_aggression = 0.5;
     }
     
@@ -3943,8 +3940,7 @@ function render_postopening(board) {
         }
 
         if (!board.balls.some(b => b.START_MUSIC)) {
-            // play_music(`2048_${random_int(0, 13, get_seeded_randomiser(board.random_seed))+1}`, 0.2);
-            play_music("glorp");
+            play_music(`2048_${random_int(0, 13, get_seeded_randomiser(board.random_seed))+1}`, 0.2);
         } else {
             // consume it?
             console.log(random_int(0, 13, get_seeded_randomiser(board.random_seed))+1);

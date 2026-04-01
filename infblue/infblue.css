@@ -1,0 +1,196 @@
+@font-face {
+    font-family: "loja";
+    src: url("fnt/Loja.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    --card-ratio: 219 / 368;
+
+    margin: 0;
+
+    font-family: "loja";
+}
+
+img {
+    image-rendering: unset;
+    -ms-interpolation-mode: unset;
+}
+
+canvas {
+    image-rendering: unset;
+    -ms-interpolation-mode: unset;
+
+    border: 2px solid #fff;
+}
+
+div {
+    background-repeat: no-repeat;
+}
+
+.nodisplay {
+    display: none !important;
+}
+
+.hidden {
+    visibility: hidden;
+}
+
+.everything-container {
+    display: flex;
+    flex-direction: column;
+
+    height: 100vh;
+}
+
+.game-board {
+    flex: 1;
+}
+
+.bottom-container {
+    --cardsiz: 22.5vmin;
+    width: calc(100vw - 48px);
+
+    flex-grow: 0;
+    flex-shrink: 0;
+
+    height: var(--cardsiz);
+
+    padding: 24px;
+    
+    background-color: #013;
+    
+    display: flex;
+    flex-direction: row;
+
+    gap: 8vw;
+
+    justify-content: space-between;
+}
+
+.ingredients-section, .products-section {
+    display: flex;
+    flex-direction: row;
+
+    height: 100%;
+}
+
+.ingredients-hand {
+    margin-left: 1em;
+
+    display: flex;
+    flex-direction: row;
+
+    gap: 1em;
+
+    height: 100%;
+}
+
+.products-hand {
+    display: flex;
+    flex-direction: row;
+
+    gap: 1em;
+
+    height: 100%;
+}
+
+.stackable {
+    display: grid;
+}
+
+.stackable * {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.ingredients-deck, .hand-item {
+    flex-grow: 0;
+    flex-shrink: 0;
+    
+    aspect-ratio: var(--card-ratio);
+}
+
+.cardspace {
+    background-image: url("img/emptydeck.png");
+    background-size: contain;
+}
+
+.facedown-card.bluedeck {
+    background-image: url("img/bluedeck.png");
+    background-size: contain;
+}
+
+.card {
+    display: grid;
+    height: var(--cardsiz);
+    width: calc(var(--cardsiz) * var(--card-ratio));
+}
+
+.card * {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.card::before {
+    background-size: contain;
+
+    content: "";
+
+    grid-column: 1;
+    grid-row: 1;
+
+    background-repeat: no-repeat;
+}
+
+.card.ingredient::before {
+    background-image: url("img/ingredientcard.png");
+    
+    height: calc(var(--cardsiz) * (250 / 219));
+
+    margin-left: calc(var(--cardsiz) * -0.05);
+    margin-right: calc(var(--cardsiz) * -0.05);
+
+    margin-top: calc(var(--cardsiz) * -0.1);
+}
+
+.card.product::before {
+    background-image: url("img/productcard.png");
+    
+    height: calc(var(--cardsiz) * (250 / 219));
+
+    margin-left: calc(var(--cardsiz) * -0.045);
+    margin-right: calc(var(--cardsiz) * -0.0575);
+
+    margin-top: calc(var(--cardsiz) * -0.0525);
+}
+
+.card .card-icon {
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: calc(var(--cardsiz) * 0.17);
+
+    height: calc(var(--cardsiz) * 0.2);
+}
+
+.card .card-text {
+    font-size: calc(var(--cardsiz) * 0.05);
+
+    margin-top: calc(var(--cardsiz) * 0.52);
+    margin-left: calc(var(--cardsiz) * 0.08);
+    margin-right: calc(var(--cardsiz) * 0.08);
+
+    height: calc(var(--cardsiz) * 0.4);
+}
+
+@media (max-aspect-ratio: 2.8/2) {
+    .bottom-container {
+        display: flex;
+        flex-direction: column;
+
+        gap: 2vh;
+
+        height: calc(2vh + (var(--cardsiz) * 2));
+    }
+}

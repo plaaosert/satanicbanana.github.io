@@ -1,0 +1,11 @@
+body {
+  margin: 0;
+}
+
+canvas {
+  border: none;
+}
+
+.bottombar {
+  height: 8vh;
+}

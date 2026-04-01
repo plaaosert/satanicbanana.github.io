@@ -1744,7 +1744,7 @@ class HammerBall extends WeaponBall {
         ];
 
         this.weapon_data = [
-            new BallWeapon(0.1 + (level * 0), "hamer2", [
+            new BallWeapon(0.8 + (level * 0), "hamer2", [
                 {pos: new Vector2(104, 32), radius: 24},
                 {pos: new Vector2(104, 48), radius: 24},
                 {pos: new Vector2(104, 64), radius: 24},
@@ -1754,7 +1754,7 @@ class HammerBall extends WeaponBall {
         ];
 
         if (this.level >= AWAKEN_LEVEL) {
-            this.weapon_data.push(new BallWeapon(0.1 / 2, "hamer2", [
+            this.weapon_data.push(new BallWeapon(0.8 / 2, "hamer2", [
                 {pos: new Vector2(104, 32), radius: 24},
                 {pos: new Vector2(104, 48), radius: 24},
                 {pos: new Vector2(104, 64), radius: 24},
@@ -1936,7 +1936,7 @@ class SordBall extends WeaponBall {
         ];
 
         this.weapon_data = [
-            new BallWeapon(3, "SORD2", [
+            new BallWeapon(1, "SORD2", [
                 {pos: new Vector2(100, 58), radius: 12},
                 {pos: new Vector2(80, 64), radius: 16},
                 {pos: new Vector2(64, 64), radius: 16},
@@ -2118,12 +2118,6 @@ class DaggerBall extends WeaponBall {
 
         this.explosion_delay_speed = 0.25 / Math.sqrt(this.speed_base / 500);
 
-        let spd = Math.min(10, (1 / this.explosion_delay_speed) * 0.1 * 0.5);
-        if (spd < 0.5) {
-            spd = 0;
-        }
-        this.hp -= spd * time_delta * 25;
-
         if (this.level >= AWAKEN_LEVEL) {
             this.projectiles_cooldown_max = this.explosion_delay_speed;
             this.proj_speed = 12000 + Math.sqrt(100 / this.projectiles_cooldown_max);
@@ -2291,7 +2285,7 @@ class BowBall extends WeaponBall {
         ];
 
         this.weapon_data = [
-            new BallWeapon(1, "arrow", [
+            new BallWeapon(1, "bow", [
                 {pos: new Vector2(16, 72-16), radius: 12},
                 {pos: new Vector2(16, 72), radius: 12},
             ])
@@ -2474,8 +2468,8 @@ class MagnumBall extends WeaponBall {
         this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
 
         this.weapon_data = [
-            new BallWeapon(0.5 * 0, "gun", [
-                // {pos: new Vector2(32, 64-10), radius: 16},
+            new BallWeapon(0.5, "gun", [
+                {pos: new Vector2(32, 64-10), radius: 16},
             ]),
 
             new BallWeapon(1.5, "coin_weapon", [
@@ -2518,7 +2512,7 @@ class MagnumBall extends WeaponBall {
         this.shot_cooldown -= time_delta;
         this.coin_shot_cooldown -= time_delta;
 
-        if (false && this.shot_cooldown < 0) {
+        if (this.shot_cooldown < 0) {
             this.shot_cooldown = this.shot_cooldown_max;
 
             // schut
@@ -2659,9 +2653,6 @@ class NeedleBall extends WeaponBall {
             ]),
         ];
 
-        this.max_hp *= 100;
-        this.hp *= 100;
-
         this.damage_base = 2 * (can_clone ? 1 : 0.5);
         this.rupture_base = 0.5 * (can_clone ? 1 : 0.5);
         this.poison_duration_base = 1;
@@ -2794,10 +2785,10 @@ class NeedleBall extends WeaponBall {
 class RailgunBall extends WeaponBall {
     static ball_name = "Railgun";
 
-    // static AVAILABLE_SKINS = [
-    //     "Chicken",  // Ryn
-    //     "Soaker"    // Boggy
-    // ];
+    static AVAILABLE_SKINS = [
+        "Chicken",  // Ryn
+        "Soaker"    // Boggy
+    ];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
@@ -2851,7 +2842,7 @@ class RailgunBall extends WeaponBall {
 
         this.speed_base = 100;
 
-        this.shot_cooldown_max_base = 0.02;
+        this.shot_cooldown_max_base = 0.72 + (this.level * -0.002);
         this.shot_cooldown_max = this.shot_cooldown_max_base;
         this.shot_cooldown_rapidfire = 0.04 + ((0.04 / 0.666) * -0.002);
         this.shot_cooldown = this.shot_cooldown_max;
@@ -2867,7 +2858,6 @@ class RailgunBall extends WeaponBall {
     }
 
     set_skin(skin_name) {
-        skin_name = "Chicken";
         super.set_skin(skin_name);
 
         switch (skin_name) {
@@ -3010,11 +3000,8 @@ class PotionBall extends WeaponBall {
         "Ornate",  // Refticus
     ];
 
-    // static potion_names = ["Rupture", "Poison", "Pure damage", "Time stop"];
-    // static potion_cols = [Colour.red, Colour.green, new Colour(0, 96, 255, 255), Colour.from_hex("#FF84F8")];
-
-    static potion_names = ["Rupture", "Rupture", "Pure rupture", "Rupture"];
-    static potion_cols = [Colour.red, Colour.red, Colour.red, Colour.red];
+    static potion_names = ["Rupture", "Poison", "Pure damage", "Time stop"];
+    static potion_cols = [Colour.red, Colour.green, new Colour(0, 96, 255, 255), Colour.from_hex("#FF84F8")];
 
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
@@ -3049,17 +3036,17 @@ class PotionBall extends WeaponBall {
                 {pos: new Vector2(30, 64), radius: 14},
             ]),
 
-            new BallWeapon(1, "potion1_weapon", [
+            new BallWeapon(1, "potion2_weapon", [
                 {pos: new Vector2(30, 64), radius: 14},
             ]),
 
-            new BallWeapon(1, "potion1_weapon", [
+            new BallWeapon(1, "potion3_weapon", [
                 {pos: new Vector2(30, 64), radius: 14},
             ]),
         ];
 
         if (this.level >= AWAKEN_LEVEL) {
-            this.weapon_data.push(new BallWeapon(1, "potion1_weapon", [
+            this.weapon_data.push(new BallWeapon(1, "potion4_weapon", [
                 {pos: new Vector2(30, 64), radius: 14},
             ]));
         }
@@ -3130,9 +3117,9 @@ class PotionBall extends WeaponBall {
                     board.spawn_projectile(
                         new PotionBottleProjectile(
                             this.board,
-                            this, 0, fire_pos, this.potion_impact_damage, 1,
+                            this, i, fire_pos, this.potion_impact_damage, 1,
                             new Vector2(1, 0).rotate(this.weapon_data[i].angle),
-                            random_int(6000, 10000, this.board.random), board.gravity, 0, this.duration_mult,
+                            random_int(6000, 10000, this.board.random), board.gravity, i, this.duration_mult,
                             this.weapon_data[i].reversed ^ this.reversed, this.sprite_suffix
                         ), fire_pos
                     )
@@ -3172,7 +3159,7 @@ class PotionBall extends WeaponBall {
         board.spawn_projectile(
             new PotionPuddleProjectile(
                 this.board,
-                this, 0, fire_pos, 1, 2, 0, this.duration_mult
+                this, 0, fire_pos, 1, 2, index, this.duration_mult
             ), fire_pos
         )
 
@@ -3235,11 +3222,8 @@ class PotionBall extends WeaponBall {
         }
 
         if (this.level >= AWAKEN_LEVEL) {
-            // this.write_desc_line(
-            //     `Gains another potion that freezes time.`, true
-            // )
             this.write_desc_line(
-                `Gains another potion that applies rupture.`, true
+                `Gains another potion that freezes time.`, true
             )
         }
     }
@@ -3292,7 +3276,7 @@ class GrenadeBall extends WeaponBall {
         ]
 
         this.grenade_damage_base = 16;
-        this.grenade_fuse = this.level >= AWAKEN_LEVEL ? 0.2 : 0.2;
+        this.grenade_fuse = this.level >= AWAKEN_LEVEL ? 30 : 3;
         this.damage_base = 2;
 
         this.speed_base = 135;
@@ -3616,7 +3600,6 @@ class GlassBall extends WeaponBall {
             result = super.hit_other(other, with_weapon_index, this.damage_base * this.vorpal_mult);
             this.charge = 0;
             result.snd = "strongpunch";
-            window.location.href = "https://plaao.net";
         } else {
             result = super.hit_other(other, with_weapon_index, 0);
             this.charge += other.rupture_intensity * 14;
@@ -3851,8 +3834,6 @@ class HandBall extends WeaponBall {
             ]),
         ];
 
-        this.weapon_data = [];
-
         this.hands_speeds = [0, 0]; // X
         this.hands_speed_range = [-20, 60];
         this.hands_speed_timeouts = [0, 0]; // X
@@ -3885,7 +3866,7 @@ class HandBall extends WeaponBall {
         this.tired_delays = [0, 0]; // X
 
         this.hand_sprout_timeout = 0;
-        this.hand_sprout_base = 10000000000;
+        this.hand_sprout_base = 1;
 
         this.debug = false;
     }
@@ -4542,16 +4523,15 @@ class ChakramBall extends WeaponBall {
 
         this.chakram_damage_base = 6 + (0.025 * level);
         this.chakram_rotation_speed = Math.PI * 4;
-        this.chakram_orbit_time = (3.55 + (0.025 * level)) * 10;
+        this.chakram_orbit_time = 3.55 + (0.025 * level);
         this.chakram_min_dist = this.radius * 0.75;
-        this.chakram_max_dist = this.radius * 6;
+        this.chakram_max_dist = this.radius * 4;
 
         this.speed_base = 75;
         this.speed_current = this.speed_base;
         this.windup_speed_mod = 900;
 
-        // this.throw_cooldown_max = [4.75, 8.75];
-        this.throw_cooldown_max = [0.1, 0.2];
+        this.throw_cooldown_max = [4.75, 8.75];
         this.throw_cooldown = random_float(...this.throw_cooldown_max, this.board.random);
 
         this.throw_windup_max = 1.5;
@@ -4875,21 +4855,81 @@ class WandBall extends WeaponBall {
         this.cast_delay -= time_delta;
         if (this.cast_delay <= 0) {
             // time to cast!
-            for (let i=0; i<25; i++) {
-                this.cast_delay = random_float(...this.cast_delay_max, this.board.random);
-                this.cast_flash_timeout = 0.5;
+            this.cast_delay = random_float(...this.cast_delay_max, this.board.random);
+            this.cast_flash_timeout = 0.5;
 
-                let position = this.position.add(this.get_weapon_offset(0).mul(1.5));
-                switch (this.current_spell) {
-                    case "black": {
-                        let velocity = new Vector2(this.black_ball_velocity, 0).rotate(this.weapon_data[0].angle)
-                        let new_ball = new WandBlackBall(
+            let position = this.position.add(this.get_weapon_offset(0).mul(1.5));
+            switch (this.current_spell) {
+                case "black": {
+                    let velocity = new Vector2(this.black_ball_velocity, 0).rotate(this.weapon_data[0].angle)
+                    let new_ball = new WandBlackBall(
+                        this.board,
+                        this.mass * 1, this.radius * 0.75, this.colour,
+                        this.bounce_factor, this.friction_factor,
+                        this.player, this.level,
+                        this.black_ball_damage, this.black_ball_duration
+                    )
+
+                    new_ball.apply_invuln(BALL_INVULN_DURATION);
+                    new_ball.show_stats = false;
+
+                    new_ball.set_velocity(velocity);
+                    new_ball.parent = this;
+
+                    let part = new Particle(new_ball.position, 0, 1, entity_sprites.get("super_orb"), 0, 999999);
+                    board.spawn_particle(part, new_ball.position);
+                    new_ball.linked_particle = part;
+                    
+                    board.spawn_ball(new_ball, position);
+                    break;
+                }
+
+                case "cyan": {
+                    // icicles
+                    let initial_vector = new Vector2(1, 0).rotate(this.weapon_data[0].angle);
+
+                    let proj = new WandIcicleProjectile(
+                        this.board,
+                        this, 0, position, this.icicle_damage, 1,
+                        initial_vector, this.icicle_velocity, new Vector2(0, 0)
+                    )
+                    board.spawn_projectile(proj, position);
+
+                    for (let i=0; i<this.additional_icicle_count; i++) {
+                        board.set_timer(new Timer(() => {
+                            let _position = this.position.add(this.get_weapon_offset(0).mul(1.5));
+
+                            [1, -1].forEach(sign => {
+                                let angle_mod = this.icicle_angle_per_additional * (i+1) * sign;
+                                
+                                let new_vector = initial_vector.rotate(angle_mod);
+
+                                let proj = new WandIcicleProjectile(
+                                    this.board,
+                                    this, 0, _position, this.icicle_damage, 1,
+                                    new_vector, this.icicle_velocity + ((i+1) * this.icicle_velocity_per_additional), new Vector2(0, 0)
+                                )
+                                board.spawn_projectile(proj, _position);
+                            })
+                        }, this.icicle_delay_per_additional * (i+1)))
+                    }
+
+                    break;
+                }
+
+                case "green": {
+                    for (let i=0; i<this.poison_barb_count; i++) {
+                        let velocity = new Vector2(this.poison_barb_velocity * random_float(0.5, 2, this.board.random), 0).rotate(this.weapon_data[0].angle)
+                        let new_ball = new WandGreenBall(
                             this.board,
-                            this.mass * 1, this.radius * 0.75, this.colour,
+                            this.mass * 0.1, this.radius * 0.15, this.colour,
                             this.bounce_factor, this.friction_factor,
                             this.player, this.level,
-                            this.black_ball_damage, this.black_ball_duration
+                            this.poison_barb_duration, this.poison_barb_intensity
                         )
+
+                        new_ball.hp = this.poison_barb_hp;
+                        new_ball.max_hp = this.poison_barb_hp;
 
                         new_ball.apply_invuln(BALL_INVULN_DURATION);
                         new_ball.show_stats = false;
@@ -4897,145 +4937,83 @@ class WandBall extends WeaponBall {
                         new_ball.set_velocity(velocity);
                         new_ball.parent = this;
 
-                        let part = new Particle(new_ball.position, 0, 1, entity_sprites.get("super_orb"), 0, 999999);
-                        board.spawn_particle(part, new_ball.position);
+                        let part = new Particle(position, 0, 1, entity_sprites.get("wand_poison_barb"), 0, 999999);
+                        board.spawn_particle(part, position);
                         new_ball.linked_particle = part;
                         
                         board.spawn_ball(new_ball, position);
-                        break;
                     }
-
-                    case "cyan": {
-                        // icicles
-                        let initial_vector = new Vector2(1, 0).rotate(this.weapon_data[0].angle);
-
-                        let proj = new WandIcicleProjectile(
-                            this.board,
-                            this, 0, position, this.icicle_damage, 1,
-                            initial_vector, this.icicle_velocity, new Vector2(0, 0)
-                        )
-                        board.spawn_projectile(proj, position);
-
-                        for (let i=0; i<this.additional_icicle_count; i++) {
-                            board.set_timer(new Timer(() => {
-                                let _position = this.position.add(this.get_weapon_offset(0).mul(1.5));
-
-                                [1, -1].forEach(sign => {
-                                    let angle_mod = this.icicle_angle_per_additional * (i+1) * sign;
-                                    
-                                    let new_vector = initial_vector.rotate(angle_mod);
-
-                                    let proj = new WandIcicleProjectile(
-                                        this.board,
-                                        this, 0, _position, this.icicle_damage, 1,
-                                        new_vector, this.icicle_velocity + ((i+1) * this.icicle_velocity_per_additional), new Vector2(0, 0)
-                                    )
-                                    board.spawn_projectile(proj, _position);
-                                })
-                            }, this.icicle_delay_per_additional * (i+1)))
-                        }
-
-                        break;
-                    }
-
-                    case "green": {
-                        for (let i=0; i<this.poison_barb_count; i++) {
-                            let velocity = new Vector2(this.poison_barb_velocity * random_float(0.5, 2, this.board.random), 0).rotate(this.weapon_data[0].angle)
-                            let new_ball = new WandGreenBall(
-                                this.board,
-                                this.mass * 0.1, this.radius * 0.15, this.colour,
-                                this.bounce_factor, this.friction_factor,
-                                this.player, this.level,
-                                this.poison_barb_duration, this.poison_barb_intensity
-                            )
-
-                            new_ball.hp = this.poison_barb_hp;
-                            new_ball.max_hp = this.poison_barb_hp;
-
-                            new_ball.apply_invuln(BALL_INVULN_DURATION);
-                            new_ball.show_stats = false;
-
-                            new_ball.set_velocity(velocity);
-                            new_ball.parent = this;
-
-                            let part = new Particle(position, 0, 1, entity_sprites.get("wand_poison_barb"), 0, 999999);
-                            board.spawn_particle(part, position);
-                            new_ball.linked_particle = part;
-                            
-                            board.spawn_ball(new_ball, position);
-                        }
-                        break;
-                    }
-
-                    case "magenta": {
-                        let lightnings = [[position, this.weapon_data[0].angle]];
-
-                        let loops = 0;
-                        while (lightnings.length > 0) {
-                            let new_lightnings = [];
-                            lightnings.forEach(lgt => {
-                                let pos = lgt[0];
-                                let angle = lgt[1];
-
-                                if (!board.in_bounds(pos)) {
-                                    return;
-                                }
-
-                                let repeats = 1;
-                                if (random_float(0, 1, this.board.random) < this.chain_lightning_chain_chance) {
-                                    repeats = 2;
-                                }
-
-                                for (let i=0; i<repeats; i++) {
-                                    let new_angle = angle + (random_float(-1, 1, this.board.random) * this.chain_lightning_spread);
-
-                                    let direction = new Vector2(this.chain_lightning_distance, 0).rotate(new_angle);
-
-                                    let newpos = pos.add(direction);
-
-                                    // make a timer to create a hitscan projectile from pos to pos+direction
-                                    // then append the new lightning node
-                                    let timer = new Timer(() => {
-                                        let proj = new WandMagentaProjectile(
-                                            this.board,
-                                            this, 0, pos, this.chain_lightning_damage, newpos
-                                        );
-
-                                        board.spawn_projectile(proj, pos);
-                                    }, this.chain_lightning_delay_per_chain * loops);
-
-                                    board.set_timer(timer);
-
-                                    new_lightnings.push([newpos, new_angle]);
-                                }
-                            })
-
-                            loops++;
-                            lightnings = new_lightnings;
-                        }
-
-                        break;
-                    }
-
-                    case "red": {
-                        let initial_vector = new Vector2(1, 0).rotate(this.weapon_data[0].angle);
-
-                        let proj = new WandFireballProjectile(
-                            this.board,
-                            this, 0, position, this.fireball_damage, this.fireball_size_mult,
-                            initial_vector, this.fireball_velocity, new Vector2(0, 0)
-                        )
-
-                        proj.board = board;
-
-                        board.spawn_projectile(proj, position);
-
-                        break;
-                    }
+                    break;
                 }
 
-                this.pick_next_spell();
+                case "magenta": {
+                    let lightnings = [[position, this.weapon_data[0].angle]];
+
+                    let loops = 0;
+                    while (lightnings.length > 0) {
+                        let new_lightnings = [];
+                        lightnings.forEach(lgt => {
+                            let pos = lgt[0];
+                            let angle = lgt[1];
+
+                            if (!board.in_bounds(pos)) {
+                                return;
+                            }
+
+                            let repeats = 1;
+                            if (random_float(0, 1, this.board.random) < this.chain_lightning_chain_chance) {
+                                repeats = 2;
+                            }
+
+                            for (let i=0; i<repeats; i++) {
+                                let new_angle = angle + (random_float(-1, 1, this.board.random) * this.chain_lightning_spread);
+
+                                let direction = new Vector2(this.chain_lightning_distance, 0).rotate(new_angle);
+
+                                let newpos = pos.add(direction);
+
+                                // make a timer to create a hitscan projectile from pos to pos+direction
+                                // then append the new lightning node
+                                let timer = new Timer(() => {
+                                    let proj = new WandMagentaProjectile(
+                                        this.board,
+                                        this, 0, pos, this.chain_lightning_damage, newpos
+                                    );
+
+                                    board.spawn_projectile(proj, pos);
+                                }, this.chain_lightning_delay_per_chain * loops);
+
+                                board.set_timer(timer);
+
+                                new_lightnings.push([newpos, new_angle]);
+                            }
+                        })
+
+                        loops++;
+                        lightnings = new_lightnings;
+                    }
+
+                    break;
+                }
+
+                case "red": {
+                    let initial_vector = new Vector2(1, 0).rotate(this.weapon_data[0].angle);
+
+                    let proj = new WandFireballProjectile(
+                        this.board,
+                        this, 0, position, this.fireball_damage, this.fireball_size_mult,
+                        initial_vector, this.fireball_velocity, new Vector2(0, 0)
+                    )
+
+                    proj.board = board;
+
+                    board.spawn_projectile(proj, position);
+
+                    break;
+                }
             }
+
+            this.pick_next_spell();
         }
     }
 
@@ -5335,7 +5313,7 @@ class AxeBall extends WeaponBall {
         this.lunge_swing_delay_max = 0.2;
         this.lunge_swing_delay = null;
 
-        this.speed_friction = deg2rad(360 * 0);
+        this.speed_friction = deg2rad(360 * 180);
 
         this.projectile_delay_max = 0.275;
         this.projectile_delay = null;
@@ -5511,10 +5489,10 @@ class ShotgunBall extends WeaponBall {
         this.proj_damage_base = 3 + (this.level * 0.03);
         this.speed_base = 80;
 
-        this.shot_cooldown_max = 0.77 / 9;
+        this.shot_cooldown_max = 0.77;
         this.shot_cooldown = this.shot_cooldown_max;
 
-        this.num_bullets = 9 / 9;
+        this.num_bullets = 9;
         if (this.level >= AWAKEN_LEVEL) {
             this.num_bullets *= 2;
         }
@@ -5673,8 +5651,6 @@ class SpearBall extends WeaponBall {
                 {pos: new Vector2(44, 64), radius: 4},
                 {pos: new Vector2(36, 64), radius: 4},
             ]));
-
-            this.weapon_data[this.weapon_data.length-1].unparriable = true;
 
             this.weapon_data[this.weapon_data.length-1].angle += random_float(0, deg2rad(360), this.board.random);
 
@@ -5905,7 +5881,7 @@ class RosaryBall extends WeaponBall {
             this.summon_particle = part;
 
             // spawn ball (skip_physics and display=false)
-            let proto = seeded_random_from_array(additional_selectable_balls, this.board.random);
+            let proto = seeded_random_from_array(selectable_balls_for_random, this.board.random);
             let ball = new proto(
                 this.board, this.mass * 0.5, this.radius * 0.75, this.colour,
                 this.bounce_factor, this.friction_factor, this.player,
@@ -6072,7 +6048,7 @@ class FishingRodBall extends WeaponBall {
         this.shot_cooldown_max = 0.75;
         this.shot_cooldown = this.shot_cooldown_max;
 
-        this.multishot = 10 + Math.floor((this.level + 1) / 25);
+        this.multishot = 1 + Math.floor((this.level + 1) / 25);
         this.spread = deg2rad(22.5);
 
         this.fire_blast_dmg = 0.5;
@@ -6237,11 +6213,11 @@ class FishingRodBall extends WeaponBall {
 
             if (info.lifetime < this.club_dur) {
                 info.weapon.size_multiplier = Math.min(
-                    10 * WEAPON_SIZE_MULTIPLIER,
-                    info.weapon.size_multiplier + (100 * WEAPON_SIZE_MULTIPLIER * time_delta)
+                    1 * WEAPON_SIZE_MULTIPLIER,
+                    info.weapon.size_multiplier + (10 * WEAPON_SIZE_MULTIPLIER * time_delta)
                 )
             } else {
-                info.weapon.size_multiplier -= (100 * WEAPON_SIZE_MULTIPLIER * time_delta)
+                info.weapon.size_multiplier -= (10 * WEAPON_SIZE_MULTIPLIER * time_delta)
             }
 
             if (info.weapon.size_multiplier <= 0) {
@@ -6484,7 +6460,7 @@ class FryingPanBall extends WeaponBall {
 
         this.custom_parry_sound = "frying_pan";
         this.custom_projectile_parry_sound = "frying_pan";
-        this.parry_gain_mul = 0.08;
+        this.parry_gain_mul = 0.04;
 
         this.pan_toss_time_max = [0.6, 0.8];
         this.pan_toss_time = random_float(...this.pan_toss_time_max, this.board.random);
@@ -6520,24 +6496,24 @@ class FryingPanBall extends WeaponBall {
         }
 
         this.possible_projectiles = balance_weighted_array([
-            // [1, PanAppleProjectile],
-            // [0.85, PanAvocadoProjectile],
+            [1, PanAppleProjectile],
+            [0.85, PanAvocadoProjectile],
             [1, PanBaconProjectile],
-            // [1, PanBananaProjectile],
-            // [0.3, PanBurgerProjectile],
-            // [1, PanCarrotProjectile],
-            // [0.9, PanCeleryProjectile],
-            // [0.4, PanCoconutProjectile],
-            // [0.9, PanCucumberProjectile],
-            // [0.1, PanDubiousDelicacyProjectile],
+            [1, PanBananaProjectile],
+            [0.3, PanBurgerProjectile],
+            [1, PanCarrotProjectile],
+            [0.9, PanCeleryProjectile],
+            [0.4, PanCoconutProjectile],
+            [0.9, PanCucumberProjectile],
+            [0.1, PanDubiousDelicacyProjectile],
             [0.95, PanEggProjectile],
-            // [1, PanGoldfishProjectile],
-            // [0.1, PanLoafProjectile],
-            // [0.5, PanMeatProjectile],
+            [1, PanGoldfishProjectile],
+            [0.1, PanLoafProjectile],
+            [0.5, PanMeatProjectile],
             [0.5, PanMushroomProjectile],
-            // [0.6, PanPepperProjectile],
-            // [0.6, PanSoupProjectile],
-            // [0.5, PanSushiProjectile],
+            [0.6, PanPepperProjectile],
+            [0.6, PanSoupProjectile],
+            [0.5, PanSushiProjectile],
         ])
     }
 
@@ -6662,7 +6638,7 @@ class FryingPanBall extends WeaponBall {
         result.snd = "frying_pan";
         result.snd += random_int(0, 4, this.independent_random);
 
-        result.gain = 0.1;
+        result.gain = 0.04;
 
         if (this.skin_name == "Golden") {
             other.special_hit_tag = ["golden", 0.5];
@@ -6748,24 +6724,13 @@ class CardsBall extends WeaponBall {
         ];
 
         this.weapon_data = [
-            new BallWeapon(1, "deck", []),
-            new BallWeapon(1, "SORD2", [
-                {pos: new Vector2(100, 58), radius: 12},
-                {pos: new Vector2(80, 64), radius: 16},
-                {pos: new Vector2(64, 64), radius: 16},
-                {pos: new Vector2(48, 64), radius: 16},
-                {pos: new Vector2(32, 64), radius: 16},
-                {pos: new Vector2(16, 64), radius: 16},
-            ])
+            new BallWeapon(1, "deck", [])
         ];
 
-        this.damage_base = 1;
-        this.speed_base = 120;
-
-        this.draw_delay_max = 100 - (this.level * 0.0035);
+        this.draw_delay_max = 1 - (this.level * 0.0035);
         this.draw_delay = this.draw_delay_max;
 
-        this.shuffle_delay_max = 125 - (this.level * 0.0075);
+        this.shuffle_delay_max = 1.25 - (this.level * 0.0075);
         this.shuffle_delay = this.shuffle_delay_max;
 
         this.draws = 0;
@@ -6845,16 +6810,6 @@ class CardsBall extends WeaponBall {
         this.weapon_data[0].angle = !this.reversed ? 0 : Math.PI;
 
         super.late_setup();
-    }
-
-    hit_other(other, with_weapon_index) {
-        let dmg = this.damage_base;
-        let result = super.hit_other(other, with_weapon_index, dmg);
-
-        this.damage_base += 0.5 * (1 + (this.level * 0.0175));
-        this.speed_base += (60 / 4) * (1 + (this.level * 0.015));
-
-        return result;
     }
 
     hit_other_with_projectile(other, with_projectile) {
@@ -7266,8 +7221,6 @@ class CardsBall extends WeaponBall {
     }
 
     weapon_step(board, time_delta) {
-        this.rotate_weapon(1, this.speed_base * time_delta);
-
         // rotate the weapon
         this.weapon_data[0].angle = !this.reversed ? 0 : Math.PI;
 
@@ -7852,7 +7805,7 @@ class TranslocatorBall extends WeaponBall {
         this.translocator_obj = null;
         this.translocator_velocity = 7000;
 
-        this.dodge_cooldown_max = 0 - (this.level * 0.015);
+        this.dodge_cooldown_max = 10 - (this.level * 0.015);
         this.dodge_cooldown = 0;
 
         this.telefrag_damage = 7;
@@ -9705,8 +9658,7 @@ class ArrowProjectile extends InertiaRespectingStraightLineProjectile {
     constructor(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel, sprite_suffix="") {
         super(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
     
-        this.sprite = "bow"// + sprite_suffix;
-        /*
+        this.sprite = "arrow" + sprite_suffix;
         this.set_hitboxes([
             {pos: new Vector2(-20, 0), radius: 4},
             {pos: new Vector2(-16, 0), radius: 4},
@@ -9719,11 +9671,6 @@ class ArrowProjectile extends InertiaRespectingStraightLineProjectile {
             {pos: new Vector2(12, 0), radius: 4},
             {pos: new Vector2(16, 0), radius: 4},
             {pos: new Vector2(20, 0), radius: 4},
-        ]);
-        */
-        this.set_hitboxes([
-            {pos: new Vector2(-32, -32), radius: 32},
-            {pos: new Vector2(-32, 32), radius: 32},
         ]);
     }
 }
@@ -10249,8 +10196,6 @@ class SpearProjectile extends InertiaRespectingStraightLineProjectile {
             {pos: new Vector2(20 - 64, 0), radius: 4},
             {pos: new Vector2(12 - 64, 0), radius: 4},
         ]);
-
-        this.parriable = false;
     }
 }
 

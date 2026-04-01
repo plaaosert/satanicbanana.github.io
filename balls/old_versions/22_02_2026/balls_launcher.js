@@ -24,22 +24,6 @@ let default_cols = [
     new Colour(255, 182, 201, 255),
     new Colour(230, 230, 230, 255),
 ];
-
-default_cols = [
-    Colour.green,
-    Colour.green,
-    Colour.green,
-    Colour.green,
-    
-    Colour.green,
-    Colour.green,
-    Colour.green,
-    Colour.green,
-    
-    Colour.green,
-    Colour.green,
-    Colour.green,
-]
 let col_names = [
     "RED",
     "YLW",
@@ -703,7 +687,7 @@ function load_replay(replay_as_text) {
     let powerups = replay.powerups ? true : false;
 
     // standard by default
-    let map_config = map_configs[replay.map_config ?? "SNG"];
+    let map_config = map_configs[replay.map_config ?? "S"];
 
     replaying = true;
     start_game(
@@ -771,7 +755,7 @@ function spawn_selected_balls() {
     mysterious_powers_enabled = document.querySelector("#mysterious_powers_checkbox").checked;
 
     // standard map
-    let map_config = map_configs["SNG"];
+    let map_config = map_configs["S"];
 
     start_game(
         framespeed, seed,
