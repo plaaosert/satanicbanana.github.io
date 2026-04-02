@@ -1,6 +1,6 @@
 game_id = "balls";
 
-const FILES_PREFIX = "";
+const FILES_PREFIX = "../../";
 
 const GAME_VERSION = "01/04/2026";
 
