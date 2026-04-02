@@ -8764,7 +8764,7 @@ class WrenchBall extends WeaponBall {
                 // upgrade turret
                 let closest = this.children.reduce((p, c) => {
                     let dist = this.position.sqr_distance(c.position);
-                    if (c.upgradable && dist < p[1]) {
+                    if (c.player.id == this.player.id && c.upgradable && dist < p[1]) {
                         return [c, dist];
                     } else {
                         return p;
