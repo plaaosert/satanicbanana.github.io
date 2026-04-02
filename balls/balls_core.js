@@ -3964,6 +3964,8 @@ function render_postopening(board) {
         }
 
         opening_state.cnt = null;
+
+        board.balls.forEach(b => b.display = true);
     }
 
     if (t < maxt && starting_fullpause_timeout > 0) {
