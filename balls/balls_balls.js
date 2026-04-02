@@ -8772,6 +8772,8 @@ class WrenchBall extends WeaponBall {
                 }, [null, Number.POSITIVE_INFINITY]);
 
                 if (closest[0]) {
+                    closest[0].upgradable = false;
+                    
                     for (let i=0; i<8; i++) {
                         this.board.spawn_particle(new EnergyBurstParticle(
                             particle_spawn_pos, 0.6, entity_sprites.get("powerup_burst_white"), 0, 16, true,
