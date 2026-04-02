@@ -8773,7 +8773,7 @@ class WrenchBall extends WeaponBall {
 
                 if (closest[0]) {
                     closest[0].upgradable = false;
-                    
+
                     for (let i=0; i<8; i++) {
                         this.board.spawn_particle(new EnergyBurstParticle(
                             particle_spawn_pos, 0.6, entity_sprites.get("powerup_burst_white"), 0, 16, true,
@@ -8876,7 +8876,6 @@ class WrenchTurretLv1Ball extends WeaponBall {
         this.parent = null;
 
         this.upgrade_class = WrenchTurretLv2Ball;
-        this.upgradable = true;
 
         this.shot_times = 1;
     }
@@ -9038,7 +9037,6 @@ class WrenchTurretLv4Ball extends WrenchTurretLv2Ball {
         this.weapon_data[0].offset = new Vector2(-16, 0);
 
         this.upgrade_class = WrenchTurretLv4Ball;
-        this.upgradable = false;
 
         this.shot_cooldown_max = 0.15;
 
