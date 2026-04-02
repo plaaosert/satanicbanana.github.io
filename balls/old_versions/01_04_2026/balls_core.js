@@ -2,7 +2,7 @@ game_id = "balls";
 
 const FILES_PREFIX = "";
 
-const GAME_VERSION = "02/04/2026";
+const GAME_VERSION = "01/04/2026";
 
 const AILMENT_CHARS = "➴☣♨";
 
@@ -780,6 +780,9 @@ async function load_audio_from_url(path, lazy=false) {
 }
 
 let audios_list = [
+    // https://www.youtube.com/watch?v=q4i05EaML44
+    ["glorp", "https://scrimblo.foundation/uploads/glorp.mp3", "Bloopin", "Eddie EWI"],
+
     // ultrakill
     ["parry", 'snd/parry.mp3'],
     ["parry2", 'snd/parry2.mp3'],
@@ -938,7 +941,7 @@ let audios_list = [
 
     // Edited: https://pixabay.com/sound-effects/film-special-effects-ratchet-62675/
     ["wrench_build", "snd/wrench_build.mp3"],
-    ["wrench_upgrade", "snd/wrench_upgrade.mp3?v=02"],
+    ["wrench_upgrade", "snd/wrench_upgrade.mp3"],
 
     // Edited: 
     // https://pixabay.com/sound-effects/film-special-effects-metal-clang-284809/
@@ -952,9 +955,6 @@ let audios_list = [
     ["big_punch", "snd/big_punch.mp3"],
     ["slow_motion_stop", "snd/slow_motion_stop.mp3"],
     ["special_move_hit", "snd/special_move_hit.mp3"],
-
-    // https://pixabay.com/sound-effects/nature-earth-rumble-6953/
-    ["earthquake2", "snd/earthquake2.mp3"],
 
     // Yoshimasa Terui (Jujutsu Kaisen)
     ["delirious", "https://scrimblo.foundation/uploads/delirious.mp3", "Delirious", "Yoshimasa Terui (Jujutsu Kaisen)"],
@@ -1023,7 +1023,7 @@ async function play_music(name, gain=null) {
 
     let played_music = await play_audio(name, gain);
     if (played_music !== null) {
-        music_audio = [played_music.obj, audio.get(name)[1], audio.get(name)[2], name];
+        music_audio = [audio_playing[played_music], audio.get(name)[1], audio.get(name)[2], name];
 
         document.querySelector("#loading_prompt").textContent = `♪ - ${music_audio[1]} - ${music_audio[2]}`
         document.querySelector("#loading_prompt").classList.remove("hidden");
@@ -1053,7 +1053,7 @@ function play_audio_data(buffer_content, gain=null) {
 
     source.start();
 
-    return {idx: audio_playing.length - 1, obj: obj};
+    return audio_playing.length - 1;
 }
 
 async function play_audio(name, gain=null) {
@@ -1065,20 +1065,20 @@ async function play_audio(name, gain=null) {
     let audio_content = audio.get(name);
     if (audio_content) {
         // this could either be a full source or base response
-        let data = null;
+        let idx = null;
         if (audio_content[3]) {
             // lazy and not loaded; load it now
             await prepare_lazy_audio(name);
         }
 
         if (!audio_content[3]) {
-            data = play_audio_data(audio_content[0], gain);
+            idx = play_audio_data(audio_content[0], gain);
         } else {
             // for some reason it didn't load. log and don't play
             console.log(`Audio ${name} didn't load on demand for some reason`);
         }
 
-        return data;
+        return idx;
     } else {
         // Tried to play a nonexistent sound. Print to console and return null
         console.log(`Tried to play nonexistent sound ${name}!`);
@@ -1086,20 +1086,6 @@ async function play_audio(name, gain=null) {
     }
 
     // console.log(`played sound ${name}`);
-}
-
-function fade_out_audio(source, initial_gain, over_time) {
-    // we need to disconect the source from its original gain node and substitute our own
-    source.disconnect(0);
-
-    let new_gain_node = audio_context.createGain();
-    new_gain_node.gain.setValueAtTime(initial_gain, audio_context.currentTime);
-
-    new_gain_node.gain.linearRampToValueAtTime(0, audio_context.currentTime + over_time);
-
-    new_gain_node.connect(audio_context.destination);
-
-    source.connect(new_gain_node);
 }
 
 function point_collides_line(pos, radius, line) {
@@ -1920,7 +1906,7 @@ class Board {
         this.max_game_duration = default_max_game_duration;
 
         this.starting_system_energy = 0;
-        this.attempt_energy_conservation = true;
+        this.attempt_energy_conservation = false;
         this.energy_conservation_aggression = 0.5;
     }
     
@@ -3957,7 +3943,8 @@ function render_postopening(board) {
         }
 
         if (!board.balls.some(b => b.START_MUSIC)) {
-            play_music(`2048_${random_int(0, 13, get_seeded_randomiser(board.random_seed))+1}`, 0.2);
+            // play_music(`2048_${random_int(0, 13, get_seeded_randomiser(board.random_seed))+1}`, 0.2);
+            play_music("glorp");
         } else {
             // consume it?
             console.log(random_int(0, 13, get_seeded_randomiser(board.random_seed))+1);
