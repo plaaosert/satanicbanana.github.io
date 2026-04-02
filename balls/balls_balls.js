@@ -8878,6 +8878,7 @@ class WrenchTurretLv1Ball extends WeaponBall {
         this.upgrade_class = WrenchTurretLv2Ball;
 
         this.shot_times = 1;
+        this.upgradable = true;
     }
 
     make_bullet(position, direction, speed) {
