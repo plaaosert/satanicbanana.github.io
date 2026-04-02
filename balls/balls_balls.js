@@ -9037,7 +9037,7 @@ class WrenchTurretLv4Ball extends WrenchTurretLv2Ball {
 
         this.weapon_data[0].offset = new Vector2(-16, 0);
 
-        this.upgrade_class = WrenchTurretLv4Ball;
+        this.upgrade_class = WrenchTurretLv5Ball;
 
         this.shot_cooldown_max = 0.15;
 
