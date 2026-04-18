@@ -4115,7 +4115,7 @@ function render_postopening(board) {
             if (AERO_BACKGROUND == AERO_BACKGROUNDS.MACINTOSH) {
                 let gains = [0.1, 0.1, 0.1];
                 let index = random_int(0, gains.length, get_seeded_randomiser(board.random_seed));
-                // index = 2;
+                // index = 1;
                 play_music(`upusen_${index+1}`, gains[index]);
             } else {
                 play_music(`2048_${random_int(0, 13, get_seeded_randomiser(board.random_seed))+1}`, 0.2);
