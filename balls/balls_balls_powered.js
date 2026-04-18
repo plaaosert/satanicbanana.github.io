@@ -124,8 +124,8 @@ class SmartLongsword extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Damage: ${this.damage_base.toFixed(2)}`
@@ -325,8 +325,8 @@ class SmartBowBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Arrow damage: ${this.proj_damage_base.toFixed(2)}`
@@ -429,8 +429,8 @@ class MissileLauncherBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Missile impact damage: ${this.proj_damage_base.toFixed(2)}`

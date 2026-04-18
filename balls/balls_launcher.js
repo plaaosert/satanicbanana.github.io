@@ -1,7 +1,7 @@
 const BASE_URL = "https://plaao.net/balls";
 
 /** @type {Board} */
-let board = null;
+board = null;
 
 let last_replay = "";
 let last_replay_compressed = "";
@@ -183,6 +183,9 @@ let gambling_money = 0;
 let gambling_money_display = 0;
 
 let screen_open = "sandbox";
+
+let aux_canvas = null;
+let aux_canvas_ctx = null;
 
 document.addEventListener("DOMContentLoaded", async function() {
     await load_audio();
@@ -597,6 +600,10 @@ function exit_battle(save_replay=true) {
 
     stop_music();
 
+    if (alternate_stats_rendering_mode) {
+        aux_canvas_ctx.clearRect(0, 0, aux_canvas.width, aux_canvas.height);
+    }
+
     game_paused = true;
     update_sim_speed_display();
 }
@@ -776,6 +783,9 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
     lmb_down = false;
     
     setTimeout(() => {
+        macintosh_comets_timer = MACINTOSH_COMETS_START_DELAY;
+        macintosh_star_timer = MACINTOSH_STAR_START_DELAY;
+
         stored_starting_hp = STARTING_HP;
         STARTING_HP = starting_hp;
     
@@ -815,6 +825,8 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
                 }
                 
                 ball.set_skin(skins[index]);
+
+                ball.spawned_index = index;
                 
                 if (christmas) {
                     let hat_particle = new Particle(ball.position, 0, 1, entity_sprites.get("festive red hat"), 0, 99999, false);
@@ -1819,6 +1831,14 @@ function set_preset(index) {
 
             break;
         }
+
+        case 3: {
+            BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.AERO;
+            AERO_LIGHTING_CONFIG = AERO_LIGHTING_CONFIGS.SPOTLIGHT;
+            AERO_BACKGROUND = AERO_BACKGROUNDS.MACINTOSH;
+
+            break;
+        }
     }
 
     update_graphics_popup();
@@ -1897,6 +1917,7 @@ function update_graphics_options() {
     if (board) {
         board.balls.forEach(b => b.setup_aero_light_lookup_table());
     }
+
     handle_resize();
     get_canvases();
     render_watermark();
@@ -2275,6 +2296,18 @@ function on_mobile() {
     return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
 
+function get_random_standard_ball() {
+    return random_from_array(selectable_balls_for_random);
+}
+
+function set_selected_ball_info(index, attr, val) {
+    selected_ball_info[`ball${index+1}`][attr] = val;
+}
+
+function register_match_end_function(fn) {
+    run_function_on_match_end = fn;
+}
+
 document.addEventListener("DOMContentLoaded", function() {
     if (window.location.href.includes("description_generator"))
         return;
@@ -2377,43 +2410,22 @@ document.addEventListener("DOMContentLoaded", function() {
             }
 
             case "Digit2": {
-                BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.VECTOR;
-                AERO_BACKGROUND = AERO_BACKGROUNDS.NONE;
-                handle_resize();
-                get_canvases();
-                render_watermark();
-                bg_changed = true;
-                BALL_DESC_BORDER_SIZE = BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO ? 2 : 1;
+                set_preset(0);
+                break;
+            }
+
+            case "Digit3": {
+                set_preset(1);
                 break;
             }
 
             case "Digit4": {
-                BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.AERO;
-                AERO_LIGHTING_CONFIG = AERO_LIGHTING_CONFIGS.VISTA;
-                AERO_BACKGROUND = AERO_BACKGROUNDS.VISTA;
-                if (board) {
-                    board.balls.forEach(b => b.setup_aero_light_lookup_table());
-                }
-                handle_resize();
-                get_canvases();
-                render_watermark();
-                BALL_DESC_BORDER_SIZE = BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO ? 2 : 1;
-                bg_changed = true;
+                set_preset(2);
                 break;
             }
 
             case "Digit5": {
-                BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.AERO;
-                AERO_LIGHTING_CONFIG = AERO_LIGHTING_CONFIGS.NEON;
-                AERO_BACKGROUND = AERO_BACKGROUNDS.PARALLAX_GRID;
-                if (board) {
-                    board.balls.forEach(b => b.setup_aero_light_lookup_table());
-                }
-                handle_resize();
-                get_canvases();
-                render_watermark();
-                BALL_DESC_BORDER_SIZE = BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO ? 2 : 1;
-                bg_changed = true;
+                set_preset(3);
                 break;
             }
 

@@ -390,6 +390,7 @@ class Vector2 {
     }
 
     static zero = new Vector2(0, 0);
+    static forward = new Vector2(1, 0);
 
     static from_hash_code(code) {
         return new Vector2((code-1) % 1000000, Math.floor((code-1) / 1000000));

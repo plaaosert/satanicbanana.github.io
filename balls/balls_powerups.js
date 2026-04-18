@@ -437,7 +437,88 @@ class PowerupRock extends Powerup {
 }
 
 class PowerupClone extends Powerup {
+    static ball_name = "Clone Powerup";
+    static sprite_name = "clone";
     
+    static burst_sprite = "cyan";
+    static burst_line_col = new Colour(0, 255, 255, 255);
+
+    static title = "Clone";
+    static desc = "Create an invulnerable copy with reduced damage that lasts 12 seconds.";
+
+    constructor(board, base_radius, radius_mul) {
+        super(board, base_radius, radius_mul);
+
+        this.name = "Clone Powerup";
+        this.affected_by_gravity = false;
+        this.ignore_bounds_checking = true;
+    }
+
+    late_setup() { 
+        super.late_setup();
+
+        this.position.x = -1000;
+        this.position.y = this.board.size.y / 2;
+
+        let vx = 2;
+        if (this.board.random() < 0.5) {
+            this.position.x = this.board.size.x - this.position.x;
+            vx *= -1;
+        }
+
+        this.set_velocity(random_on_circle(1, this.board.random).add(
+            new Vector2(vx, 0)
+        ).normalize().mul(
+            6000 * random_float(0.8, 1.2, this.board.random)
+        ));
+    }
+
+    powerup_movement(board, time_delta) {
+        if (this.ignore_bounds_checking && (this.position.x >= this.radius && this.position.x < this.board.size.x - this.radius)) {
+            this.ignore_bounds_checking = false;
+        }
+    }
+
+    apply_powerup(board, to) {
+        // do nothing
+        play_audio("powerup_clone", 0.2);
+        
+        /** @type {typeof WeaponBall} */
+        let proto = to.constructor;
+
+        let new_ball = new proto(
+            board, to.mass, to.radius, to.colour,
+            to.bounce_factor, to.friction_factor,
+            to.player, to.level, to.reversed
+        );
+
+        new_ball.opacity *= 0.5;
+        new_ball.gets_hit = false;
+        new_ball.takes_damage = false;
+
+        new_ball.show_stats = false;
+        new_ball.die = () => {
+            return {skip_default_explosion: true};
+        }
+
+        let displacement = random_on_circle(to.radius + 1, this.board.random);
+        this.board.spawn_ball(new_ball, to.position.add(displacement));
+
+        new_ball.set_velocity(displacement.mul(8));
+
+        let start_time = this.board.duration;
+        this.board.set_timer(new Timer(b => {
+            let t = b.duration - start_time
+            if (t > 10) {
+                new_ball.opacity = Math.max(0, lerp(0.5, 0.0, (t-10) / 2));
+            } if (t > 12) {
+                new_ball.hp = 0;
+                return false;
+            }
+            
+            return true;
+        }, 0.05, true));
+    }
 }
 
 class RockPowerupProjectile extends StraightLineProjectile {
@@ -500,4 +581,13 @@ const DEFAULT_POWERUPS_POOL = balance_weighted_array([
     [0.5, PowerupGift],
     [1, PowerupHeal],
     [0.5, PowerupRock],
+])
+
+const POWERUPS_POOL_2 = balance_weighted_array([
+    [1, PowerupCoinBlast],
+    [1, PowerupEnhancement],
+    [0.5, PowerupGift],
+    [1, PowerupHeal],
+    [0.5, PowerupRock],
+    [0.5, PowerupClone]
 ])

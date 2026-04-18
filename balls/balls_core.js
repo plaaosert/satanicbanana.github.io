@@ -25,7 +25,8 @@ const layer_names = [
 
 let imgs = {};
 
-const local = window.location.href.startsWith("file://");
+const local = window.location.href.startsWith("file://") || window.location.href.startsWith("http://localhost");
+const alternate_stats_rendering_mode = local;
 const show_playingaround_warning = false;
 
 const prerender_canvas = document.getElementById("hidden-prerender-canvas");
@@ -34,6 +35,19 @@ const prerender_ctx = prerender_canvas.getContext("2d");
 const PARTICLE_SIZE_MULTIPLIER = 16;
 
 const CANVAS_FONTS = "MS Gothic, terminus, Roboto Mono, monospace";
+const sizedown_lookup = {
+    20: 18,
+    18: 16,
+    16: 14,
+    14: 12,
+    12: 10,
+    10: 9,
+    9: 8,
+    8: 7,
+    7: 6,
+    6: 5,
+    5: 4
+}
 
 let num_textures_loaded = 0;
 let num_textures_needed = 0;
@@ -48,6 +62,15 @@ let STARTING_HP = 100;
 let stored_starting_hp = null;
 
 let run_function_on_match_end = null;
+
+const MACINTOSH_COMETS_START_DELAY = 2;
+let macintosh_comets_timer = MACINTOSH_COMETS_START_DELAY;
+let macintosh_comets_delays = [3.4, 12.4];
+
+const MACINTOSH_STAR_START_DELAY = 0;
+let macintosh_star_timer = MACINTOSH_STAR_START_DELAY
+let macintosh_star_delays = [0.05, 0.2];
+let macintosh_star_counts = [0, 4];
 
 const BALL_RENDERING_METHODS = {
     VECTOR: "VECTOR",
@@ -74,6 +97,7 @@ const AERO_LIGHTING_CONFIGS = {
     SIMPLE: "SIMPLE",
     VISTA: "VISTA",
     NEON: "NEON",
+    SPOTLIGHT: "SPOTLIGHT",
 }
 
 const AERO_LIGHTING_CONFIGS_INFO = {
@@ -88,7 +112,11 @@ const AERO_LIGHTING_CONFIGS_INFO = {
     [AERO_LIGHTING_CONFIGS.NEON]: {
         desc: "Incomplete!",
         disabled: true
-    }
+    },
+
+    [AERO_LIGHTING_CONFIGS.SPOTLIGHT]: {
+        desc: "Two opposite auroras on the corners with slightly offset global lighting.",
+    },
 }
 
 const AERO_BACKGROUNDS = {
@@ -96,6 +124,7 @@ const AERO_BACKGROUNDS = {
     RENDERED: "RENDERED",
     VISTA: "VISTA",
     PARALLAX_GRID: "PARALLAX_GRID",
+    MACINTOSH: "MACINTOSH",
 }
 
 const AERO_BACKGROUNDS_INFO = {
@@ -113,6 +142,10 @@ const AERO_BACKGROUNDS_INFO = {
 
     [AERO_BACKGROUNDS.PARALLAX_GRID]: {
         desc: "A slowly moving parallax grid.",
+    },
+
+    [AERO_BACKGROUNDS.MACINTOSH]: {
+        desc: "Adapted from the classic album art of Macintosh Plus - Floral Shoppe.",
     },
 }
 
@@ -314,6 +347,11 @@ const DEFAULT_POWERUPS_FREQUENCY = [10, 20];
 const entity_sprites = new Map([
     // Vista - https://www.reddit.com/r/FrutigerAero/comments/1eqwt3s/windows_vistainspired_wallpapers_i_made_in_about/
     ["vista", 1, "etc/"],
+
+    ["macintosh2", 1, "etc/"],
+    ["comet1", 12, "etc/macintosh/"],
+    ["comet_trail", 1, "etc/macintosh/"],
+    ["macintosh_star", 1, "etc/macintosh"],
 
     // entries
     ["entry_impact", 16, "entries/impact/"],
@@ -613,6 +651,8 @@ const entity_sprites = new Map([
     ["wrench_turret_gun3", 1, "weapon/"],
     ["wrench_turret_gun4", 1, "weapon/"],
     ["wrench_turret_gun5", 1, "weapon/"],
+
+    ["shiv", 1, "weapon/"],
 
     ["fire_blast", 6, "fire_blast/"],
 
@@ -959,12 +999,19 @@ let audios_list = [
     // Yoshimasa Terui (Jujutsu Kaisen)
     ["delirious", "https://scrimblo.foundation/uploads/delirious.mp3", "Delirious", "Yoshimasa Terui (Jujutsu Kaisen)"],
     ["if_i_am_with_you", "https://scrimblo.foundation/uploads/if_i_am_with_you.mp3", "If I Am With You", "Yoshimasa Terui (Jujutsu Kaisen)"],
+
+    // A3Zap [FF6 - SNES] + 59greenCherry [FF6 - SNES]
+    ["powerup_clone", "snd/powerup_clone.mp3"],
+
+    ["upusen_1", "https://scrimblo.foundation/uploads/bad_customer.mp3", "Bad customers", "upusen"],
+    ["upusen_2", "https://scrimblo.foundation/uploads/upusen_2.mp3", "Wednesday Is Almost Friday", "upusen"],
+    ["upusen_3", "https://scrimblo.foundation/uploads/upusen_not_good.mp3", "Not Good", "upusen"],
 ]
 
 
 let titles = [
     "",
-    "Twilight", "Winter Morning", "Summer Rain", "Amazon Queen",
+    "Sunrise", "Winter Morning", "Summer Rain", "Amazon Queen",
     "Waterfall", "Blossom Time", "Starlight", "Dolphin Play",
     "Underwater Sun", "Ice Tower", "Voyage", "Chronologica",
     "Alice"
@@ -1201,6 +1248,43 @@ class MovingParticle extends Particle {
         let result = super.pass_time(time_delta);
         if (result) {
             this.position = this.position.add(this.velocity.mul(time_delta));
+        }
+        
+        return result;
+    }
+}
+
+class MacintoshCometParticle extends MovingParticle {
+    constructor(position, rotation_angle, size, sprites, frame_speed, duration, looping, velocity, board, delay=0, render_behind=false) {
+        super(position, rotation_angle, size, sprites, frame_speed, duration, looping, velocity, delay, render_behind);
+
+        this.board = board;
+
+        this.subparticle_delay_max = 0.15;
+        this.subparticle_delay = 0;
+
+        this.render_behind = true;
+
+        this.opacity = 0.75;
+    }
+
+    pass_time(time_delta) {
+        let result = super.pass_time(time_delta);
+        if (result) {
+            this.subparticle_delay -= time_delta;
+            if (this.subparticle_delay < 0) {
+                this.subparticle_delay += this.subparticle_delay_max;
+
+                let p = new AilmentParticle(
+                    this.position, 0, this.size / PARTICLE_SIZE_MULTIPLIER,
+                    entity_sprites.get("comet_trail"), 0.5
+                );
+
+                p.render_behind = true;
+                p.opacity = 0.75;
+
+                this.board.spawn_particle(p, this.position);
+            }
         }
         
         return result;
@@ -2429,6 +2513,7 @@ class Ball {
         this.id = Ball.id_inc;
         Ball.id_inc++;
         
+        /** @type {Board} */
         this.board = board;
 
         this.position = new Vector2(0, 0);
@@ -2453,6 +2538,8 @@ class Ball {
         this.collision = true;
         this.affected_by_gravity = true;
         this.moves = true;
+
+        this.spawned_index = -1;
     }
 
     set_pos(to) {
@@ -2637,7 +2724,10 @@ function get_canvases() {
             canvas: c,
             ctx: c.getContext("2d")
         }
-    })
+    });
+
+    aux_canvas = document.querySelector("#aux-canvas-1");
+    aux_canvas_ctx = aux_canvas.getContext("2d");
 }
 
 function handle_resize(event) {
@@ -2704,6 +2794,15 @@ function handle_resize(event) {
         document.querySelector("#desktop_mode_prompt").classList.add("nodisplay");
     } else {
         document.querySelector("#desktop_mode_prompt").classList.remove("nodisplay");
+    }
+
+    if (alternate_stats_rendering_mode) {
+        aux_canvas.style.height = "256px";
+        aux_canvas.style.width = "516px";
+        aux_canvas.height = 256;
+        aux_canvas.width = 516;
+
+        aux_canvas.style.display = "";
     }
 
     bg_changed = true;
@@ -3050,6 +3149,11 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
                 write_rotated_image(
                     layers.bg3.canvas, layers.bg3.ctx,
                     canvas_width/2, canvas_height/2, entity_sprites.get("vista")[0], canvas_width, canvas_height, 0
+                )
+            } else if (AERO_BACKGROUND == AERO_BACKGROUNDS.MACINTOSH) {
+                write_rotated_image(
+                    layers.bg3.canvas, layers.bg3.ctx,
+                    canvas_width/2, canvas_height/2, entity_sprites.get("macintosh2")[0], canvas_width, canvas_height, 0
                 )
             } else if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID) {
                 if (background_tint) {
@@ -3480,7 +3584,7 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
             // weapon needs to be drawn at an offset from the ball (radius to the right)
             // with that offset rotated by the angle as well
             ball.weapon_data.forEach((weapon, index) => {
-                if (weapon.size_multiplier <= 0) {
+                if (weapon.size_multiplier <= 0 || !weapon.display) {
                     return;
                 }
 
@@ -3531,9 +3635,6 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
 }
 
 function render_descriptions(board) {
-    // layers.ui1.ctx.clearRect(0, 0, canvas_width, canvas_height);
-    layers.ui2.ctx.clearRect(0, 0, canvas_width, canvas_height);
-
     if (ball_stats_display_level == BALL_STATS_DISPLAY_LEVELS.NONE) {
         return;
     }
@@ -3569,11 +3670,62 @@ function render_descriptions(board) {
         ]
     }
 
+    let canvas = layers.ui2.canvas;
+    let ctx = layers.ui2.ctx;
+
+    layers.ui2.ctx.clearRect(0, 0, canvas_width, canvas_height);
+
     let filtered_balls = board.balls.filter(ball => ball.show_stats);
+    // if local, we want to keep the balls' places in the stats
+    if (alternate_stats_rendering_mode) {
+        let filtered_balls_len = board.balls.reduce((p, c) => {
+            return Math.max(p, c.show_stats ? c.spawned_index : -1)
+        }, 0) + 1;
+
+        filtered_balls = [];
+        for (let i=0; i<filtered_balls_len; i++) {
+            filtered_balls.push(board.balls.find(b => b.spawned_index == i));
+        }
+    }
+
+    // if running local rendering, override those layouts
+    if (alternate_stats_rendering_mode) {
+        let offset = 240;
+        let cw = aux_canvas.width;
+        let xs = 16;
+        let ys = 28;
+        if (reduced || filtered_balls.length > 2) {
+            reduced = true;
+
+            offset = 216;
+            let ystep = 92;
+            layouts = [
+                [[xs, ys]],
+                [[xs, ys], [cw - offset, ys]],
+                [[xs, ys], [cw - offset, ys], [xs, ys + ystep]],
+                [[xs, ys], [cw - offset, ys], [xs, ys + ystep], [cw - offset, ys + ystep]],
+            ]
+        } else {
+            layouts = [
+                [[xs, ys]],
+                [[xs, ys], [cw - offset, ys]],
+            ]
+        }
+
+        canvas = aux_canvas;
+        ctx = aux_canvas_ctx;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
     let layout = layouts[filtered_balls.length-1];
     
+    let sizedown = alternate_stats_rendering_mode;
+
     if (layout) {
         filtered_balls.forEach((ball, index) => {
+            if (!ball)
+                return;
+
             let l_base = layout[index];
 
             let l = [
@@ -3589,9 +3741,9 @@ function render_descriptions(board) {
             let ball_border_col = ball.get_current_border_col().css();
 
             write_pp_bordered_text(
-                layers.ui2.ctx,
+                ctx,
                 `${ball.name}  LV ${ball instanceof UnarmedBall ? "???" : ball.level+1}`.padEnd(18) + `| HP: ${Math.ceil(ball.hp)}`,
-                l[0], l[1], ball_col, CANVAS_FONTS, 16,
+                l[0], l[1], ball_col, CANVAS_FONTS, sizedown ? 14 : 16,
                 false, BALL_DESC_BORDER_SIZE, ball_border_col
             )
 
@@ -3635,41 +3787,44 @@ function render_descriptions(board) {
             })
 
             write_pp_bordered_text(
-                layers.ui2.ctx,
+                ctx,
                 `[${str}]`,
-                l[0], l[1] + 12, ball_col, CANVAS_FONTS, 9,
+                l[0], l[1] + 12, ball_col, CANVAS_FONTS, sizedown ? 8 : 9,
                 false, BALL_DESC_BORDER_SIZE, ball_border_col
             )
             
             if (ball.poison_duration > 0) {
                 write_pp_bordered_text(
-                    layers.ui2.ctx,
+                    ctx,
                     `${AILMENT_CHARS[1]} ${ball.poison_intensity.toFixed(2).padEnd(5)} | ${ball.poison_duration.toFixed(1)}s`,
-                    l[0], l[1] + 12 + 12, ball_col, CANVAS_FONTS, 12,
+                    l[0], l[1] + 12 + 12, ball_col, CANVAS_FONTS, sizedown ? 10 : 12,
                     false, BALL_DESC_BORDER_SIZE, ball_border_col
                 )
             }
 
             if (ball.rupture_intensity >= 0.01) {
                 write_pp_bordered_text(
-                    layers.ui2.ctx,
+                    ctx,
                     `${AILMENT_CHARS[0]} ${ball.rupture_intensity.toFixed(2).padEnd(5)}`,
-                    l[0] + 106, l[1] + 12 + 12, ball_col, CANVAS_FONTS, 12,
+                    l[0] + 106, l[1] + 12 + 12, ball_col, CANVAS_FONTS, sizedown ? 10 : 12,
                     false, BALL_DESC_BORDER_SIZE, ball_border_col
                 )
             }
 
             if (ball.burn_intensity >= 0.01) {
                 write_pp_bordered_text(
-                    layers.ui2.ctx,
+                    ctx,
                     `${AILMENT_CHARS[2]} ${ball.burn_intensity.toFixed(2).padEnd(5)}`,
-                    l[0] + 160, l[1] + 12 + 12, ball_col, CANVAS_FONTS, 12,
+                    l[0] + 160, l[1] + 12 + 12, ball_col, CANVAS_FONTS, sizedown ? 10 : 12,
                     false, BALL_DESC_BORDER_SIZE, ball_border_col
                 )
             }
 
             if (!reduced)
-                ball.render_stats(layers.ui2.canvas, layers.ui2.ctx, l[0], l[1] + 12 + 12 + 16);
+                ball.render_stats(canvas, ctx, l[0], l[1] + 12 + 12 + 16, sizedown);
+
+            if (reduced && alternate_stats_rendering_mode)
+                ball.render_reduced_stats(canvas, ctx, l[0], l[1] + 12 + 12 + 16, sizedown);
         })
     }
 }
@@ -3957,10 +4112,18 @@ function render_postopening(board) {
         }
 
         if (!board.balls.some(b => b.START_MUSIC)) {
-            play_music(`2048_${random_int(0, 13, get_seeded_randomiser(board.random_seed))+1}`, 0.2);
+            if (AERO_BACKGROUND == AERO_BACKGROUNDS.MACINTOSH) {
+                let gains = [0.1, 0.1, 0.1];
+                let index = random_int(0, gains.length, get_seeded_randomiser(board.random_seed));
+                // index = 2;
+                play_music(`upusen_${index+1}`, gains[index]);
+            } else {
+                play_music(`2048_${random_int(0, 13, get_seeded_randomiser(board.random_seed))+1}`, 0.2);
+            }
+            
         } else {
             // consume it?
-            console.log(random_int(0, 13, get_seeded_randomiser(board.random_seed))+1);
+            let _ = random_int(0, 13, get_seeded_randomiser(board.random_seed)) + 1;
         }
 
         opening_state.cnt = null;
@@ -4770,6 +4933,49 @@ function game_loop() {
                 }
             }
             // ....
+
+            // macintosh aesthetic comets
+            if (board && AERO_BACKGROUND == AERO_BACKGROUNDS.MACINTOSH) {
+                macintosh_comets_timer -= game_delta_time / 1000;
+                if (macintosh_comets_timer <= 0) {
+                    let local_random = get_seeded_randomiser(board.duration.toString());
+                    
+                    macintosh_comets_timer += random_float(...macintosh_comets_delays, local_random);
+
+                    // spawn a comet
+                    let pos = new Vector2(board.size.x * -0.1, random_float(0.08, 0.7, local_random) * board.size.y)
+                    let vel = new Vector2(random_float(1250, 2250, local_random), 0);
+
+                    board.spawn_particle(new MacintoshCometParticle(
+                        pos, 0, random_float(0.9, 1.8, local_random), entity_sprites.get("comet1"),
+                        9, 15, true, vel, board
+                    ), pos);
+                }
+
+                macintosh_star_timer -= game_delta_time / 1000;
+                while (macintosh_star_timer <= 0) {
+                    let local_random = get_seeded_randomiser(board.duration.toString());
+
+                    macintosh_star_timer += random_float(...macintosh_star_delays, local_random);
+
+                    let cnt = random_int(...macintosh_star_counts, local_random);
+                    for (let i=0; i<cnt; i++) {
+                        let pos = new Vector2(
+                            random_float(0, 1, local_random) * board.size.x,
+                            random_float(0, 0.75, local_random) * board.size.y
+                        );
+
+                        let part = board.spawn_particle(new AilmentParticle(
+                            pos, 0, random_float(0.5, 1, local_random),
+                            entity_sprites.get("macintosh_star"),
+                            random_float(2, 6, local_random)
+                        ), pos)
+
+                        part.render_behind = true;
+                        part.opacity = random_float(0.7, 1, local_random);
+                    }
+                }
+            }
 
             ending_game = false;
             if (board?.remaining_players().length <= 1) {

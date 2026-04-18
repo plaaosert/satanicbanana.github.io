@@ -156,15 +156,27 @@ const TIERS_INFO = {
 
 const CATEGORIES = {
     STANDARD: "STANDARD",
+
+    LOWTIER: "LOWTIER",
+    // HIGHTIER: "HIGHTIER",
+
     SILLY: "SILLY",
     POWERED: "POWERED",
 }
 
 const CATEGORIES_INFO = {
     [CATEGORIES.STANDARD]: {
-        desc: "Follows the rules and usually has a consistent power level.",
+        desc: "Follows the rules, always has 100 base HP and usually has a consistent power level (A-tier at LV1, A+ at LV100).",
         col: Colour.white,
     },
+    [CATEGORIES.LOWTIER]: {
+        desc: "Like STANDARD balls but with a lower power level - usually with lower base HP.",
+        col: new Colour(128, 255, 128, 255),
+    },
+    // [CATEGORIES.HIGHTIER]: {
+    //     desc: "Like STANDARD balls but with a higher power level - sometimes with higher base HP.",
+    //     col: new Colour(255, 255, 128, 255),
+    // },
     [CATEGORIES.SILLY]: {
         desc: "Usually made initially as a joke. Often inconsistent in power level or slightly crazy.",
         col: new Colour(255, 128, 255, 255),
@@ -318,6 +330,8 @@ class BallWeapon {
         this.offset = new Vector2(0, 0);
 
         this.frame = 0;
+
+        this.display = true;
     }
 
     rotate(by_deg, reverse) {
@@ -437,6 +451,7 @@ class WeaponBall extends Ball {
         this.saved_ctx = null;
         this.saved_x_anchor = 0;
         this.saved_y_anchor = 0;
+        this.sizedown_desc = false;
 
         this.desc_colour = null;
         this.alt_colour = null;
@@ -519,7 +534,8 @@ class WeaponBall extends Ball {
             }
 
             case AERO_LIGHTING_CONFIGS.VISTA:
-            case AERO_LIGHTING_CONFIGS.NEON: {
+            case AERO_LIGHTING_CONFIGS.NEON:
+            case AERO_LIGHTING_CONFIGS.SPOTLIGHT: {
                 let light_centers = [
                     [new Vector2(-ball_siz_scaled * 0.5, -ball_siz_scaled * 0.5), 1],
                     [new Vector2(-ball_siz_scaled * 0, -ball_siz_scaled * 0), -0.2],
@@ -568,6 +584,8 @@ class WeaponBall extends Ball {
                         shiny_max_sqr: null,
                     },
                 ]
+
+                let rounding_factor = 1;
                 
                 if (AERO_LIGHTING_CONFIG == AERO_LIGHTING_CONFIGS.NEON) {
                     // replace with neon effect
@@ -587,6 +605,45 @@ class WeaponBall extends Ball {
                             shiny_max_sqr: null,
                         },
                     ];
+                } else if (AERO_LIGHTING_CONFIG == AERO_LIGHTING_CONFIGS.SPOTLIGHT) {
+                    light_centers = [
+                        [new Vector2(-ball_siz_scaled * 0.2, -ball_siz_scaled * 0.2), 1],
+                    ];
+
+                    auroras = [
+                        {
+                            shiny_level: -0.8,
+                            shiny_min: ball_siz_scaled * 0.7,
+                            shiny_max: ball_siz_scaled * 0.9,
+                            shiny_diff: null,
+                            angles: [deg2rad(0)],
+                            angles_length: deg2rad(360),
+                            shiny_min_sqr: null,
+                            shiny_max_sqr: null,
+                        },
+
+                        {
+                            shiny_level: 0.5,
+                            shiny_min: ball_siz_scaled * 0.8,
+                            shiny_max: ball_siz_scaled,
+                            shiny_diff: null,
+                            angles: [deg2rad(315)],
+                            angles_length: deg2rad(135),
+                            shiny_min_sqr: null,
+                            shiny_max_sqr: null,
+                        },
+
+                        {
+                            shiny_level: 0.5,
+                            shiny_min: ball_siz_scaled * 0.8,
+                            shiny_max: ball_siz_scaled,
+                            shiny_diff: null,
+                            angles: [deg2rad(135)],
+                            angles_length: deg2rad(135),
+                            shiny_min_sqr: null,
+                            shiny_max_sqr: null,
+                        },
+                    ]
                 }
 
                 auroras.forEach(a => {
@@ -602,6 +659,9 @@ class WeaponBall extends Ball {
                     for (let x=0; x<s; x++) {
                         let xt = x - ball_siz_scaled;
                         let yt = y - ball_siz_scaled;
+
+                        xt = Math.round(xt / rounding_factor) * rounding_factor;
+                        yt = Math.round(yt / rounding_factor) * rounding_factor;
 
                         let sum = Math.pow(xt, 2) + Math.pow(yt, 2);
                         let props = light_centers.map(c => {
@@ -661,6 +721,13 @@ class WeaponBall extends Ball {
         let lightest_amt = 0.8;
         let darkest = Colour.black;
         let darkest_amt = 0.5;
+
+        if (AERO_LIGHTING_CONFIG == AERO_LIGHTING_CONFIGS.SPOTLIGHT) {
+            lightest = Colour.from_hex("#FE9EB1");
+            lightest_amt = 0.95;
+            darkest = Colour.from_hex("#000080");
+            darkest_amt = 0.8;
+        }
 
         let border_col = base_ball_col.lerp(Colour.white, 0.75);
 
@@ -755,7 +822,8 @@ class WeaponBall extends Ball {
         this.skin_name = skin_name;
     }
 
-    start_writing_desc(ctx, x_anchor, y_anchor) {
+    start_writing_desc(ctx, x_anchor, y_anchor, sizedown=false) {
+        this.sizedown_desc = sizedown;
         this.description_line_num = 0;
 
         this.saved_ctx = ctx;
@@ -785,6 +853,10 @@ class WeaponBall extends Ball {
         let col = custom_col ?? (awakened ? ball_col.lerp(Colour.white, 0.5).css() : ball_col.css());
 
         let siz = fontsiz ?? 12;
+        if (this.sizedown_desc) {
+            siz = sizedown_lookup[siz] ?? siz;
+        }
+
         let xpos = this.saved_x_anchor + x_offset;
         let ypos = this.saved_y_anchor + (
             this.description_line_num * this.description_line_spacing
@@ -1383,8 +1455,8 @@ class WeaponBall extends Ball {
         return {skip_default_explosion: false};
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             "This thing has no stats"
@@ -1393,6 +1465,11 @@ class WeaponBall extends Ball {
         this.write_desc_line(
             "im serious"
         )
+    }
+
+    render_reduced_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        // do nothing by default
+        return
     }
 }
 
@@ -1547,8 +1624,8 @@ class DummyBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             "This thing has no stats"
@@ -1694,8 +1771,8 @@ class UnarmedBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             "It's all over.", true
@@ -1878,17 +1955,17 @@ class HammerBall extends WeaponBall {
         }
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
+        this.write_desc_line(
+            "Knocks enemies back on hit."
+        )
         this.write_desc_line(
             `Damage: ${this.damage_base.toFixed(2)}`
         )
         this.write_desc_line(
             `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`
-        )
-        this.write_desc_line(
-            "Knocks enemies back when striking them."
         )
         if (this.level >= AWAKEN_LEVEL) {
             this.write_desc_line(
@@ -2016,17 +2093,17 @@ class SordBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
+        this.write_desc_line(
+            `Bonus damage and rotation speed on hit.`
+        )
         this.write_desc_line(
             `Damage: ${this.damage_base.toFixed(2)}`
         )
         this.write_desc_line(
             `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`
-        )
-        this.write_desc_line(
-            `Hits harder and rotates faster every strike.`, false, 10
         )
         if (this.level >= AWAKEN_LEVEL) {
             this.write_desc_line(
@@ -2227,8 +2304,12 @@ class DaggerBall extends WeaponBall {
         parrier.invuln_duration = 0;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Temporary speed and damage bonus on hit.`
+        )
 
         this.write_desc_line(
             `Damage: ${this.damage_base.toFixed(2)}`
@@ -2237,13 +2318,7 @@ class DaggerBall extends WeaponBall {
             `Rotation speed: ${this.speed_base.toFixed(0)} deg/s`
         )
         this.write_desc_line(
-            `Bonus decay time: ${this.hit_decay_max.toFixed(1)}`
-        )
-        this.write_desc_line(
-            `Faster rotation speed (x2) and damage (x1.5)`, false, 10
-        )
-        this.write_desc_line(
-            `every strike. Bonus decays when not striking.`, false, 10
+            `Bonus speed decay time: ${this.hit_decay_max.toFixed(1)}s`
         )
         if (this.level >= AWAKEN_LEVEL) {
             this.write_desc_line(
@@ -2404,9 +2479,12 @@ class BowBall extends WeaponBall {
         
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
+        this.write_desc_line(
+            `Gain more multishots and damage each hit.`
+        )
         this.write_desc_line(
             `Arrow damage: ${this.proj_damage_base.toFixed(2)}`
         )
@@ -2421,12 +2499,6 @@ class BowBall extends WeaponBall {
         )
         this.write_desc_line(
             `Arrow speed: ${this.arrow_speed}`
-        )
-        this.write_desc_line(
-            `Multishot + damage increases with successful hits.`, false, 10
-        )
-        this.write_desc_line(
-            `Has a weak melee attack: 2 damage.`, false, 10
         )
         if (this.level >= AWAKEN_LEVEL) {
             this.write_desc_line(
@@ -2576,9 +2648,15 @@ class MagnumBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
+        this.write_desc_line(
+            `Shots ricochet off coins for double damage.`, false, 10
+        )
+        this.write_desc_line(
+            `Ricochet shots can't be parried.`, false, 10
+        )
         this.write_desc_line(
             `Bullet damage: ${this.proj_damage_base.toFixed(2)}`
         )
@@ -2590,12 +2668,6 @@ class MagnumBall extends WeaponBall {
         )
         this.write_desc_line(
             `Coin rotation speed: ${(this.speed_base * 2.5).toFixed(0)} deg/s`
-        )
-        this.write_desc_line(
-            `Shots ricochet off coins for double damage.`, false, 10
-        )
-        this.write_desc_line(
-            `Ricochet shots can't be parried.`, false, 10
         )
         if (this.level >= AWAKEN_LEVEL) {
             this.write_desc_line(
@@ -2753,8 +2825,8 @@ class NeedleBall extends WeaponBall {
     //     return result;
     // }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Damage: ${this.damage_base.toFixed(2)}`
@@ -2970,20 +3042,20 @@ class RailgunBall extends WeaponBall {
         */
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
-        this.write_desc_line(
-            `Bullet damage: ${this.proj_damage_base.toFixed(2)}`
-        )
-        this.write_desc_line(
-            `Gun rotation speed: ${this.speed_base.toFixed(0)} deg/s`
-        )
         this.write_desc_line(
             `On shot hit, rotation speed increases,`, false, 10
         )
         this.write_desc_line(
             `and quickly fire another shot.`, false, 10
+        )
+        this.write_desc_line(
+            `Bullet damage: ${this.proj_damage_base.toFixed(2)}`
+        )
+        this.write_desc_line(
+            `Gun rotation speed: ${this.speed_base.toFixed(0)} deg/s`
         )
         if (this.level >= AWAKEN_LEVEL) {
             this.write_desc_line(
@@ -3187,8 +3259,12 @@ class PotionBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Brews and throws various potions.`
+        )
 
         this.write_desc_line(
             `Potion impact damage: ${this.potion_impact_damage.toFixed(2)}`
@@ -3388,11 +3464,11 @@ class GrenadeBall extends WeaponBall {
         new_ball.linked_particle = part;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
-            `Strike damage: ${this.damage_base.toFixed(0)}`
+            `Throws dangerous grenades with self-damage.`
         )
         this.write_desc_line(
             `Grenade damage: ${this.grenade_damage_base.toFixed(0)}`
@@ -3661,9 +3737,12 @@ class GlassBall extends WeaponBall {
         this.fire_glass_shards(3);
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
+        this.write_desc_line(
+            `Charges up to deliver vorpal strikes.`
+        )
         this.write_desc_line(
             `Rupture per hit: ${this.damage_base.toFixed(2)}`
         )
@@ -3693,9 +3772,6 @@ class GlassBall extends WeaponBall {
         )
         this.write_desc_line(
             `Shard rupture: ${this.shard_rupture_amt.toFixed(2)}`
-        )
-        this.write_desc_line(
-            `Normal strikes apply rupture instead of damage.`, true, 10
         )
         if (this.level >= AWAKEN_LEVEL) {
             this.write_desc_line(
@@ -4424,8 +4500,8 @@ class HandBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `The hand.   `
@@ -4662,9 +4738,12 @@ class ChakramBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
+        this.write_desc_line(
+            `Throws an orbiting chakram projectile.`
+        )
         this.write_desc_line(
             `Chakram impact damage: ${this.damage_base.toFixed(2)}`
         )
@@ -5017,8 +5096,12 @@ class WandBall extends WeaponBall {
         }
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Casts random arcane spells.`
+        )
 
         this.write_desc_line(
             `${this.current_spell == "cyan" ? " - " : ""}Icicle: ${this.icicle_damage.toFixed(2)}dmg, ${1 + (this.additional_icicle_count * 2)} icicles`,
@@ -5425,9 +5508,12 @@ class AxeBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
+        this.write_desc_line(
+            `Swings a highly damaging axe.`
+        )
         this.write_desc_line(
             `Damage: ${this.damage.toFixed(1).padEnd(5)} |${">".repeat(Math.floor(this.damage / 2))}`
         )
@@ -5566,17 +5652,17 @@ class ShotgunBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
+        this.write_desc_line(
+            `Significant self-knockback on each shot.`
+        )
         this.write_desc_line(
             `Bullet damage: ${this.proj_damage_base.toFixed(2)}`
         )
         this.write_desc_line(
             `Gun rotation speed: ${this.speed_base.toFixed(0)} deg/s`
-        )
-        this.write_desc_line(
-            `Significant knockback on each shot.`
         )
 
         let awakened = this.level >= AWAKEN_LEVEL
@@ -5727,8 +5813,12 @@ class SpearBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Throws an endless supply of spears.`
+        )
 
         this.write_desc_line(
             `Spear melee damage: ${this.damage_base.toFixed(2)}`
@@ -5964,8 +6054,12 @@ class RosaryBall extends WeaponBall {
         }
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Summons allies and periodically heals them.`
+        )
 
         this.write_desc_line(
             `Healing: ${this.healing_amount}`
@@ -6250,8 +6344,8 @@ class FishingRodBall extends WeaponBall {
         return super.hit_other(other, with_weapon_index, with_weapon_index == 0 ? this.rod_base_dmg : this.club_damage);
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Rod base damage: ${this.rod_base_dmg.toFixed(2)}`
@@ -6665,8 +6759,8 @@ class FryingPanBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Pan damage on hit: ${this.damage_base.toFixed(2)}`
@@ -7695,8 +7789,12 @@ class CardsBall extends WeaponBall {
         }
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Draws hands of cards for unique effects.`
+        )
 
         this.write_desc_line(
             `Card damage: ${this.orbital_dmg.toFixed(2) * this.temp_stat_modifiers.damage_bonus}`
@@ -7774,6 +7872,7 @@ class TranslocatorBall extends WeaponBall {
             TAGS.HYBRID,
             TAGS.OFFENSIVE,
             TAGS.PROJECTILES,
+            TAGS.AOE,
             TAGS.LEVELS_UP,
             TAGS.CAN_AWAKEN,
         ];
@@ -8057,8 +8156,12 @@ class TranslocatorBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Throws a teleporter and dodges attacks.`
+        )
 
         this.write_desc_line(
             `Teleport damage: ${this.telefrag_damage.toFixed(2)}`
@@ -8184,8 +8287,7 @@ class DrillBall extends WeaponBall {
         this.category = CATEGORIES.STANDARD;
         this.tags = [
             TAGS.MELEE,
-            TAGS.BALANCED,
-            TAGS.SCALING,
+            TAGS.OFFENSIVE,
             TAGS.LEVELS_UP,
             TAGS.CAN_AWAKEN,
         ];
@@ -8582,8 +8684,12 @@ class DrillBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Burrows into walls to surprise enemies.`
+        )
 
         if (this.burrow_duration <= 0) {
             if (this.rapidfire_time > 0) {
@@ -8676,9 +8782,13 @@ class WrenchBall extends WeaponBall {
 
         this.category = CATEGORIES.STANDARD;
         this.tags = [
-            TAGS.MELEE,
+            TAGS.HYBRID,
             TAGS.BALANCED,
             TAGS.SCALING,
+            TAGS.CHILDREN,
+            TAGS.PROJECTILES,
+            TAGS.HITSCAN,
+            TAGS.HOMING,
             TAGS.LEVELS_UP,
             TAGS.CAN_AWAKEN,
         ];
@@ -8813,8 +8923,12 @@ class WrenchBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Uses metal to build and upgrade turrets.`
+        )
 
         this.write_desc_line(
             `Damage: ${this.damage_base.toFixed(2)}`
@@ -9112,6 +9226,7 @@ class Projectile {
         // {pos, radius} same as balls
         this.hitboxes = [];
 
+        /** @type {Board} */
         this.board = board;
 
         this.source = source;

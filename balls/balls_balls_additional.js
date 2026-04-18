@@ -96,8 +96,8 @@ class ThirteenLongswordsBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Damage: ${this.damage_base.toFixed(2)}`
@@ -158,8 +158,8 @@ class AStickBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Damage: ${this.damage_base.toFixed(2)}`
@@ -227,8 +227,8 @@ class ThirteenSticksBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Damage: ${this.damage_base.toFixed(2)}`
@@ -291,8 +291,8 @@ class GreatsordBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Damage: ${this.damage_base.toFixed(2)}`
@@ -389,8 +389,8 @@ class ExtralongswordBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Damage: ${this.damage_base.toFixed(2)}`
@@ -442,8 +442,8 @@ class SuperDummyBall extends WeaponBall {
         this.hp = Math.min(this.max_hp, this.hp + (heal_speed * time_delta));
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Max HP: ${this.max_hp}`
@@ -654,8 +654,8 @@ class SuperDaggerBall extends WeaponBall {
         parrier.invuln_duration = 0;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Don't say I never gave you anything.`
@@ -744,8 +744,8 @@ class BerserkerBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Down slam cooldown: ${this.down_slam_cooldown.toFixed(1)}s [${"#".repeat(Math.ceil((this.down_slam_cooldown / this.down_slam_cooldown_max) * 12)).padEnd(12)}]`
@@ -869,8 +869,8 @@ class BigBall extends DummyBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Big`
@@ -961,8 +961,12 @@ class ShieldBall extends WeaponBall {
         this.grow_chance();
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Reflects projectiles hit by the sheld.`
+        )
 
         this.write_desc_line(
             `Damage: ${this.damage.toFixed(1)}`
@@ -1088,8 +1092,8 @@ class GamblerBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Bullet damage: ${this.proj_damage_base[0].toFixed(0)} - ${this.proj_damage_base[1].toFixed(0)}`
@@ -1246,8 +1250,8 @@ class NotSoSuperDaggerBall extends WeaponBall {
         parrier.invuln_duration = 0;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Don't say I never gave you anything.`
@@ -1404,8 +1408,8 @@ class SwordAndShieldBall extends WeaponBall {
         this.grow_chance();
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Damage: ${this.damage.toFixed(1)}`
@@ -1590,8 +1594,26 @@ class HyperParrierBall extends WeaponBall {
         }
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        if (this.hyper_parry_duration > 0) {
+            this.write_desc_line(
+                `PARRYING  |${"<".repeat(Math.ceil(24 * this.hyper_parry_duration / 0.25))}`
+            )
+        } else {
+            this.write_desc_line(
+                `preparing |${"<".repeat(Math.ceil(24 * this.hyper_parry_cooldown / this.hyper_parry_cooldown_max))}`
+            )
+        }
+    }
+
+    render_reduced_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Sometimes parries, with devastating effects.`
+        )
 
         if (this.hyper_parry_duration > 0) {
             this.write_desc_line(
@@ -1721,8 +1743,8 @@ class ThwompBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Down slam cooldown: ${this.down_slam_cooldown.toFixed(1)}s [${"#".repeat(Math.ceil((this.down_slam_cooldown / this.down_slam_cooldown_max) * 12)).padEnd(12)}]`
@@ -1814,8 +1836,8 @@ class MachineGunBall extends WeaponBall {
         }
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Bullet damage: ${this.proj_damage_base.toFixed(0)}`
@@ -2126,8 +2148,8 @@ class ShotgunMagnumBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Bullet damage: ${this.proj_damage_base.toFixed(2)}`
@@ -2414,8 +2436,8 @@ class CursedEnergyBall extends WeaponBall {
         return result;
     }
 
-    render_stats(canvas, ctx, x_anchor, y_anchor) {
-        this.start_writing_desc(ctx, x_anchor, y_anchor);
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
             `Hit damage: ${this.damage_base.toFixed(2)}`

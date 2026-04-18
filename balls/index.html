@@ -48,6 +48,10 @@
                     <div class="social-link ig"><img class="social-img" src="img/icons/instagram.png"><a href="https://www.instagram.com/plaaoballs/reels/">Instagram</a></div>
                     <span>...i usually upload 1-2 videos per day</span>
                 </div>
+
+                <canvas class="aux-canvas" id="aux-canvas-1" style="display: none;">
+                    This canvas needs to be viewed to be displayed.
+                </canvas>
             </div>
 
             <div class="game-supercontainer">
@@ -623,6 +627,7 @@
                     <select id="shading-method" onchange="set_graphics_option('shading', 'shading-method')">
                         <option>Simple</option>
                         <option selected>Vista</option>
+                        <option>Spotlight</option>
                     </select>
                 </div>
                 <div class="option small shadingsmall">
@@ -635,6 +640,7 @@
                         <option>Rendered</option>
                         <option>Vista</option>
                         <option>Parallax grid</option>
+                        <option>Macintosh</option>
                     </select>
                 </div>
                 <div class="option small">
@@ -687,6 +693,8 @@
                 <span class="clickable info" onclick="set_preset(1)">Vista</span>
                 <span class="spc">&nbsp;</span>
                 <span class="clickable info" onclick="set_preset(2)">Grid</span>
+                <span class="spc">&nbsp;</span>
+                <span class="clickable info" onclick="set_preset(3)">Vapor</span>
             </div>
             <br>
             <div class="action-buttons">
@@ -873,23 +881,25 @@
         </div>
     </div>
 
-    <script src="../shared/js/helpers.js?v=12"></script>
+    <script src="../shared/js/helpers.js?v=13"></script>
 	<script src="../shared/js/canvas_helpers.js?v=07"></script>
 	
-    <script src="balls_core.js?v=63"></script>
+    <script src="balls_core.js?v=64"></script>
 
-    <script src="balls_balls.js?v=67"></script>
-    <script src="balls_balls_additional.js?v=47"></script>
-    <script src="balls_balls_powered.js?v=08"></script>
+    <script src="balls_balls.js?v=68"></script>
+    <script src="balls_balls_additional.js?v=48"></script>
+    <script src="balls_balls_powered.js?v=09"></script>
+
+    <script src="balls_balls_campaign_lowtier.js?v=01"></script>
 
     <script src="balls_objects.js?v=01"></script>
 
-    <script src="balls_powerups.js?v=05"></script>
+    <script src="balls_powerups.js?v=06"></script>
 
-    <script src="balls_gambling_info.js?v=07"></script>
+    <script src="balls_gambling_info.js?v=08"></script>
 
-    <script src="balls_replay_parsing.js?v=11"></script>
-    <script src="balls_launcher.js?v=90"></script>
+    <script src="balls_replay_parsing.js?v=12"></script>
+    <script src="balls_launcher.js?v=91"></script>
     
     <script src="balls_campaign.js?v=09"></script>
 
