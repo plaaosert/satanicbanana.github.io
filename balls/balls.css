@@ -723,7 +723,9 @@ button.sandbox-ball-random {
 .generic-ball-selector {
   --share: 1;
 
-  max-height: unset;
+  max-height: 85vh;
+  overflow-y: auto;
+
   max-width: 80vmin;
 
   font-size: 2vmin;
