@@ -30,8 +30,9 @@ class ShivBall extends WeaponBall {
 
         this.weapon_data[0].offset = new Vector2(-30, 0);
 
-        this.max_hp = 30;
-        this.hp = 30;
+        // scales based on STARTING_HP
+        this.max_hp = this.max_hp * (30 / 100);
+        this.hp = this.max_hp;
 
         this.damage_base = 2;
         this.speeds_range = [160, 240];

@@ -330,6 +330,15 @@ function obj_random_shuffle(arr, rand) {
     return shuffle(arr, rand.random);
 }
 
+function random_colour(rand=null, include_alpha=false) {
+    return new Colour(
+        random_int(0, 256, rand),
+        random_int(0, 256, rand),
+        random_int(0, 256, rand),
+        include_alpha ? random_int(0, 256, rand) : 255
+    )
+}
+
 /*
 
   Number formatting

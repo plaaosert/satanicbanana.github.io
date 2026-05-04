@@ -158,7 +158,7 @@ const CATEGORIES = {
     STANDARD: "STANDARD",
 
     LOWTIER: "LOWTIER",
-    // HIGHTIER: "HIGHTIER",
+    HIGHTIER: "HIGHTIER",
 
     SILLY: "SILLY",
     POWERED: "POWERED",
@@ -173,10 +173,10 @@ const CATEGORIES_INFO = {
         desc: "Like STANDARD balls but with a lower power level - usually with lower base HP.",
         col: new Colour(128, 255, 128, 255),
     },
-    // [CATEGORIES.HIGHTIER]: {
-    //     desc: "Like STANDARD balls but with a higher power level - sometimes with higher base HP.",
-    //     col: new Colour(255, 255, 128, 255),
-    // },
+    [CATEGORIES.HIGHTIER]: {
+        desc: "Like STANDARD balls but with a higher power level - sometimes with higher base HP.",
+        col: new Colour(255, 255, 128, 255),
+    },
     [CATEGORIES.SILLY]: {
         desc: "Usually made initially as a joke. Often inconsistent in power level or slightly crazy.",
         col: new Colour(255, 128, 255, 255),
@@ -1554,6 +1554,8 @@ class DummyBall extends WeaponBall {
                     this.player, this.level, false
                 )
 
+                this.child.spawned_index = this.spawned_index;
+
                 this.child.set_velocity(random_on_circle(25000, this.board.random));
 
                 this.board.unarmed_cinematic_played = true;
@@ -1955,6 +1957,20 @@ class HammerBall extends WeaponBall {
         }
     }
 
+    render_reduced_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            "Knocks enemies back on hit."
+        )
+
+        if (this.level >= AWAKEN_LEVEL) {
+            this.write_desc_line(
+                `Has another smaller hammer.`, true
+            )
+        }
+    }
+
     render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
         this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
@@ -2093,6 +2109,17 @@ class SordBall extends WeaponBall {
         return result;
     }
 
+    render_reduced_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Bonus damage and rotation speed on hit.`
+        )
+        this.write_desc_line(
+            `Damage/speed: ${this.damage_base.toFixed(2)} / ${this.speed_base.toFixed(0)} deg/s`
+        )
+    }
+
     render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
         this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
@@ -2159,6 +2186,9 @@ class DaggerBall extends WeaponBall {
 
         this.damage_base = 1;
         this.speed_base = 360;
+
+        this.damage_max = 1 * Math.pow(1.5, 8);
+        this.speed_max = 360 * Math.pow(2, 8);
 
         this.hit_decay = 0;
 
@@ -2283,6 +2313,13 @@ class DaggerBall extends WeaponBall {
         this.speed_base *= 2;
         this.damage_base *= 1.5;
 
+        // if in a mode with 8 or more other balls (not counting needleballs), cap damage.
+        // TODO extend to all situations, with a new game version
+        if (this.board.balls.filter(b => b.name != "Needle").length >= 8) {
+            this.speed_base = Math.min(this.speed_max, this.speed_base);
+            this.damage_base = Math.min(this.damage_max, this.damage_base);
+        }
+
         this.hit_decay = this.hit_decay_max
 
         return result;
@@ -2302,6 +2339,22 @@ class DaggerBall extends WeaponBall {
 
     get_projectile_parried(parrier, projectile) {
         parrier.invuln_duration = 0;
+    }
+
+    render_reduced_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Temporary speed and damage bonus on hit.`
+        )
+
+        this.write_desc_line(
+            `Damage/speed: ${this.damage_base.toFixed(2)} / ${this.speed_base.toFixed(0)} deg/s`
+        )
+
+        this.write_desc_line(
+            `Bonus speed decay time: ${this.hit_decay_max.toFixed(1)}s`
+        )
     }
 
     render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
@@ -3259,6 +3312,37 @@ class PotionBall extends WeaponBall {
         return result;
     }
 
+    render_reduced_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        let num = 3;
+        if (this.level >= AWAKEN_LEVEL) {
+            num = 4;
+        }
+
+        for (let i=0; i<num; i++) {
+            // col if ready, grey if not - strikethrough if smashed
+            let potion_exists = this.weapon_data[i].size_multiplier > 0
+            let col = potion_exists ? PotionBall.potion_cols[i].css() : (this.potions_smashed[i] ? "#333" : "#666")
+            this.write_desc_line(
+                PotionBall.potion_names[i], false, null, col
+            )
+
+            if (!potion_exists) {
+                if (this.potions_smashed[i]) {
+                    this.write_desc_line(
+                        "-".repeat(PotionBall.potion_names[i].length), false, null, col, true
+                    )
+                }
+
+                // then write the respawn delay
+                this.write_desc_line(
+                    `${this.weapon_regeneration_times[i].toFixed(1)}s`, false, null, "#888", true, 128
+                )
+            }
+        }
+    }
+
     render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
         this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
@@ -3474,7 +3558,7 @@ class GrenadeBall extends WeaponBall {
             `Grenade damage: ${this.grenade_damage_base.toFixed(0)}`
         )
         this.write_desc_line(
-            `Grenade self-damage reduction: ${(this.self_grenade_reduction * 100).toFixed(0)}%`
+            `Grenade self-damage percentage: ${(this.self_grenade_reduction * 100).toFixed(0)}%`
         )
 
         let awakened = this.level >= AWAKEN_LEVEL;
@@ -4787,6 +4871,14 @@ class WandBall extends WeaponBall {
         "Brush",   // Refticus
     ];
 
+    static spell_names = {
+        "cyan": "Icicle",
+        "red": "Fireball",
+        "green": "Poison barbs",
+        "magenta": "Lightning",
+        "black": "Black ball"
+    }
+
     constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
         super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
@@ -5096,6 +5188,31 @@ class WandBall extends WeaponBall {
         }
     }
 
+    render_reduced_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        if (this.level >= AWAKEN_LEVEL) {
+            this.write_desc_line(
+                `All spells are empowered.`, true
+            )
+        } else {
+            this.write_desc_line(
+                `Casts random arcane spells.`
+            )
+        }
+
+        this.write_desc_line(
+            `Next spell: `
+        )
+
+        let col = this.current_spell == "black" ? "white" : this.current_spell;
+        let name = WandBall.spell_names[this.current_spell];
+
+        this.write_desc_line(
+            `            ${name}`, false, null, col, true, 
+        )
+    }
+
     render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
         this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
@@ -5130,7 +5247,7 @@ class WandBall extends WeaponBall {
         this.write_desc_line(
             `${this.current_spell == "black" ? " - " : ""}Ball: ${this.black_ball_damage.toFixed(2)}dmg, ${this.black_ball_duration}s duration`,
             false, null,
-            this.current_spell == "white" ? "white" : "grey"
+            this.current_spell == "black" ? "white" : "grey"
         )
 
         if (this.level >= AWAKEN_LEVEL) {
@@ -7538,6 +7655,8 @@ class CardsBall extends WeaponBall {
                             break;
 
                         case "Straight Flush":
+                            this.board.achievements.straightflush = true;
+
                             this.takes_damage = false;
                             this.cur_calced_hand[4].forEach(idx => {
                                 let proj = this.projs[idx];
@@ -7616,6 +7735,8 @@ class CardsBall extends WeaponBall {
                             break;
 
                         case "Royal Flush":
+                            this.board.achievements.royalflush = true;
+
                             this.takes_damage = false;
                             let this_team = this.player.id;
                             let cnt = 0;
@@ -7786,6 +7907,29 @@ class CardsBall extends WeaponBall {
                     */
                 }
             }
+        }
+    }
+
+    render_reduced_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        if (this.cur_calced_hand) {
+            this.write_desc_line(
+                ``
+            )
+
+            for (let i=0; i<this.handsize; i++) {
+                let x_offset = (0 * 6) + (6 * i * 4.5);
+                let in_hand = this.cur_calced_hand[4].includes(i);
+                this.write_desc_line(
+                    `${in_hand ? "[" : " "}${(this.cur_calced_hand_string[i] ?? " ? ").padEnd(3)}${in_hand ? "]" : " "}`,
+                    false, null, this.cur_calced_hand_string[i] ? (in_hand ? null : this.get_current_desc_col().lerp(Colour.black, 0.5).css()) : "#444", true, x_offset
+                )
+            }
+
+            this.write_desc_line(
+                `(${this.cur_calced_hand[1]}, ${this.cur_calced_hand[3]})`, false, null, this.cur_calced_hand[0] <= 0 ? "#666" : null
+            )
         }
     }
 

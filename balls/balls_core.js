@@ -61,6 +61,8 @@ let current_mysterious_power = {name: null, power: 5};
 let STARTING_HP = 100;
 let stored_starting_hp = null;
 
+let default_ball_radius = 512;
+
 let run_function_on_match_end = null;
 
 const MACINTOSH_COMETS_START_DELAY = 2;
@@ -71,6 +73,8 @@ const MACINTOSH_STAR_START_DELAY = 0;
 let macintosh_star_timer = MACINTOSH_STAR_START_DELAY
 let macintosh_star_delays = [0.05, 0.2];
 let macintosh_star_counts = [0, 4];
+
+let fully_loaded = false;
 
 const BALL_RENDERING_METHODS = {
     VECTOR: "VECTOR",
@@ -391,6 +395,8 @@ const entity_sprites = new Map([
     ["yomi_parry", 9, "etc/yomi_parry/"],  // redrawn, based on Your Only Move is Hustle
 
     ["hit", 6, "etc/hit/"],
+    ["hit_fire", 5, "etc/hit_fire/"],
+
     ["rupture", 1, "etc/"],
     ["poison", 1, "etc/"],
     ["burn", 1, "etc/"],
@@ -653,6 +659,11 @@ const entity_sprites = new Map([
     ["wrench_turret_gun5", 1, "weapon/"],
 
     ["shiv", 1, "weapon/"],
+
+    ["flamethrower", 1, "weapon/"],
+    ["flamethrower_charge", 5, "weapon/flamethrower/"],
+    ["flamethrower_fireball", 6, "weapon/flamethrower/"],
+    ["flamethrower_flame", 7, "weapon/flamethrower/"],
 
     ["fire_blast", 6, "fire_blast/"],
 
@@ -1003,9 +1014,18 @@ let audios_list = [
     // A3Zap [FF6 - SNES] + 59greenCherry [FF6 - SNES]
     ["powerup_clone", "snd/powerup_clone.mp3"],
 
+    // upusen https://upusen.bandcamp.com/
     ["upusen_1", "https://scrimblo.foundation/uploads/bad_customer.mp3", "Bad customers", "upusen"],
     ["upusen_2", "https://scrimblo.foundation/uploads/upusen_2.mp3", "Wednesday Is Almost Friday", "upusen"],
     ["upusen_3", "https://scrimblo.foundation/uploads/upusen_not_good.mp3", "Not Good", "upusen"],
+
+    ["noise", "snd/noise.mp3"],
+
+    // https://soundeffect-lab.info/sound/battle/battle1.html
+    // Slightly edited "Gravity Magic 2"
+    ["gravity_magic_2", "snd/gravity_magic_2.mp3"],
+    // "Explosion 1"
+    ["explosion_1", "snd/explosion_1.mp3"],
 ]
 
 
@@ -1019,7 +1039,7 @@ let titles = [
 
 if (new URLSearchParams(window.location.search).get("nomusic") !== "true") {
     for (let i=1; i<=13; i++) {
-        audios_list.push([`2048_${i}`, `https://scrimblo.foundation/uploads/2048_${i}.mp3`, titles[i], "2048 (3DS)", true]);
+        audios_list.push([`2048_${i}`, `https://scrimblo.foundation/uploads/2048_${i}.mp3`, titles[i], "2048 (3DS) -- Zbigniew Siatecki", true]);
     }
 }
 
@@ -2006,6 +2026,10 @@ class Board {
         this.starting_system_energy = 0;
         this.attempt_energy_conservation = true;
         this.energy_conservation_aggression = 0.5;
+
+        this.achievements = {
+            started: true
+        };
     }
     
     calculate_system_energy() {
@@ -3694,17 +3718,28 @@ function render_descriptions(board) {
         let cw = aux_canvas.width;
         let xs = 16;
         let ys = 28;
-        if (reduced || filtered_balls.length > 2) {
+        if (reduced || board.balls.some(b => b.spawned_index >= 2)) {
             reduced = true;
 
             offset = 216;
-            let ystep = 92;
+            let ystep = 92 + 8;
             layouts = [
                 [[xs, ys]],
                 [[xs, ys], [cw - offset, ys]],
                 [[xs, ys], [cw - offset, ys], [xs, ys + ystep]],
                 [[xs, ys], [cw - offset, ys], [xs, ys + ystep], [cw - offset, ys + ystep]],
             ]
+
+            for (let n=4; n<24; n++) {
+                layouts[n] = [];
+                ystep = 26;
+                for (let i=0; i<12; i++) {
+                    layouts[n].push(
+                        [xs, ys + (ystep * i)],
+                        [cw - offset, ys + (ystep * i)],
+                    )
+                }
+            }
         } else {
             layouts = [
                 [[xs, ys]],
@@ -3727,6 +3762,9 @@ function render_descriptions(board) {
                 return;
 
             let l_base = layout[index];
+
+            if (!l_base)
+                return;
 
             let l = [
                 Math.round(l_base[0] + ball.desc_shake_offset[0]),
@@ -3823,7 +3861,7 @@ function render_descriptions(board) {
             if (!reduced)
                 ball.render_stats(canvas, ctx, l[0], l[1] + 12 + 12 + 16, sizedown);
 
-            if (reduced && alternate_stats_rendering_mode)
+            if (reduced && alternate_stats_rendering_mode && false)
                 ball.render_reduced_stats(canvas, ctx, l[0], l[1] + 12 + 12 + 16, sizedown);
         })
     }
@@ -4781,7 +4819,7 @@ function game_loop() {
 
                                     let particle = new Particle(
                                         impact_position, 0, 2,
-                                        entity_sprites.get("hit"), 16, 4, false
+                                        entity_sprites.get(projectile.hit_particles_override ?? "hit"), 16, 4, false
                                     )
 
                                     board.spawn_particle(particle, impact_position);

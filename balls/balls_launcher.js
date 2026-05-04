@@ -193,10 +193,10 @@ document.addEventListener("DOMContentLoaded", async function() {
 
 function spawn_testing_balls() {
     board = new Board(new Vector2(512 * 16, 512 * 16));
-    // board.spawn_ball(new SordBall(board, 1, 512, Colour.red, null, null, {id: 0}), new Vector2(512*4, 512*4));
-    // board.spawn_ball(new HammerBall(board, 1, 512, Colour.yellow, null, null, {id: 1}, true), new Vector2(512*12, 512*12));
-    board.spawn_ball(new MagnumBall(board, 1, 512, Colour.green, null, null, {id: 2}), new Vector2(512*5, 512*11));
-    board.spawn_ball(new SordBall(board, 1, 512, Colour.cyan, null, null, {id: 3}, true), new Vector2(512*11, 512*5));
+    // board.spawn_ball(new SordBall(board, 1, default_ball_radius, Colour.red, null, null, {id: 0}), new Vector2(512*4, 512*4));
+    // board.spawn_ball(new HammerBall(board, 1, default_ball_radius, Colour.yellow, null, null, {id: 1}, true), new Vector2(512*12, 512*12));
+    board.spawn_ball(new MagnumBall(board, 1, default_ball_radius, Colour.green, null, null, {id: 2}), new Vector2(512*5, 512*11));
+    board.spawn_ball(new SordBall(board, 1, default_ball_radius, Colour.cyan, null, null, {id: 3}, true), new Vector2(512*11, 512*5));
 
     board.record_starting_balls();
 
@@ -239,6 +239,81 @@ function load_replay_button() {
     } catch (e) {
         alert(`There was a problem parsing the replay!!\n\nError:\n${e}`);
     }
+}
+
+function create_replay(balls, cols, powerups=false, seed=null, boardsize=null, levels=null, positions=null, autoposition_gap_mul=2, skins=null, players=null) {
+    let ids = {};
+    let idx = 1;
+    cols.forEach(cl => {
+        let c = cl.css();
+        if (!ids[c]) {
+            ids[c] = idx;
+            idx++;
+        }
+    })
+    
+    let positions_final = positions
+    if (!positions_final) {
+        positions_final = [];
+
+        // generate random positions until one is found that is default_ball_radius * autoposition_gap_mul
+        // away from all other positions
+        let mindist_sqr = Math.pow(autoposition_gap_mul * default_ball_radius, 2);
+
+        for (let i=0; i<balls.length; i++) {
+            let success = false;
+            for (let tries=0; tries<512; tries++) {
+                let pos = new Vector2(
+                    random_float(autoposition_gap_mul * default_ball_radius, BOARD_SIZE - (autoposition_gap_mul * default_ball_radius)),
+                    random_float(autoposition_gap_mul * default_ball_radius, BOARD_SIZE - (autoposition_gap_mul * default_ball_radius)),
+                );
+
+                if (positions_final.every(p => pos.sqr_distance(p) >= mindist_sqr)) {
+                    positions_final.push(pos);
+                    success = true;
+                    break
+                }
+            }
+
+            if (!success)
+                throw new Error(`tried 512 times but couldn't get a ball position for index ${i}`)
+        }
+    }
+
+    replay = {
+        balls: balls,
+        board_size: boardsize ?? BOARD_SIZE,
+        cols: cols.map(c => {
+            if (c instanceof Colour) {
+                return c.data;
+            }
+
+            return c;
+        }),
+        duration: -1,
+        framespeed: 144,
+        game_version: GAME_VERSION,
+        levels: levels ?? new Array(balls.length).fill(0),
+        map_config: "S",
+        max_game_duration: default_max_game_duration,
+        players: players ?? new Array(balls.length).fill(0).map((_, i) => {
+            return make_default_player(ids[cols[i].css()]);
+        }),
+        positions: positions_final.map(p => {
+            if (p instanceof Vector2) {
+                return [p.x, p.y];
+            }
+
+            return p;
+        }),
+        powerups: powerups ? true : false,
+        seed: seed ?? `${get_seeded_randomiser(Date.now().toFixed(0))()}`,
+        skins: skins ?? new Array(balls.length).fill("Default"),
+        starting_hp: STARTING_HP,
+        time_recorded: Date.now()
+    }
+
+    return btoa(JSON.stringify(collapse_replay(replay)));
 }
 
 function add_to_replays_tab(tab, replay_entry, to_first=true) {
@@ -814,7 +889,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
                 let lvl = ball_levels[index];
                 let ball = new ball_proto(
                     board,
-                    1, 512, col, null, null, players[index], lvl, index % 2 == 1
+                    1, default_ball_radius, col, null, null, players[index], lvl, index % 2 == 1
                 );
 
                 ball.randomise_weapon_rotations();
@@ -922,7 +997,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
 
 function create_testball(proto, level=0) {
     return new proto(
-        {random: Math.random, random_seed: "123"}, 1, 512,
+        {random: Math.random, random_seed: "123"}, 1, default_ball_radius,
         Colour.white, null, null, {}, level+1, false
     )
 }
@@ -1431,8 +1506,8 @@ function randomise_ball_info(ballid, rand_type) {
         case "random-ball": {
             li = category_to_balls_list[info.category].filter(t => !banned_for_random.some(s => t.ball_name == s.ball_name));
 
-            let newball = null
-            while (!newball || newball == info.name)
+            let newball = null;
+            while (!newball || (li.length > 1 && newball == info.name))
                 newball = random_from_array(li).ball_name;
             
             ball = newball;
@@ -1618,13 +1693,14 @@ let render_victory_enabled = true;
 
 let user_interacted_with_fps_select = false;
 
-function setup_match_search_params(num_candidates, tension_threshold, winning_team, survivor_hp_bounds, num_balls_survived, duration, randomise_balls) {
+function setup_match_search_params(num_candidates, tension_threshold, winning_team, survivor_hp_bounds, num_balls_survived, duration, achievements, randomise_balls) {
     setup_match_search(num_candidates, {
         tension_threshold: tension_threshold ?? null,
         winning_team: winning_team ?? null,
         survivor_hp_bounds: survivor_hp_bounds ?? null,
         num_balls_survived: num_balls_survived ?? null,
         duration: duration ?? null,
+        achievements: achievements ?? [],
         randomise_balls: randomise_balls ?? []
     });
 }
@@ -1703,7 +1779,8 @@ function setup_match_search(num_candidates, settings) {
                 (lb === null || lowest_survivor_hp >= lb) &&
                 (settings.num_balls_survived === null || num_balls_survived <= settings.num_balls_survived) &&
                 (dur_ub === null || duration <= dur_ub) &&
-                (dur_lb === null || duration >= dur_lb)
+                (dur_lb === null || duration >= dur_lb) &&
+                (!settings.achievements || settings.achievements.every(a => last_board.achievements[a]))
             ) {
                 // this is valid, so add to candidates list
                 search_stored_replays.push({tension: last_board?.tension, replay: last_replay, replay_compressed: last_replay_compressed});
@@ -2308,6 +2385,10 @@ function register_match_end_function(fn) {
     run_function_on_match_end = fn;
 }
 
+function is_fully_loaded() {
+    return fully_loaded;
+}
+
 document.addEventListener("DOMContentLoaded", function() {
     if (window.location.href.includes("description_generator"))
         return;
@@ -2512,6 +2593,8 @@ document.addEventListener("DOMContentLoaded", function() {
             document.querySelector("#loading_reminder_text").style.display = "none";
             clearInterval(interval);
             
+            fully_loaded = true;
+
             handle_resize();
             game_loop();
         }
