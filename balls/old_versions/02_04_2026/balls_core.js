@@ -1,8 +1,8 @@
 game_id = "balls";
 
-const FILES_PREFIX = "";
+const FILES_PREFIX = "../../";
 
-const GAME_VERSION = "07/05/2026";
+const GAME_VERSION = "02/04/2026";
 
 const AILMENT_CHARS = "➴☣♨";
 
