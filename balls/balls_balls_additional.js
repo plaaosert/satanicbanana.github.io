@@ -2838,6 +2838,139 @@ class CursedEnergyRedBall extends WeaponBall {
 }
 
 
+class BiggerBall extends WeaponBall {
+    static ball_name = "Bigger";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Bigger";
+        this.description_brief = "Can you    add Bigger Ball. Bigger BALL. BIGGER ball. Like Big Ball but BIGGER";
+
+        this.quote = "Thanks reft.";
+
+        this.tier = TIERS.DISMAL;
+        this.category = CATEGORIES.SILLY;
+        this.tags = [
+
+        ];
+
+        this.entry_animation = "load";
+        this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
+        this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
+
+        this.weapon_data = [
+
+        ];
+
+        this.damage = 1;
+
+        this.speed_cur = 100;
+
+        this.max_hp = 1;
+        this.hp = this.max_hp;
+
+        this.set_radius(this.radius * 4);
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Bigger`
+        )
+    }
+}
+
+
+class LemonBall extends WeaponBall {
+    static ball_name = "Lemon";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Lemon";
+        this.description_brief = "Lemon stuns the opponent every second for 0.5 seconds and does 10 damage per attack to opponent but does 3 damage to itself when attacking";
+
+        this.quote = "Thanks @Bread.Consumer1.";
+
+        this.tier = TIERS.S;
+        this.category = CATEGORIES.SILLY;
+
+        this.weapon_data = [
+
+        ];
+
+        this.linked_particle = null;
+
+        this.blast_timer = 1;
+    }
+
+    late_setup() {
+        super.late_setup();
+
+        this.linked_particle = this.board.spawn_particle(new Particle(
+            this.position, 0, 0.8, entity_sprites.get("lemon"),
+            0, 9999, true
+        ), this.position);
+
+        let b = this;
+        this.board.set_timer(new Timer(_ => {
+            b.linked_particle.position = b.position;
+            b.linked_particle.hide = !b.display;
+            return true;
+        }, 0.01, true))
+    }
+
+    weapon_step(board, time_delta) {
+        this.blast_timer -= time_delta;
+        if (this.blast_timer <= 0) {
+            this.blast_timer = 1;
+            this.board.balls.forEach(ball => {
+                if (!ball.allied_with(this)) {
+                    for (let i=0; i<8; i++) {
+                        // do nothing to allies
+                        let burst = `powerup_burst_gold`;
+                        let col = new Colour(255, 242, 0, 255);
+                        this.board.spawn_particle(new EnergyBurstParticle(
+                            this.position, 0.4, entity_sprites.get(burst), 0, 16, true,
+                            random_float(20000, 30000, this.independent_random), 120000, ball, col,
+                            4, 2, 0, true
+                        ), this.position)
+                    }
+
+                    this.board.set_timer(new Timer(_ => {
+                        ball.apply_hitstop(0.5);
+                        ball.lose_hp(10, this);
+                    }, 0.2));
+                }
+            })
+
+            this.lose_hp(3, this);
+
+            this.board.set_timer(new Timer(_ => {
+                play_audio("bottle_pop");
+                play_audio("FullHealthItemA");
+            }, 0.2));
+        }
+    }
+
+    die() {
+        this.linked_particle.duration = 0;
+        
+        return super.die();
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Lemon: ${this.blast_timer.toFixed(2)}s ${"<".repeat(Math.ceil(this.blast_timer * 16))}`
+        )
+    }
+}
+
+
 class NormalerBall extends WeaponBall {
     
 }
@@ -3021,5 +3154,9 @@ let additional_selectable_balls = [
     BerserkerBall, BigBall, ShieldBall, GamblerBall, NotSoSuperDaggerBall,
     RailgunIfItLockedIn, SwordAndShieldBall, HornetBall, HyperParrierBall,
     ThwompBall, MachineGunBall, ThiccNeedleBall, FourteenLongswordsBall,
-    ShotgunMagnumBall, CursedEnergyBall,
+    ShotgunMagnumBall, CursedEnergyBall, BiggerBall
+]
+
+let additional2_selectable_balls = [
+    LemonBall
 ]

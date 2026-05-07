@@ -367,6 +367,7 @@ const entity_sprites = new Map([
     ["entry_rift_front", 16, "rift/front/"],
     ["entry_rift_back", 16, "rift/back/"],
     ["entry_translocator", 14, "entries/translocator/"],
+    ["entry_bolt", 13, "entries/bolt/"],
 
     // powerups
     ["powerup_empty", 1, "powerups/"],
@@ -667,6 +668,9 @@ const entity_sprites = new Map([
 
     ["fire_blast", 6, "fire_blast/"],
 
+    ["ball_lightning", 1, "weapon/"],
+    ["ball_lightning_explosion", 9, "weapon/ball_lightning/"],
+
     ["explosion", 16, "explosion/"],  // Game Maker Classic
 
     ["lightning", 7, "lightning/"],
@@ -689,6 +693,8 @@ const entity_sprites = new Map([
     ["spike", 1, "weapon/additional/"],
     ["bullet", 1, "weapon/"],
     ["shotgun-magnum", 1, "weapon/"],
+
+    ["lemon", 1, "weapon/additional/"],
 
     // Etc
     ["festive red hat", 1, "etc/"],
@@ -1026,6 +1032,9 @@ let audios_list = [
     ["gravity_magic_2", "snd/gravity_magic_2.mp3"],
     // "Explosion 1"
     ["explosion_1", "snd/explosion_1.mp3"],
+    // "Lightning 2" [slightly edited] and "Lightning 4"
+    ["lightningbolt2", "snd/lightningbolt2.mp3"],
+    ["lightningbolt4", "snd/lightningbolt4.mp3"],
 ]
 
 
@@ -1231,10 +1240,25 @@ class Particle {
 
         this.unarmed_cinematic_played = false;
         this.opacity = 1;
+
+        this.hide = false;
+
+        /** @type {[ParticleComponent]} */
+        this.components = [];
+    }
+
+    /** @param {ParticleComponent} component  */
+    add_component(component) {
+        component.on_add(this);
+        this.components.push(component);
     }
 
     set_pos(to) {
         this.position = to;
+    }
+
+    pass_time_components(time_delta) {
+        this.components.forEach(c => c.pass_time(this, time_delta));
     }
 
     pass_time(time_delta) {
@@ -1254,6 +1278,76 @@ class Particle {
         }
 
         return true;
+    }
+}
+
+class ParticleComponent {
+    static id_inc = 0;
+
+    constructor(board) {
+        this.id = ParticleComponent.id_inc;
+        ParticleComponent.id_inc++;
+
+        this.board = board;
+
+        this.independent_random = get_seeded_randomiser(this.board.random_seed + this.id);
+    }
+
+    on_add(particle) {
+        // blank
+    }
+
+    pass_time(particle, time_delta) {
+        // blank
+    }
+}
+
+class OverlayBallParticleComponent extends ParticleComponent {
+    constructor(board, linked_ball, match_hide_state=true) {
+        super(board);
+
+        this.linked_ball = linked_ball;
+        this.match_hide_state = match_hide_state;
+    }
+
+    pass_time(particle, time_delta) {
+        particle.position = this.linked_ball.position;
+        if (this.match_hide_state) {
+            particle.hide = !this.linked_ball.display;
+        }
+
+        if (this.linked_ball.hp <= 0) {
+            particle.duration = 0;
+        }
+    }
+}
+
+class LightningBallParticleComponent extends ParticleComponent {
+    constructor(board) {
+        super(board);
+
+        this.rotate_delay = 0;
+        this.size_change_delay = 0;
+    
+        this.particle_base_size = 0;
+    }
+
+    on_add(particle) {
+        this.particle_base_size = particle.size;
+    }
+
+    pass_time(particle, time_delta) {
+        this.rotate_delay -= time_delta;
+        if (this.rotate_delay <= 0) {
+            this.rotate_delay = Math.pow(random_float(0, 1, this.independent_random), 3) * 0.15;
+            particle.rotation_angle = deg2rad(random_int(0, 360, this.independent_random) * 1);
+        }
+
+        this.size_change_delay -= time_delta;
+        if (this.size_change_delay <= 0) {
+            this.size_change_delay = Math.pow(random_float(0, 1, this.independent_random), 3) * 0.2;
+            particle.size = this.particle_base_size * random_float(1, 1.075, this.independent_random);
+        }
     }
 }
 
@@ -2357,7 +2451,10 @@ class Board {
             time_delta *= Number.EPSILON;
         }
 
-        this.particles.forEach(particle => particle.pass_time(time_delta / 1000));
+        this.particles.forEach(particle => {
+            particle.pass_time(time_delta / 1000);
+            particle.pass_time_components(time_delta / 1000);
+        });
         this.particles = this.particles.filter(particle => {
             // looping particles never hit the framecount bound so out-of-range frame is valid to check deletion
             return particle.lifetime < particle.duration && particle.cur_frame < particle.framecount;
@@ -3366,7 +3463,7 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
 
     // particles
     board.particles.forEach(particle => {
-        if (particle.delay > 0) {
+        if (particle.delay > 0 || particle.hide) {
             return;
         }
 
@@ -3908,7 +4005,7 @@ function render_opening(board, time_delta) {
                 pos, 0,
                 2.5 * board.balls[opening_state.balls].entry_animation_size_mult,
                 entity_sprites.get("entry_" + board.balls[opening_state.balls].entry_animation),
-                18, 100, false
+                18 * board.balls[opening_state.balls].entry_animation_speed_mult, 100, false
             );
             board.spawn_particle(part, pos);
             opening_state.particles.push(part);

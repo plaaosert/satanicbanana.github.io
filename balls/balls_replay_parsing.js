@@ -3,6 +3,7 @@ let selectable_balls = [
     ...campaign_low_tier_selectable_balls,
     ...campaign_high_tier_selectable_balls,
     ...additional_selectable_balls,
+    ...additional2_selectable_balls,
     ...powered_selectable_balls,
 ]
 
@@ -11,6 +12,7 @@ let category_to_balls_list = {
     [CATEGORIES.LOWTIER]: campaign_low_tier_selectable_balls,
     [CATEGORIES.HIGHTIER]: campaign_high_tier_selectable_balls,
     [CATEGORIES.SILLY]: additional_selectable_balls,
+    [CATEGORIES.SILLY2]: additional2_selectable_balls,
     [CATEGORIES.POWERED]: powered_selectable_balls,
 }
 

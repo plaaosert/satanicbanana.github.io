@@ -85,7 +85,17 @@ const ANIMATION_STANDARD_DATA = {
         ],
         size_mult: 1.6,
         offset: new Vector2(0, 0.333),
-    }
+    },
+
+    bolt: {
+        keyframes: [
+            {frame: 3, snd: "lightningbolt4", gain: 0.375},
+            {frame: 7, display: true},
+        ],
+        size_mult: 1.25,
+        offset: new Vector2(0, 0.333),
+        speed_mult: 0.85,
+    },
 }
 
 const TIERS = {
@@ -161,6 +171,8 @@ const CATEGORIES = {
     HIGHTIER: "HIGHTIER",
 
     SILLY: "SILLY",
+    SILLY2: "SILLY2",
+
     POWERED: "POWERED",
 }
 
@@ -180,6 +192,10 @@ const CATEGORIES_INFO = {
     [CATEGORIES.SILLY]: {
         desc: "Usually made initially as a joke. Often inconsistent in power level or slightly crazy.",
         col: new Colour(255, 128, 255, 255),
+    },
+    [CATEGORIES.SILLY2]: {
+        desc: "Page 2! Usually made initially as a joke. Often inconsistent in power level or slightly crazy.",
+        col: new Colour(255, 192, 255, 255),
     },
     [CATEGORIES.POWERED]: {
         desc: "Uses game-aware movement like homing, auto-aim or dodging. Almost always very strong.",
@@ -370,6 +386,7 @@ class WeaponBall extends Ball {
         this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
         this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
         this.entry_animation_size_mult = 1;
+        this.entry_animation_speed_mult = 1;
 
         // player.stats:
         /*
