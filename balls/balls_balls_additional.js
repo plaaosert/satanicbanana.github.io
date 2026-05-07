@@ -2895,7 +2895,7 @@ class LemonBall extends WeaponBall {
         this.quote = "Thanks @Bread.Consumer1.";
 
         this.tier = TIERS.S;
-        this.category = CATEGORIES.SILLY;
+        this.category = CATEGORIES.SILLY2;
 
         this.weapon_data = [
 
