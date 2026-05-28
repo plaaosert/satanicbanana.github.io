@@ -828,7 +828,20 @@ function spawn_selected_balls() {
         cols_indexes.push(col_team);
     }
 
-    let cols = cols_indexes.map((c, i) => get_default_col(c, ball_classes[i]));
+    let cols = [];
+    for (let i=0; i<ball_classes.length; i++) {
+        let c = cols_indexes[i];
+        let gotcol = get_default_col(c, ball_classes[i]);
+
+        let cs = [Colour.red, Colour.green, Colour.blue];
+        let t = 0;
+        while (cols.some(col => gotcol.eq(col))) {
+            gotcol = gotcol.lerp(cs[t], 0.25);
+            t = Math.min(2, t+1);
+        }
+
+        cols.push(gotcol)
+    }
 
     let ball_levels = [];
     for (let i=0; i<cols.length; i++) {
@@ -1932,7 +1945,7 @@ function setup_load_menu(replay_as_text) {
         let col = replay.cols[index] ?? get_default_col(0, ball_class);
 
         name_span.textContent = ` ${(`${ball_class.ball_name} LV ${levels[index]+1} `)} `;
-        name_span.style.color = Colour.from_array(cols[index]).css();
+        name_span.style.color = Colour.from_array(replay.cols[index]).css();
 
         entry_span.appendChild(img_icon);
         entry_span.appendChild(name_span);
