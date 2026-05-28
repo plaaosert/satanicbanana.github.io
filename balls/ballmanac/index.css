@@ -1,0 +1,201 @@
+@font-face {
+    font-family: "ibm_vga";
+    src: url("https://plaao.net/shared/fonts/Web437_IBM_VGA_8x16.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "nec_apc";
+    src: url("https://plaao.net/shared/fonts/Web437_NEC_APC3_8x16.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "terminus";
+    src: url("https://plaao.net/shared/fonts/Terminus.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "juliamono";
+    src: url("https://plaao.net/shared/fonts/JuliaMono-Light.woff2") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
+img {
+    image-rendering: optimizeSpeed;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: optimize-contrast;
+    image-rendering: pixelated;
+    -ms-interpolation-mode: nearest-neighbor;
+	
+	-moz-user-select: -moz-none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+}
+
+body {
+    --fontsiz: 20px;
+    font-size: var(--fontsiz);
+
+    background-color: black;
+    color: white;
+
+    font-family: "MS Gothic", "terminus", "nec_apc";
+	
+	font-smooth: never;
+	-webkit-font-smoothing: none;
+
+    margin: 0;
+}
+
+.content {
+    margin: 8px;
+}
+
+.infosection {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.infosection .panel {
+    padding: 8px;
+    margin: 8px;
+    border: 1px solid white;
+
+    transition: opacity 0.1s;
+}
+
+.full-line {
+    display: flex;
+    width: 100%;
+}
+
+.ball-blurb {
+    display: flex;
+
+    flex-direction: row;
+
+    width: 100%;
+}
+
+.ball-image-name {
+    display: flex;
+
+    flex-direction: column;
+
+    flex-basis: 25%;
+}
+
+.ball-name {
+    display: flex;
+    justify-content: space-between;
+}
+
+.tier {
+    white-space: pre;
+}
+
+.ball-image {
+    display: flex;
+    justify-content: center;
+
+    aspect-ratio: 2/1;
+}
+
+.ball-image img {
+    padding: 16px;
+}
+
+.ball-brief-info {
+    flex-basis: 75%;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.ball-tags {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+
+    gap: calc(var(--fontsiz) / 2)
+}
+
+.ball-tag {
+    width: auto;
+    flex-grow: 0;
+    white-space: pre;
+}
+
+.ball-lore-tags {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.ball-lore-tag {
+    display: flex;
+    flex-direction: column;
+
+    gap: calc(var(--fontsiz) / 3);
+
+    align-items: center;
+    white-space: pre;
+
+    flex-grow: 1;
+}
+
+.ball-lore-tag .line1 {
+    display: flex;
+    flex-direction: row;
+}
+
+.ball-lore-tag img {
+    aspect-ratio: 1/1;
+    height: round(var(--fontsiz), 16px);
+}
+
+.ball-tagline {
+    flex-grow: 1;
+}
+
+.ball-game-desc {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--fontsiz) / 4)
+}
+
+.base-label {
+    white-space: pre;
+    background-color: #333;
+}
+
+.levelup-label {
+    white-space: pre;
+    background-color: #060;
+}
+
+.awaken-label {
+    white-space: pre;
+    background-color: #606;
+}
+
+.templates, .template {
+    display: none;
+}
+
+.flickin {
+    opacity: 1;
+}
+
+.flickout {
+    opacity: 0;
+}

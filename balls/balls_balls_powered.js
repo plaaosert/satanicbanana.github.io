@@ -10,6 +10,8 @@ class SmartLongsword extends WeaponBall {
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "Taste true power.";
 
+        this.default_colour = Colour.from_hex("#f9edff")
+
         this.tier = TIERS.X;
         this.category = CATEGORIES.POWERED;
         this.tags = [
@@ -148,6 +150,8 @@ class SmartBowBall extends WeaponBall {
         this.name = "Smart Bow";
         this.description_brief = "Fires arrows. Locks onto the closest target and tries to predict its movement.";
         this.quote = "My creator did not endow me with a victory quote.";
+
+        this.default_colour = Colour.from_hex("#b374c3")
 
         this.tier = TIERS.S;
         this.category = CATEGORIES.POWERED;
@@ -344,6 +348,8 @@ class MissileLauncherBall extends WeaponBall {
         this.description_brief = "Fires an explosive homing missile.";
         this.quote = "My creator did not endow me with a victory quote.";
 
+        this.default_colour = Colour.from_hex("#39c652")
+
         this.tier = TIERS.S;
         this.category = CATEGORIES.POWERED;
         this.tags = [
@@ -451,6 +457,8 @@ class ClusterfuckBall extends WeaponBall {
         this.name = "Clusterfuck";
         this.description_brief = "Has entirely too much.";
         this.quote = "My creator did not endow me with a victory quote.";
+
+        this.default_colour = Colour.from_hex("#07e7f8")
 
         this.tier = TIERS.ULTRA;
         this.category = CATEGORIES.POWERED;
@@ -638,6 +646,8 @@ class TurretBall extends SmartBowBall {
         this.name = "Smart Turret";
         this.description_brief = "Fires a whole lot of bullets. Locks onto the closest target and tries to predict its movement.";
         this.quote = "Thanks @TheGlimGuy.";
+
+        this.default_colour = Colour.from_hex("#d6ffec")
 
         this.tier = TIERS.ULTRA;
 

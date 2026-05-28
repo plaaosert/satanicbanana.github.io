@@ -54,6 +54,14 @@ let num_textures_needed = 0;
 
 const make_damage_numbers = true;
 
+let materials2sprites = {
+    "neutral": ["Neutral", "wht"],
+    "blue": ["Starmetal", "material_blue"],
+    "green": ["Fluorite", "material_green"],
+    "red": ["Cinnabar", "material_red"],
+    "white": ["Radiance", "material_white"],
+}
+
 let ending_game = false;
 let mysterious_powers_enabled = false;
 let current_mysterious_power = {name: null, power: 5};
@@ -75,6 +83,9 @@ let macintosh_star_delays = [0.05, 0.2];
 let macintosh_star_counts = [0, 4];
 
 let fully_loaded = false;
+
+let ending_game_timer_max = 200;
+let ending_game_timer = ending_game_timer_max;
 
 const BALL_RENDERING_METHODS = {
     VECTOR: "VECTOR",
@@ -816,7 +827,7 @@ function reset_audio_buffer() {
 }
 
 async function load_audio_item(path, lazy=false) {
-    return await load_audio_from_url(`https://plaao.net/balls/${path}`, lazy);;
+    return await load_audio_from_url(`https://plaao.net/balls/${path}`, lazy);
 }
 
 async function decode_audio(array_buffer) {
@@ -1035,6 +1046,12 @@ let audios_list = [
     // "Lightning 2" [slightly edited] and "Lightning 4"
     ["lightningbolt2", "snd/lightningbolt2.mp3"],
     ["lightningbolt4", "snd/lightningbolt4.mp3"],
+
+    // MAHJONG BANGERS
+    // https://downloads.khinsider.com/game-soundtracks/album/simple-ds-series-vol.-01-the-mahjong-nintendo-ds
+    ["mahjong_04", "https://scrimblo.foundation/uploads/simple_mahjong_04.mp3", "Track 4", "Simple DS Series Vol. 01: The Mahjong"],
+    ["mahjong_win", "https://scrimblo.foundation/uploads/simple_mahjong_jingle_win.mp3", "Jingle #2", "Simple DS Series Vol. 01: The Mahjong"],
+    ["mahjong_lose", "https://scrimblo.foundation/uploads/simple_mahjong_jingle_lose.mp3", "Jingle #7", "Simple DS Series Vol. 01: The Mahjong"],
 ]
 
 
@@ -2321,8 +2338,8 @@ class Board {
     }
 
     remaining_players() {
-        let balls_ids = this.balls.map(ball => ball.player.id);
-        let players = this.balls.filter((t, i) => t.show_stats && balls_ids.indexOf(t.player.id) === i).map(b => b.player);
+        let balls_ids = this.balls.filter((t, i) => t.show_stats).map(ball => ball.player.id);
+        let players = this.balls.filter((t, i) => t.show_stats).filter((t, i) => balls_ids.indexOf(t.player.id) === i).map(b => b.player);
         return players;
     }
 
@@ -3958,7 +3975,7 @@ function render_descriptions(board) {
             if (!reduced)
                 ball.render_stats(canvas, ctx, l[0], l[1] + 12 + 12 + 16, sizedown);
 
-            if (reduced && alternate_stats_rendering_mode && false)
+            if (reduced && alternate_stats_rendering_mode)
                 ball.render_reduced_stats(canvas, ctx, l[0], l[1] + 12 + 12 + 16, sizedown);
         })
     }
@@ -4250,7 +4267,7 @@ function render_postopening(board) {
             if (AERO_BACKGROUND == AERO_BACKGROUNDS.MACINTOSH) {
                 let gains = [0.1, 0.1, 0.1];
                 let index = random_int(0, gains.length, get_seeded_randomiser(board.random_seed));
-                // index = 1;
+                index = 1;
                 play_music(`upusen_${index+1}`, gains[index]);
             } else {
                 play_music(`2048_${random_int(0, 13, get_seeded_randomiser(board.random_seed))+1}`, 0.2);
@@ -5114,6 +5131,16 @@ function game_loop() {
 
             ending_game = false;
             if (board?.remaining_players().length <= 1) {
+                if (ending_game_timer <= 0) {
+                    // this means if _max is >0, there will always be at least one frame of "grace period"
+                    ending_game = true;
+                }
+                ending_game_timer -= game_delta_time;
+            } else {
+                ending_game_timer = ending_game_timer_max;
+            }
+
+            if (ending_game) {
                 let players = board.remaining_players();
                 if (players.length > 0) {
                     board.get_all_player_balls(players[0]).forEach(ball => ball.takes_damage = false);
@@ -5130,7 +5157,6 @@ function game_loop() {
                 }
 
                 match_end_timeout -= game_delta_time;
-                ending_game = true;
                 board.attempt_energy_conservation = false;
                 
                 if (searching) {

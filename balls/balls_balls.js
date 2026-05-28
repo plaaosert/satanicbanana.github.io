@@ -329,6 +329,13 @@ const TAGS_INFO = {
     },
 }
 
+const PRONOUN = {
+    THEY: "they/them",
+    HE: "he/him",
+    SHE: "she/her",
+    IT: "it/its",
+}
+
 class BallWeapon {
     constructor(size_multiplier, sprite, hitboxes) {
         this.size_multiplier = size_multiplier * WEAPON_SIZE_MULTIPLIER;
@@ -377,6 +384,19 @@ class WeaponBall extends Ball {
         this.level_description = "This ball has no levelup effect.";
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "I won? I won! How'd I win?!";
+
+        this.pronoun = PRONOUN.THEY;
+        this.tagline = "I wish I had a tagline..."
+        this.description = "I wish people knew what I did..."
+        this.lore_description = "I wish people knew more about me..."
+        this.weapon_relationship = "A quote would go here, probably."
+        this.lore_origin = "Somewhere"
+        this.lore_temperament = "Probably quite nice"
+        this.lore_affiliation = "Independent"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "1st Jan"
+
+        this.default_colour = Colour.red;
 
         this.tier = TIERS.DISMAL;
         this.category = CATEGORIES.STANDARD;
@@ -1499,6 +1519,20 @@ class DummyBall extends WeaponBall {
         
         this.max_level_description = "Seriously, it doesn't do anythin- wait... no...";
 
+        this.pronoun = PRONOUN.IT;
+        // "No upgrades are available for this ball aside from HP."
+        this.tagline = "Though a failure in creating artificial ball life, it is uniquely able to exist without tethering to a weapon. Other balls often use it to practice strategies, appreciative of the fact that it can't fight back."
+        this.description = "Has no weapon! Some say that, if it were to awaken, terrible things might happen..."
+        this.lore_description = "Affectionately named Dummy, this ball was created in the early days of the convergence by biologists attempting to understand the unique physiology of ballkind. Though a well-known fact now, at the time it was not understood that a ball required a weapon to tether its essence to, so the attempt was a failure - producing an unmoving blob of matter with only slight signs of life. Despite all predictions, it did not die; time had it remain whole and like a normal ball it simply reformed unharmed after taking conventional damage. The Grand Arena took possession of it after the closure of the lab it was created in, quickly finding a use for it as a stress toy, practice dummy or basketball for its contenders. It seems to lack any form of cognition or even perception, save for a low hum that some swear is slowly getting louder..."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Artificial"
+        this.lore_temperament = "N/A"
+        this.lore_affiliation = "N/A"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "20th Jun"
+
+        this.default_colour = default_cols[0];
+
         this.tier = TIERS.DISMAL;
         this.category = CATEGORIES.STANDARD;
         this.tags = [
@@ -1674,6 +1708,8 @@ class UnarmedBall extends WeaponBall {
         this.max_level_description = "It cannot improve on perfection.";
         this.quote = "...pathetic.";
 
+        this.default_colour = default_cols[0];
+
         this.tier = TIERS.SPLUS;
         this.category = CATEGORIES.STANDARD;
         this.tags = [
@@ -1825,6 +1861,20 @@ class HammerBall extends WeaponBall {
         this.level_description = "Makes the hammer deal even more damage.";
         this.max_level_description = "Adds another smaller hammer that swings independently and faster, dealing half damage.";
         this.quote = "I'm sure you understand.\nThe subject of my victory is quite the heavy topic.";
+
+        this.pronoun = PRONOUN.HE;
+        this.tagline = "The greatest example of the principle that simplicity is not weakness. Sometimes all you need is a big hammer.";
+        this.description = ""
+        this.lore_description = "Hammer, alongside SORD, is one of the two original balls, appearing in our world moments after the convergence began. Soon after the first ceasefire, Hammer eagerly settled into a peacetime role, working with SORD to create the Grand Arena. Repurposing his military experience to train less experienced balls into the skilled fighters we know and love today, he provides them with a much-needed outlet for the combat impulses all balls possess. Though his hands are often full with administrative work, he takes any opportunity to fight as a contestant in his own arena, especially if SORD is on the other side."
+        // this.weapon_relationship = "The younger generation, they've got it all mixed up. Some of them don't even use weapons anymore. It's just not a good idea. Tethering is a lifelong decision, but they're treating it like a fashion choice"
+        this.weapon_relationship = "You're a smart one. I'm sure you can figure out why I chose this as my weapon."
+        this.lore_origin = "Convergence"
+        this.lore_temperament = "Thoughtful"
+        this.lore_affiliation = "The Grand Arena"
+        this.lore_alignment = "blue"
+        this.lore_birthday = "5th Jan"
+
+        this.default_colour = Colour.from_hex("#b1b4b3")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -2031,6 +2081,19 @@ class SordBall extends WeaponBall {
         this.max_level_description = "Also makes the sord larger(!) after every strike.";
         this.quote = "I told you about those strikes, bro. I TOLD you.";
 
+        this.pronoun = PRONOUN.HE;
+        this.tagline = "Learning from every strike, SORD may start out unremarkable but rapidly becomes an unstoppable force.";
+        this.description = ""
+        this.lore_description = "SORD is one of the original balls, alongside Hammer. Their appearance long predates understanding of the convergence, a fact SORD is eager to remind his students when they question his teachings, usually with a stern tone he's still not quite used to using. Though Hammer was always the combat-minded one among the two, SORD finds himself fighting more often than he might have expected, given Hammer's almost constant stream of administrative work forcing him to contend with the never-ending flow of new Arena arrivals. Though always happy to fight Hammer at any opprtunity, SORD does wish that he could have a rest sometimes."
+        this.weapon_relationship = "My SORD is special. It's not really a weapon, well, not originally. Once upon a time, this was actually a paintbrush! Well, that's not really true either... It's complicated."
+        this.lore_origin = "Convergence"
+        this.lore_temperament = "Laid-back"
+        this.lore_affiliation = "The Grand Arena"
+        this.lore_alignment = "green"
+        this.lore_birthday = "13th Aug"
+
+        this.default_colour = Colour.from_hex("#4acb20")
+
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
             this.tier = TIERS.APLUS;
@@ -2168,6 +2231,19 @@ class DaggerBall extends WeaponBall {
         this.level_description = "Increases the delay after not striking until bonuses will decay.";
         this.max_level_description = "When spinning 1000 deg/s or more, shoots small projectiles (1 dmg) at a frequency and velocity based on rotation speed.";
         this.quote = "surely thats not all youve got.\ncome here and let me destroy you again.";
+
+        this.pronoun = PRONOUN.SHE;
+        this.tagline = "Bloodthirsty, arrogant and highly aggressive, dagger is a fearsome combo killer. Under the right circumstances, she can take down any enemy in a matter of seconds.";
+        this.description = "Some powerful balls have specific methods of neutralising this highly dangerous threat."
+        this.lore_description = "Though terrifying to think about, hundreds of balls just like this one were prepared for the convergence. Remnath, talked down from the brink seconds before disaster, forbade dagger and her comrades from crossing the threshold... but a fighting group as driven as this one was bound to have some insubordination. Before the fragile peace could be shattered by the actions of one single ball, SORD and Hammer reluctantly scooped dagger up into the Grand Arena to give her an outlet. Much to the shock of everyone involved, this actually worked - though it took some time for the Arena to shrug off the reputation that came with hosting her."
+        this.weapon_relationship = "my favourite part is the split second before my dagger hits them for the final time. seeing their terror makes me feel alive."
+        this.lore_origin = "Convergence"
+        this.lore_temperament = "Violent"
+        this.lore_affiliation = "The Grand Arena"
+        this.lore_alignment = "red"
+        this.lore_birthday = "30th Jan"
+
+        this.default_colour = Colour.from_hex("#c9776b")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -2414,6 +2490,19 @@ class BowBall extends WeaponBall {
         this.max_level_description = "Start with +1 multishot. Every shot fires an additional arrow.";
         this.quote = "Phew! Almost ran out of arrows there.";
 
+        this.pronoun = PRONOUN.HE;
+        this.tagline = "Bow believes that it isn't about your accuracy, just the number of arrows you hit."
+        this.description = ""
+        this.lore_description = "Given their almost complete ubiquity now, it might shock some to learn that, at the time of the convergence, ranged weapons were almost nonexistent in Remnath. As part of exploratory missions, Remnath sent untethered balls to discover new promising weapons on our plane, which, before we knew their initial intention, was highly successful. Given what they can do with little more than a stick, in retrospect this isn't so surprising. Hammer, too, was especially interested in the mechanisms behind bonding to a ranged weapon, though was quickly revolted after understanding what happened to the projectiles."
+        this.weapon_relationship = "It's really not that bad! All ranged balls go through it. You really do get used to the feeling. Well, melee balls wouldn't understand."
+        this.lore_origin = "Convergence"
+        this.lore_temperament = "Curious"
+        this.lore_affiliation = "Independent"
+        this.lore_alignment = "green"
+        this.lore_birthday = "4th Feb"
+
+        this.default_colour = Colour.from_hex("#be9667")
+
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
             this.tier = TIERS.APLUS;
@@ -2590,6 +2679,19 @@ class MagnumBall extends WeaponBall {
         this.max_level_description = "Get an additional coin thrower.";
         this.quote = "Do you have any idea how much this battle cost me?\nIt's a good thing I can write off these coins as business expenses.";
 
+        this.pronoun = PRONOUN.HE;
+        this.tagline = "A lover of spectacle and an avid gambler. With the right situation, Magnum can deal lethal damage while making a clip that'll go triple platinum.";
+        this.description = "No, coins from other sources will not ricochet."
+        this.lore_description = "Part of the initial exploratory missions, Magnum, unlike his siblings, remained pointedly untethered until he somehow found his way into a mafia strongbox. The moment he touched its contents, he understood his purpose, clearer than any other moment in his (admittedly quite short) life. Long before the war, let alone the ceasefire, Magnum got to work learning everything there was to know about forming a media conglomerate, focusing around content by balls, for balls. Happily partnering with the Grand Arena upon its inauguration, the Balls Broadcasting Corporation is the official media partner for all Arena fights. Recently, it has even branched out into hybrid content!"
+        this.weapon_relationship = "Are you paying me for this appearance? Hang on, do you even have permission to use my likeness? My time is too valuable for this."
+        this.lore_origin = "Convergence"
+        this.lore_temperament = "Enterprising"
+        this.lore_affiliation = "Balls Broadcasting Corporation"
+        this.lore_alignment = "blue"
+        this.lore_birthday = "11th Nov"
+
+        this.default_colour = Colour.from_hex("#c069c5")
+
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
             this.tier = TIERS.APLUS;
@@ -2758,6 +2860,19 @@ class NeedleBall extends WeaponBall {
         this.level_description = "Increases split chance and reduces HP lost from splitting.";
         this.max_level_description = "Applies poison instead for 1s each. Poison deals the full DOT for its duration and refreshes when stacked.";
         this.quote = "Many thanks for your kind donation! It's always hard getting food\non the table as a mother of six trillion.";
+
+        this.pronoun = PRONOUN.SHE;
+        this.tagline = "Long-suffering mother of six trillion. Summons her children to protect her when in danger.";
+        this.description = ""
+        this.lore_description = "Balls' reproductive capabilities, even now, manage to elude understanding. Based on our understanding of concept sinks and how they apply to balls, it seems that they reproduce not according to biology, but instead \"when the time is right\". Unfortunately for Needle, it seems that this is true almost all the time. The reproduction process of a ball has never been observed, even for Needle, lending more credibility to the theory that ball procreation is a purely conceptual, rather than physical, event. Regardless, she keeps herself in high spirits. Caring for that many children is hard work! Most of them, especially the adults, live in Remnath, but Needle spends her time almost exclusively here, funnelling the stipend from the Grand Arena right back into her family."
+        this.weapon_relationship = "Well, I wasn't always a mother. Definitely not one of this many children, either! It turns out tethering has more profound effects than most of us think when we're young... Anyway! You said you were doing a buffet after this?"
+        this.lore_origin = "Convergence"
+        this.lore_temperament = "Motherly"
+        this.lore_affiliation = "The Grand Arena"
+        this.lore_alignment = "green"
+        this.lore_birthday = "7th May"
+
+        this.default_colour = Colour.from_hex("#a099dd")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -2940,6 +3055,19 @@ class RailgunBall extends WeaponBall {
         this.level_description = "Increases shot frequency.";
         this.max_level_description = "Use two railguns that always mirror positions and always shoot together, but damage is reduced by 33%.";
         this.quote = "Wow, it's hard to hold this thing!\nSeriously, take a look- No, really, try it!";
+
+        this.pronoun = PRONOUN.SHE;
+        this.tagline = "Absorbs energy from successful hits to immediately reload the railgun and shoot again, and again, and again...";
+        this.description = ""
+        this.lore_description = "Magnum runs a tight ship, but has a soft spot for family. As his eldest daughter, Railgun was given unparalleled access from birth to the technologies of our modern world. Much like the ancient Ramnath dynasties, the strongest weapons often stay within the family - but Railgun had no intention of taking the easy path. Based on reverse-engineered designs of the Magnum family's many heirlooms, she created a new weapon to match her vision of the perfect tether. Aside from the weight, she couldn't be happier - and Magnum isn't too upset to have saved another treasure. Though she remains loyal to her family, Railgun found her true calling in combat at the Grand Arena."
+        this.weapon_relationship = "I bet you were expecting me to riff about how this thing is so heavy. I mean, it is, but that's beside the point. What? That's it? Can I re-record this?"
+        this.lore_origin = "Center Plane City"
+        this.lore_temperament = "Thoughtful"
+        this.lore_affiliation = "The Grand Arena"
+        this.lore_alignment = "blue"
+        this.lore_birthday = "31st Mar"
+
+        this.default_colour = Colour.from_hex("#81c2e5")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -3153,6 +3281,19 @@ class PotionBall extends WeaponBall {
         this.level_description = "Increases puddle duration.";
         this.max_level_description = "Adds a fourth potion that temporally affects balls, freezing them in time.";
         this.quote = "You couldn't handle my strongest potions.";
+
+        this.pronoun = PRONOUN.SHE;
+        this.tagline = "Brews powerful potions to debilitate enemies. Can block with them in a pinch, but doing so leaves her vulnerable.";
+        this.description = ""
+        this.lore_description = "It was anyone's guess what weapon Potion actually tethered with. She swore it was with an alembic, but ball scholars were quick to point out that there was little chance for anyone, and by her own admission, Potion herself, to consider such a thing a \"weapon\". With the convergence long since closed and nobody else to ask, they begrudgingly accepted that, maybe, it might have been an alembic. This did not answer the question of how she seemed to be able to create and throw away parts of her soul at will, with no limitations yet observed. Many generations later, when the convergence opened once more, Potion got her answer. It was an alembic."
+        this.weapon_relationship = "You know, I don't use any ingredients or anything to brew the potions. It's a good thing I can't make anything actually useful, or the government might want me! Haha! Ha... ha..."
+        this.lore_origin = "Center Plane City"
+        this.lore_temperament = "Curious"
+        this.lore_affiliation = "The Grand Arena"
+        this.lore_alignment = "red"
+        this.lore_birthday = "24th Nov"
+
+        this.default_colour = Colour.from_hex("#ACFF02")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -3424,6 +3565,19 @@ class GrenadeBall extends WeaponBall {
         this.max_level_description = "Increases grenades' fuse timer to 30 seconds and increases throwing frequency by an additional 1.5x.";
         this.quote = "I can't hear anything. Am I dying? Is this the end?";
 
+        this.pronoun = PRONOUN.HE;
+        this.tagline = "An old ball with a less than stable tether on life. Throws highly potent grenades that are as much a danger to himself and his allies as they are to his enemies.";
+        this.description = ""
+        this.lore_description = "While it might come as a surprise to some, it is possible for a ball to change its tether, though usually only in times of mortal danger or high stress. Grenade, once a simple and peaceful (by ball standards...) Gardening Fork, briefly became the front line in the First War when he found himself precisely on the seam that opened into the convergence. Unwilling to fight, he tried to run and lay low, but somehow, the war always had a way of coming back to him. In the corner of a ruined farmhouse, his luck finally ran out, and he counted his final moments before he would be blown to shreds and sent back to the lifestream. Though he would of course never have died, his belief was enough; in those final moments, his acceptance of his death awakened a soul he didn't know he still had. The primed grenade, tethered to him now, stopped ticking, as his gardening fork along with half of his soul faded to dust. It took him fifty years to recover enough to move. Hammer believes it will take him another hundred to feel alive again. For now, the fights and his newfound friends bring him comfort."
+        this.weapon_relationship = "I don't really mind dying. Some of my friends hate it - they say it makes them uncomfortable, or it hurts, or it feels like dying... myself, I can't really feel, well, anything, most days. Best I feel is when I win. And when Hammer comes to visit."
+        this.lore_origin = "Convergence"
+        this.lore_temperament = "Tired"
+        this.lore_affiliation = "The Grand Arena"
+        this.lore_alignment = "green"
+        this.lore_birthday = "19th Jul"
+
+        this.default_colour = Colour.from_hex("#bfd199")
+
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
             this.tier = TIERS.APLUS;
@@ -3682,6 +3836,19 @@ class GlassBall extends WeaponBall {
         this.level_description = "Increases base rupture and makes the weapon rotate faster.";
         this.max_level_description = "Multiplies the target's rupture by 2x after each hit.";
         this.quote = "[unintelligible animalistic grunting]";
+
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "More weapon than ball, terrifying and mindless in its pursuit of violence. Able to deal incredible damage after spilling enough blood.";
+        this.description = ""
+        this.lore_description = "Glass is an example of why a young ball must always choose their weapon carefully. Tethering is for life, after all, and one must take into account both compatibility and baseline concept. When compatibility is weak or baseline concept is too strong. the weapon will take over the ball, turning it into a tool for its own ends, rather than the other way round. It is for this reason that Glass, once thinking itself subversive and unique in its choice of weapon, now shambles through towns like a plague, descending upon anyone or anything not quick enough to escape it."
+        this.weapon_relationship = "[Glass was not available for comment.]"
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Feral"
+        this.lore_affiliation = "N/A"
+        this.lore_alignment = "red"
+        this.lore_birthday = "25th May"
+
+        this.default_colour = Colour.from_hex("#d3f2fa")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -3981,6 +4148,19 @@ class HandBall extends WeaponBall {
         this.level_description = "Speeds up punch recovery, makes hands larger and increases grab damage.";
         this.max_level_description = "Hands are now removed when they become tired (after parrying or throwing). New hands sprout every 1 second, doubled for each currently active hand.";
         this.quote = "It doesn't count as a self-insert if it's just my hands.";
+
+        this.pronoun = PRONOUN.HE;
+        this.tagline = "The first ever fusion of ball and man. Strikes and grapples his way through fights.";
+        this.description = ""
+        this.lore_description = "It bears repeating that anything can be tethered if considered a weapon. After human and ball reached a tenuous coexistence, the brave among them started to explore the boundaries of each others' biology. Among other things, Hand and his partner were interested about whether they could tether, perhaps assisted by our uniquely powerful, though subconscious, grasp of concept. Indeed, the idea was not unprecedented - stories exist of balls tethering with dangerous beasts on their own world since the beginning of their civilisation - but it is quite another thing to actually try it on a target with a real grasp of concept and self-identity. Hand's existence is proof enough that the attempt was successful, though the rest of his partner's physical existence was obliterated in the process. Hand has stated that he is equal parts himself and them, though of course this is impossible to prove one way or the other. Regardless, it is the opinion of the author that Hand seems to be quite happy and there's probably nothing wrong with it, though it is a little disquieting."
+        this.weapon_relationship = "I kind of just let the hands do what they want, but usually I'm the one blocking. If it were up to them, we'd always be punching!"
+        this.lore_origin = "Center Plane City"
+        this.lore_temperament = "Adventurous"
+        this.lore_affiliation = "ConTech CFsR Ltd."
+        this.lore_alignment = "green"
+        this.lore_birthday = "2nd Aug"
+
+        this.default_colour = Colour.from_hex("#fef43d")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -4661,6 +4841,19 @@ class ChakramBall extends WeaponBall {
         this.max_level_description = "The chakram now also applies rupture equal to damage.";
         this.quote = "它叫手里剑我一直在说";
 
+        this.pronoun = PRONOUN.HE;
+        this.tagline = "Misunderstood and thoughtful, with a very, very large chakram.";
+        this.description = ""
+        this.lore_description = "Because of the hugely lengthened lifespan of most balls along with their concept porosity rapidly diminishing after tethering, it has proven reasonably difficult for them to learn languages other than Spheric, and even harder for them to understand the perspective of a ball who never learned the language at all. Though Chakram feels right at home in the Shenzhen Arena, his trips to the Grand Arena have often fallen short of comfortable. Alongside his extensive duties as a celebrity darling of the Asian ball combat scene, Chakram has spent extensive effort fighting his limitations and becoming a polyglot in order to better spread a message of inclusivity throughout all balls, especially the diaspora stuck with Spheric, or without it. Though he would very much like to go, he worries about his treatment were he to visit Remnath, but hopes that one day he might see open passage between the planes and street signs in all five major languages."
+        this.weapon_relationship = "我的名字有可能改成\"手里剑\"吗?"
+        this.lore_origin = "South East Asia Ball-Human Autonomous Zone"
+        this.lore_temperament = "Patient"
+        this.lore_affiliation = "NHK Ball Combat League"
+        this.lore_alignment = "blue"
+        this.lore_birthday = "6th Feb"
+
+        this.default_colour = Colour.from_hex("#b4a9bc")
+
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
             this.tier = TIERS.APLUS;
@@ -4904,6 +5097,19 @@ class WandBall extends WeaponBall {
         this.level_description = "Reduces the delay between spell casts.";
         this.max_level_description = "Upgrades each spell - more icicles, larger fireball, barbs hit up to twice, more lightning chains, more damaging black ball.";
         this.quote = "Chat did you see that guy lmao what a loser";
+
+        this.pronoun = PRONOUN.HE;
+        this.tagline = "Really just straight up murderous and evil. Somehow the only remaining holder of arcane power in all the known planes.";
+        this.description = ""
+        this.lore_description = "Unbeknownst to both us and ballkind, magic users had existed on the home planes all along - we were just no good at finding them. Whether the specialised wards were keyed too strongly to our kind to trigger or Wand simply got lucky, he managed to find the last wizard before tethering to his staff and summarily killing him. Thus ended the line of wizardry, too weak to be revived now that the conceptual baseline had well and truly defined it out of existence - leaving Wand the last true magic user in the known planes. In the wizard's final moments, he placed a curse on this invader to torment his soul for eternity, implanting a demonic mind to belittle and torment the upstart killer until the end of days. Still conceptually porous, however, Wand managed to warp the concept of this new auxilliary tether into an entity named \"Chat\", which he now quips to more often than it says anything back."
+        this.weapon_relationship = "Ayo lmao this guy is tryna talk to me? Chat what do I say?"
+        this.lore_origin = "Convergence"
+        this.lore_temperament = "Temperamental"
+        this.lore_affiliation = "An Evil Wizard Tower"
+        this.lore_alignment = "red"
+        this.lore_birthday = "12th Dec"
+
+        this.default_colour = Colour.from_hex("#badbd0")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -5484,6 +5690,19 @@ class AxeBall extends WeaponBall {
         this.max_level_description = "The axe also launches a damaging, piercing shockwave when swinging.";
         this.quote = "Did you get that on camera?!\nI gotta put this match in my highlight reel!";
 
+        this.pronoun = PRONOUN.HE;
+        this.tagline = "Born for the stage, Axe sacrifices everything for the clip, charging headlong into danger with incredibly powerful axe swings.";
+        this.description = ""
+        this.lore_description = "Axe grew up in the first golden age of ball combat, when every fight was shown on every channel and the results of bouts regularly made the headlines. He loved the splendor, the tension, the storylines, but most importantly he loved the highlights. Rewatching the best clips from each tournament again and again, marvelling at the explosive skill of his favourite contenders, Axe spent every day wishing it could one day be him. He chose to tether a gigantic battle-axe, one of the largest weapons out of all those regularly taken to the Grand Arena, his skill with it unique enough to have him scouted long before he made it out of the rookie leagues. While he still can't quite comprehend the idea that he and dagger are in the same room, let alone fighting on even footing, he has admitted that the things she's said to him before dispatching him have distinctly changed his opinion of her. Never meet your heroes."
+        this.weapon_relationship = "You know Hammer said he might be sending me on tour soon? I'll be fighting in Asia, Africa AND South America! Being able to fight Khopesh on her own turf is gonna be so awesome!"
+        this.lore_origin = "Center Plane City"
+        this.lore_temperament = "Boisterous"
+        this.lore_affiliation = "The Grand Arena"
+        this.lore_alignment = "green"
+        this.lore_birthday = "23th Jul"
+
+        this.default_colour = Colour.from_hex("#7c48ff")
+
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
             this.tier = TIERS.APLUS;
@@ -5677,6 +5896,19 @@ class ShotgunBall extends WeaponBall {
         this.max_level_description = "Shoots twice as many bullets.";
         this.quote = "...Target eliminated.";
 
+        this.pronoun = PRONOUN.HE;
+        this.tagline = "Emotionless and calculating in battle, Shotgun makes every shot count, with the potential to immediately demolish any opponent caught in the wrong spot.";
+        this.description = ""
+        this.lore_description = "Shotgun was born and trained in a clandestine wing of a clandestine department in an off-record branch of Remnath's shadow government. With an identity built from the ground up to make it possible for him to execute leaders, dissidents and war enemies alike, he spent decades knowing nothing but his accommodations and his missions. After Remnath's governmental collapse post-convergence, however, Shotgun found himself, for the first time in his life, without instructions - worse, being mid-mission, he was stuck on the wrong side of the seam when it closed. He wandered aimlessly for some time, trying to find a way to feel like he hadn't just lost his life's purpose, but his concept was simply unsuited to civilian life. Soon, the violent urges kicked in, as he knew they would, and he signed up as a contestant in the Grand Arena. Thankfully, he made it through, his ability to slip back into his assassin persona in combat giving him a unique edge over the competing hopefuls. He found a kindred spirit in Grenade and a trusted friend in SORD, who helped convince him that maybe even old balls can change."
+        this.weapon_relationship = "I've been using the persona less these days. It feels good to change, but... everyone knows me as the assassin. Am I even Shotgun if that isn't me anymore?"
+        this.lore_origin = "Convergence"
+        this.lore_temperament = "Quiet"
+        this.lore_affiliation = "The Grand Arena"
+        this.lore_alignment = "blue"
+        this.lore_birthday = "20th Dec"
+
+        this.default_colour = Colour.from_hex("#ffe0b6")
+
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
             this.tier = TIERS.APLUS;
@@ -5816,7 +6048,20 @@ class SpearBall extends WeaponBall {
         this.description_brief = "Throws spears which replenish over time. Successful strikes replenish a spear immediately.";
         this.level_description = "Reduces throw delay and increases replenishment speed.";
         this.max_level_description = "If throwing the last spear, replenish another spear immediately. Whenever a spear is replenished, replenish two instead.";
-        this.quote = "I knew you could do it, little spear!\nI'm gonna put you in a display case so all the others can learn from you!";
+        this.quote = "I knew you could do it, little spear!\nI'm gonna put you in the display case so all the others can learn from you!";
+
+        this.pronoun = PRONOUN.SHE;
+        this.tagline = "Relentlessly pushing any advantage, Spear rapidly punishes her opponent's missteps while building defenses, then uses her gathered armaments for even more damage.";
+        this.description = ""
+        this.lore_description = "Exposure to our plane taught balls many things, including novel approaches to tethering. The unique human approach to concept regarding weapons may have started the first-generation balls off as alchemists and rangers, but in recent times it seems as if the concept of \"weapon\" barely applies anymore. Spear is somewhere in the middle. One misconception (not helped by her name) is that she, indeed, tethered to a spear, but in truth she tethered to a spear display case, meaning the spears she throws are very much real. Though her ability to remain tethered to her case over a kilometre away was groundbreaking in her time, she now finds herself with a cumbersome weapon lacking any advantage over the truly modern tethers. Regardless, skill beats tricks, at least according to her, and she swears her spears talk to her sometimes about new battle strategies."
+        this.weapon_relationship = "I am not just tethered to Gordon! I have tethers to all my little ones - there's Jack, Maxim, Lucia, Kyle, Potemkin, Martin, Qian, Riku, Ai, Hugo, [quotation cut for brevity]"
+        this.lore_origin = "Venezuelan Superstate"
+        this.lore_temperament = "Calculating"
+        this.lore_affiliation = "The Grand Arena"
+        this.lore_alignment = "blue"
+        this.lore_birthday = "13th Mar"
+
+        this.default_colour = Colour.from_hex("#bc85a3")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -5998,6 +6243,19 @@ class RosaryBall extends WeaponBall {
         this.level_description = "Healing burst is more frequent. Summoned balls also gain level bonuses.";
         this.max_level_description = "Summoned balls also gain awakening bonuses. Ball summoning delay is halved.";
         this.quote = "For this victory I may thank only the Ball Above All. Praise be.";
+
+        this.pronoun = PRONOUN.HE;
+        this.tagline = "In the name of his god, Rosary summons echoes of legendary warriors from the aetherplane, though his power comes at a price - he is utterly defenseless without his allies!";
+        this.description = ""
+        this.lore_description = "Ball scientists were, and are, unable to discern the complete nature of the aetherplane. Though balls claim to have pulled upon it for millenia, the only time it ever truly opened was the convergence, and the only being who ever left it was Rosary. Though forthcoming with information, Rosary finds it utterly impossible to explain, or even recall, the aetherplane's nature in a way that language can describe, and when trying, it becomes very difficult to separate fact from scripture. Dashing the hopes of would-be neo-planerangers, Rosary's portals have been proven to only work for him and his allies; indeed, for everyone but him, they are one way only."
+        this.weapon_relationship = "All I can tell you for sure is that, between my missions, the Ball Above All holds me tight in aetherspace, swaddled in Their loving embrace. Please, stay with me after this. I would love to tell you more."
+        this.lore_origin = "Aetherplane"
+        this.lore_temperament = "Evangelical"
+        this.lore_affiliation = "Aetherist Worldwide Communion"
+        this.lore_alignment = "green"
+        this.lore_birthday = "25th Dec"
+
+        this.default_colour = Colour.from_hex("#e29a9b")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -6224,6 +6482,19 @@ class FishingRodBall extends WeaponBall {
         this.level_description = "Increases rupture intensity. Every 25 levels adds another hook cast at once.";
         this.max_level_description = "Hooks now create a small fire blast when they are destroyed.";
         this.quote = "I am alone. I am empty. And yet... I fish.";
+
+        this.pronoun = PRONOUN.HE;
+        this.tagline = "Fishing Rod would rather be anywhere else, his fights a small distraction from his real passion: extreme sport fishing. Despite this, he catches his opponents just as well as his fish, reeling them close and clubbing them senseless.";
+        this.description = ""
+        this.lore_description = "Fishing Rod just wants to fish."
+        this.weapon_relationship = "Man, I just do this to pay the bills. Did you see my ballcarp I caught over on Remnath though?! Pretty sweet, right? Well. Yeah. Anyway, that's why. Bills."
+        this.lore_origin = "Gulf-Peidmont Free States"
+        this.lore_temperament = "Bored"
+        this.lore_affiliation = "South Water Anglers' Club (and The Grand Arena)"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "11th Feb"
+
+        this.default_colour = Colour.from_hex("#3bd8fc")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -6651,6 +6922,19 @@ class FryingPanBall extends WeaponBall {
         this.max_level_description = "+1 base delicacy per toss. Delicacies bounce on hit, giving them a chance to hit again.";
         this.quote = "You disrupted my energy balance. I had to do this.";
 
+        this.pronoun = PRONOUN.HE;
+        this.tagline = "A line cook turned field provisioner turned restaurateur, Frying Pan doles out equal parts heal and harm ";
+        this.description = ""
+        this.lore_description = "Fishing Rod just wants to fish."
+        this.weapon_relationship = "Man, I just do this to pay the bills. Did you see my ballcarp I caught over on Remnath though?! Pretty sweet, right? Well. Yeah. Anyway, that's why. Bills."
+        this.lore_origin = "Gulf-Peidmont Free States"
+        this.lore_temperament = "Bored"
+        this.lore_affiliation = "South Water Anglers' Club (and The Grand Arena)"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "11th Feb"
+
+        this.default_colour = Colour.from_hex("#6dda7a")
+
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
             this.tier = TIERS.APLUS;
@@ -6935,6 +7219,8 @@ class CardsBall extends WeaponBall {
         this.level_description = "Increases card draw and reshuffle speed. Every 25 levels allows another hand draw from the deck before shuffling.";
         this.max_level_description = "Starts with +8 luck.";
         this.quote = "...Is this your card? Well, I suppose it doesn't matter now.";
+
+        this.default_colour = Colour.from_hex("#f297c3")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -8023,6 +8309,8 @@ class TranslocatorBall extends WeaponBall {
         this.max_level_description = "Throws a fan of knives after teleporting.";
         this.quote = "i] ;fIfeel a lllit'le b@it   uhhhhhh  =2]wooozy/.,";
 
+        this.default_colour = Colour.from_hex("#8bdee5")
+
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
             this.tier = TIERS.APLUS;
@@ -8439,6 +8727,8 @@ class DrillBall extends WeaponBall {
         this.level_description = "Increases the damage of the drill while dashing and reduces dash cooldown slightly.";
         this.max_level_description = "Burrowing has no cooldown but lasts for half the time.";
         this.quote = "If there's a wall in my way, I'll smash it down!\nIf there's no path forward, I'll carve one myself!!\nJust who the hell do you think I am?!";
+
+        this.default_colour = Colour.from_hex("#8d6136")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -8935,6 +9225,8 @@ class WrenchBall extends WeaponBall {
         this.level_description = "Increases metal gain on hit.";
         this.max_level_description = "Damage from turrets also contributes a reduced amount of metal.";
         this.quote = "Dispenser? Never heard of anythin' like that.\nYa sure yer not confusin' me for someone else?";
+
+        this.default_colour = Colour.from_hex("#e02c2b")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {

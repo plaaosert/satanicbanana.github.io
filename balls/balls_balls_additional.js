@@ -14,6 +14,8 @@ class ThirteenLongswordsBall extends WeaponBall {
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "Thanks to @XxRodxXr for the deranged idea.";
 
+        this.default_colour = Colour.from_hex("#ab9f9d")
+
         this.tier = TIERS.S;
         this.category = CATEGORIES.SILLY;
         this.tags = [
@@ -123,6 +125,8 @@ class AStickBall extends WeaponBall {
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "Thanks to @XxRodxXr for the deranged idea.";
 
+        this.default_colour = Colour.from_hex("#B68E65");
+
         this.tier = TIERS.S;
         this.category = CATEGORIES.SILLY;
         this.tags = [
@@ -182,6 +186,8 @@ class ThirteenSticksBall extends WeaponBall {
         this.level_description = "This ball has no levelup effect.";
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "You need to think a bit more outside the box to win.";
+
+        this.default_colour = Colour.from_hex("#986B41");
 
         this.tier = TIERS.ULTRA;
         this.category = CATEGORIES.SILLY;
@@ -252,6 +258,8 @@ class GreatsordBall extends WeaponBall {
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "Requested by @TheGlimGuy.";
 
+        this.default_colour = Colour.from_hex("#718691")
+
         this.tier = TIERS.SPLUS;
         this.category = CATEGORIES.SILLY;
         this.tags = [
@@ -315,6 +323,8 @@ class ExtralongswordBall extends WeaponBall {
         this.level_description = "This ball has no levelup effect.";
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "Suggested by @_Olar_.";
+
+        this.default_colour = Colour.from_hex("#918171")
 
         this.tier = TIERS.S;
         this.category = CATEGORIES.SILLY;
@@ -417,6 +427,8 @@ class SuperDummyBall extends WeaponBall {
         this.level_description = "Gains more max HP per level (+25 per level).";
         this.max_level_description = "Constantly heals based on missing HP (max 50%/s)";
 
+        this.default_colour = Colour.red;
+
         this.tier = TIERS.DISMAL;
         this.category = CATEGORIES.SILLY;
         this.tags = [
@@ -467,6 +479,8 @@ class SuperNeedleBall extends NeedleBall {
         this.splitcnt = splitcnt;
         
         this.category = CATEGORIES.SILLY;
+        this.default_colour = this.default_colour.lerp(Colour.black, 0.2);
+
         this.tier = TIERS.APLUS;
         if (level >= AWAKEN_LEVEL) {
             this.tier = TIERS.S;
@@ -530,6 +544,8 @@ class SuperDaggerBall extends WeaponBall {
         this.level_description = "Same as dagger.";
         this.max_level_description = "Same as dagger... shudders";
         this.quote = "help.";
+
+        this.default_colour = Colour.from_hex("") // need to inherit dagger
 
         this.tier = TIERS.SPLUS;
         this.category = CATEGORIES.SILLY;
@@ -677,6 +693,8 @@ class BerserkerBall extends WeaponBall {
         this.description_brief = "@plaaoballsit's passive the lower it gets the more strength and speed it gets // It's ability to down slam create a shockwave in a big radius stunning the opponent for 2 seconds only against the wall or whatever wall to freeze the enemy btw. // The downside it's bigger and easier to hit // Cd 5 sec ig // Base hp 115?";
         this.quote = "Thanks @jaydeniskandar9185.";
 
+        this.default_colour = Colour.from_hex("#f369fa")
+
         this.tier = TIERS.DISMAL;
         this.category = CATEGORIES.SILLY;
         this.tags = [
@@ -768,6 +786,8 @@ class BigBall extends DummyBall {
         if (this.level >= AWAKEN_LEVEL) {
             this.quote = "It wasn't."
         }
+
+        this.default_colour = default_cols[0];
 
         this.tier = TIERS.DISMAL;
         this.category = CATEGORIES.SILLY;
@@ -895,6 +915,8 @@ class ShieldBall extends WeaponBall {
         this.description_brief = "1.sheld ball! reflects all atacks AND have 10% chance to grow";
         this.quote = "Thanks @sPAIN_foru.";
 
+        this.default_colour = Colour.from_hex("#6ba9e3")
+
         this.tier = TIERS.C;
         this.category = CATEGORIES.SILLY;
         this.tags = [
@@ -992,6 +1014,8 @@ class GamblerBall extends WeaponBall {
         this.name = "Gambler";
         this.description_brief = "gambler with gun (-1-101 damage,70-130hp,weaknes if miss 3 times,basicly chance from forsaken[T.L. i don't know what this is] but B A L L)";
         this.quote = "Thanks @sPAIN_foru.";
+
+        this.default_colour = Colour.from_hex("#b59638")
 
         this.tier = TIERS.S;
         this.category = CATEGORIES.STANDARD;
@@ -1126,6 +1150,8 @@ class NotSoSuperDaggerBall extends WeaponBall {
         this.level_description = "Same as dagger.";
         this.max_level_description = "Same as dagger... shudders";
         this.quote = "Yup man just do whatever";
+
+        this.default_colour = Colour.from_hex("") // same as dagger
 
         this.tier = TIERS.APLUS;
         this.category = CATEGORIES.SILLY;
@@ -1276,6 +1302,7 @@ class RailgunIfItLockedIn extends RailgunBall {
         this.max_level_description = "Same as Railgun.";
         this.quote = "Ez";
 
+        this.default_colour = this.default_colour.lerp(Colour.black, 0.15);
 
         this.speed_base *= 5;
 
@@ -1296,6 +1323,8 @@ class SwordAndShieldBall extends WeaponBall {
         this.name = "Sord and Sheld";
         this.description_brief = "Maybe if the sword[sic] was just a little bigger it could defeat the 13 sticks? Perhaps a shield[sic] would help";
         this.quote = "Thanks @_Olar_ and @sPAIN_foru.";
+
+        this.default_colour = Colour.from_hex("#6594a3")
 
         this.tier = TIERS.S;
         this.category = CATEGORIES.SILLY;
@@ -1440,6 +1469,8 @@ class HornetBall extends SuperNeedleBall {
         this.description_brief = "Same as Super Needle in every way, but also periodically releases Hornet's Thread Storm ability.";
         this.quote = "Shaaw!";
     
+        this.default_colour = Colour.from_hex("#b71c1c")
+
         this.splitcnt = splitcnt;
         
         this.category = CATEGORIES.SILLY;
@@ -1497,6 +1528,8 @@ class HyperParrierBall extends WeaponBall {
         this.name = "Hyper Parrier";
         this.description_brief = "Make a ball that flashes yellow every 3 seconds for .25 second and if something hits it in that time frame, do a cool animation or smth with more peak sound effects :D";
         this.quote = "Thanks @MyronKost2.";
+
+        this.default_colour = Colour.from_hex("#3838cf")
 
         this.tier = TIERS.B;
         this.category = CATEGORIES.SILLY;
@@ -1612,7 +1645,7 @@ class HyperParrierBall extends WeaponBall {
         this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
 
         this.write_desc_line(
-            `Sometimes parries, with devastating effects.`
+            `Sometimes parries with devastating effects.`
         )
 
         if (this.hyper_parry_duration > 0) {
@@ -1637,6 +1670,8 @@ class ThwompBall extends WeaponBall {
         this.name = "Thwomp";
         this.description_brief = "Periodically grows spikes and slams down, dealing 50 damage to any balls in the way. Spikes deal 5 damage while not slamming and retract shortly after the slam completes.";
         this.quote = "Thanks @CasualBinaryMan.";
+
+        this.default_colour = Colour.from_hex("#bdbddb")
 
         this.tier = TIERS.BPLUS;
         this.category = CATEGORIES.SILLY;
@@ -1763,6 +1798,8 @@ class MachineGunBall extends WeaponBall {
         this.description_brief = "Meachin gun was grand lancher";
         this.quote = "Thanks @אריאליותם."
 
+        this.default_colour = Colour.from_hex("#f0dba5")
+
         this.tier = TIERS.S;
         this.category = CATEGORIES.STANDARD;
         this.tags = [
@@ -1856,6 +1893,8 @@ class ThiccNeedleBall extends NeedleBall {
         this.description_brief = "A THICCNEEDLE - A needle with 1000 hp (at level 100) which spawns normal needle balls whenever it is damaged. Also to mention it is THICKER";
         this.max_level_description = "Has 1000 hp (at level 100)... and needle's other awakening bonuses";
         this.quote = "Thanks @_Olar_.";
+
+        this.default_colour = this.default_colour.lerp(Colour.white, 0.3);
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -1969,6 +2008,8 @@ class ShotgunMagnumBall extends WeaponBall {
         this.level_description = "Both Shotgun and Magnum's level-up effects.";
         this.max_level_description = "Both Shotgun and Magnum's awakening effects.";
         this.quote = "...Do you have any idea how much it cost me to eliminate you?";
+
+        this.default_colour = Colour.from_hex("") // lerp 50% between shotgun and magnum
 
         this.tier = TIERS.SPLUS;
         if (level >= AWAKEN_LEVEL) {
@@ -2197,6 +2238,8 @@ class CursedEnergyBall extends WeaponBall {
         this.level_description = "This ball has no levelup effect.";
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "Throughout heaven and earth, I alone am the honoured one.";
+
+        this.default_colour = Colour.from_hex("#853ef7")
 
         this.tier = TIERS.SPLUS;
         this.category = CATEGORIES.SILLY;
@@ -2849,6 +2892,8 @@ class BiggerBall extends WeaponBall {
 
         this.quote = "Thanks reft.";
 
+        this.default_colour = Colour.from_hex("#910000")
+
         this.tier = TIERS.DISMAL;
         this.category = CATEGORIES.SILLY;
         this.tags = [
@@ -2893,6 +2938,8 @@ class LemonBall extends WeaponBall {
         this.description_brief = "Lemon stuns the opponent every second for 0.5 seconds and does 10 damage per attack to opponent but does 3 damage to itself when attacking";
 
         this.quote = "Thanks @Bread.Consumer1.";
+
+        this.default_colour = Colour.from_hex("#FFF44F");
 
         this.tier = TIERS.S;
         this.category = CATEGORIES.SILLY2;
@@ -2966,6 +3013,132 @@ class LemonBall extends WeaponBall {
 
         this.write_desc_line(
             `Lemon: ${this.blast_timer.toFixed(2)}s ${"<".repeat(Math.ceil(this.blast_timer * 16))}`
+        )
+    }
+}
+
+
+class ShapeshifterBall extends WeaponBall {
+    static ball_name = "Shapeshifter";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Shapeshifter";
+        this.description_brief = "Whenever this ball gets hit, it is destroyed and replaced with a different STANDARD ball, with the same HP. Each time this happens, the new ball gets a 1.1x weapon speed bonus (stacks multiplicatively).";
+
+        this.level_description = "The transformed balls retain the level of the original."
+        this.max_level_description = "The transformed balls also awaken."
+
+        this.quote = "What was I thinking...?";
+
+        this.default_colour = Colour.from_hex("#b80272")
+
+        this.tier = TIERS.S;
+        this.category = CATEGORIES.SILLY2;
+
+        this.pass_hp = 0;
+
+        this.weapon_data = [
+
+        ];
+    }
+
+    late_setup() {
+        let keyed_ball = this;
+        let begun_morph = false;
+        let timer = new Timer(b => {
+            if (!keyed_ball.SHAPESHIFTER_APPLIED) {
+                keyed_ball.SHAPESHIFTER_APPLIED = true;
+
+                let old_get_hit = keyed_ball.get_hit;
+                keyed_ball.get_hit = (source, damage, hitstop, invuln=null, round_up=true) => {
+                    let r = old_get_hit.call(keyed_ball, source, damage, hitstop, invuln, round_up);
+
+                    if (!begun_morph) {
+                        begun_morph = true;
+                        
+                        let new_hp = keyed_ball.hp;
+                        keyed_ball.hp = 0;
+
+                        let old_die = keyed_ball.die;
+                        keyed_ball.die = () => {
+                            let r2 = old_die.call(keyed_ball);
+
+                            if (new_hp <= 0) {
+                                return r2;
+                            }
+
+                            r2.skip_default_explosion = true;
+
+                            keyed_ball.board.spawn_particle(new Particle(
+                                keyed_ball.position, 0, 0.75, entity_sprites.get("explosion_small"), 12, 3, false
+                            ), keyed_ball.position);
+
+                            let proto = seeded_random_from_array(selectable_balls_for_random, keyed_ball.board.random);
+                            let ball = new proto(
+                                keyed_ball.board,
+                                keyed_ball.mass, keyed_ball.radius, keyed_ball.colour,
+                                keyed_ball.bounce_factor, keyed_ball.friction_factor,
+                                keyed_ball.player, keyed_ball.level, keyed_ball.reversed
+                            )
+
+                            // console.log(`transforming into ${proto.name} at ${new_hp} hp`)
+
+                            ball.hp = new_hp;
+                            ball.spawned_index = keyed_ball.spawned_index;
+                            ball.apply_invuln(BALL_INVULN_DURATION * 8);
+
+                            ball.temp_stat_modifiers.timespeed_mult = (keyed_ball.temp_stat_modifiers.timespeed_mult ?? 1) * 1.1;
+
+                            ball.set_velocity(random_on_circle(keyed_ball.velocity.magnitude(), keyed_ball.board.random));
+
+                            ball.name = "Shapeshifter"
+                            ball.quote = "What was I thinking...?";
+
+                            let pos = keyed_ball.position.copy();
+                            keyed_ball.board.set_timer(new Timer(() => {
+                                keyed_ball.board.spawn_ball(ball, pos);
+                                begun_morph = false;
+                                play_audio("whipcrack")
+                            }, 0.001));
+
+                            // show text particle
+                            let tpos = pos.sub(new Vector2(0, keyed_ball.radius * 1.75));
+                            keyed_ball.board.spawn_particle(new FadingTextParticle(
+                                tpos, 1, `- ${proto.ball_name} -`, keyed_ball.get_current_col(), keyed_ball.board, 24, 1
+                            ), tpos)
+
+                            let tpos2 = tpos.add(new Vector2(0, keyed_ball.radius * 0.5));
+                            keyed_ball.board.spawn_particle(new FadingTextParticle(
+                                tpos2, 1, `ATK.Speed x${ball.temp_stat_modifiers.timespeed_mult.toFixed(2)}`, keyed_ball.get_current_col(), keyed_ball.board, 16, 1
+                            ), tpos2);
+
+                            keyed_ball = ball;
+
+                            return r2;
+                        }
+                    }
+
+                    return r;
+                };
+            }
+            
+            return true;
+        }, 0.0001, true)
+
+        this.board.set_timer(timer);
+    }
+
+    weapon_step(board, time_delta) {
+        
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            "Soon this will become something else."
         )
     }
 }
@@ -3158,5 +3331,5 @@ let additional_selectable_balls = [
 ]
 
 let additional2_selectable_balls = [
-    LemonBall
+    LemonBall, ShapeshifterBall
 ]

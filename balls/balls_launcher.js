@@ -65,7 +65,7 @@ let selected_ball_info = {
         name: "SORD",
         skin: "Default",
         level: 0,
-        team: 0,
+        team: 999,
         category: CATEGORIES.STANDARD,
         disabled: false,
         saved_selections: {},
@@ -76,7 +76,7 @@ let selected_ball_info = {
         name: "Hammer",
         skin: "Default",
         level: 0,
-        team: 1,
+        team: 999,
         category: CATEGORIES.STANDARD,
         disabled: false,
         saved_selections: {},
@@ -87,7 +87,7 @@ let selected_ball_info = {
         name: "SORD",
         skin: "Default",
         level: 0,
-        team: 2,
+        team: 999,
         category: CATEGORIES.STANDARD,
         disabled: true,
         saved_selections: {},
@@ -98,7 +98,7 @@ let selected_ball_info = {
         name: "SORD",
         skin: "Default",
         level: 0,
-        team: 3,
+        team: 999,
         category: CATEGORIES.STANDARD,
         disabled: true,
         saved_selections: {},
@@ -445,6 +445,10 @@ const REPLAY_BALLS_LISTS = [
     powered_selectable_balls
 ];
 function collapse_replay(replay) {
+    // TODO: new game version to make collapse behaviour want to collapse down 999, 1000, 1001, ...
+    // instead of 0, 1, 2, ...
+    // in order to allow for Default colours to take priority
+
     // collapse down the replay as much as possible:
     /*
         - balls: cut off nulls at the end (and do the equivalent for cols, levels, players, skins)
@@ -658,14 +662,16 @@ function exit_battle(save_replay=true) {
     }
 
     if (run_function_on_match_end) {
-        run_function_on_match_end(board);
-        run_function_on_match_end = null;
+        run_function_on_match_end = run_function_on_match_end(board);
     }
 
     replaying = false;
     board = null;
-    document.querySelector(".game-container").classList.add("popout");
-    document.querySelector(".game-container").classList.remove("popin");
+
+    if (show_canvases || document.querySelector(".game-container").classList.contains("popin")) {
+        document.querySelector(".game-container").classList.add("popout");
+        document.querySelector(".game-container").classList.remove("popin");
+    }
 
     if (last_replay) {
         document.querySelector("#save_replay_button").disabled = false;
@@ -686,16 +692,19 @@ function exit_battle(save_replay=true) {
 function enter_battle() {
     bg_changed = true;
 
-    Object.keys(layers).forEach(k => layers[k].ctx.clearRect(0, 0, layers[k].canvas.width, layers[k].canvas.height));
+    if (show_canvases) {
+        Object.keys(layers).forEach(k => layers[k].ctx.clearRect(0, 0, layers[k].canvas.width, layers[k].canvas.height));
 
-    layers.bg3.ctx.fillStyle = game_normal_col;
-    layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height)
+        layers.bg3.ctx.fillStyle = game_normal_col;
+        layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height)
 
-    document.querySelector(".game-container").classList.add("popin");
-    document.querySelector(".game-container").classList.remove("popout");
+        document.querySelector(".game-container").classList.add("popin");
+        document.querySelector(".game-container").classList.remove("popout");
+
+        render_watermark();
+    }
 
     update_sim_speed_display();
-    render_watermark();
 }
 
 function load_replay(replay_as_text) {
@@ -731,7 +740,7 @@ function load_replay(replay_as_text) {
     } else {
         for (let i=0; i<ball_classes.length; i++) {
             players.push(make_default_player(i))
-            cols.push(default_cols[i]);
+            cols.push(get_default_col(999, ball_classes[i]));
         }
     }
 
@@ -798,24 +807,28 @@ function spawn_selected_balls() {
         selected_ball_info.ball4
     ];
 
-    let cols_indexes = [];
-    for (let i=0; i<positions.length; i++) {
-        let col_team = infos[i].team;
-        cols_indexes.push(col_team);
-    }
-
-    let cols = cols_indexes.map(c => default_cols[c]);
-
     let ball_classes = [];
-    for (let i=0; i<cols.length; i++) {
+    for (let i=0; i<positions.length; i++) {
         let value = infos[i].name;
         if (infos[i].disabled)
             value = null;
 
         let ball_proto = selectable_balls.find(t => t.ball_name == value);
 
-        ball_classes.push(ball_proto);
+        if (ball_proto)
+            ball_classes.push(ball_proto);
     }
+
+    let cols_indexes = [];
+    for (let i=0; i<ball_classes.length; i++) {
+        let col_team = infos[i].team;
+        if (col_team == 999)
+            col_team += i;
+
+        cols_indexes.push(col_team);
+    }
+
+    let cols = cols_indexes.map((c, i) => get_default_col(c, ball_classes[i]));
 
     let ball_levels = [];
     for (let i=0; i<cols.length; i++) {
@@ -1002,6 +1015,14 @@ function create_testball(proto, level=0) {
     )
 }
 
+function get_default_col(index, ball_proto) {
+    if (index >= 999) {
+        return create_testball(ball_proto).default_colour;
+    } else {
+        return default_cols[index];
+    }
+}
+
 function update_ballinfo(ballid, save_skin=false) {
     let ball_team = document.querySelector(`select[name='${ballid}_team']`).selectedIndex;
 
@@ -1046,10 +1067,11 @@ function update_ballinfo(ballid, save_skin=false) {
 
     skins_elem.selectedIndex = saved_skin;
 
-    settings_elem.style.setProperty("--col", default_cols[ball_team].css());
-    info_a_parent_elem.style.setProperty("--col", default_cols[ball_team].lerp(Colour.white, 0.5).css());
-    info_parent_elem.style.setProperty("--col", default_cols[ball_team].css());
-    skins_elem.style.setProperty("--col", default_cols[ball_team].css());
+    let c = get_default_col(ball_team, ball_proto);
+    settings_elem.style.setProperty("--col", c.css());
+    info_a_parent_elem.style.setProperty("--col", c.lerp(Colour.white, 0.5).css());
+    info_parent_elem.style.setProperty("--col", c.css());
+    skins_elem.style.setProperty("--col", c.css());
 }
 
 function update_awaken_showhide(ballid) {
@@ -1281,6 +1303,31 @@ function update_ball_selection_popup() {
     };
 
     clone = team_list.querySelector(".example");
+
+    // Default colour
+    let new_o2 = clone.cloneNode(true);
+
+    new_o2.querySelector(".ballname").textContent = "[ Default ]";
+    new_o2.style.color = testball.default_colour.css();
+
+    new_o2.classList.remove("example");
+    new_o2.classList.remove("nodisplay");
+
+    let it = 999;
+
+    if (selected_ball_info[ballid].team == it) {
+        new_o2.classList.add("selected");
+        new_o2.style.backgroundColor = testball.default_colour.lerp(Colour.black, 0.7).css();
+    }
+
+    new_o2.addEventListener("click", _ => {
+        if (selected_ball_info[ballid].team != it)
+            change_selected_team(it);
+    })
+
+    team_list.append(new_o2);
+
+    // Other teams
     default_cols.forEach((col, i) => {
         let col_name = col_names[i];
 
@@ -1311,7 +1358,7 @@ function update_ball_selection_popup() {
     e2.querySelector("#ball_level_number").textContent = selected_ball_info[ballid].level + 1;
     e2.querySelector("input.slider").value = selected_ball_info[ballid].level + 1;
     // and team for col
-    e2.querySelector("input.slider").style.setProperty("--col", default_cols[selected_ball_info[ballid].team].css());
+    e2.querySelector("input.slider").style.setProperty("--col", get_default_col(selected_ball_info[ballid].team, ball_proto).css());
 }
 
 function cancel_selection_button() {
@@ -1384,11 +1431,6 @@ function refresh_ballinfo(ballid) {
     
     let info = selected_ball_info[ballid];
 
-    let col = default_cols[info.team];
-
-    elem.style.setProperty("--col", col.lerp(Colour.white, 0.5).css());
-    elem.style.setProperty("--bgcol", col.lerp(Colour.black, 0.5).css());
-
     let icon_name = info.name.toLowerCase();
     let spr = entity_sprites.get(`icon_${icon_name}`);
     if (spr) {
@@ -1407,9 +1449,14 @@ function refresh_ballinfo(ballid) {
         elem.querySelector(".random-skin").classList.add("disabled");
     }
 
+    let col = get_default_col(info.team, proto);
+
+    elem.style.setProperty("--col", col.lerp(Colour.white, 0.5).css());
+    elem.style.setProperty("--bgcol", col.lerp(Colour.black, 0.5).css());
+
     elem.querySelector(".ball-level").textContent = `LV ${info.level + 1}`;
 
-    elem.querySelector(".team").textContent = `${String.fromCharCode(160)}${col_names[info.team]}${String.fromCharCode(160)}`;
+    elem.querySelector(".team").textContent = `${String.fromCharCode(160)}${info.team == 999 ? "DFL" : col_names[info.team]}${String.fromCharCode(160)}`;
 
     if (info.disabled) {
         elem.classList.add("disabled");
@@ -1848,7 +1895,7 @@ function setup_load_menu(replay_as_text) {
     // structure is <span><img> <span>BallName LV X</span></span> like in replay buttons
     let replay = parse_replay(replay_as_text);
 
-    let cols = replay.cols ?? default_cols.map(c => c.data);
+    let cols = [];
     let levels = replay.levels ?? new Array(replay.balls.length).fill(0);
 
     replay.balls.forEach((ball, index) => {
@@ -1872,6 +1919,8 @@ function setup_load_menu(replay_as_text) {
                 e = true;
             }
         });
+
+        let col = replay.cols[index] ?? get_default_col(0, ball_class);
 
         name_span.textContent = ` ${(`${ball_class.ball_name} LV ${levels[index]+1} `)} `;
         name_span.style.color = Colour.from_array(cols[index]).css();
@@ -2390,7 +2439,7 @@ function is_fully_loaded() {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
-    if (window.location.href.includes("description_generator"))
+    if (window.location.href.includes("description_generator") || window.location.href.includes("ballmanac") || window.location.href.includes("balls_stream_fakeplayers"))
         return;
 
     get_canvases();
@@ -2710,6 +2759,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
     let teams_elems = document.querySelectorAll("select.sandbox-team-select");
     teams_elems.forEach((elem, elem_idx) => {
+        let opt = new Option("DFL");
+        opt.style.color = "#fff";
+        elem.options.add(opt);
+
         default_cols.forEach((col, index) => {
             let option = new Option(col_names[index]);
             option.style.color = col.css();
@@ -2717,7 +2770,7 @@ document.addEventListener("DOMContentLoaded", function() {
             elem.options.add(option);
         })
 
-        elem.selectedIndex = elem_idx;
+        elem.selectedIndex = 0;
     })
 
     randomise_ballselect('ball1');
@@ -2955,6 +3008,7 @@ if (winrate_tracking)
     force_fps = 144;
 
 let muted = searching;
+let show_canvases = true;
 
 let repeater_interval = null;
 let force_ball1 = null;

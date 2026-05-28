@@ -10,6 +10,8 @@ class ShivBall extends WeaponBall {
         this.max_level_description = "The thrown shiv reflects off walls up to twice.";
         this.quote = "I'm gonna getcha! Hehehehe!";
 
+        this.default_colour = Colour.from_hex("#da2532")
+
         this.tier = TIERS.C;
         this.category = CATEGORIES.LOWTIER;
         this.tags = [

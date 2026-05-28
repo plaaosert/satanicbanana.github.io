@@ -10,6 +10,8 @@ class FlamethrowerBall extends WeaponBall {
         this.max_level_description = "The flamethrower does not stop shooting while charging the fireball.";
         this.quote = "Oh, oh, sorry! Just doing my job!";
 
+        this.default_colour = Colour.from_hex("#fb5f04")
+
         this.tier = TIERS.APLUS;
         if (level >= AWAKEN_LEVEL) {
             this.tier = TIERS.S;
@@ -269,6 +271,8 @@ class BallLightningBall extends WeaponBall {
         this.level_description = "Chain lightning bursts are more frequent. Slightly increases chain lightning split chance.";
         this.max_level_description = "Additional ball lightnings can create more smaller ball lightnings!";
         this.quote = "bzzt";
+
+        this.default_colour = Colour.from_hex("#87d9f7")
 
         this.tier = TIERS.S;
         if (level >= AWAKEN_LEVEL) {

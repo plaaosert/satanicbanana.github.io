@@ -1,0 +1,106 @@
+<html>
+    <head>
+        <meta charset = "UTF-8">
+        <title>plaaoballs: the ballmanac</title>
+        <meta content="plaao.net >> balls >> ballmanac" property="og:title" />
+        <meta content="Information repository for all things plaaoballs." property="og:description" />
+        <meta name="description" content="Information repository for all things plaaoballs.">
+        <meta content="https://plaao.net" property="og:url" />
+        <meta content="https://plaao.net/bej/green_funny.png" property="og:image" />
+        <meta content="#cccccc" data-react-helmet="true" name="theme-color" />
+
+        <link rel="stylesheet" type="text/css" href="index.css?v=00"/>
+    
+    </head>
+
+    <body>
+        <canvas width="8" height="8" id="hidden-prerender-canvas" style="display:none"></canvas>
+
+        <script src="../../shared/js/helpers.js?v=00"></script>
+	    <script src="../../shared/js/canvas_helpers.js?v=00"></script>
+
+        <script src="../balls_core.js?v=00"></script>
+        <script src="../balls_balls.js?v=00"></script>
+        <script src="../balls_balls_additional.js?v=00"></script>
+        <script src="../balls_balls_powered.js?v=00"></script>
+        <script src="../balls_balls_campaign_lowtier.js?v=00"></script>
+        <script src="../balls_balls_campaign_hightier.js?v=00"></script>
+
+        <script src="../balls_replay_parsing.js?v=00"></script>
+        <script src="../balls_launcher.js?v=00"></script>
+        
+        <script src="ballmanac.js"></script>
+
+        <div class="content">
+            <div class="infosection info-ball">
+                <div class="ball-blurb">
+                    <div class="ball-image-name">
+                        <div class="panel ball-image">
+                            <img src="../img/icons/a stick.png">
+                        </div>
+                        <div class="panel ball-name">
+                            <span class="name">A Stick</span>
+                            <span class="tier" style="background-color: #222;"> ? </span>
+                        </div>
+                    </div>
+                    <div class="ball-brief-info">
+                        <div class="panel ball-tags">
+                            <div class="template ball-tag" style="background-color: #333;"> Levels up </div>
+                        </div>
+                        <div class="ball-lore-tags">
+                            <div class="panel ball-lore-tag">
+                                <div class="line1">
+                                    <img src="../img/icons/unknown.png">
+                                    <span> Origin</span>
+                                </div>
+                                <span class="ball-lore-origin">The Outer Plains</span>
+                            </div>
+                            <div class="panel ball-lore-tag">
+                                <div class="line1">
+                                    <img src="../img/icons/unknown.png">
+                                    <span> Temperament</span>
+                                </div>
+                                <span class="ball-lore-temperament">Unknown</span>
+                            </div>
+                            <div class="panel ball-lore-tag">
+                                <div class="line1">
+                                    <img src="../img/icons/unknown.png">
+                                    <span> Affiliation</span>
+                                </div>
+                                <span class="ball-lore-affiliation">Not recommended</span>
+                            </div>
+                            <div class="panel ball-lore-tag">
+                                <div class="line1">
+                                    <img src="../img/icons/unknown.png">
+                                    <span> Alignment</span>
+                                </div>
+                                <div class="line1">
+                                    <img class="ball-lore-alignment-img" src="../img/icons/material_red.png"><span class="ball-lore-alignment"> Scoria</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="panel ball-tagline">
+                            <span>Hello i am a tagline</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel ball-game-desc full-line">
+                    <span class="additional">Hi i am a game description</span>
+                    <span class="base-c"><span class="base-label"> BASE </span><span class="base">Hi i am a game description</span></span>
+                    <span class="levelup-c"><span class="levelup-label"> LEVEL UP </span><span class="levelup">Hi i am a game description</span></span>
+                    <span class="awaken-c"><span class="awaken-label"> AWAKEN (lv. 100) </span><span class="awaken">Hi i am a game description</span></span>
+                </div>
+                <div class="panel ball-lore-desc full-line">
+                    <span>Hi i am a lore description</span>
+                </div>
+                <div class="panel ball-quote-desc full-line">
+                    <span>Hi i am a weapon description</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="templates">
+
+        </div>
+    </body>
+</html>

@@ -76,7 +76,19 @@
 }
 
 .game-canvas {
-  transform: scale(var(--canvases-scale));
+  pointer-events: none;
+  z-index: 10;
+}
+
+.game-container.popin .game-canvas {
+  pointer-events: unset;
+}
+
+.game-canvas {
+  transform: translate(calc((1 - var(--canvases-scale)) * -64px), 0);
+  opacity: var(--canvases-scale);
+
+  border: 2px solid rgba(255, 255, 255, calc(var(--canvases-scale) * 255));
 }
 
 .behind-canvases {
@@ -235,11 +247,11 @@ button:disabled {
 }
 
 .game-container.popin {
-  animation: popin 0.2s ease-out forwards;
+  animation: popin 0.25s ease-out forwards;
 }
 
 .game-container.popout {
-  animation: popout 0.2s ease-in forwards;
+  animation: popout 0.25s ease-out forwards;
 }
 
 .slidecontainer {
@@ -1390,15 +1402,37 @@ button.sandbox-ball-random {
 
 .campaign-container .header {
   display: flex;
+  flex-direction: row;
+  
+  background-color: rgb(17, 17, 17);
+}
+
+.campaign-container .timeline {
+  display: flex;
   flex-direction: column;
 
   align-items: center;
   justify-content: center;
 
-  padding-top: 2vmin;
-  padding-bottom: 2vmin;
+  flex-grow: 1;
 
-  background-color: rgb(17, 17, 17);
+  padding: 2vmin;
+}
+
+.campaign-container .skip-button {
+  display: flex;
+
+  padding: 2vmin;
+}
+
+.campaign-container .skip-button .skip-day-button {
+  height: 100%;
+
+  padding: 0;
+  padding-left: 1.5vmin;
+  padding-right: 1.5vmin;
+
+  margin: 0;
 }
 
 .campaign-container .main-content {
@@ -1514,7 +1548,7 @@ button.sandbox-ball-random {
   padding-right: 5vmin;
 }
 
-.active-tournament-view .fight-button.disabled {
+.active-tournament-view .fight-button.disabled, .skip-day-button.disabled {
   opacity: 0.25;
 }
 

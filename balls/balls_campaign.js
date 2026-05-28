@@ -199,7 +199,7 @@ function render_header() {
     document.querySelector("#campaign_date_week").textContent = Math.floor(campaign_cur_date / 7)+1;
     document.querySelector("#campaign_date_day").textContent = (campaign_cur_date % 7)+1;
 
-    show_upcoming_events(user_player, campaign_cur_date, )
+    show_upcoming_events(user_player, campaign_cur_date);
 }
 
 function show_upcoming_events(player, date) {
@@ -212,30 +212,35 @@ function show_upcoming_events(player, date) {
     // later we might put events, shop restocks, etc here
     // preload with green | showing where we are
     let col = "lime";
-    let content = "|";
-    for (let i=1; i<lookahead; i++) {
+    let content = "";
+    for (let i=0; i<lookahead; i++) {
         let d = campaign_cur_date + i;
         let newchar = " ";
         let newcol = "white";
+        if (i == 0) {
+            newcol = "lime";
+            newchar = "|";
+        }
+
         if (d % 7 == 0) {
             newchar = "|";
         }
 
-        if (tournament) {
-            if (i >= info.next_match_date && (d - info.next_match_date) == 0) {
-                newcol = "red";
-                newchar = "#";
-            }
-        }
-
-        if (i % 14 == 0) {
+        if (d % 14 == 0) {
             newchar = "$";
             newcol = "yellow";
         }
 
-        if (i % 19 == 0) {
+        if (d % 19 == 0) {
             newchar = "?";
             newcol = "lime";
+        }
+
+        if (tournament) {
+            if ((d - info.next_match_date) == 0) {
+                newcol = "red";
+                newchar = "#";
+            }
         }
 
         // if col is different, flush the last content and add tag to full string
@@ -425,6 +430,52 @@ function layout_tournament_screen() {
             el.classList.add("nodisplay");
         }
     })
+
+    e.querySelector(".fight-button").classList.remove("disabled");
+    if (campaign_cur_date != current_tournament_info.next_match_date) {
+        e.querySelector(".fight-button").classList.add("disabled");
+    }
+}
+
+function begin_nonplayer_tournament_fight(match) {
+    // TODO format-dependent stuff
+    let player_entry_ball = match[0].ball_inventory[0];
+    let enemy_entry_ball = match[1].ball_inventory[0];
+
+    begin_tournament_fight(player_entry_ball, enemy_entry_ball);
+}
+
+function begin_player_tournament_fight() {
+    // TODO remove temp stuff here (colours, format-dependent stuff, etc)
+    let player_entry_ball = user_player.ball_inventory[current_tournament_info.selected_indexes[0]];
+    let enemy_entry_ball = campaign_tournament_info_objs[0][1];
+
+    begin_tournament_fight(player_entry_ball, enemy_entry_ball);
+}
+
+function begin_tournament_fight(player_entry_ball, enemy_entry_ball) {
+    switch (current_tournament.format) {
+        case TournamentFormat.DUEL: {
+            start_game(
+                144, campaign_random().toString(), [default_cols[0], default_cols[3]],
+                [default_positions[0], default_positions[1]], [
+                    selectable_balls.find(t => t.name == player_entry_ball.ball_proto_name),
+                    selectable_balls.find(t => t.name == enemy_entry_ball.ball_proto_name),
+                ], [
+                    player_entry_ball.level,
+                    enemy_entry_ball.level
+                ], [
+                    make_default_player(0),
+                    make_default_player(1),
+                ], [
+                    "Default", "Default"
+                ], STARTING_HP, default_max_game_duration,
+                BOARD_SIZE, false, map_configs["S"]
+            )
+
+            break;
+        }
+    }
 }
 
 function try_start_tournament_fight() {
@@ -443,6 +494,118 @@ function try_start_tournament_fight() {
     // 4) simulate other balls. show a little progress bar here
     //    note we'll need to keep passing control back to the game loop and using the board end function to return to this control loop
     // 5) finally, progress the day and return control to the player
+    
+    run_function_on_match_end = (board => {
+        // spawned_index will tell us which ball
+        let winstate = -1;
+
+        switch (current_tournament.format) {
+            case TournamentFormat.DUEL: {
+                let won = false;
+                let lost = false;
+                if (board.balls.filter(b => b.show_stats).some(b => b.spawned_index == 0)) {
+                    won = true;
+                }
+                
+                if (board.balls.filter(b => b.show_stats).some(b => b.spawned_index == 1)) {
+                    lost = true;
+                }
+
+                if (won && !lost) {
+                    winstate = 1;
+                }
+
+                if (lost && !won) {
+                    winstate = 0;
+                }
+
+                break;
+            }
+        }
+
+        // TODO nuzlocke
+
+        if (winstate == 1) {
+            // we won!
+            // kick the opponent player out of the tournament
+            // find the player in the list of matches
+            let player_match_index = current_tournament_info.matches.findIndex(m => m[0].id == user_player.id || m[1].id == user_player.id)
+            let match = current_tournament_info.matches[player_match_index];
+
+            let defeated_player = match[0].id == user_player.id ? match[1] : match[0];
+            let defeated_player_index = current_tournament_info.players.findIndex(p => p.id == defeated_player.id);
+            current_tournament_info.players.splice(defeated_player_index, 1);
+        
+            // then simulate other fights
+            let other_matches = current_tournament_info.matches.filter((p, i) => i != player_match_index);
+            let original_mute_state = muted;
+
+            let gothru_fn = (b => {
+                // TODO i think this is best to throw into a generalised function
+                // that uses the player entry tournament function when needed
+                // otherwise we're duplicating a lot of code
+                let winstate = -1;
+                switch (current_tournament.format) {
+                    case TournamentFormat.DUEL: {
+                        if (board.balls.filter(b => b.show_stats).some(b => b.spawned_index == 0)) {
+                            winstate = 1;
+                        } else if (board.balls.filter(b => b.show_stats).some(b => b.spawned_index == 1)) {
+                            winstate = 0;
+                        }
+
+                        break;
+                    }
+                }
+
+                if (winstate != -1) {
+                    let match = other_matches.shift();
+
+                    // remove the losing player
+                    let losing_player = match[winstate];
+                    let losing_player_index = current_tournament_info.players.findIndex(p => p.id == losing_player.id);
+                    current_tournament_info.players.splice(losing_player_index, 1);
+                } else {
+                    // just go again
+                }
+
+                if (other_matches.length > 0) {
+                    console.log(`Simulating nonplayer match (${other_matches.length - 1} left)`);
+                    setTimeout(() => begin_nonplayer_tournament_fight(other_matches[0]), 50);
+                    return gothru_fn;
+                } else {
+                    // we're done
+                    muted = original_mute_state;
+                    show_canvases = true;
+
+                    setup_next_tournament_match(user_player, campaign_cur_date, current_tournament);
+                    try_progress_day();
+                }
+            });
+
+            if (other_matches.length > 0) {
+                muted = true;
+                show_canvases = false;
+                console.log(`Simulating nonplayer match (${other_matches.length - 1} left)`);
+                setTimeout(() => begin_nonplayer_tournament_fight(other_matches[0]), 50);
+            } else {
+                if (current_tournament_info.players.length == 1) {
+                    alert("YOU WON THE TOURNAMENT!!!!");
+                    return null;
+                }
+            }
+            return gothru_fn;
+        } else if (winstate == 0) {
+            // we lost!
+            alert("YOU LOST :(");
+            // TODO crash out of the tournament and return to normal
+            // i dont think we need to simulate tournaments we're not in.
+            // but we could.
+        } else {
+            // draw! run it back, just drop out of the function
+        }
+    });
+
+    begin_player_tournament_fight();
 }
 
 function show_campaign_info_popup(index) {
@@ -597,8 +760,26 @@ function cancel_campaign_selection_button() {
     save_campaign_selection_button();
 }
 
+function try_progress_day() {
+    // don't progress day if event in progress (e.g. tournament)
+    let can_progress = true;
+    if (campaign_cur_date == current_tournament_info.next_match_date)
+        can_progress = false;
+
+    if (can_progress) {
+        campaign_cur_date += 1;
+        render_day_ui();
+    }
+}
+
+function render_day_ui() {
+    render_header();
+    layout_tournament_screen();
+}
+
 // +1 = 1 day
 let campaign_cur_date = 0;
+let campaign_random = get_seeded_randomiser(Date.now().toFixed(0));
 
 let test_tournament = new Tournament(
     "Test tournament", 25, [
