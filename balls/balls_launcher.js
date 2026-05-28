@@ -1433,11 +1433,20 @@ function refresh_ballinfo(ballid) {
 
     let icon_name = info.name.toLowerCase();
     let spr = entity_sprites.get(`icon_${icon_name}`);
+    let icon = elem.querySelector(".big-ballicon");
     if (spr) {
-        elem.querySelector(".big-ballicon").src = `${FILES_PREFIX}img/icons/${icon_name}.png`;
+        icon.src = `${FILES_PREFIX}img/icons/${icon_name}.png`;
     } else {
-        elem.querySelector(".big-ballicon").src = `${FILES_PREFIX}img/icons/unknown.png`;
+        icon.src = `${FILES_PREFIX}img/icons/unknown.png`;
     }
+
+    let e = false;
+    icon.addEventListener("error", () => {
+        if (!e) {
+            icon.src = `${FILES_PREFIX}img/icons/unknown.png`;
+            e = true;
+        }
+    });
 
     elem.querySelector(".ballname").textContent = info.name;
     elem.querySelector(".skinname").textContent = info.skin;
