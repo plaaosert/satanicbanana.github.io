@@ -545,7 +545,7 @@ class SuperDaggerBall extends WeaponBall {
         this.max_level_description = "Same as dagger... shudders";
         this.quote = "help.";
 
-        this.default_colour = Colour.from_hex("") // need to inherit dagger
+        this.default_colour = Colour.from_hex("#c9776b") // need to inherit dagger
 
         this.tier = TIERS.SPLUS;
         this.category = CATEGORIES.SILLY;
@@ -1151,7 +1151,7 @@ class NotSoSuperDaggerBall extends WeaponBall {
         this.max_level_description = "Same as dagger... shudders";
         this.quote = "Yup man just do whatever";
 
-        this.default_colour = Colour.from_hex("") // same as dagger
+        this.default_colour = Colour.from_hex("#c9776b") // same as dagger
 
         this.tier = TIERS.APLUS;
         this.category = CATEGORIES.SILLY;
@@ -2009,7 +2009,7 @@ class ShotgunMagnumBall extends WeaponBall {
         this.max_level_description = "Both Shotgun and Magnum's awakening effects.";
         this.quote = "...Do you have any idea how much it cost me to eliminate you?";
 
-        this.default_colour = Colour.from_hex("") // lerp 50% between shotgun and magnum
+        this.default_colour = Colour.from_hex("#ffe0b6").lerp(Colour.from_hex("#c069c5"), 0.5) // lerp 50% between shotgun and magnum
 
         this.tier = TIERS.SPLUS;
         if (level >= AWAKEN_LEVEL) {
