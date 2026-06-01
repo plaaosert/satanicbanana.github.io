@@ -200,17 +200,34 @@ let BALL_DESC_BORDER_SIZE = BALL_RENDERING_METHOD == BALL_RENDERING_METHODS.AERO
 let view_offset = new Vector2(0, 0);
 let zoom_level = 1;
 
-let screen_scaling_factor = 1;
-let true_zoom_level = 1;
-let stwp = v => Vector2.zero;
-let wtsp = v => Vector2.zero;
+let scaling = {};
 
-function refresh_wtsp_stwp() {
-    screen_scaling_factor = canvas_width / board.size.x;
-    true_zoom_level = zoom_level * screen_scaling_factor;
+scaling.screen_scaling_factor = 1;
+scaling.true_zoom_level = 1;
+scaling.stwp = v => Vector2.zero;
+scaling.wtsp = v => Vector2.zero;
 
-    wtsp = vec => vec.add(view_offset).mul(true_zoom_level);
-    stwp = vec => vec.div(true_zoom_level).sub(view_offset);
+function get_wtsp_stwp(on_board=null, override_canvas_width=null) {
+    let b = on_board ?? board;
+
+    let t_screen_scaling_factor = (override_canvas_width ?? canvas_width) / b.size.x;
+    let t_true_zoom_level = zoom_level * t_screen_scaling_factor;
+
+    let t_wtsp = vec => vec.add(view_offset).mul(t_true_zoom_level);
+    let t_stwp = vec => vec.div(t_true_zoom_level).sub(view_offset);
+
+    let obj = {
+        screen_scaling_factor: t_screen_scaling_factor,
+        true_zoom_level: t_true_zoom_level,
+        wtsp: t_wtsp,
+        stwp: t_stwp,
+    }
+
+    if (on_board) {
+        return obj;
+    } else {
+        scaling = obj;
+    }
 }
 
 // TODO - need to fix collision weirdness when hitting sides of lines
@@ -2946,7 +2963,7 @@ function handle_resize(event) {
     bg_changed = true;
     need_stwp_recache = true;
 
-    //refresh_wtsp_stwp();
+    //get_wtsp_stwp();
 
     // layers.bg2.ctx.drawImage(
     //     document.getElementById("map-clean"), 0, 0, canvas_width, canvas_height
@@ -3381,7 +3398,7 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
     let ctx_normal = layers.fg2.ctx;
 
     // keep?
-    let w = 25 * screen_scaling_factor;
+    let w = 25 * scaling.screen_scaling_factor;
 
     // test code
     /*
@@ -3465,8 +3482,8 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
             if (line.uby)
                 amt_ub_y = (line.uby - line_point.y) / line_vector_normalised.y;
 
-            let point1 = wtsp(line_point.sub(line_vector_normalised.mul(Math.min(amt_lb_x, amt_lb_y))));
-            let point2 = wtsp(line_point.add(line_vector_normalised.mul(Math.min(amt_ub_x, amt_ub_y))));
+            let point1 = scaling.wtsp(line_point.sub(line_vector_normalised.mul(Math.min(amt_lb_x, amt_lb_y))));
+            let point2 = scaling.wtsp(line_point.add(line_vector_normalised.mul(Math.min(amt_ub_x, amt_ub_y))));
 
             layers.debug_back.ctx.beginPath();
             layers.debug_back.ctx.moveTo(point1.x, point1.y);
@@ -3484,9 +3501,9 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
             return;
         }
 
-        let particle_screen_pos = wtsp(particle.position)
+        let particle_screen_pos = scaling.wtsp(particle.position)
 
-        let siz = particle.size * true_zoom_level * 128;
+        let siz = particle.size * scaling.true_zoom_level * 128;
 
         particle_screen_pos = particle_screen_pos.add(new Vector2(-siz, -siz).mul(0));
 
@@ -3508,7 +3525,7 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
                 true, 1, particle.text_border_col.css(), particle.text_modifiers
             );
         } else if (particle instanceof LineParticle) {
-            let particle_end_pos = wtsp(particle.target_position);
+            let particle_end_pos = scaling.wtsp(particle.target_position);
 
             ctx.lineWidth = particle.size * zoom_level;
             ctx.strokeStyle = particle.colour.css();
@@ -3550,9 +3567,9 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
         let proj_layer = projectile.alternative_layer ? layers[projectile.alternative_layer] : layers.fg3;
 
         if (projectile.sprite != "HITSCAN") {
-            let projectile_screen_pos = wtsp(projectile.position)
+            let projectile_screen_pos = scaling.wtsp(projectile.position)
 
-            let siz = projectile.size * true_zoom_level * 128;
+            let siz = projectile.size * scaling.true_zoom_level * 128;
 
             write_rotated_image(
                 proj_layer.canvas, proj_layer.ctx,
@@ -3563,9 +3580,9 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
         } else {
             // draw a line from position to target with given width
             // and colour
-            let projectile_screen_start_pos = wtsp(projectile.position);
+            let projectile_screen_start_pos = scaling.wtsp(projectile.position);
 
-            let projectile_screen_end_pos = wtsp(projectile.target_position);
+            let projectile_screen_end_pos = scaling.wtsp(projectile.target_position);
 
             let projectile_lifetime_proportion = (projectile.lifetime - projectile.render_delay) / (projectile.duration - projectile.render_delay);
             // every line can be 1000 segments. start the line at 1000 * proportion segments down
@@ -3597,7 +3614,7 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
                     w_factor = 1;
                 }
 
-                proj_layer.ctx.lineWidth = w_factor * max_width * PROJ_SIZE_MULTIPLIER * true_zoom_level;
+                proj_layer.ctx.lineWidth = w_factor * max_width * PROJ_SIZE_MULTIPLIER * scaling.true_zoom_level;
 
                 proj_layer.ctx.beginPath();
                 proj_layer.ctx.moveTo(last_last_pos.x, last_last_pos.y);
@@ -3618,13 +3635,13 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
             hitboxes.forEach((hitbox_offset, index) => {
                 let hitbox = projectile.hitboxes[index];
 
-                let hitbox_screen_pos = wtsp(projectile.position.add(hitbox_offset));
+                let hitbox_screen_pos = scaling.wtsp(projectile.position.add(hitbox_offset));
                 let w2 = w / 8;
 
                 layers.debug_back.ctx.beginPath();
                 layers.debug_back.ctx.arc(
                     hitbox_screen_pos.x, hitbox_screen_pos.y, 
-                    Math.max(0, (hitbox.radius * projectile.size * true_zoom_level) - (w2/2)),
+                    Math.max(0, (hitbox.radius * projectile.size * scaling.true_zoom_level) - (w2/2)),
                     0, 2 * Math.PI, false
                 );
                 layers.debug_back.ctx.fillStyle = new Colour(255, 255, 0, 128).css();
@@ -3639,137 +3656,155 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
 
     // then the balls and weapons
     balls_to_render.forEach(ball => {
-        // set up aero cache if needed
-        if (ball.needs_aero_setup) {
-            ball.setup_aero_light_lookup_table();
-            ball.needs_aero_setup = false;
-        }
-
         let ball_pos = ball.position;
 
-        let original_alpha = ctx.globalAlpha;
-        ctx.globalAlpha = ball.opacity;
-
-        let ball_screen_pos = wtsp(ball_pos);
-
         if (ball.display) {
-            let ball_canvas_idx = 0;
-            let ball_col = ball.get_current_col();
-            if (ball.invuln_duration > 0 && ball.last_hit == 0) {
-                ball_col = ball_col.lerp(Colour.black, 0.75);
-                ball_canvas_idx = 1;
-            }
+            render_canvas_ball(
+                layer.canvas, ctx, layers.fg3.ctx, layers.debug_back.ctx,
+                ball,
+                ball_pos,
+                ball.hp !== null && ball.display_hp && draw_ball_hp,
+                collision_boxes
+            )
+        }
+    })
+}
 
-            switch (BALL_RENDERING_METHOD) {
-                case BALL_RENDERING_METHODS.VECTOR: {
-                    ctx.beginPath();
-                    ctx.arc(ball_screen_pos.x, ball_screen_pos.y, Math.max(0, (ball.radius * true_zoom_level) - (w/2)), 0, 2 * Math.PI, false);
-                    
-                    ctx.fillStyle = ball_col.css();
-                    ctx.fill();
-                    ctx.lineWidth = w;
-                    ctx.strokeStyle = ball_col.lerp(Colour.white, 0.75).css();
-                    ctx.stroke();
+function render_canvas_ball(canvas, ctx, weapon_layer_ctx, debug_layer_ctx, ball, ball_pos, render_hp=true, render_collision_boxes=false, scaling_override=null) {
+    // set up aero cache if needed
+    let old_scaling = scaling;
+    if (scaling_override) {
+        scaling = scaling_override;
+    }
 
-                    break;
-                }
+    if (ball.needs_aero_setup) {
+        ball.setup_aero_light_lookup_table();
+        ball.needs_aero_setup = false;
+    }
 
-                case BALL_RENDERING_METHODS.AERO: {
-                    let draw_pos = wtsp(ball.position.sub(new Vector2(ball.radius, ball.radius)));
+    let w = 25 * scaling.screen_scaling_factor;
 
-                    ctx.drawImage(
-                        ball.aero_canvases[ball_canvas_idx],
-                        draw_pos.x,
-                        draw_pos.y
-                    )
+    let original_alpha = ctx.globalAlpha;
+    ctx.globalAlpha = ball.opacity;
 
-                    if (ball.hp !== null && ball.display_hp && draw_ball_hp) {
-                        let hp = Math.max(0, ball.hp);
+    let ball_screen_pos = scaling.wtsp(ball_pos);
 
-                        let original_text_alpha = ctx_normal.globalAlpha;
-                        ctx_normal.globalAlpha = ball.opacity;
+    let ball_canvas_idx = 0;
+    let ball_col = ball.get_current_col();
+    if (ball.invuln_duration > 0 && ball.last_hit == 0) {
+        ball_col = ball_col.lerp(Colour.black, 0.75);
+        ball_canvas_idx = 1;
+    }
 
-                        ctx_normal.fillStyle = "white";
-                        ctx_normal.font = `22px ${CANVAS_FONTS}`;
-                        ctx_normal.textAlign = "center";
-                        ctx_normal.textBaseline = "middle";
-                        ctx_normal.fillText(Math.ceil(hp), ball_screen_pos.x-1.5, ball_screen_pos.y-1.5);
-                        ctx_normal.fillText(Math.ceil(hp), ball_screen_pos.x+1.5, ball_screen_pos.y-1.5);
-                        ctx_normal.fillText(Math.ceil(hp), ball_screen_pos.x-1.5, ball_screen_pos.y+1.5);
-                        ctx_normal.fillText(Math.ceil(hp), ball_screen_pos.x+1.5, ball_screen_pos.y+1.5);
-                    
-                        ctx_normal.globalAlpha = original_text_alpha;
-                    }
+    switch (BALL_RENDERING_METHOD) {
+        case BALL_RENDERING_METHODS.VECTOR: {
+            ctx.beginPath();
+            ctx.arc(ball_screen_pos.x, ball_screen_pos.y, Math.max(0, (ball.radius * scaling.true_zoom_level) - (w/2)), 0, 2 * Math.PI, false);
+            
+            ctx.fillStyle = ball_col.css();
+            ctx.fill();
+            ctx.lineWidth = w;
+            ctx.strokeStyle = ball_col.lerp(Colour.white, 0.75).css();
+            ctx.stroke();
 
-                    break;
-                }
-            }
+            break;
+        }
 
-            if (ball.hp !== null && ball.display_hp && draw_ball_hp) {
+        case BALL_RENDERING_METHODS.AERO: {
+            let draw_pos = scaling.wtsp(ball_pos.sub(new Vector2(ball.radius, ball.radius)));
+
+            ctx.drawImage(
+                ball.aero_canvases[ball_canvas_idx],
+                draw_pos.x,
+                draw_pos.y
+            )
+
+            if (render_hp) {
                 let hp = Math.max(0, ball.hp);
 
-                ctx_normal.fillStyle = "black";
-                ctx_normal.font = `22px ${CANVAS_FONTS}`;
-                ctx_normal.textAlign = "center";
-                ctx_normal.textBaseline = "middle";
-                ctx_normal.fillText(Math.ceil(hp), ball_screen_pos.x-0.5, ball_screen_pos.y-0.5);
-                ctx_normal.fillText(Math.ceil(hp), ball_screen_pos.x+0.5, ball_screen_pos.y-0.5);
-                ctx_normal.fillText(Math.ceil(hp), ball_screen_pos.x-0.5, ball_screen_pos.y+0.5);
-                ctx_normal.fillText(Math.ceil(hp), ball_screen_pos.x+0.5, ball_screen_pos.y+0.5);
+                let original_text_alpha = ctx.globalAlpha;
+                ctx.globalAlpha = ball.opacity;
+
+                ctx.fillStyle = "white";
+                ctx.font = `22px ${CANVAS_FONTS}`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(Math.ceil(hp), ball_screen_pos.x-1.5, ball_screen_pos.y-1.5);
+                ctx.fillText(Math.ceil(hp), ball_screen_pos.x+1.5, ball_screen_pos.y-1.5);
+                ctx.fillText(Math.ceil(hp), ball_screen_pos.x-1.5, ball_screen_pos.y+1.5);
+                ctx.fillText(Math.ceil(hp), ball_screen_pos.x+1.5, ball_screen_pos.y+1.5);
+            
+                ctx.globalAlpha = original_text_alpha;
             }
 
-            // now draw the weapons
-            // weapon needs to be drawn at an offset from the ball (radius to the right)
-            // with that offset rotated by the angle as well
-            ball.weapon_data.forEach((weapon, index) => {
-                if (weapon.size_multiplier <= 0 || !weapon.display) {
-                    return;
-                }
+            break;
+        }
+    }
 
-                let offset = ball.get_weapon_offset(index);
+    if (render_hp) {
+        let hp = Math.max(0, ball.hp);
 
-                let siz = weapon.size_multiplier * true_zoom_level * 128;
-                let pos = wtsp(ball_pos.add(offset));
+        ctx.fillStyle = "black";
+        ctx.font = `22px ${CANVAS_FONTS}`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(Math.ceil(hp), ball_screen_pos.x-0.5, ball_screen_pos.y-0.5);
+        ctx.fillText(Math.ceil(hp), ball_screen_pos.x+0.5, ball_screen_pos.y-0.5);
+        ctx.fillText(Math.ceil(hp), ball_screen_pos.x-0.5, ball_screen_pos.y+0.5);
+        ctx.fillText(Math.ceil(hp), ball_screen_pos.x+0.5, ball_screen_pos.y+0.5);
+    }
 
-                let original_weapon_alpha = layers.fg3.ctx.globalAlpha;
-                layers.fg3.ctx.globalAlpha = ball.opacity * (ball.weapon_opacity ?? 1);
+    // now draw the weapons
+    // weapon needs to be drawn at an offset from the ball (radius to the right)
+    // with that offset rotated by the angle as well
+    ball.weapon_data.forEach((weapon, index) => {
+        if (weapon.size_multiplier <= 0 || !weapon.display) {
+            return;
+        }
 
-                if (weapon.sprite) {
-                    write_rotated_image(layers.fg3.canvas, layers.fg3.ctx, pos.x, pos.y, entity_sprites.get(weapon.sprite)[weapon.frame], siz, siz, weapon.angle);
-                }
+        let offset = ball.get_weapon_offset(index);
 
-                if (collision_boxes) {
-                    // render the collision boxes on debug_back as green circles
-                    // collision boxes are based on the original 128x128 sizing
-                    // so get the offset, then add the collision pos offset, then draw that
-                    let hitboxes_offsets = ball.get_hitboxes_offsets(index);
-                    weapon.hitboxes.forEach((hitbox, index) => {
-                        let hitbox_offset = offset.add(hitboxes_offsets[index]);
+        let siz = weapon.size_multiplier * scaling.true_zoom_level * 128;
+        let pos = scaling.wtsp(ball_pos.add(offset));
 
-                        let hitbox_screen_pos = wtsp(ball_pos.add(hitbox_offset));
-                        let w2 = w / 8;
+        let original_weapon_alpha = weapon_layer_ctx.globalAlpha;
+        weapon_layer_ctx.globalAlpha = ball.opacity * (ball.weapon_opacity ?? 1);
 
-                        layers.debug_back.ctx.beginPath();
-                        layers.debug_back.ctx.arc(
-                            hitbox_screen_pos.x, hitbox_screen_pos.y, 
-                            Math.max(0, (hitbox.radius * weapon.size_multiplier * true_zoom_level) - (w2/2)),
-                            0, 2 * Math.PI, false
-                        );
-                        layers.debug_back.ctx.fillStyle = new Colour(0, 255, 0, 128).css();
-                        layers.debug_back.ctx.fill();
-                        layers.debug_back.ctx.lineWidth = w2;
-                        layers.debug_back.ctx.strokeStyle = new Colour(0, 255, 0, 255).css();
-                        layers.debug_back.ctx.stroke();
-                        layers.debug_back.ctx.closePath();
-                    })
-                }
+        if (weapon.sprite) {
+            write_rotated_image(layers.fg3.canvas, weapon_layer_ctx, pos.x, pos.y, entity_sprites.get(weapon.sprite)[weapon.frame], siz, siz, weapon.angle);
+        }
 
-                layers.fg3.ctx.globalAlpha = original_weapon_alpha;
+        if (render_collision_boxes) {
+            // render the collision boxes on debug_back as green circles
+            // collision boxes are based on the original 128x128 sizing
+            // so get the offset, then add the collision pos offset, then draw that
+            let hitboxes_offsets = ball.get_hitboxes_offsets(index);
+            weapon.hitboxes.forEach((hitbox, index) => {
+                let hitbox_offset = offset.add(hitboxes_offsets[index]);
+
+                let hitbox_screen_pos = scaling.wtsp(ball_pos.add(hitbox_offset));
+                let w2 = w / 8;
+
+                debug_layer_ctx.beginPath();
+                debug_layer_ctx.arc(
+                    hitbox_screen_pos.x, hitbox_screen_pos.y, 
+                    Math.max(0, (hitbox.radius * weapon.size_multiplier * scaling.true_zoom_level) - (w2/2)),
+                    0, 2 * Math.PI, false
+                );
+                debug_layer_ctx.fillStyle = new Colour(0, 255, 0, 128).css();
+                debug_layer_ctx.fill();
+                debug_layer_ctx.lineWidth = w2;
+                debug_layer_ctx.strokeStyle = new Colour(0, 255, 0, 255).css();
+                debug_layer_ctx.stroke();
+                debug_layer_ctx.closePath();
             })
         }
 
-        ctx.globalAlpha = original_alpha;
+        weapon_layer_ctx.globalAlpha = original_weapon_alpha;
     })
+
+    ctx.globalAlpha = original_alpha;
+    scaling = old_scaling;
 }
 
 function render_descriptions(board) {
@@ -4087,7 +4122,7 @@ function render_opening(board, time_delta) {
         let req = base_delay + 0.25 + (i * (ball_stagger / balls_num));
 
         if (t > req) {
-            let pos = wtsp(ball.position.add(
+            let pos = scaling.wtsp(ball.position.add(
                 new Vector2(0, ball.radius * 1.75)
             )).add(
                 new Vector2(0, 44)
@@ -4104,8 +4139,8 @@ function render_opening(board, time_delta) {
 
             layers.ui2.ctx.beginPath();
 
-            let start_pos = wtsp(ball.position.add(ball.velocity.normalize().mul(ball.radius * 1.5)));
-            let end_pos = wtsp(ball.position.add(ball.velocity.normalize().mul(ball.radius * (1.5 + (ball.velocity.magnitude() / 3500)))));
+            let start_pos = scaling.wtsp(ball.position.add(ball.velocity.normalize().mul(ball.radius * 1.5)));
+            let end_pos = scaling.wtsp(ball.position.add(ball.velocity.normalize().mul(ball.radius * (1.5 + (ball.velocity.magnitude() / 3500)))));
 
             let dir = end_pos.sub(start_pos).normalize();
 
@@ -4135,7 +4170,7 @@ function render_opening(board, time_delta) {
         let req = base_delay + 0 + (i * (ball_stagger / balls_num));
 
         if (t > req) {
-            let pos = wtsp(ball.position.add(
+            let pos = scaling.wtsp(ball.position.add(
                 new Vector2(0, ball.radius * 1.75)
             ));
 
@@ -4159,7 +4194,7 @@ function render_opening(board, time_delta) {
         let req = base_delay + 0.125 + (i * (ball_stagger / balls_num));
 
         if (t > req) {
-            let pos = wtsp(ball.position.add(
+            let pos = scaling.wtsp(ball.position.add(
                 new Vector2(0, ball.radius * 1.75)
             )).add(
                 new Vector2(0, 24)
@@ -4389,7 +4424,7 @@ function game_loop() {
 
     if (board && render) {
         if (need_stwp_recache) {
-            refresh_wtsp_stwp();
+            get_wtsp_stwp();
             if (BALL_RENDERING_METHOD != BALL_RENDERING_METHODS.VECTOR) {
                 board.balls.forEach(ball => ball.setup_aero_light_lookup_table());
             }

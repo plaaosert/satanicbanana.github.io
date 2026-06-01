@@ -538,7 +538,7 @@ class WeaponBall extends Ball {
             return;
         }
 
-        let ball_siz_scaled = Math.round(this.radius * true_zoom_level);
+        let ball_siz_scaled = Math.round(this.radius * scaling.true_zoom_level);
 
         let lb = Math.floor(-ball_siz_scaled / 1);
         let ub = Math.ceil(ball_siz_scaled / 1) + 1;
@@ -742,7 +742,7 @@ class WeaponBall extends Ball {
             }
         }
 
-        let w = 25 * screen_scaling_factor;
+        let w = 25 * scaling.screen_scaling_factor;
 
         // test code
         let base_ball_col = this.get_current_col();
@@ -751,8 +751,8 @@ class WeaponBall extends Ball {
             base_ball_col.lerp(Colour.black, 0.75).lerp(Colour.black, 0.1)
         ]
 
-        let sqr_radius = Math.pow(this.radius * true_zoom_level, 2);
-        let sqr_inner_radius = Math.pow((this.radius * true_zoom_level) - (w * 1.2), 2);
+        let sqr_radius = Math.pow(this.radius * scaling.true_zoom_level, 2);
+        let sqr_inner_radius = Math.pow((this.radius * scaling.true_zoom_level) - (w * 1.2), 2);
 
         let lightest = Colour.white;
         let lightest_amt = 0.8;
@@ -2690,7 +2690,7 @@ class MagnumBall extends WeaponBall {
         this.lore_alignment = "blue"
         this.lore_birthday = "11th Nov"
 
-        this.default_colour = Colour.from_hex("#c069c5")
+        this.default_colour = Colour.from_hex("#e056e4")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -3848,7 +3848,7 @@ class GlassBall extends WeaponBall {
         this.lore_alignment = "red"
         this.lore_birthday = "25th May"
 
-        this.default_colour = Colour.from_hex("#d3f2fa")
+        this.default_colour = Colour.from_hex("#edfafd")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -4852,7 +4852,7 @@ class ChakramBall extends WeaponBall {
         this.lore_alignment = "blue"
         this.lore_birthday = "6th Feb"
 
-        this.default_colour = Colour.from_hex("#b4a9bc")
+        this.default_colour = Colour.from_hex("#c7b9d3")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -5109,7 +5109,7 @@ class WandBall extends WeaponBall {
         this.lore_alignment = "red"
         this.lore_birthday = "12th Dec"
 
-        this.default_colour = Colour.from_hex("#badbd0")
+        this.default_colour = Colour.from_hex("#ffb33b")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -6061,7 +6061,7 @@ class SpearBall extends WeaponBall {
         this.lore_alignment = "blue"
         this.lore_birthday = "13th Mar"
 
-        this.default_colour = Colour.from_hex("#bc85a3")
+        this.default_colour = Colour.from_hex("#ab658b")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -6255,7 +6255,7 @@ class RosaryBall extends WeaponBall {
         this.lore_alignment = "green"
         this.lore_birthday = "25th Dec"
 
-        this.default_colour = Colour.from_hex("#e29a9b")
+        this.default_colour = Colour.from_hex("#e9b3b9")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -7220,7 +7220,7 @@ class CardsBall extends WeaponBall {
         this.max_level_description = "Starts with +8 luck.";
         this.quote = "...Is this your card? Well, I suppose it doesn't matter now.";
 
-        this.default_colour = Colour.from_hex("#f297c3")
+        this.default_colour = Colour.from_hex("#df5120")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {
@@ -9226,7 +9226,7 @@ class WrenchBall extends WeaponBall {
         this.max_level_description = "Damage from turrets also contributes a reduced amount of metal.";
         this.quote = "Dispenser? Never heard of anythin' like that.\nYa sure yer not confusin' me for someone else?";
 
-        this.default_colour = Colour.from_hex("#e02c2b")
+        this.default_colour = Colour.from_hex("#bb1c1b")
 
         this.tier = TIERS.A;
         if (level >= AWAKEN_LEVEL) {

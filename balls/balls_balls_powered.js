@@ -235,10 +235,10 @@ class SmartBowBall extends WeaponBall {
 
                 predicted_movement = predicted_velocity.mul(cur_nt);
                 predicted_position = closest_enemy[0].position.add(predicted_movement);
-                let predicted_position_screenpos = wtsp(predicted_position);
+                let predicted_position_screenpos = scaling.wtsp(predicted_position);
                 draw_circle(
                     ctx, predicted_position_screenpos.x, predicted_position_screenpos.y,
-                    closest_enemy[0].radius * true_zoom_level,
+                    closest_enemy[0].radius * scaling.true_zoom_level,
                     Colour.red.lerp(Colour.green, i / times).css()
                 );
             }
@@ -247,8 +247,8 @@ class SmartBowBall extends WeaponBall {
 
             ctx.beginPath();
 
-            let start_screenpos = wtsp(this.position);
-            let end_screenpos = wtsp(predicted_position);
+            let start_screenpos = scaling.wtsp(this.position);
+            let end_screenpos = scaling.wtsp(predicted_position);
             ctx.moveTo(start_screenpos.x, start_screenpos.y);
             ctx.lineTo(end_screenpos.x, end_screenpos.y);
 

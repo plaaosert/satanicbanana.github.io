@@ -829,15 +829,20 @@ function spawn_selected_balls() {
     }
 
     let cols = [];
+    let same_class_dfls = {};
     for (let i=0; i<ball_classes.length; i++) {
         let c = cols_indexes[i];
         let gotcol = get_default_col(c, ball_classes[i]);
 
-        let cs = [Colour.red, Colour.green, Colour.blue];
-        let t = 0;
-        while (cols.some(col => gotcol.eq(col))) {
-            gotcol = gotcol.lerp(cs[t], 0.25);
-            t = Math.min(2, t+1);
+        if (c >= 999) {
+            let dfl_count = (same_class_dfls[ball_classes[i].name] ?? 0);
+            let cs = [Colour.red, Colour.green, Colour.blue];
+
+            if (dfl_count >= 1) {
+                gotcol = gotcol.lerp(cs[dfl_count-1], 0.25);
+            }
+
+            same_class_dfls[ball_classes[i].name] = dfl_count + 1;
         }
 
         cols.push(gotcol)
@@ -914,8 +919,8 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
             if (ball_proto) {
                 let lvl = ball_levels[index];
                 let ball = new ball_proto(
-                    board,
-                    1, default_ball_radius, col, null, null, players[index], lvl, index % 2 == 1
+                    board, 1, default_ball_radius, col, 
+                    null, null, players[index], lvl, index % 2 == 1
                 );
 
                 ball.randomise_weapon_rotations();
@@ -1021,11 +1026,16 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
     enter_battle();
 }
 
-function create_testball(proto, level=0) {
-    return new proto(
-        {random: Math.random, random_seed: "123"}, 1, default_ball_radius,
-        Colour.white, null, null, {}, level+1, false
-    )
+function create_testball(proto, level=0, colour=null, override_boardsiz=null) {
+    let boardsiz = override_boardsiz ?? map_configs["S"].size;
+
+    let b = new Board(new Vector2(boardsiz, boardsiz));
+    b.set_random_seed("123");
+
+    return b.spawn_ball(new proto(
+        b, 1, default_ball_radius,
+        colour ?? Colour.white, null, null, {}, level+1, false
+    ), Vector2.zero);
 }
 
 function get_default_col(index, ball_proto) {
@@ -1478,7 +1488,7 @@ function refresh_ballinfo(ballid) {
 
     elem.querySelector(".ball-level").textContent = `LV ${info.level + 1}`;
 
-    elem.querySelector(".team").textContent = `${String.fromCharCode(160)}${info.team == 999 ? "DFL" : col_names[info.team]}${String.fromCharCode(160)}`;
+    elem.querySelector(".team").textContent = `${String.fromCharCode(160)}${info.team == 999 ? "[DFL]" : col_names[info.team]}${String.fromCharCode(160)}`;
 
     if (info.disabled) {
         elem.classList.add("disabled");
@@ -2435,6 +2445,64 @@ function close_gambling_info_popup() {
     document.querySelector("#gambling_ball_extra_info").classList.add("nodisplay");
 }
 
+function draw_example_ball(canvas, ctx, weapon_layer_ctx, debug_layer_ctx, ball_proto, game_pos, level=0, override_boardsiz=null) {
+    let ball = create_testball(ball_proto, level, get_default_col(999, ball_proto), override_boardsiz);
+
+    ball.randomise_weapon_rotations();
+    ball.randomise_weapon_rotations();
+    ball.cache_weapon_offsets();
+    ball.cache_hitboxes_offsets();
+    ball.late_setup();
+
+    render_canvas_ball(
+        canvas, ctx, weapon_layer_ctx, debug_layer_ctx,
+        ball, game_pos, false, false,
+        get_wtsp_stwp(ball.board, Math.min(canvas.width, canvas.height))
+    )
+
+    return ball;
+}
+
+function layout_balls_list(canvas, ctx, weapon_layer_ctx, debug_layer_ctx, list, levels=0, override_boardsiz=null, width_len_mul=1) {
+    weapon_layer_ctx.beginPath();
+    weapon_layer_ctx.rect(0, 0, canvas.width, canvas.height);
+    weapon_layer_ctx.fillStyle = "black";
+    weapon_layer_ctx.fill();
+    weapon_layer_ctx.closePath();
+
+    let balls_per_row = 5;
+    
+    let boardsiz = override_boardsiz ?? map_configs.S.size
+
+    let siz = ((boardsiz * width_len_mul) / (balls_per_row + 1));
+
+    for (let i=0; i<list.length; i++) {
+        let x = ((i % balls_per_row) + 1) * (siz);
+        let y = (Math.floor(i / balls_per_row) + 1) * (siz);
+
+        let pos = new Vector2(x, y);
+        let ball = draw_example_ball(
+            canvas, ctx, weapon_layer_ctx, debug_layer_ctx,
+            list[i], pos, levels, 
+            override_boardsiz
+        );
+
+        let l_scaling = get_wtsp_stwp(ball.board, Math.min(canvas.width, canvas.height))
+        let spos = l_scaling.wtsp(pos);
+
+        debug_layer_ctx.textAlign = "center";
+        debug_layer_ctx.textBaseline = "middle";
+        
+        write_pp_bordered_text(
+            debug_layer_ctx,
+            `${ball.name}`,
+            spos.x, spos.y + (800 * l_scaling.true_zoom_level), ball.get_current_desc_col().css(), 
+            CANVAS_FONTS, 18,
+            false, 2, ball.get_current_border_col().css()
+        )
+    }
+}
+
 function is_valid_viewport() {
     // check we have enough content size AND we're not on mobile (or on desktop mode in mobile)
     return (window.innerHeight >= 919 && window.innerWidth >= 640) && (!on_mobile() || window.innerWidth > screen.availWidth);
@@ -2781,7 +2849,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     let teams_elems = document.querySelectorAll("select.sandbox-team-select");
     teams_elems.forEach((elem, elem_idx) => {
-        let opt = new Option("DFL");
+        let opt = new Option("[DFL]");
         opt.style.color = "#fff";
         elem.options.add(opt);
 
@@ -2984,6 +3052,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
         render_header();
     }
+
+    document.querySelectorAll(".fullscreen-canvas").forEach(e => e.width = window.innerWidth);
+    document.querySelectorAll(".fullscreen-canvas").forEach(e => e.height = window.innerHeight);
 
     window.requestAnimationFrame(gambling_display_loop);
 })
