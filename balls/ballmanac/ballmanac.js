@@ -103,6 +103,42 @@ function update_ball_info_view(elem, ball_proto) {
     set_with_glitch(elem.querySelector(".ball-quote-desc span"), `"${ball.weapon_relationship}"`);
 }
 
+function findpage(text, forcecat="") {
+    let tx = text.toLowerCase();
+
+    let g_index = game_entries.findIndex(ge => ge.title.toLowerCase() == tx);
+    let l_index = lore_entries.findIndex(le => le.title.toLowerCase() == tx);
+    let b_index = selectable_balls.findIndex(b => b.ball_name.toLowerCase() == tx);
+
+    switch (forcecat) {
+        case "lore":
+            g_index = -1;
+            b_index = -1;
+            break;
+
+        case "game":
+            l_index = -1;
+            b_index = -1;
+            break;
+
+        case "ball":
+            g_index = -1;
+            l_index = -1;
+    }
+
+    let index = g_index == -1 ? (l_index == -1 ? b_index : l_index) : g_index;
+    let cat = g_index == -1 ? (l_index == -1 ? "ball" : "lore") : "game";
+
+    return [index, cat];
+}
+
+function openpage(text, forcecat="") {
+    let res = findpage(text, forcecat);
+    if (res[0] != -1) {
+        ballmanac_open_category(res[1], res[0]);
+    }
+}
+
 function update_generic_info_view(elem, entry) {
     elem.style.setProperty("--col1", entry.colour.css());
     elem.style.setProperty("--col2", entry.colour.lerp(Colour.white, 0.6).css());
@@ -113,38 +149,23 @@ function update_generic_info_view(elem, entry) {
 
     elem.querySelectorAll(".main-text span .link").forEach(e => {
         let tx = e.getAttribute("data-linkto")?.toLowerCase() ?? e.textContent.toLowerCase();
-
-        let g_index = game_entries.findIndex(ge => ge.title.toLowerCase() == tx);
-        let l_index = lore_entries.findIndex(le => le.title.toLowerCase() == tx);
-
         let forcecat = e.getAttribute("data-cat");
-        switch (forcecat) {
-            case "lore":
-                g_index = -1;
-                break;
-
-            case "game":
-                l_index = -1;
-                break;
-        }
         
-        let index = g_index == -1 ? l_index : g_index;
-        let cat = g_index == -1 ? "lore" : "game";
+        let res = findpage(tx, forcecat);
+
+        let index = res[0]
+        let cat = res[1];
         if (index == -1)
             return;
 
         let relevant_list = [];
-        switch (cat) {
-            case "lore":
-                relevant_list = lore_entries;
-                break;
+        relevant_list = ballmanac_get_relevant_list(cat);
 
-            case "game":
-                relevant_list = game_entries;
-                break;
+        if (cat == "ball") {
+            e.style.color = create_testball(relevant_list[index]).default_colour.css();
+        } else {
+            e.style.color = relevant_list[index].colour.css();
         }
-
-        e.style.color = relevant_list[index].colour.css();
 
         e.addEventListener("click", e => {
             ballmanac_open_category(cat, index);
@@ -306,10 +327,9 @@ function ballmanac_set_entry(to) {
     ballmanac_mod_entry(diff);
 }
 
-function ballmanac_mod_entry(by) {
+function ballmanac_get_relevant_list(category) {
     let relevant_list = [];
-    // get list
-    switch (current_category) {
+    switch (category) {
         case "ball": {
             relevant_list = selectable_balls;
             break;
@@ -325,6 +345,13 @@ function ballmanac_mod_entry(by) {
             break;
         }
     }
+
+    return relevant_list;
+}
+
+function ballmanac_mod_entry(by) {
+    // get list
+    let relevant_list = ballmanac_get_relevant_list(current_category);
 
     // mod index
     current_index = Math.max(0, Math.min(relevant_list.length-1, current_index+by));
@@ -367,7 +394,7 @@ function ballmanac_mod_entry(by) {
     let url = new URL(window.location.href);
     url.searchParams.set("cat", current_category);
     url.searchParams.set("idx", current_index);
-    
+
     if (url.href != window.location.href)
         window.history.pushState({urlPath:url.href}, null, url.href);
 }

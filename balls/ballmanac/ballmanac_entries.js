@@ -9,7 +9,7 @@ class Entry {
 let game_entries = [
     new Entry(
         "Ball", Colour.from_hex("#fcc"),
-        "A ball is a fighter. All fighters are balls. There are no non-ball fighters.<br><br>Also see <span class='link' data-linkto='ball' data-cat='lore'>Ball (lore)</span>"
+        "A ball is a fighter. All fighters are balls. There are no non-ball fighters. Even <span class='link'>Lemon</span> is a ball.<br><br>Also see <span class='link' data-linkto='ball' data-cat='lore'>Ball (lore)</span>"
     ),
 
     new Entry(

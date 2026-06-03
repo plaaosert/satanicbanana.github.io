@@ -492,7 +492,7 @@ body {
     margin-bottom: 8px;
 }
 
-.info-generic .link {
+.link {
     text-decoration: underline;
     cursor:pointer;
 }
