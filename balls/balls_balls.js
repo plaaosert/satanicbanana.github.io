@@ -198,7 +198,7 @@ const CATEGORIES_INFO = {
         col: new Colour(255, 192, 255, 255),
     },
     [CATEGORIES.POWERED]: {
-        desc: "Uses game-aware movement like homing, auto-aim or dodging. Almost always very strong.",
+        desc: "Primarily uses game-aware movement like homing, auto-aim or dodging. Almost always very strong.",
         col: new Colour(255, 128, 128, 255),
     },
 }
