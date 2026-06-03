@@ -14,6 +14,17 @@ class ThirteenLongswordsBall extends WeaponBall {
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "Thanks to @XxRodxXr for the deranged idea.";
 
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
+
         this.default_colour = Colour.from_hex("#ab9f9d")
 
         this.tier = TIERS.S;
@@ -125,6 +136,17 @@ class AStickBall extends WeaponBall {
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "Thanks to @XxRodxXr for the deranged idea.";
 
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
+
         this.default_colour = Colour.from_hex("#B68E65");
 
         this.tier = TIERS.S;
@@ -186,6 +208,17 @@ class ThirteenSticksBall extends WeaponBall {
         this.level_description = "This ball has no levelup effect.";
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "You need to think a bit more outside the box to win.";
+
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
 
         this.default_colour = Colour.from_hex("#986B41");
 
@@ -258,6 +291,17 @@ class GreatsordBall extends WeaponBall {
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "Requested by @TheGlimGuy.";
 
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
+
         this.default_colour = Colour.from_hex("#718691")
 
         this.tier = TIERS.SPLUS;
@@ -323,6 +367,17 @@ class ExtralongswordBall extends WeaponBall {
         this.level_description = "This ball has no levelup effect.";
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "Suggested by @_Olar_.";
+
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
 
         this.default_colour = Colour.from_hex("#918171")
 
@@ -427,6 +482,17 @@ class SuperDummyBall extends WeaponBall {
         this.level_description = "Gains more max HP per level (+25 per level).";
         this.max_level_description = "Constantly heals based on missing HP (max 50%/s)";
 
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
+
         this.default_colour = Colour.red;
 
         this.tier = TIERS.DISMAL;
@@ -476,6 +542,17 @@ class SuperNeedleBall extends NeedleBall {
         this.max_level_description = "Applies poison instead for 1s each. Poison deals the full DOT for its duration and refreshes when stacked.";
         this.quote = "Many thanks for your kind donation! It's always hard getting food\non the table as a mother of six trillion.";
     
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
+
         this.splitcnt = splitcnt;
         
         this.category = CATEGORIES.SILLY;
@@ -544,6 +621,17 @@ class SuperDaggerBall extends WeaponBall {
         this.level_description = "Same as dagger.";
         this.max_level_description = "Same as dagger... shudders";
         this.quote = "help.";
+
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
 
         this.default_colour = Colour.from_hex("#c9776b") // need to inherit dagger
 
@@ -693,6 +781,17 @@ class BerserkerBall extends WeaponBall {
         this.description_brief = "@plaaoballsit's passive the lower it gets the more strength and speed it gets // It's ability to down slam create a shockwave in a big radius stunning the opponent for 2 seconds only against the wall or whatever wall to freeze the enemy btw. // The downside it's bigger and easier to hit // Cd 5 sec ig // Base hp 115?";
         this.quote = "Thanks @jaydeniskandar9185.";
 
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
+
         this.default_colour = Colour.from_hex("#f369fa")
 
         this.tier = TIERS.DISMAL;
@@ -781,6 +880,17 @@ class BigBall extends DummyBall {
         this.name = "Big";
         this.description_brief = "Add Big Ball. It's Big Ball. Big Ball.";
         this.max_level_description = "Wait... it can't be...";
+
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
 
         this.quote = "Thanks reft.";
         if (this.level >= AWAKEN_LEVEL) {
@@ -915,6 +1025,17 @@ class ShieldBall extends WeaponBall {
         this.description_brief = "1.sheld ball! reflects all atacks AND have 10% chance to grow";
         this.quote = "Thanks @sPAIN_foru.";
 
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
+
         this.default_colour = Colour.from_hex("#6ba9e3")
 
         this.tier = TIERS.C;
@@ -1015,10 +1136,21 @@ class GamblerBall extends WeaponBall {
         this.description_brief = "gambler with gun (-1-101 damage,70-130hp,weaknes if miss 3 times,basicly chance from forsaken[T.L. i don't know what this is] but B A L L)";
         this.quote = "Thanks @sPAIN_foru.";
 
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
+
         this.default_colour = Colour.from_hex("#b59638")
 
         this.tier = TIERS.S;
-        this.category = CATEGORIES.STANDARD;
+        this.category = CATEGORIES.SILLY;
         this.tags = [
             TAGS.RANGED,
             TAGS.OFFENSIVE,
@@ -1150,6 +1282,17 @@ class NotSoSuperDaggerBall extends WeaponBall {
         this.level_description = "Same as dagger.";
         this.max_level_description = "Same as dagger... shudders";
         this.quote = "Yup man just do whatever";
+
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
 
         this.default_colour = Colour.from_hex("#c9776b") // same as dagger
 
@@ -1302,6 +1445,19 @@ class RailgunIfItLockedIn extends RailgunBall {
         this.max_level_description = "Same as Railgun.";
         this.quote = "Ez";
 
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
+
+        this.category = CATEGORIES.SILLY;
+
         this.default_colour = this.default_colour.lerp(Colour.black, 0.15);
 
         this.speed_base *= 5;
@@ -1323,6 +1479,17 @@ class SwordAndShieldBall extends WeaponBall {
         this.name = "Sord and Sheld";
         this.description_brief = "Maybe if the sword[sic] was just a little bigger it could defeat the 13 sticks? Perhaps a shield[sic] would help";
         this.quote = "Thanks @_Olar_ and @sPAIN_foru.";
+
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
 
         this.default_colour = Colour.from_hex("#6594a3")
 
@@ -1469,6 +1636,17 @@ class HornetBall extends SuperNeedleBall {
         this.description_brief = "Same as Super Needle in every way, but also periodically releases Hornet's Thread Storm ability.";
         this.quote = "Shaaw!";
     
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
+
         this.default_colour = Colour.from_hex("#b71c1c")
 
         this.splitcnt = splitcnt;
@@ -1528,6 +1706,17 @@ class HyperParrierBall extends WeaponBall {
         this.name = "Hyper Parrier";
         this.description_brief = "Make a ball that flashes yellow every 3 seconds for .25 second and if something hits it in that time frame, do a cool animation or smth with more peak sound effects :D";
         this.quote = "Thanks @MyronKost2.";
+
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
 
         this.default_colour = Colour.from_hex("#3838cf")
 
@@ -1671,6 +1860,17 @@ class ThwompBall extends WeaponBall {
         this.description_brief = "Periodically grows spikes and slams down, dealing 50 damage to any balls in the way. Spikes deal 5 damage while not slamming and retract shortly after the slam completes.";
         this.quote = "Thanks @CasualBinaryMan.";
 
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
+
         this.default_colour = Colour.from_hex("#bdbddb")
 
         this.tier = TIERS.BPLUS;
@@ -1798,10 +1998,21 @@ class MachineGunBall extends WeaponBall {
         this.description_brief = "Meachin gun was grand lancher";
         this.quote = "Thanks @אריאליותם."
 
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
+
         this.default_colour = Colour.from_hex("#f0dba5")
 
         this.tier = TIERS.S;
-        this.category = CATEGORIES.STANDARD;
+        this.category = CATEGORIES.SILLY;
         this.tags = [
             TAGS.RANGED,
             TAGS.OFFENSIVE,
@@ -1894,6 +2105,17 @@ class ThiccNeedleBall extends NeedleBall {
         this.max_level_description = "Has 1000 hp (at level 100)... and needle's other awakening bonuses";
         this.quote = "Thanks @_Olar_.";
 
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
+
         this.default_colour = this.default_colour.lerp(Colour.white, 0.3);
 
         this.tier = TIERS.A;
@@ -1973,6 +2195,17 @@ class FourteenLongswordsBall extends ThirteenLongswordsBall {
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "This is a crime. I must not be allowed to win.";
 
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
+
         this.weapon_data = new Array(14).fill("").map(_ => new BallWeapon(1, "LONGSORD", [
             {pos: new Vector2(116, 72), radius: 8},
             {pos: new Vector2(100, 72), radius: 8},
@@ -2009,6 +2242,17 @@ class ShotgunMagnumBall extends WeaponBall {
         this.max_level_description = "Both Shotgun and Magnum's awakening effects.";
         this.quote = "...Do you have any idea how much it cost me to eliminate you?";
 
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
+
         this.default_colour = Colour.from_hex("#ffe0b6").lerp(Colour.from_hex("#c069c5"), 0.5) // lerp 50% between shotgun and magnum
 
         this.tier = TIERS.SPLUS;
@@ -2016,7 +2260,7 @@ class ShotgunMagnumBall extends WeaponBall {
             this.tier = TIERS.X;
         }
 
-        this.category = CATEGORIES.STANDARD;
+        this.category = CATEGORIES.SILLY;
         this.tags = [
             TAGS.RANGED,
             TAGS.OFFENSIVE,
@@ -2238,6 +2482,17 @@ class CursedEnergyBall extends WeaponBall {
         this.level_description = "This ball has no levelup effect.";
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "Throughout heaven and earth, I alone am the honoured one.";
+
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
 
         this.default_colour = Colour.from_hex("#853ef7")
 
@@ -2890,6 +3145,17 @@ class BiggerBall extends WeaponBall {
         this.name = "Bigger";
         this.description_brief = "Can you    add Bigger Ball. Bigger BALL. BIGGER ball. Like Big Ball but BIGGER";
 
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
+
         this.quote = "Thanks reft.";
 
         this.default_colour = Colour.from_hex("#910000")
@@ -2938,6 +3204,17 @@ class LemonBall extends WeaponBall {
         this.description_brief = "Lemon stuns the opponent every second for 0.5 seconds and does 10 damage per attack to opponent but does 3 damage to itself when attacking";
 
         this.quote = "Thanks @Bread.Consumer1.";
+
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
 
         this.default_colour = Colour.from_hex("#FFF44F");
 
@@ -3031,6 +3308,17 @@ class ShapeshifterBall extends WeaponBall {
         this.max_level_description = "The transformed balls also awaken."
 
         this.quote = "What was I thinking...?";
+
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
 
         this.default_colour = Colour.from_hex("#b80272")
 

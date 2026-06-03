@@ -55,11 +55,19 @@ let num_textures_needed = 0;
 const make_damage_numbers = true;
 
 let materials2sprites = {
-    "neutral": ["Neutral", "wht"],
-    "blue": ["Starmetal", "material_blue"],
-    "green": ["Fluorite", "material_green"],
-    "red": ["Cinnabar", "material_red"],
-    "white": ["Radiance", "material_white"],
+    "neutral": ["Neutral", "wht", "#ccc"],
+    "blue": ["Starmetal", "material_blue", "#9bf"],
+    "green": ["Fluorite", "material_green", "#7d7"],
+    "red": ["Cinnabar", "material_red", "#f88"],
+    "white": ["Radiance", "material_white", "#ff0"],
+}
+
+let materials2descs = {
+    "neutral": "Neutral. This is only an alignment (not a material).",
+    "blue": `Used for defensive and speed-based upgrades. ${materials2sprites.blue[0]}-aligned balls are enterprising and logical, but can be callous and unempathetic.`,
+    "green": `Used for upgrades concerned with scaling, growth or reactivity. ${materials2sprites.green[0]}-aligned balls believe in growth and nature but can be traditionalist and stubborn.`,
+    "red": `Used for damage upgrades, and often as a supplementary material for upgrades with tradeoffs or downsides. ${materials2sprites.red[0]}-aligned balls are free and uninhibited but can be selfish and amoral.`,
+    "white": `Used for rare, unique upgrades. ${materials2sprites.white[0]}-aligned balls are unique, often undefinable by traditional value sets.`,
 }
 
 let ending_game = false;
@@ -698,6 +706,8 @@ const entity_sprites = new Map([
 
     ["ball_lightning", 1, "weapon/"],
     ["ball_lightning_explosion", 9, "weapon/ball_lightning/"],
+
+    ["khopesh", 1, "weapon/"],
 
     ["explosion", 16, "explosion/"],  // Game Maker Classic
 

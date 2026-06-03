@@ -134,7 +134,7 @@ const TIERS_INFO = {
     },
     [TIERS.APLUS]: {
         name: "A+",
-        desc: "Noticeably stronger over A-tier balls.",
+        desc: "Noticeably stronger versus A-tier balls.",
         col: new Colour(128, 255, 128, 255),
     },
     [TIERS.A]: {
@@ -1523,7 +1523,7 @@ class DummyBall extends WeaponBall {
         // "No upgrades are available for this ball aside from HP."
         this.tagline = "Though a failure in creating artificial ball life, it is uniquely able to exist without tethering to a weapon. Other balls often use it to practice strategies, appreciative of the fact that it can't fight back."
         this.description = "Has no weapon! Some say that, if it were to awaken, terrible things might happen..."
-        this.lore_description = "Affectionately named Dummy, this ball was created in the early days of the convergence by biologists attempting to understand the unique physiology of ballkind. Though a well-known fact now, at the time it was not understood that a ball required a weapon to tether its essence to, so the attempt was a failure - producing an unmoving blob of matter with only slight signs of life. Despite all predictions, it did not die; time had it remain whole and like a normal ball it simply reformed unharmed after taking conventional damage. The Grand Arena took possession of it after the closure of the lab it was created in, quickly finding a use for it as a stress toy, practice dummy or basketball for its contenders. It seems to lack any form of cognition or even perception, save for a low hum that some swear is slowly getting louder..."
+        this.lore_description = "Affectionately named Dummy, this ball was created in the early days of the convergence by biologists attempting to understand the unique physiology of ballkind. Though a well-known fact now, at the time it was not understood that a ball required something to tether its essence to, so the attempt was a failure - producing an unmoving blob of matter with only slight signs of life. Despite all predictions, it did not die; time had it remain whole and like a normal ball it simply reformed unharmed after taking conventional damage. The Grand Arena took possession of it after the closure of the lab it was created in, quickly finding a use for it as a stress toy, practice dummy or basketball for its contenders. It seems to lack any form of cognition or even perception, save for a low hum that some swear is slowly getting louder..."
         this.weapon_relationship = "..."
         this.lore_origin = "Artificial"
         this.lore_temperament = "N/A"
@@ -2235,7 +2235,7 @@ class DaggerBall extends WeaponBall {
         this.pronoun = PRONOUN.SHE;
         this.tagline = "Bloodthirsty, arrogant and highly aggressive, dagger is a fearsome combo killer. Under the right circumstances, she can take down any enemy in a matter of seconds.";
         this.description = "Some powerful balls have specific methods of neutralising this highly dangerous threat."
-        this.lore_description = "Though terrifying to think about, hundreds of balls just like this one were prepared for the convergence. Remnath, talked down from the brink seconds before disaster, forbade dagger and her comrades from crossing the threshold... but a fighting group as driven as this one was bound to have some insubordination. Before the fragile peace could be shattered by the actions of one single ball, SORD and Hammer reluctantly scooped dagger up into the Grand Arena to give her an outlet. Much to the shock of everyone involved, this actually worked - though it took some time for the Arena to shrug off the reputation that came with hosting her."
+        this.lore_description = "Though terrifying to think about, hundreds of balls just like this one were prepared after the convergence began. Remnath, talked down from the brink seconds before disaster, forbade dagger and her comrades from crossing the threshold... but a fighting group as driven as this one was bound to have some insubordination. Before the fragile peace could be shattered by the actions of one single ball, SORD and Hammer reluctantly scooped dagger up into the Grand Arena to give her an outlet. Much to the shock of everyone involved, this actually worked - though it took some time for the Arena to shrug off the reputation that came with hosting her."
         this.weapon_relationship = "my favourite part is the split second before my dagger hits them for the final time. seeing their terror makes me feel alive."
         this.lore_origin = "Convergence"
         this.lore_temperament = "Violent"
@@ -3285,7 +3285,7 @@ class PotionBall extends WeaponBall {
         this.pronoun = PRONOUN.SHE;
         this.tagline = "Brews powerful potions to debilitate enemies. Can block with them in a pinch, but doing so leaves her vulnerable.";
         this.description = ""
-        this.lore_description = "It was anyone's guess what weapon Potion actually tethered with. She swore it was with an alembic, but ball scholars were quick to point out that there was little chance for anyone, and by her own admission, Potion herself, to consider such a thing a \"weapon\". With the convergence long since closed and nobody else to ask, they begrudgingly accepted that, maybe, it might have been an alembic. This did not answer the question of how she seemed to be able to create and throw away parts of her soul at will, with no limitations yet observed. Many generations later, when the convergence opened once more, Potion got her answer. It was an alembic."
+        this.lore_description = "It was anyone's guess what weapon Potion actually tethered with. She swore it was with an alembic, but ball scholars were quick to point out that there was little chance for anyone, and by her own admission, Potion herself, to consider such a thing a \"weapon\" at the time. With the convergence long since closed and nobody else to ask, they begrudgingly accepted that, maybe, it might have been an alembic. This did not answer the question of how she seemed to be able to create and throw away parts of her soul at will, with no limitations yet observed. Many generations later, when the convergence opened once more, Potion got her answer. It was an alembic."
         this.weapon_relationship = "You know, I don't use any ingredients or anything to brew the potions. It's a good thing I can't make anything actually useful, or the government might want me! Haha! Ha... ha..."
         this.lore_origin = "Center Plane City"
         this.lore_temperament = "Curious"
@@ -3566,9 +3566,9 @@ class GrenadeBall extends WeaponBall {
         this.quote = "I can't hear anything. Am I dying? Is this the end?";
 
         this.pronoun = PRONOUN.HE;
-        this.tagline = "An old ball with a less than stable tether on life. Throws highly potent grenades that are as much a danger to himself and his allies as they are to his enemies.";
+        this.tagline = "An old ball with a less than stable link to life. Throws highly potent grenades that are as much a danger to himself and his allies as they are to his enemies.";
         this.description = ""
-        this.lore_description = "While it might come as a surprise to some, it is possible for a ball to change its tether, though usually only in times of mortal danger or high stress. Grenade, once a simple and peaceful (by ball standards...) Gardening Fork, briefly became the front line in the First War when he found himself precisely on the seam that opened into the convergence. Unwilling to fight, he tried to run and lay low, but somehow, the war always had a way of coming back to him. In the corner of a ruined farmhouse, his luck finally ran out, and he counted his final moments before he would be blown to shreds and sent back to the lifestream. Though he would of course never have died, his belief was enough; in those final moments, his acceptance of his death awakened a soul he didn't know he still had. The primed grenade, tethered to him now, stopped ticking, as his gardening fork along with half of his soul faded to dust. It took him fifty years to recover enough to move. Hammer believes it will take him another hundred to feel alive again. For now, the fights and his newfound friends bring him comfort."
+        this.lore_description = "While it might come as a surprise to some, it is possible for a ball to change its tether, though usually only in times of mortal danger or high stress. Grenade, once a simple and peaceful (by ball standards...) Gardening Fork, briefly became the front line in the First War when he found himself precisely on the seam that opened into the convergence. Unwilling to fight, he tried to run and lay low, but somehow, the war always had a way of coming back to him. In the corner of a ruined farmhouse, his luck finally ran out, and he counted his final moments before he would be blown to shreds and sent back to the lifestream. In those final moments, his acceptance of his death awakened a soul he didn't know he still had. The primed grenade, tethered to him now, stopped ticking, as his gardening fork along with half of his soul faded to dust. It took him fifty years to recover enough to move. Hammer believes it will take him another hundred to feel alive again. For now, the fights and his newfound friends bring him comfort."
         this.weapon_relationship = "I don't really mind dying. Some of my friends hate it - they say it makes them uncomfortable, or it hurts, or it feels like dying... myself, I can't really feel, well, anything, most days. Best I feel is when I win. And when Hammer comes to visit."
         this.lore_origin = "Convergence"
         this.lore_temperament = "Tired"
@@ -4152,7 +4152,7 @@ class HandBall extends WeaponBall {
         this.pronoun = PRONOUN.HE;
         this.tagline = "The first ever fusion of ball and man. Strikes and grapples his way through fights.";
         this.description = ""
-        this.lore_description = "It bears repeating that anything can be tethered if considered a weapon. After human and ball reached a tenuous coexistence, the brave among them started to explore the boundaries of each others' biology. Among other things, Hand and his partner were interested about whether they could tether, perhaps assisted by our uniquely powerful, though subconscious, grasp of concept. Indeed, the idea was not unprecedented - stories exist of balls tethering with dangerous beasts on their own world since the beginning of their civilisation - but it is quite another thing to actually try it on a target with a real grasp of concept and self-identity. Hand's existence is proof enough that the attempt was successful, though the rest of his partner's physical existence was obliterated in the process. Hand has stated that he is equal parts himself and them, though of course this is impossible to prove one way or the other. Regardless, it is the opinion of the author that Hand seems to be quite happy and there's probably nothing wrong with it, though it is a little disquieting."
+        this.lore_description = "It bears repeating that anything can be tethered if considered a weapon and, in modern times, even this rule has become less true. After human and ball reached a tenuous coexistence, the brave among them started to explore the boundaries of each others' biology. Among other things, Hand and his partner were interested about whether they could tether, perhaps assisted by our uniquely powerful, though subconscious, grasp of concept. Indeed, the idea was not unprecedented - stories exist of balls tethering with dangerous beasts on their own world since the beginning of their civilisation - but it is quite another thing to actually try it on a target with a real grasp of concept and self-identity. Hand's existence is proof enough that the attempt was successful, though the rest of his partner's physical existence was obliterated in the process. Hand has stated that he is equal parts himself and them, though of course this is impossible to prove one way or the other. Regardless, it is the opinion of the author that Hand seems to be quite happy and there's probably nothing wrong with it, though it is a little disquieting."
         this.weapon_relationship = "I kind of just let the hands do what they want, but usually I'm the one blocking. If it were up to them, we'd always be punching!"
         this.lore_origin = "Center Plane City"
         this.lore_temperament = "Adventurous"
@@ -5101,7 +5101,7 @@ class WandBall extends WeaponBall {
         this.pronoun = PRONOUN.HE;
         this.tagline = "Really just straight up murderous and evil. Somehow the only remaining holder of arcane power in all the known planes.";
         this.description = ""
-        this.lore_description = "Unbeknownst to both us and ballkind, magic users had existed on the home planes all along - we were just no good at finding them. Whether the specialised wards were keyed too strongly to our kind to trigger or Wand simply got lucky, he managed to find the last wizard before tethering to his staff and summarily killing him. Thus ended the line of wizardry, too weak to be revived now that the conceptual baseline had well and truly defined it out of existence - leaving Wand the last true magic user in the known planes. In the wizard's final moments, he placed a curse on this invader to torment his soul for eternity, implanting a demonic mind to belittle and torment the upstart killer until the end of days. Still conceptually porous, however, Wand managed to warp the concept of this new auxilliary tether into an entity named \"Chat\", which he now quips to more often than it says anything back."
+        this.lore_description = "Unbeknownst to both us and ballkind, magic users had existed on the home planes all along - we were just no good at finding them. Whether the specialised wards were keyed too strongly to our kind to trigger or Wand simply got lucky, he managed to find the last wizard before tethering to his staff and summarily killing him. Thus ended the line of wizardry, too weak to be revived now that the conceptual baseline had well and truly defined it out of existence - leaving Wand as the last true magic user in the known planes. In the wizard's final moments, he placed a curse on this invader to torment his soul for eternity, implanting a demonic mind to belittle and torment the upstart killer until the end of days. Still conceptually porous, however, Wand managed to warp the concept of this new auxilliary tether into an entity named \"Chat\", which he now quips to more often than it ever says anything back."
         this.weapon_relationship = "Ayo lmao this guy is tryna talk to me? Chat what do I say?"
         this.lore_origin = "Convergence"
         this.lore_temperament = "Temperamental"
@@ -6486,7 +6486,7 @@ class FishingRodBall extends WeaponBall {
         this.pronoun = PRONOUN.HE;
         this.tagline = "Fishing Rod would rather be anywhere else, his fights a small distraction from his real passion: extreme sport fishing. Despite this, he catches his opponents just as well as his fish, reeling them close and clubbing them senseless.";
         this.description = ""
-        this.lore_description = "Fishing Rod just wants to fish."
+        this.lore_description = "Fishing Rod is a once-in-a-generation talent by the least generous measure and once-in-a-millenium by any normal one. For most balls, tethering is an ordeal that can have days or even weeks of side effects, debilitating the host as conceptual flexing and pushing molds both entities into a shape where the two can coexist. Fishing Rod, though, simply did it one day while out fishing with his father. Not once, but tens of times, tethering once at a time to every tool in his tackle box, as if it was nothing, with so little struggle or fanfare that his father didn't even realise until they got back and found the fishing gear could no longer be removed. Some minds have speculated that Fishing Rod's incredible love of all things fishing may have caused this, but he spends so little time at the Arena outside of matches that verifying any theory has been a struggle."
         this.weapon_relationship = "Man, I just do this to pay the bills. Did you see my ballcarp I caught over on Remnath though?! Pretty sweet, right? Well. Yeah. Anyway, that's why. Bills."
         this.lore_origin = "Gulf-Peidmont Free States"
         this.lore_temperament = "Bored"
@@ -6923,15 +6923,15 @@ class FryingPanBall extends WeaponBall {
         this.quote = "You disrupted my energy balance. I had to do this.";
 
         this.pronoun = PRONOUN.HE;
-        this.tagline = "A line cook turned field provisioner turned restaurateur, Frying Pan doles out equal parts heal and harm ";
+        this.tagline = "A field provisioner turned restaurateur turned food scientist, Frying Pan doles out equal parts heal and harm to his customers, able to apply the powerful burn status effect.";
         this.description = ""
-        this.lore_description = "Fishing Rod just wants to fish."
-        this.weapon_relationship = "Man, I just do this to pay the bills. Did you see my ballcarp I caught over on Remnath though?! Pretty sweet, right? Well. Yeah. Anyway, that's why. Bills."
-        this.lore_origin = "Gulf-Peidmont Free States"
-        this.lore_temperament = "Bored"
-        this.lore_affiliation = "South Water Anglers' Club (and The Grand Arena)"
-        this.lore_alignment = "neutral"
-        this.lore_birthday = "11th Feb"
+        this.lore_description = "Contrary to what one may believe at first glance, balls do indeed need to eat. Ball historians often consider the conceptual overwrite that caused this to have equal importance as the one that caused gravity, or, of course, deathlessness. When the ancient planar travellers brought the concept to a not-yet-unified Remnath, the idea spread like wildfire and almost wiped out the race as a whole. Since that point, food has become a self-reinforcing concept underpinning balls' existence, much like gravity and tethering. However, the eating process is indeed quite different. Frying Pan describes it as \"more conceptual than physical\", much like birth - where the form and intent of the food is paramount and the cooking process is more like painting than cooking (to loosely translate an idiom). At first a field provisioner in the war, Frying Pan felt himself empathising more and more with the humans who seemed to care so much about things like smell, looks and taste that he was practically happy to be stuck on our side when the seam closed. A strong campaigner for peace even before talks began, Frying Pan found friends in the culinary masters of our world, enrapturing them with ballkind's cooking methods and being enraptured in turn by his colleagues' myriad creations. After he officially became a citizen of our plane, he set about founding a restaurant based on a simple idea of cultural exchange: ball food for humans and human food for balls."
+        this.weapon_relationship = "Cooking in combat is quite the rush! You must remind me to tell my friends about that fried stew dish that took out Axe last week!"
+        this.lore_origin = "Convergence"
+        this.lore_temperament = "Curious"
+        this.lore_affiliation = "Taste of Remnath"
+        this.lore_alignment = "green"
+        this.lore_birthday = "2nd Jun"
 
         this.default_colour = Colour.from_hex("#6dda7a")
 
@@ -7219,6 +7219,17 @@ class CardsBall extends WeaponBall {
         this.level_description = "Increases card draw and reshuffle speed. Every 25 levels allows another hand draw from the deck before shuffling.";
         this.max_level_description = "Starts with +8 luck.";
         this.quote = "...Is this your card? Well, I suppose it doesn't matter now.";
+
+        this.pronoun = PRONOUN.HE;
+        this.tagline = "Permanently banned from every casino on every plane, Cards nonetheless chases the rush of gambling, pulling out wildly different effects in combat with each new hand.";
+        this.description = ""
+        this.lore_description = "Because of balls' unique conceptual porosity, they often take on very significant changes based on the environment in which they spent their childhood. For Cards, this meant lots and lots of gambling. So much, in fact, that the combined wishes of every being wishing for a windfall imbued Cards with an almost inexhaustible supply of fortune. Over time, he became more and more lucky - no matter what he did or where he did it, fate favoured him, and in a game of chance he simply could not lose. Unfortunately, Cards quite liked gambling, and being unable to lose took quite a lot of the fun out of it. Once he was banned by every casino ever created in past, present and future, he realised he needed to find something else to slake his thirst. The Grand Arena seemed a choice as good as any."
+        this.weapon_relationship = "There's enough moving parts in a fight that I don't just instantly rip a royal flush like I normally do, which is good! Problem is, I think my luck is still increasing... soon I'll need to move on and find something even more variable."
+        this.lore_origin = "Center Plane City"
+        this.lore_temperament = "Lucky"
+        this.lore_affiliation = "The Grand Arena"
+        this.lore_alignment = "red"
+        this.lore_birthday = "19th Apr"
 
         this.default_colour = Colour.from_hex("#df5120")
 
@@ -8309,6 +8320,17 @@ class TranslocatorBall extends WeaponBall {
         this.max_level_description = "Throws a fan of knives after teleporting.";
         this.quote = "i] ;fIfeel a lllit'le b@it   uhhhhhh  =2]wooozy/.,";
 
+        this.pronoun = PRONOUN.SHE;
+        this.tagline = "With a tool much stronger than the hollow shell of intelligence wielding it, Translocator rips through time and space to dodge attacks and keep her enemies guessing.";
+        this.description = ""
+        this.lore_description = "Translocator ripped through space long after the convergence, summarily wiping out in a crater after the collective conceptual tide of her much more modern bretheren turned on gravity and a half dozen other physical laws around her. Whether due to the translocation or some conceptual incompatibility with our plane, she has been incoherent since, unable to vocalise more than very basic sentences or indicate any real presence of memory. Her combat instincts seem to be the only truly intact part of her and, when fighting, her clarity seemed to increase, so in the interests of science she was inaugurated into the Grand Arena as a guest, before unprecedented ratings turned her into a full-time competitor."
+        this.weapon_relationship = "ih,,. hl   hah-=a.. yehi9lh.        bal;l"
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Delirious"
+        this.lore_affiliation = "The Grand Arena"
+        this.lore_alignment = "red"
+        this.lore_birthday = "Unknown"
+
         this.default_colour = Colour.from_hex("#8bdee5")
 
         this.tier = TIERS.A;
@@ -8727,6 +8749,17 @@ class DrillBall extends WeaponBall {
         this.level_description = "Increases the damage of the drill while dashing and reduces dash cooldown slightly.";
         this.max_level_description = "Burrowing has no cooldown but lasts for half the time.";
         this.quote = "If there's a wall in my way, I'll smash it down!\nIf there's no path forward, I'll carve one myself!!\nJust who the hell do you think I am?!";
+
+        this.pronoun = PRONOUN.HE;
+        this.tagline = "With a great appreciation of ancient East Asian animation series and a frankly enormous weapon, Drill wants to prove that the old ways of determination and friendship work just as well in the modern age.";
+        this.description = ""
+        this.lore_description = "Aside from archaeology labs and collector-hoarders, Drill might be one of the few people left in the world that still owns a disc player. Even fewer would be the count of those who own a collection of ancient TV series from East Asia on the original media, but Drill is one of them. Originally from his grandfather, his collection of 'anmay' was all he cared about watching - not ecasts or streams, nothing. As he grew to espouse the ancient values represented inside those disks, he collected more and more of the relics, eventually becoming the owner of the biggest collection in the world. Though most are a little boring by today's standards, some of Drill's friends - especially Axe - seem to like them."
+        this.weapon_relationship = "It's kind of awesome having all these things to quote and nobody even knows what you're quoting. Believe it!"
+        this.lore_origin = "Center Plane City"
+        this.lore_temperament = "Genki"
+        this.lore_affiliation = "Remnath Anmay Appreciation Group"
+        this.lore_alignment = "red"
+        this.lore_birthday = "15th Jul"
 
         this.default_colour = Colour.from_hex("#8d6136")
 
@@ -9225,6 +9258,17 @@ class WrenchBall extends WeaponBall {
         this.level_description = "Increases metal gain on hit.";
         this.max_level_description = "Damage from turrets also contributes a reduced amount of metal.";
         this.quote = "Dispenser? Never heard of anythin' like that.\nYa sure yer not confusin' me for someone else?";
+
+        this.pronoun = PRONOUN.HE;
+        this.tagline = "Capable of building powerful weapons from little more than scrap, Wrench fills the arena with his constructions and lets them do the dirty work.";
+        this.description = ""
+        this.lore_description = "A master artificer trained in the Magnum estate since birth, Wrench is the mastermind behind the monumental infrastructure that permits interplanar transport and broadcasting to and from the Grand Arena. Every machine and construction in Center Plane City even vaguely related to Magnum likely had Wrench's involvement, even (though she would never admit it...) Railgun's own weapon! Though his combat skills pale in comparison to his construction skills, he can nonetheless hold his own against even the arena regulars, though in a slightly more unconventional way than most. Though he is far from the most popular, a hard core of fans rejoices whenever he gets screen time - and he is deeply grateful for every single one of them."
+        this.weapon_relationship = "Y'know, turrets ain't exactly new to me. Back when Railgun was jus' a lil' kid, we'd get up to all manner of roughhousin' - but don't tell Magnum I said that, y'hear?"
+        this.lore_origin = "Center Plane City"
+        this.lore_temperament = "Industrious"
+        this.lore_affiliation = "Balls Broadcasting Corporation"
+        this.lore_alignment = "blue"
+        this.lore_birthday = "1st Jan"
 
         this.default_colour = Colour.from_hex("#bb1c1b")
 

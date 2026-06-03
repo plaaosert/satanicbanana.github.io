@@ -10,6 +10,17 @@ class SmartLongsword extends WeaponBall {
         this.max_level_description = "This ball has no awakening effect.";
         this.quote = "Taste true power.";
 
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
+
         this.default_colour = Colour.from_hex("#f9edff")
 
         this.tier = TIERS.X;
@@ -150,6 +161,17 @@ class SmartBowBall extends WeaponBall {
         this.name = "Smart Bow";
         this.description_brief = "Fires arrows. Locks onto the closest target and tries to predict its movement.";
         this.quote = "My creator did not endow me with a victory quote.";
+
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
 
         this.default_colour = Colour.from_hex("#b374c3")
 
@@ -348,6 +370,17 @@ class MissileLauncherBall extends WeaponBall {
         this.description_brief = "Fires an explosive homing missile.";
         this.quote = "My creator did not endow me with a victory quote.";
 
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
+
         this.default_colour = Colour.from_hex("#39c652")
 
         this.tier = TIERS.S;
@@ -457,6 +490,17 @@ class ClusterfuckBall extends WeaponBall {
         this.name = "Clusterfuck";
         this.description_brief = "Has entirely too much.";
         this.quote = "My creator did not endow me with a victory quote.";
+
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
 
         this.default_colour = Colour.from_hex("#07e7f8")
 
@@ -646,6 +690,17 @@ class TurretBall extends SmartBowBall {
         this.name = "Smart Turret";
         this.description_brief = "Fires a whole lot of bullets. Locks onto the closest target and tries to predict its movement.";
         this.quote = "Thanks @TheGlimGuy.";
+
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "-";
+        this.description = ""
+        this.lore_description = "We might know more about this ball... one day."
+        this.weapon_relationship = "..."
+        this.lore_origin = "Unknown"
+        this.lore_temperament = "Unknown"
+        this.lore_affiliation = "Unknown"
+        this.lore_alignment = "neutral"
+        this.lore_birthday = "Unknown"
 
         this.default_colour = Colour.from_hex("#d6ffec")
 

@@ -10,6 +10,17 @@ class FlamethrowerBall extends WeaponBall {
         this.max_level_description = "The flamethrower does not stop shooting while charging the fireball.";
         this.quote = "Oh, oh, sorry! Just doing my job!";
 
+        this.pronoun = PRONOUN.SHE;
+        this.tagline = "Dedicated, loyal and far more humble than she should be, wielding the powerful burn status effect and the ability to shoot devastating fireballs.";
+        this.description = ""
+        this.lore_description = "For a time, flamethrowers were used to clean streets in Center Plane City, until health and safety regulations effectively illegalised the profession overnight. Flamethrower, an overachiever by nature, was especially disappointed, having gone so far so as to tether to her tool in order to do a better job of cleaning. Luckily enough, flamethrowers aren't half bad in combat either, taking advantage of most balls' natural weakness to conceptually dense things like fire. Though she loves the praise, she still hasn't quite gotten used to the whole \"combat\" thing, since to her the flamethrower isn't really a weapon at all."
+        this.weapon_relationship = "People still ask me, hey, how can you tether if you don't consider it a weapon and... well, I don't want to be mean, but that's just not how we do it! Or ever did it! Combine Harvester doesn't consider it a weapon, right? When we say \"weapon\", we usually mean \"tool\" without meaning it, and even then, it's far from exact, and with the changes of our concept since the convergence, we- Oh, sorry, did I talk too long? I'm sorry!"
+        this.lore_origin = "Center Plane City"
+        this.lore_temperament = "Shy"
+        this.lore_affiliation = "The Grand Arena"
+        this.lore_alignment = "green"
+        this.lore_birthday = "2nd Feb"
+
         this.default_colour = Colour.from_hex("#fb5f04")
 
         this.tier = TIERS.APLUS;
@@ -272,6 +283,17 @@ class BallLightningBall extends WeaponBall {
         this.max_level_description = "Additional ball lightnings can create more smaller ball lightnings!";
         this.quote = "bzzt";
 
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "Once a ball but now a force of nature, each strike creating more volatile nodes of lightning.";
+        this.description = ""
+        this.lore_description = "Bad luck, really, for the ball that became Ball Lightning. Not two days old and in a freak act of nature, it was struck in front of its parents' eyes by a once-in-a-century bolt of lightning. Whether due to the newborn's almost maximal conceptual porosity at the time or something more complex, the lightning bolt was tethered and captured in its entirety, and for a moment it seemed as if the most powerful ball ever created might right there have been born. However, as the raw concept started to rupture outwards, it quickly became obvious that there would be no such thing - at least, not in the shape of a ball we might recognise. As lightning crackled from the fissures across its body, it began to rise in the air... and vanished in a puff of sulfurous gas. Now a force of nature, Ball Lightning appears, often lethally, at times of great emotion and stress - including during televised battles. It seems to enjoy the cables."
+        this.weapon_relationship = "bzz"
+        this.lore_origin = "London"
+        this.lore_temperament = "Shy"
+        this.lore_affiliation = "The Grand Arena"
+        this.lore_alignment = "white"
+        this.lore_birthday = "2nd Feb"
+
         this.default_colour = Colour.from_hex("#87d9f7")
 
         this.tier = TIERS.S;
@@ -502,6 +524,218 @@ class BallLightningBall extends WeaponBall {
     }
 }
 
+class KhopeshBall extends WeaponBall {
+    static ball_name = "Khopesh";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed, clone_level=0) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Khopesh";
+        this.description_brief = "On hit, creates an temporary intangible clone that lunges at the victim. Clones can create more clones, but each clone is smaller and more short-lived.";
+        this.level_description = "Increases damage and clone duration.";
+        this.max_level_description = "Clones gain +2 seconds of bonus duration each time they hit anything. Clones rotate at 2x speed permanently.";
+        this.quote = "Feel the wrath of my ancestors!";
+
+        this.pronoun = PRONOUN.SHE;
+        this.tagline = "The darling of the Middle Eastern fighting scene, Khopesh summons ancestral echoes to rain hell upon her opponents.";
+        this.description = ""
+        this.lore_description = "Calling upon a family line stretching to before the founding of Remnath, Khopesh calls the fury of the ancients into the modern day! With each strike, she shows her enemies the strength of thousands, and when they're down and beaten, she teaches them what it truly means... to oppose history."
+        this.weapon_relationship = "...It's just a character. Works well with the media, especially overseas. They love an exotic fighter. Anyway, the ancestors are actually made of sand and yes, the khopesh does let me do that."
+        this.lore_origin = "Qalyubia Floating Supermonument"
+        this.lore_temperament = "Pragmatic"
+        this.lore_affiliation = "Qital Akurat Almajidat fi Shamun"
+        this.lore_alignment = "blue"
+        this.lore_birthday = "8th Oct"
+
+        this.default_colour = Colour.from_hex("#ffe48f")
+
+        this.tier = TIERS.APLUS;
+
+        this.category = CATEGORIES.HIGHTIER;
+        this.tags = [
+            TAGS.MELEE,
+            TAGS.OFFENSIVE,
+            TAGS.LEVELS_UP,
+            TAGS.CAN_AWAKEN,
+        ];
+
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.S;
+            this.tags = [
+                TAGS.MELEE,
+                TAGS.OFFENSIVE,
+                TAGS.PROJECTILES,
+                TAGS.LEVELS_UP,
+                TAGS.CAN_AWAKEN,
+            ];
+        }
+
+        this.weapon_data = [
+            new BallWeapon(1, "khopesh", [
+                {pos: new Vector2(16 * 0.78125, 58), radius: 6},
+                {pos: new Vector2(24 * 0.78125, 58), radius: 6},
+                {pos: new Vector2(32 * 0.78125, 58), radius: 6},
+                {pos: new Vector2(40 * 0.78125, 58), radius: 6},
+                {pos: new Vector2(48 * 0.78125, 58), radius: 6},
+
+                {pos: new Vector2(58 * 0.78125, 64), radius: 6},
+                {pos: new Vector2(70 * 0.78125, 70), radius: 6},
+                {pos: new Vector2(82 * 0.78125, 72), radius: 6},
+                {pos: new Vector2(94 * 0.78125, 72), radius: 6},
+                {pos: new Vector2(106 * 0.78125, 72), radius: 6},
+                {pos: new Vector2(116 * 0.78125, 66), radius: 6},
+            ])
+        ];
+
+        // scales based on STARTING_HP
+        this.max_hp = this.max_hp * (100 / 100);
+        this.hp = this.max_hp;
+
+        this.damage_base = 4 + (this.level * 0.01 * (100/99));
+        this.speed_base = 120;
+        this.speed = this.speed_base;
+
+        this.speed_decel = 120;
+
+        this.clone_level = clone_level;
+
+        this.clone_dur = 10;
+        this.clone_dur_penalty_per_level = 0.4;
+
+        this.bonus_duration = 0;
+    }
+
+    weapon_step(board, time_delta) {
+        // rotate the weapon
+        this.rotate_weapon(0, this.speed * time_delta);
+        
+        this.speed = Math.max(this.speed_base, this.speed - (this.speed_decel * time_delta))
+    }
+
+    clone_self(around_target) {
+        let proto = KhopeshBall;
+
+        let new_ball = new proto(
+            board, this.mass, this.radius * (Math.pow(0.75, this.clone_level+1)), this.colour,
+            this.bounce_factor, this.friction_factor,
+            this.player, this.level, this.reversed,
+            this.clone_level + 1
+        );
+
+        new_ball.opacity = 0;
+        new_ball.gets_hit = false;
+        new_ball.takes_damage = false;
+        new_ball.ignore_bounds_checking = true;
+        new_ball.collision = false;
+
+        new_ball.show_stats = false;
+
+        new_ball.display_hp = false;
+
+        new_ball.speed *= 4;
+
+        if (this.level >= AWAKEN_LEVEL) {
+            new_ball.speed_base *= 2;
+        }
+
+        // position is random location around target, including OOB
+        let displacement = random_on_circle(this.position.distance(around_target.position) * 2, this.board.random);
+        let pos = around_target.position.add(displacement);
+
+        this.board.spawn_ball(new_ball, pos);
+
+        new_ball.set_velocity(displacement.mul(-2));
+        new_ball.weapon_data[0].angle = displacement.angle();
+        if (this.reversed) {
+            new_ball.weapon_data[0].angle = (Math.PI * 2) - new_ball.weapon_data[0].angle;
+        }
+
+        let start_time = this.board.duration;
+
+        let penalty_mul = Math.pow(this.clone_dur_penalty_per_level, this.clone_level);
+        
+        let end_t = this.clone_dur * penalty_mul;
+        let fade_t = Math.max(0, end_t - 0.5);
+
+        this.board.set_timer(new Timer(b => {
+            let t_original = b.duration - start_time
+            let t = Math.max(0, t_original - new_ball.bonus_duration);
+            if (t_original < 0.25) {
+                new_ball.opacity = t_original * 2.5;
+            } else {
+                new_ball.ignore_bounds_checking = false;
+                new_ball.collision = true;
+            }
+
+            if (t > fade_t) {
+                let prop = (t - fade_t) / (end_t - fade_t);
+
+                new_ball.opacity = Math.max(0, lerp(0.5, 0.0, prop));
+            } if (t > end_t) {
+                new_ball.hp = 0;
+                return false;
+            }
+            
+            return true;
+        }, 0.01, true));
+    }
+
+    die() {
+        let result = super.die();
+
+        if (this.clone_level >= 1) {
+            result.skip_default_explosion = true;
+        }
+
+        return result;
+    }
+
+    hit_other(other, with_weapon_index) {
+        let dmg = this.damage_base;
+        let result = super.hit_other(other, with_weapon_index, dmg);
+
+        this.clone_self(other);
+
+        if (this.level >= AWAKEN_LEVEL) {
+            this.bonus_duration += 3;
+        }
+
+        return result;
+    }
+
+    hit_other_with_projectile(other, with_projectile) {
+        let result = super.hit_other_with_projectile(other, with_projectile);
+
+        return result;
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Clones self on hit.`
+        )
+
+        this.write_desc_line(
+            `Damage: ${this.damage_base.toFixed(2)}`
+        )
+    }
+
+    render_reduced_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        if (this.level >= AWAKEN_LEVEL) {
+            this.write_desc_line(
+                `Clones throw their weapon on expiry, which can clone again.`, true
+            )
+        } else {
+            this.write_desc_line(
+                `Clones self on hit.`
+            )
+        }
+    }
+}
+
 class BallLightningLightningProjectile extends HitscanProjectile {
     constructor(board, source, source_weapon_index, position, damage, target_position) {
         super(board, source, source_weapon_index, position, damage, target_position);
@@ -693,5 +927,5 @@ class FlamethrowerFireballProjectile extends StraightLineProjectile {
 }
 
 let campaign_high_tier_selectable_balls = [
-    FlamethrowerBall, BallLightningBall
+    FlamethrowerBall, BallLightningBall, KhopeshBall
 ]

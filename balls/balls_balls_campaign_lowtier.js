@@ -10,6 +10,17 @@ class ShivBall extends WeaponBall {
         this.max_level_description = "The thrown shiv reflects off walls up to twice.";
         this.quote = "I'm gonna getcha! Hehehehe!";
 
+        this.pronoun = PRONOUN.HE;
+        this.tagline = "A bloodthirsty and wicked ball stopped only by the fact that he was born under three months ago.";
+        this.description = ""
+        this.lore_description = "In recent times, prospective Arena combatants have been warned of a terrifying entity named Shiv, so violent and terrible that his time in the Arena isn't a job but a prison sentence... until they actually fight him and realise those rumours were actually about Dagger. Shiv might one day hold that reputation too, though, if his parents don't step in soon."
+        this.weapon_relationship = "Hahahahahaha!! Blood! Kill! Death! Hehehehehe!!"
+        this.lore_origin = "Center Plane City"
+        this.lore_temperament = "Deranged"
+        this.lore_affiliation = "The Grand Arena"
+        this.lore_alignment = "red"
+        this.lore_birthday = "16th Jun"
+
         this.default_colour = Colour.from_hex("#da2532")
 
         this.tier = TIERS.C;
