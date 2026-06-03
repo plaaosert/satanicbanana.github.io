@@ -449,4 +449,17 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
         ballmanac_back_to_index();
     }
+
+    let resizefn = () => {
+        let w = window.innerWidth;
+
+        let v = Math.floor((w * 0.7) / 166);
+
+        document.querySelectorAll(".opt-list").forEach(e => {
+            e.style.gridTemplateColumns = `repeat(${v}, minmax(166px, 1fr))`;
+        })
+    }
+
+    resizefn();
+    window.addEventListener("resize", resizefn);
 })

@@ -404,7 +404,9 @@ body {
 
 .opt-list {
     display: grid;
-    grid-template-columns: repeat(round(to-zero, calc(70vw / 166px)), minmax(166px, 1fr));
+
+    --v: round(to-zero, calc(70vw / 166px));
+    grid-template-columns: repeat(var(--v), minmax(166px, 1fr));
     
     padding-bottom: 16px;
     padding-top: 16px;
