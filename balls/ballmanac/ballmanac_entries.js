@@ -54,7 +54,7 @@ let game_entries = [
     
     new Entry(
         "Category", Colour.from_hex("#eee"),
-        `A category is a general theme that a ball fits into. The deepest category is <span style='color:${CATEGORIES_INFO.STANDARD.col.css()}; background-color:${CATEGORIES_INFO.STANDARD.col.lerp(Colour.black, 0.8).css()}'>STANDARD</span>, which contains balls that are explicitly balance tested against all others of the category to ensure each one has a ~50% average winrate. These balls are the primary focus of campaign mode alongside <span style='color:${CATEGORIES_INFO.HIGHTIER.col.css()}; background-color:${CATEGORIES_INFO.HIGHTIER.col.lerp(Colour.black, 0.8).css()}'>HIGHTIER</span> and <span style='color:${CATEGORIES_INFO.LOWTIER.col.css()}; background-color:${CATEGORIES_INFO.LOWTIER.col.lerp(Colour.black, 0.8).css()}'>LOWTIER</span> balls.<br><br>List of categories:<br><br>${
+        `A category is a general theme that a ball fits into. The deepest category is <span style='color:${CATEGORIES_INFO.STANDARD.col.css()}; background-color:${CATEGORIES_INFO.STANDARD.col.lerp(Colour.black, 0.8).css()}'>STANDARD</span>, which contains balls that are explicitly balance tested against all others of the category to ensure each one has a ~50% average winrate. These balls are the primary focus of <span class='link' data-linkto='campaign'>Campaign mode (WIP)</span> alongside <span style='color:${CATEGORIES_INFO.HIGHTIER.col.css()}; background-color:${CATEGORIES_INFO.HIGHTIER.col.lerp(Colour.black, 0.8).css()}'>HIGHTIER</span> and <span style='color:${CATEGORIES_INFO.LOWTIER.col.css()}; background-color:${CATEGORIES_INFO.LOWTIER.col.lerp(Colour.black, 0.8).css()}'>LOWTIER</span> balls.<br><br>List of categories:<br><br>${
             Object.keys(CATEGORIES).map(t => {
                 let info = CATEGORIES_INFO[t];
                 return `<span style='background-color:${info.col.lerp(Colour.black, 0.8).css()}; color:${info.col.css()}'>\xa0${t}\xa0</span><br>${info.desc}`
@@ -95,7 +95,7 @@ let game_entries = [
 
     new Entry(
         "Upgrade materials", Colour.from_hex("#fff"),
-        "Upgrade materials are used for ball upgrades in Campaign mode. They are also the namesakes for ball alignments.<br><br>List of upgrade materials/alignments:<br><br>" +
+        "Upgrade materials are used for ball upgrades in <span class='link' data-linkto='campaign'>Campaign mode (WIP)</span>. They are also the namesakes for ball alignments.<br><br>List of upgrade materials/alignments:<br><br>" +
         `${Object.keys(materials2sprites).map(k => {
             let desc = materials2descs[k];
             let sprs = materials2sprites[k];
