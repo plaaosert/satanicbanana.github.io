@@ -244,6 +244,253 @@ class ShivProjectile extends InertiaRespectingStraightLineProjectile {
     }
 }
 
+class BallBall extends WeaponBall {
+    static ball_name = "Ball";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        // TODO this one should multi-awaken in campaign, having no level cap
+        this.name = "Ball";
+        this.description_brief = "Throws random mini-balls. Mini-balls bounce around and damage the first enemy they hit. Mini-balls are destroyed after hitting or getting hit by anything.";
+        this.level_description = "Reduces throw delay.";
+        this.max_level_description = "Every 100 levels, gains a new ball thrower, multiplies all damage output by 1.5x and increases max HP by 25.";
+        this.quote = "...";
+
+        this.pronoun = PRONOUN.IT;
+        this.tagline = "An amalgamation of ball concept that seems to never stop growing.";
+        this.description = "This ball may be able to break past level 100..."
+        this.lore_description = "In the annals of history, the story of Ball has served as a cautionary reminder of why tethering another ball must never be attempted. Though the process would usually result in mutual annihilation, it was not so for Ball, who stayed alive, but more as a natural force than a conscious being. Who tethered who in the beginning is, at this point, mostly immaterial - besides, many thousands of balls have since been absorbed into the tether, despite ballkind's attempts to destroy it. Though waning belief in it has weakened it, the hushed stories told over campfires keep it alive. A run in the Grand Arena might be enough to bring it to power levels never known, even in the depths of history - but nobody would be fool enough to let that happen!"
+        this.weapon_relationship = "..."
+        this.lore_origin = "Beginning of Time"
+        this.lore_temperament = "Hungry"
+        this.lore_affiliation = "Independent"
+        this.lore_alignment = "green"
+        this.lore_birthday = "Unknown"
+
+        this.default_colour = Colour.from_hex("#5062e5")
+
+        this.awaken_tier = Math.floor((this.level+1) / 100);
+
+        this.tier = [
+            TIERS.C,
+            TIERS.B,
+            TIERS.A, TIERS.APLUS,
+            TIERS.S, TIERS.SPLUS,
+            TIERS.X
+        ][Math.min(6, this.awaken_tier)]
+
+        this.category = CATEGORIES.LOWTIER;
+        this.tags = [
+            TAGS.RANGED,
+            TAGS.OFFENSIVE,
+            TAGS.CHILDREN,
+            TAGS.LEVELS_UP,
+            TAGS.CAN_AWAKEN,
+        ];
+
+        this.level_limit = 999;
+
+        this.weapon_data = [
+            
+        ];
+
+        for (let i=0; i<(this.awaken_tier+1); i++) {
+            this.weapon_data.push(new BallWeapon(0.75, "ballball_red", [
+                // {pos: new Vector2(16, 64), radius: 64},
+            ]));
+
+            this.weapon_data[i].offset = new Vector2(-32, 0);
+            this.weapon_data[i].reversed = i%2==1;
+        }
+
+        this.possible_cols = [
+            "red", "yellow", "green", "blue", "orange", "dgreen",
+            "seagreen", "magenta", "violet", "pink"
+        ];
+
+        this.get_new_cols();
+
+        // scales based on STARTING_HP
+        this.max_hp = this.max_hp * ((25 * (1 + (this.awaken_tier))) / 100) + 25;
+        this.hp = this.max_hp;
+
+        this.damage_base = 1 * Math.pow(1.5, this.awaken_tier);
+
+        this.base_speed = 200;
+
+        let throw_reduction = (100/99) * 0.001 * this.level;
+        this.throw_cooldowns_max = [Math.max(0.1, 0.7-throw_reduction), Math.max(0.1, 1.6-throw_reduction)];
+        this.throw_cooldowns = new Array(this.weapon_data.length).fill(0).map(_ => {
+            return random_float(...this.throw_cooldowns_max, this.board.random);
+        });
+    }
+
+    get_new_cols() {
+        this.cur_cols = new Array(this.weapon_data.length).fill("red");
+
+        for (let i=0; i<this.weapon_data.length; i++) {
+            this.get_new_col(i);
+        }
+    }
+
+    get_new_col(index) {
+        this.cur_cols[index] = seeded_random_from_array(this.possible_cols, this.board.random)
+        this.weapon_data[index].sprite = `ballball_${this.cur_cols[index]}`;
+    }
+
+    weapon_step(board, time_delta) {
+        // rotate the weapon
+        for (let i=0; i<this.weapon_data.length; i++) {
+            this.rotate_weapon(i, this.base_speed * time_delta);
+            this.throw_cooldowns[i] -= time_delta;
+            if (this.throw_cooldowns[i] <= 0) {
+                this.throw_cooldowns[i] += random_float(...this.throw_cooldowns_max, this.board.random);
+
+                let position = this.get_weapon_offset(i).add(this.position);
+                let velocity = new Vector2(8000 * random_float(0.5, 2, this.board.random), 0).rotate(this.weapon_data[i].angle)
+                let new_ball = new BallBallBall(
+                    this.board,
+                    this.mass * 0.25, this.radius * 0.5, this.colour,
+                    this.bounce_factor, this.friction_factor,
+                    this.player, this.level, this.cur_cols[i]
+                )
+
+                new_ball.apply_invuln(BALL_INVULN_DURATION);
+                new_ball.show_stats = false;
+
+                new_ball.set_velocity(velocity);
+                new_ball.parent = this;
+
+                let part = new Particle(position, 0, 0.75, entity_sprites.get(`ballball_${this.cur_cols[i]}`), 0, 999999);
+                board.spawn_particle(part, position);
+                new_ball.linked_particle = part;
+                part.rotation_angle = this.weapon_data[i].angle;
+                
+                board.spawn_ball(new_ball, position);
+                
+                this.get_new_col(i);
+            }
+        }
+    }
+
+    hit_other(other, with_weapon_index) {
+        let dmg = this.damage_base;
+        let result = super.hit_other(other, with_weapon_index, dmg);
+
+        return result;
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Damage: ${this.damage_base.toFixed(2)}`
+        )
+    }
+
+    render_reduced_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        if (this.level >= AWAKEN_LEVEL) {
+            this.write_desc_line(
+                `More ball throwers (${this.weapon_data.length}) and ${this.damage_base}x damage.`, true
+            )
+        } else {
+            this.write_desc_line(
+                `Periodically throws balls.`
+            )
+        }
+    }
+}
+
+class BallBallBall extends WeaponBall {
+    static ball_name = "BallBall Ball";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, ballcolour) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, false);
+
+        this.name = "BallBall Ball";
+        this.description_brief = "Fired from the ball ball";
+        this.level_description = "-";
+        this.max_level_description = "-";
+
+        this.tags = [];
+
+        this.weapon_data = [
+            new BallWeapon(0.75, `ballball_${ballcolour}`, [
+                {pos: new Vector2(64, 64), radius: 25},
+            ])
+        ];
+
+        this.weapon_data[0].offset = new Vector2(-69, 0);
+
+        this.lifetime = 0;
+        this.duration = Number.POSITIVE_INFINITY;
+
+        this.hp = 1;
+        this.max_hp = 1;
+        this.show_stats = false;
+
+        this.parent = null;
+
+        this.linked_particle = null;
+
+        this.display = false;
+
+        this.rotation_speed = random_float(240, 480);
+    }
+
+    update_particles(time_delta) {
+        super.update_particles(time_delta);
+
+        this.linked_particle.set_pos(this.position);
+        this.linked_particle.rotation_angle += this.rotation_speed * (time_delta * (Math.PI / 180))
+    }
+
+    weapon_step(board, time_delta) {
+        this.lifetime += time_delta;
+        if (this.lifetime >= this.duration) {
+            this.hp = 0;
+        }
+    }
+
+    hit_other(other, with_weapon_index) {
+        let result = this.parent.hit_other(other, with_weapon_index);
+        this.hp -= 1;
+
+        return result;
+    }
+
+    parry_weapon(with_weapon_index, other_ball, other_weapon_id) {
+        // this deliberately does not call its super
+        // because we don't want these to count for tension
+        
+        this.hp -= 1;
+
+        other_ball.weapon_data[other_weapon_id]?.reverse()
+    }
+
+    parry_projectile(with_weapon_index, projectile) {
+        // this deliberately does not call its super
+        // because we don't want these to count for tension
+
+        this.hp -= 1;
+    }
+
+    die() {
+        this.linked_particle.lifetime = Number.POSITIVE_INFINITY;
+
+        this.board.spawn_particle(new Particle(
+            this.position, 0, 0.35, entity_sprites.get("explosion_small"), 24, 3, false
+        ), this.position);
+
+        // TODO sound
+
+        return {skip_default_explosion: true};
+    }
+}
+
 let campaign_low_tier_selectable_balls = [
-    ShivBall,
+    ShivBall, BallBall
 ]

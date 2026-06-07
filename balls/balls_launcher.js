@@ -1034,7 +1034,7 @@ function create_testball(proto, level=0, colour=null, override_boardsiz=null) {
 
     return b.spawn_ball(new proto(
         b, 1, default_ball_radius,
-        colour ?? Colour.white, null, null, {}, level+1, false
+        colour ?? Colour.white, null, null, {}, level, false
     ), Vector2.zero);
 }
 
@@ -1377,8 +1377,11 @@ function update_ball_selection_popup() {
     })
 
     // final cleanup (level slider)
+    selected_ball_info[ballid].level = Math.min(testball.level_limit, selected_ball_info[ballid].level);
+
     let e2 = elem.querySelector(".slide-supercontainer");
     e2.querySelector("#ball_level_number").textContent = selected_ball_info[ballid].level + 1;
+    e2.querySelector("input.slider").max = testball.level_limit+1;
     e2.querySelector("input.slider").value = selected_ball_info[ballid].level + 1;
     // and team for col
     e2.querySelector("input.slider").style.setProperty("--col", get_default_col(selected_ball_info[ballid].team, ball_proto).css());

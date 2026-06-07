@@ -402,6 +402,8 @@ class WeaponBall extends Ball {
         this.category = CATEGORIES.STANDARD;
         this.tags = [TAGS.UNTAGGED];
 
+        this.level_limit = 99;
+
         this.entry_animation = "impact";
         this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
         this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;

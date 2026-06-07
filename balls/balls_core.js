@@ -709,6 +709,17 @@ const entity_sprites = new Map([
 
     ["khopesh", 1, "weapon/"],
 
+    ["ballball_red", 1, "weapon/ballball/"],
+    ["ballball_yellow", 1, "weapon/ballball/"],
+    ["ballball_green", 1, "weapon/ballball/"],
+    ["ballball_blue", 1, "weapon/ballball/"],
+    ["ballball_orange", 1, "weapon/ballball/"],
+    ["ballball_dgreen", 1, "weapon/ballball/"],
+    ["ballball_seagreen", 1, "weapon/ballball/"],
+    ["ballball_magenta", 1, "weapon/ballball/"],
+    ["ballball_violet", 1, "weapon/ballball/"],
+    ["ballball_pink", 1, "weapon/ballball/"],
+
     ["explosion", 16, "explosion/"],  // Game Maker Classic
 
     ["lightning", 7, "lightning/"],
