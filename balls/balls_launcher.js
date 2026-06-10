@@ -800,23 +800,28 @@ function spawn_selected_balls() {
     
     let positions = POSITIONS;
 
-    let infos = [
+    let base_infos = [
         selected_ball_info.ball1,
         selected_ball_info.ball2,
         selected_ball_info.ball3,
         selected_ball_info.ball4
     ];
 
+    let infos = [];
+
     let ball_classes = [];
     for (let i=0; i<positions.length; i++) {
-        let value = infos[i].name;
-        if (infos[i].disabled)
+        let value = base_infos[i].name;
+        if (base_infos[i].disabled) {
             value = null;
+        }
 
         let ball_proto = selectable_balls.find(t => t.ball_name == value);
 
-        if (ball_proto)
+        if (ball_proto) {
             ball_classes.push(ball_proto);
+            infos.push(base_infos[i])
+        }
     }
 
     let cols_indexes = [];
@@ -849,18 +854,18 @@ function spawn_selected_balls() {
     }
 
     let ball_levels = [];
-    for (let i=0; i<cols.length; i++) {
+    for (let i=0; i<ball_classes.length; i++) {
         let lvl = infos[i].level;
         ball_levels.push(lvl);
     }
 
     let players = [];
-    for (let i=0; i<cols.length; i++) {
+    for (let i=0; i<ball_classes.length; i++) {
         players.push(make_default_player(cols_indexes[i]))
     }
 
     let skins = [];
-    for (let i=0; i<positions.length; i++) {
+    for (let i=0; i<ball_classes.length; i++) {
         let skin = infos[i].skin;
         skins.push(skin);
     }
