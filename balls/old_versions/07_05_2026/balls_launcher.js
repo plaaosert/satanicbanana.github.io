@@ -800,28 +800,23 @@ function spawn_selected_balls() {
     
     let positions = POSITIONS;
 
-    let base_infos = [
+    let infos = [
         selected_ball_info.ball1,
         selected_ball_info.ball2,
         selected_ball_info.ball3,
         selected_ball_info.ball4
     ];
 
-    let infos = [];
-
     let ball_classes = [];
     for (let i=0; i<positions.length; i++) {
-        let value = base_infos[i].name;
-        if (base_infos[i].disabled) {
+        let value = infos[i].name;
+        if (infos[i].disabled)
             value = null;
-        }
 
         let ball_proto = selectable_balls.find(t => t.ball_name == value);
 
-        if (ball_proto) {
+        if (ball_proto)
             ball_classes.push(ball_proto);
-            infos.push(base_infos[i])
-        }
     }
 
     let cols_indexes = [];
@@ -854,18 +849,18 @@ function spawn_selected_balls() {
     }
 
     let ball_levels = [];
-    for (let i=0; i<ball_classes.length; i++) {
+    for (let i=0; i<cols.length; i++) {
         let lvl = infos[i].level;
         ball_levels.push(lvl);
     }
 
     let players = [];
-    for (let i=0; i<ball_classes.length; i++) {
+    for (let i=0; i<cols.length; i++) {
         players.push(make_default_player(cols_indexes[i]))
     }
 
     let skins = [];
-    for (let i=0; i<ball_classes.length; i++) {
+    for (let i=0; i<positions.length; i++) {
         let skin = infos[i].skin;
         skins.push(skin);
     }
@@ -909,15 +904,6 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
         board.powerups_enabled = powerups;
 
         screen_to_game_scaling_factor = board.size.x / canvas_width;
-
-        set_camera_targets(board.size.div(2), map_config.initial_zoom_level, 1, 1);
-        fix_camera_targets();
-
-        view_offset = new Vector2(0, 0);
-        zoom_level = map_config.initial_zoom_level;
-        need_stwp_recache = true;
-
-        cutscene_time_stop_dur = 0;
 
         let skipping = searching || document.querySelector("#skip_intro_checkbox").checked;
 
@@ -2628,38 +2614,16 @@ document.addEventListener("DOMContentLoaded", function() {
 
         switch (code) {
             case "Minus": {
-                camera_zoom_target /= 1.25;
+                zoom_level /= 1.25;
                 need_stwp_recache = true;
                 
                 break;
             }
 
             case "Equal": {
-                camera_zoom_target *= 1.25;
+                zoom_level *= 1.25;
                 need_stwp_recache = true;
 
-                break;
-            }
-
-            case "KeyT": {
-                board.balls[0].speak([
-                    {
-                        text: "hello chat ",
-                        initial_delay: 0,
-                        delay_per_char: 0.1,
-                    },
-                    {
-                        text: "im normal",
-                        initial_delay: 0,
-                        delay_per_char: 0.2,
-                        mods: {
-                            shaking: true
-                        }
-                    },    
-                ], 14, 10)
-
-                cutscene_time_stop_dur = 100;
-                
                 break;
             }
 
@@ -2967,10 +2931,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     randomise_ball_info("ball1", "random-ball");
     randomise_ball_info("ball2", "random-ball");
-
-    selected_ball_info['ball1'].name = "dagger"
-    selected_ball_info['ball2'].name = "Super Dummy"
-    selected_ball_info['ball2'].level = 99;
 
     // force ball in slot 1 and slot 2
     // selected_ball_info.ball1.name = "Dummy";

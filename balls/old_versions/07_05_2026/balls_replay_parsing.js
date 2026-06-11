@@ -56,7 +56,7 @@ function parse_replay(replay_as_text) {
         throw Error("Replay doesn't have all necessary fields!");
     }
 
-    if (typeof GAME_VERSION !== "undefined" && !window.location.href.includes("description_generator")) {
+    if (typeof GAME_VERSION !== "undefined") {
         if (replay.game_version != GAME_VERSION) {
             if (replay.game_version == undefined) {
                 alert(
