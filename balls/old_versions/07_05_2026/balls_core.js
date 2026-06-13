@@ -1,15 +1,14 @@
 game_id = "balls";
 
-const FILES_PREFIX = "";
+const FILES_PREFIX = "../../";
 
-const GAME_VERSION = "08/06/2026";
+const GAME_VERSION = "07/05/2026";
 
 const AILMENT_CHARS = "➴☣♨";
 
 const layer_names = [
     "front",
     "debug_front",
-    "text_main",
     "debug_back",
     "ui1",
     "ui2",
@@ -55,15 +54,6 @@ let num_textures_needed = 0;
 
 const make_damage_numbers = true;
 
-let camera_position_target = null;
-let camera_position_lerp_intens = 1;
-
-let camera_zoom_target = null;
-let camera_zoom_lerp_intens = 1;
-
-let camera_operation_timeout_max = 0.001;
-let camera_operation_timeout = 0;
-
 let materials2sprites = {
     "neutral": ["Neutral", "wht", "#ccc"],
     "blue": ["Starmetal", "material_blue", "#9bf"],
@@ -104,8 +94,6 @@ let fully_loaded = false;
 
 let ending_game_timer_max = 200;
 let ending_game_timer = ending_game_timer_max;
-
-let cutscene_time_stop_dur = 0;
 
 const BALL_RENDERING_METHODS = {
     VECTOR: "VECTOR",
@@ -156,7 +144,7 @@ const AERO_LIGHTING_CONFIGS_INFO = {
 
 const AERO_BACKGROUNDS = {
     NONE: "NONE",
-    // RENDERED: "RENDERED",
+    RENDERED: "RENDERED",
     VISTA: "VISTA",
     PARALLAX_GRID: "PARALLAX_GRID",
     MACINTOSH: "MACINTOSH",
@@ -167,9 +155,9 @@ const AERO_BACKGROUNDS_INFO = {
         desc: "No background.",
     },
 
-    // [AERO_BACKGROUNDS.RENDERED]: {
-    //     desc: "A simple cube-like render.",
-    // },
+    [AERO_BACKGROUNDS.RENDERED]: {
+        desc: "A simple cube-like render.",
+    },
 
     [AERO_BACKGROUNDS.VISTA]: {
         desc: "An edited version of a Vista-style wallpaper: https://www.reddit.com/r/FrutigerAero/comments/1eqwt3s/windows_vistainspired_wallpapers_i_made_in_about/",
@@ -278,28 +266,6 @@ const map_configs = {
 
         initial_zoom_level: 1,
         camera_mode: CAMERA_MODES.STATIC,
-    },
-
-    "SUL": {
-        id: "SUL",
-        name: "Standard - Ultimates",
-        desc: "Same as Standard but with ultimates enabled.",
-        gravity: new Vector2(0, 9810),
-        size: 512 * 16,
-        extra_walls: board => null,
-        
-        // objects are generalised ball-like objects that optionally have collision,
-        // but do not interact with weapons
-        // they still run weaponsteps, but collision isn't checked with them
-        // they are usually, but may not be, kinematic
-        extra_objects: board => null,
-
-        extra_balls: board => null,
-
-        initial_zoom_level: 1,
-        camera_mode: CAMERA_MODES.STATIC,
-
-        ultimates_enabled: true
     },
 
     "SNG": {
@@ -489,10 +455,6 @@ const entity_sprites = new Map([
     ["hamer_mogul", 1, "weapon/"],
     ["money_particle", 10, "money/"],
     ["money_particle_r", 10, "money_r/"],
-
-    // Deltarune (Chapter 4) - Hammer of Justice / Rude Buster
-    ["hoj_orb", 5, "etc/hoj_orb/"],
-    ["hoj_dash", 5, "etc/hoj_orb/"],
 
     ["dagger", 1, "weapon/"],
     ["pellet", 1, "weapon/"],
@@ -767,13 +729,6 @@ const entity_sprites = new Map([
     ["explosion3", 8, "explosion3/"],  // Sonic Rush Adventure
 
     ["explosion_small", 10, "explosion_small/"],  // Sonic Rush Adventure
-
-    ["superflash1", 7, "superflash/"],
-    ["superflash2", 9, "superflash/"],
-    ["superflash3", 6, "superflash/"],
-
-    ["ult_flash", 6, "etc/ult_flash/"],
-    ["ult_point", 1, "etc/ult_flash/"],
 
     // Additionals
     ["LONGSORD", 1, "weapon/additional/"],
@@ -1114,6 +1069,11 @@ let audios_list = [
     // A3Zap [FF6 - SNES] + 59greenCherry [FF6 - SNES]
     ["powerup_clone", "snd/powerup_clone.mp3"],
 
+    // upusen https://upusen.bandcamp.com/
+    ["upusen_1", "https://scrimblo.foundation/uploads/bad_customer.mp3", "Bad customers", "upusen"],
+    ["upusen_2", "https://scrimblo.foundation/uploads/upusen_2.mp3", "Wednesday Is Almost Friday", "upusen"],
+    ["upusen_3", "https://scrimblo.foundation/uploads/upusen_not_good.mp3", "Not Good", "upusen"],
+
     ["noise", "snd/noise.mp3"],
 
     // https://soundeffect-lab.info/sound/battle/battle1.html
@@ -1125,21 +1085,13 @@ let audios_list = [
     ["lightningbolt2", "snd/lightningbolt2.mp3"],
     ["lightningbolt4", "snd/lightningbolt4.mp3"],
 
-    // Super Smash Bros. Ultimate: se_item_genesis_genesis.wav + se_item_smashball.wav
-    ["ultimate_activate", "snd/ultimate_activate.mp3"],
-
-    // Dragon Ball Z
-    ["aura_power_fluxing", "snd/aura_power_fluxing.mp3"],
-    ["aura_power_fluxing2", "snd/aura_power_fluxing2.mp3"],
+    // MAHJONG BANGERS
+    // https://downloads.khinsider.com/game-soundtracks/album/simple-ds-series-vol.-01-the-mahjong-nintendo-ds
+    ["mahjong_04", "https://scrimblo.foundation/uploads/simple_mahjong_04.mp3", "Track 4", "Simple DS Series Vol. 01: The Mahjong"],
+    ["mahjong_win", "https://scrimblo.foundation/uploads/simple_mahjong_jingle_win.mp3", "Jingle #2", "Simple DS Series Vol. 01: The Mahjong"],
+    ["mahjong_lose", "https://scrimblo.foundation/uploads/simple_mahjong_jingle_lose.mp3", "Jingle #7", "Simple DS Series Vol. 01: The Mahjong"],
 ]
 
-// buh
-for (let i=1; i<=11; i++) {
-    console.log(`snd/buh/buh${i}.mp3`);
-    audios_list.push([`buh${i}`, `snd/buh/buh${i}.mp3`]);
-}
-
-audios_list.push([`buh1_alt`, `snd/buh/buh1_alt.mp3`]);
 
 let titles = [
     "",
@@ -1150,26 +1102,9 @@ let titles = [
 ]
 
 if (new URLSearchParams(window.location.search).get("nomusic") !== "true") {
-    // upusen https://upusen.bandcamp.com/
-    audios_list.push(   
-        ["upusen_1", "https://scrimblo.foundation/uploads/bad_customer.mp3", "Bad customers", "upusen"],
-        ["upusen_2", "https://scrimblo.foundation/uploads/upusen_2.mp3", "Wednesday Is Almost Friday", "upusen"],
-        ["upusen_3", "https://scrimblo.foundation/uploads/upusen_not_good.mp3", "Not Good", "upusen"],
-    );
-    
     for (let i=1; i<=13; i++) {
         audios_list.push([`2048_${i}`, `https://scrimblo.foundation/uploads/2048_${i}.mp3`, titles[i], "2048 (3DS) -- Zbigniew Siatecki", true]);
     }
-}
-
-if (new URLSearchParams(window.location.search).get("mahjongmusic") !== "true") {
-    // MAHJONG BANGERS
-    // https://downloads.khinsider.com/game-soundtracks/album/simple-ds-series-vol.-01-the-mahjong-nintendo-ds
-    audios_list.push(
-        ["mahjong_04", "https://scrimblo.foundation/uploads/simple_mahjong_04.mp3", "Track 4", "Simple DS Series Vol. 01: The Mahjong"],
-        ["mahjong_win", "https://scrimblo.foundation/uploads/simple_mahjong_jingle_win.mp3", "Jingle #2", "Simple DS Series Vol. 01: The Mahjong"],
-        ["mahjong_lose", "https://scrimblo.foundation/uploads/simple_mahjong_jingle_lose.mp3", "Jingle #7", "Simple DS Series Vol. 01: The Mahjong"],
-    )
 }
 
 if (new URLSearchParams(window.location.search).get("noaudio") == "true") {
@@ -1226,7 +1161,7 @@ async function play_music(name, gain=null) {
     }
 }
 
-function play_audio_data(buffer_content, gain=null, pitch_mod=null) {
+function play_audio_data(buffer_content, gain=null) {
     let source = audio_context.createBufferSource();
 
     source.buffer = buffer_content;
@@ -1235,14 +1170,6 @@ function play_audio_data(buffer_content, gain=null, pitch_mod=null) {
 
     if (gain) {
         let new_gain_node = audio_context.createGain();
-        new_gain_node.connect(audio_context.destination);
-        new_gain_node.gain.setValueAtTime(gain, audio_context.currentTime);
-
-        mod_node = new_gain_node;
-    }
-
-    if (pitch_mod) {
-        let new_pitch_node = audio_context.create
         new_gain_node.connect(audio_context.destination);
         new_gain_node.gain.setValueAtTime(gain, audio_context.currentTime);
 
@@ -1260,7 +1187,7 @@ function play_audio_data(buffer_content, gain=null, pitch_mod=null) {
     return {idx: audio_playing.length - 1, obj: obj};
 }
 
-async function play_audio(name, gain=null, pitch_mod=null) {
+async function play_audio(name, gain=null) {
     // this may end up needing to fetch the audio data if it isn't preloaded
     // in that case, finish loading and set up the promise to play once decoded
     if (muted)
@@ -1276,7 +1203,7 @@ async function play_audio(name, gain=null, pitch_mod=null) {
         }
 
         if (!audio_content[3]) {
-            data = play_audio_data(audio_content[0], gain, pitch_mod);
+            data = play_audio_data(audio_content[0], gain);
         } else {
             // for some reason it didn't load. log and don't play
             console.log(`Audio ${name} didn't load on demand for some reason`);
@@ -1346,13 +1273,6 @@ function point_collides_line(pos, radius, line) {
     return distance < radius;  
 }
 
-const PARTICLE_TYPE = {
-    NORMAL: 0,
-    TEXT: 1,
-    LINE: 2,
-    BALL: 3,
-}
-
 class Particle {
     static id_inc = 0;
 
@@ -1378,26 +1298,14 @@ class Particle {
 
         this.hide = false;
 
-        this.typ = PARTICLE_TYPE.NORMAL;
-
-        // time_locked particles will pause alongside other gameobjects
-        // when any form of time stop happens (e.g. cutscene time stop)
-        this.time_locked = true;
-
         /** @type {[ParticleComponent]} */
         this.components = [];
-    }
-
-    expire() {
-        this.lifetime = Number.POSITIVE_INFINITY;
     }
 
     /** @param {ParticleComponent} component  */
     add_component(component) {
         component.on_add(this);
         this.components.push(component);
-
-        return this;
     }
 
     set_pos(to) {
@@ -1446,154 +1354,6 @@ class ParticleComponent {
 
     pass_time(particle, time_delta) {
         // blank
-    }
-}
-
-class SpriteTrailParticleComponent extends ParticleComponent {
-    constructor(board, lifetime_start=0, initial_opacity=1, pow=1, duration=0.5, freq=0.02) {
-        super(board);
-
-        this.lifetime_start = lifetime_start;
-        this.initial_opacity = initial_opacity;
-        this.pow = pow;
-
-        this.trail_duration = duration;
-
-        this.freq_max = freq;
-        this.freq = this.freq_max;
-    }
-
-    pass_time(particle, time_delta) {
-        this.freq -= time_delta;
-        while (this.freq <= 0) {
-            this.freq += this.freq_max;
-
-            let newpart = new Particle(
-                particle.position, particle.rotation_angle,
-                particle.size / PARTICLE_SIZE_MULTIPLIER,
-                particle.sprites, 0, this.trail_duration,
-                true
-            );
-
-            newpart.add_component(new FadeOutParticleComponent(
-                this.board, this.lifetime_start, this.initial_opacity, this.pow
-            ));
-
-            newpart.add_component(new FrameControlParticleComponent(
-                this.board, particle.cur_frame
-            ));
-
-            newpart.time_locked = particle.time_locked;
-            newpart.render_behind = particle.render_behind;
-            newpart.alternative_layer = particle.alternative_layer;
-
-            this.board.spawn_particle(newpart, particle.position);
-        }
-    }
-}
-
-class FrameControlParticleComponent extends ParticleComponent {
-    constructor(board, initial_frame=0) {
-        super(board);
-        this.frame = initial_frame;
-    }
-
-    pass_time(particle, time_delta) {
-        particle.cur_frame = this.frame;
-    }
-}
-
-class FadeInParticleComponent extends ParticleComponent {
-    constructor(board, lifetime_end=0, initial_opacity=1, pow=1) {
-        super(board);
-
-        this.pow = pow;
-        this.initial_opacity = initial_opacity;
-        this.lifetime_end = lifetime_end;
-    }
-
-    pass_time(particle, time_delta) {
-        if (this.lifetime_end && particle.lifetime > this.lifetime_end)
-            return;
-
-        let operant_duration = this.lifetime_end ? this.lifetime_end : particle.duration;
-        let effective_lifetime = particle.lifetime;
-
-        let prop = Math.max(0, Math.min(1, effective_lifetime / operant_duration));
-
-        particle.opacity = this.initial_opacity * Math.pow(prop, this.pow);
-    }
-}
-
-class FadeOutParticleComponent extends ParticleComponent {
-    constructor(board, lifetime_start=0, initial_opacity=1, pow=1) {
-        super(board);
-
-        this.pow = pow;
-        this.initial_opacity = initial_opacity;
-        this.lifetime_start = lifetime_start;
-    }
-
-    pass_time(particle, time_delta) {
-        if (particle.lifetime < this.lifetime_start)
-            return;
-
-        let operant_duration = particle.duration - this.lifetime_start;
-        let effective_lifetime = particle.lifetime - this.lifetime_start;
-
-        let prop = 1 - Math.max(0, Math.min(1, effective_lifetime / operant_duration));
-
-        particle.opacity = this.initial_opacity * Math.pow(prop, this.pow);
-    }
-}
-
-class LerpInParticleComponent extends ParticleComponent {
-    constructor(board, lifetime_end=0, initial_position, final_position, pow=1) {
-        super(board);
-
-        this.pow = pow;
-
-        this.initial_position = initial_position;
-        this.final_position = final_position;
-
-        this.lifetime_end = lifetime_end;
-    }
-
-    pass_time(particle, time_delta) {
-        if (this.lifetime_end && particle.lifetime > this.lifetime_end)
-            return;
-
-        let operant_duration = this.lifetime_end ? this.lifetime_end : particle.duration;
-        let effective_lifetime = particle.lifetime;
-
-        let prop = Math.max(0, Math.min(1, effective_lifetime / operant_duration));
-
-        particle.position = this.initial_position.lerp(this.final_position, Math.pow(prop, this.pow));
-    }
-}
-
-class LerpOutParticleComponent extends ParticleComponent {
-    constructor(board, lifetime_start=0, initial_position, final_position, pow=1) {
-        super(board);
-
-        this.pow = pow;
-        
-        this.initial_position = initial_position;
-        this.final_position = final_position;
-
-        this.lifetime_start = lifetime_start;
-    }
-
-    pass_time(particle, time_delta) {
-        if (particle.lifetime < this.lifetime_start)
-            return;
-
-        let operant_duration = particle.duration - this.lifetime_start;
-        let effective_lifetime = particle.lifetime - this.lifetime_start;
-
-        let prop = 1 - Math.max(0, Math.min(1, effective_lifetime / operant_duration));
-
-        particle.position = this.initial_position.lerp(this.final_position, Math.pow(prop, this.pow));
     }
 }
 
@@ -1821,8 +1581,6 @@ class EnergyBurstParticle extends MovingParticle {
 
         this.granularity = granularity;
         this.speed_mul = speed_mul;
-
-        this.time_locked = true;
     }
 
     pass_time(time_delta) {
@@ -1934,27 +1692,9 @@ class PersistentParticle extends Particle {
     }
 }
 
-class TextParticle extends Particle {
-    constructor(position, size, text, col, board, text_size, duration) {
-        super(position, 0, size, [text], 0, duration, false);
-
-        this.board = board;
-
-        this.base_col = col;
-        this.text_col = col;
-        this.text_border_col = this.base_col.lerp(Colour.black, 0.6);
-        this.text_border_size = 1;
-
-        this.text_size = text_size;
-        this.text_modifiers = "";
-
-        this.typ = PARTICLE_TYPE.TEXT;
-    }
-}
-
 class FadingTextParticle extends Particle {
     constructor(position, size, text, col, board, text_size, duration) {
-        super(position, 0, size, [text], 0, duration, false);
+        super(position, 0, size, [text], 0, 2, false);
 
         this.board = board;
 
@@ -1966,8 +1706,6 @@ class FadingTextParticle extends Particle {
         this.text_modifiers = "";
 
         this.duration = duration;
-
-        this.typ = PARTICLE_TYPE.TEXT;
     }
 
     pass_time(time_delta) {
@@ -1976,57 +1714,6 @@ class FadingTextParticle extends Particle {
         this.opacity = 1 - (this.lifetime / this.duration);
         
         return true;
-    }
-}
-
-class FollowingTextParticle extends TextParticle {
-    constructor(position, size, text, col, board, text_size, duration, follow_target) {
-        super(position, size, text, col, board, text_size, duration);
-
-        this.follow_target = follow_target;
-        this.offset = this.position.sub(this.follow_target.position);
-    }
-
-    pass_time(time_delta) {
-        let result = super.pass_time(time_delta);
-        if (result) {
-            this.position = this.follow_target.position.add(this.offset);
-        }
-
-        return result;
-    }
-}
-
-class ShakingComponent extends ParticleComponent {
-    // set fix_offset to true for particles that don't manage their own position
-    constructor(board, magnitude, frequency, fix_offset=false) {
-        super(board);
-
-        this.magnitude = magnitude;
-        this.offset = null;
-
-        this.shake_timeout = 0;
-        this.shake_max = frequency;
-
-        this.fix_offset = fix_offset;
-        this.setpos = Vector2.zero;
-    }
-
-    on_add(particle) {
-        if (this.fix_offset) {
-            this.offset = particle.position;
-        }
-    }
-
-    pass_time(particle, time_delta) {
-        this.shake_timeout -= time_delta;
-        while (this.shake_timeout <= 0) {
-            this.shake_timeout += this.shake_max;
-
-            this.setpos = random_on_circle(this.magnitude, this.independent_random)
-        }
-
-        particle.position = (this.offset ?? particle.position).add(this.setpos);
     }
 }
 
@@ -2064,8 +1751,6 @@ class DamageNumberParticle extends Particle {
         this.gravity = board.gravity.mul(0.5);
         
         this.flash_period = 0.1;
-
-        this.typ = PARTICLE_TYPE.TEXT;
     }
 
     pass_time(time_delta) {
@@ -2159,8 +1844,6 @@ class BallParticle extends Particle {
         this.opacity = opacity;
         this.original_opacity = opacity;
         this.aero_canvases = aero_canvases;
-
-        this.typ = PARTICLE_TYPE.BALL;
     }
 }
 
@@ -2281,8 +1964,6 @@ class LineParticle extends Particle {
 
         /** @type {Colour} */
         this.colour = colour;
-
-        this.typ = PARTICLE_TYPE.LINE;
     }
 
     pass_time(time_delta) {
@@ -2405,15 +2086,11 @@ class Board {
         ]
 
         this.duration = 0;
-        this.duration_plus_cutscenes = 0;
 
         this.balls = [];
         this.projectiles = [];
         this.particles = [];
-
         this.timers = [];
-        this.cutscene_timers = [];
-
         this.objects = [];
 
         this.lines = [
@@ -2502,18 +2179,6 @@ class Board {
         this.achievements = {
             started: true
         };
-
-        this.local_id_inc = -1;
-
-        this.ultimates_enabled = false;
-        this.ultimates_paused = false;
-        this.ultimate_global_cooldown_max = 1;
-        this.ultimate_global_cooldown = 2;
-    }
-
-    get_local_id() {
-        this.local_id_inc++;
-        return this.local_id_inc;
     }
     
     calculate_system_energy() {
@@ -2694,12 +2359,6 @@ class Board {
         this.timers.splice(index, 0, timer);
     }
 
-    set_cutscene_timer(timer) {
-        let index = get_sorted_index_with_property(this.cutscene_timers, timer.trigger_time, "trigger_time");
-
-        this.cutscene_timers.splice(index, 0, timer);
-    }
-
     in_bounds(pos) {
         return (
             pos.x >= 0 &&
@@ -2820,27 +2479,16 @@ class Board {
         }
     }
 
-    // if cutscenes=true, step only cutscene timers. else, step both cutscene and non-cutscene timers.
-    timers_step(time_delta, cutscenes=false) {
-        let timers_list = this.timers;
-        let set_timer_fn = "set_timer";
-
-        if (cutscenes) {
-            timers_list = this.cutscene_timers;
-            set_timer_fn = "set_cutscene_timer";
-        } else {
-            this.timers_step(time_delta, true);
-        }
-
-        timers_list.forEach(timer => timer.trigger_time -= time_delta);
+    timers_step(time_delta) {
+        this.timers.forEach(timer => timer.trigger_time -= time_delta);
         /*
-        if (timers_list.length > 0) {
-            console.log(`${timers_list.length} timers left`);
+        if (this.timers.length > 0) {
+            console.log(`${this.timers.length} timers left`);
         }
         */
-        while (timers_list[0]?.trigger_time <= 0) {
+        while (this.timers[0]?.trigger_time <= 0) {
             // remove, then re-add if repeat
-            let trigger = timers_list.shift();
+            let trigger = this.timers.shift();
             
             // console.log(`Triggering timer ID ${trigger.id}`);
 
@@ -2848,24 +2496,20 @@ class Board {
 
             if (trigger.repeat && result) {
                 trigger.reset();
-                this[set_timer_fn](trigger);
+                this.set_timer(trigger);
             }
         }
     }
 
-    particles_step(time_delta, time_stop_active=false) {
+    particles_step(time_delta) {
         if (this.hitstop_time > 0) {
             time_delta *= Number.EPSILON;
         }
 
         this.particles.forEach(particle => {
-            if (time_stop_active && particle.time_locked)
-                return;
-
             particle.pass_time(time_delta / 1000);
             particle.pass_time_components(time_delta / 1000);
         });
-        
         this.particles = this.particles.filter(particle => {
             // looping particles never hit the framecount bound so out-of-range frame is valid to check deletion
             return particle.lifetime < particle.duration && particle.cur_frame < particle.framecount;
@@ -2874,7 +2518,6 @@ class Board {
 
     physics_step(time_delta) {
         this.stepped_physics = true;
-        this.ultimate_global_cooldown -= time_delta;
 
         this.hitstop_time -= time_delta;
         if (this.hitstop_time > 0) {
@@ -3011,7 +2654,6 @@ class Board {
                     ball.resolve_line_collision(sthis, line);
                     
                     ball.collide_wall();
-                    ball.dispatch_event("collide_wall", [line]);
 
                     if (thud_cooldown < 0) {
                         play_audio("thud");
@@ -3037,7 +2679,6 @@ class Board {
         });
 
         this.duration += time_delta;
-        this.duration_plus_cutscenes += time_delta;
     }
 }
 
@@ -3620,18 +3261,13 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
     layers.fg1.ctx.clearRect(0, 0, canvas_width, canvas_height);
     layers.fg3.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
-    layers.text_main.ctx.clearRect(0, 0, canvas_width, canvas_height);
-
     layers.bg1.ctx.clearRect(0, 0, canvas_width, canvas_height);
     layers.bg2.ctx.clearRect(0, 0, canvas_width, canvas_height);
     if (bg_changed) {
         bg_changed = false;
-        layers.bg3.ctx.fillStyle = "black";
-        layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height);
 
         if (AERO_BACKGROUND != AERO_BACKGROUNDS.NONE) {
-            if (/* AERO_BACKGROUND == AERO_BACKGROUNDS.RENDERED */ false) {
-                // Sent to hell (GONE)
+            if (AERO_BACKGROUND == AERO_BACKGROUNDS.RENDERED) {
                 let imagedata = layers.bg3.ctx.getImageData(0, 0, canvas_width, canvas_height);
 
                 let floor_col = new Colour(96, 96, 96, 255);
@@ -3686,21 +3322,14 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
 
                 layers.bg3.ctx.putImageData(imagedata, 0, 0);
             } else if (AERO_BACKGROUND == AERO_BACKGROUNDS.VISTA) {
-                let spos = scaling.wtsp(new Vector2(4096, 4096))
-
                 write_rotated_image(
                     layers.bg3.canvas, layers.bg3.ctx,
-                    spos.x, spos.y, entity_sprites.get("vista")[0],
-                    canvas_width * zoom_level, canvas_height * zoom_level, 0
+                    canvas_width/2, canvas_height/2, entity_sprites.get("vista")[0], canvas_width, canvas_height, 0
                 )
             } else if (AERO_BACKGROUND == AERO_BACKGROUNDS.MACINTOSH) {
-                let spos = scaling.wtsp(new Vector2(4096, 4096));
-
                 write_rotated_image(
                     layers.bg3.canvas, layers.bg3.ctx,
-                    spos.x, spos.y,
-                    entity_sprites.get("macintosh2")[0],
-                    canvas_width * zoom_level, canvas_height * zoom_level, 0
+                    canvas_width/2, canvas_height/2, entity_sprites.get("macintosh2")[0], canvas_width, canvas_height, 0
                 )
             } else if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID) {
                 if (background_tint) {
@@ -3902,31 +3531,21 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
         let sprite = particle.sprites[particle.cur_frame];
 
         let canvas_entry = particle.render_behind ? layers.bg2 : layers.fg1;
-        if (particle.alternative_layer) {
-            canvas_entry = layers[particle.alternative_layer];
-        }
-
+        
         /** @type {CanvasRenderingContext2D} */
         let ctx = canvas_entry.ctx;
 
         let old_alpha = ctx.globalAlpha;
-        let old_filter = ctx.filter;
+        ctx.globalAlpha = particle.opacity ?? 1;
 
-        if (particle.opacity != 1)
-            ctx.globalAlpha = particle.opacity ?? 1;
-
-        if (particle.filter)
-            ctx.filter = particle.filter ?? "";
-
-        if (particle.typ == PARTICLE_TYPE.TEXT) {
+        if (typeof sprite === "string") {
             write_pp_bordered_text(
                 ctx, sprite,
                 particle_screen_pos.x, particle_screen_pos.y,
                 particle.text_col.css(), CANVAS_FONTS, (particle.text_size * particle.size) / PARTICLE_SIZE_MULTIPLIER,
-                true, particle.text_border_size ?? 1, particle.text_border_col.css(), particle.text_modifiers,
-                particle.shortcut_pp_text ?? false
+                true, 1, particle.text_border_col.css(), particle.text_modifiers
             );
-        } else if (particle.typ == PARTICLE_TYPE.LINE) {
+        } else if (particle instanceof LineParticle) {
             let particle_end_pos = scaling.wtsp(particle.target_position);
 
             ctx.lineWidth = particle.size * zoom_level;
@@ -3937,7 +3556,7 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
             ctx.lineTo(particle_end_pos.x, particle_end_pos.y);
             ctx.stroke();
             ctx.closePath();
-        } else if (particle.typ == PARTICLE_TYPE.BALL) {
+        } else if (particle instanceof BallParticle) {
             balls_to_render.unshift({
                 position: particle.position,
                 display: true,
@@ -3946,8 +3565,7 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
                 aero_canvases: particle.aero_canvases,
                 hp: null,
                 weapon_data: [],
-                opacity: particle.opacity,
-                filter: particle.filter,
+                opacity: particle.opacity
             })
         } else {
             write_rotated_image(
@@ -3958,11 +3576,7 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
             );
         }
 
-        if (particle.opacity != 1)
-            ctx.globalAlpha = old_alpha;
-
-        if (particle.filter)
-            ctx.filter = old_filter;
+        ctx.globalAlpha = old_alpha;
     })
 
     // then the projectiles. put them on fg3, same as weapons
@@ -4103,10 +3717,6 @@ function render_canvas_ball(canvas, ctx, weapon_layer_ctx, debug_layer_ctx, ball
         ball_canvas_idx = 1;
     }
 
-    let old_filter = ctx.filter;
-    if (ball.filter)
-        ctx.filter = ball.filter;
-
     switch (BALL_RENDERING_METHOD) {
         case BALL_RENDERING_METHODS.VECTOR: {
             ctx.beginPath();
@@ -4216,9 +3826,6 @@ function render_canvas_ball(canvas, ctx, weapon_layer_ctx, debug_layer_ctx, ball
 
     ctx.globalAlpha = original_alpha;
     scaling = old_scaling;
-
-    if (ball.filter)
-        ctx.filter = old_filter;
 }
 
 function render_descriptions(board) {
@@ -4417,25 +4024,6 @@ function render_descriptions(board) {
                     ctx,
                     `${AILMENT_CHARS[2]} ${ball.burn_intensity.toFixed(2).padEnd(5)}`,
                     l[0] + 160, l[1] + 12 + 12, ball_col, CANVAS_FONTS, sizedown ? 10 : 12,
-                    false, BALL_DESC_BORDER_SIZE, ball_border_col
-                )
-            }
-
-            // ultimate charge
-            if (ball.has_an_ultimate()) {
-                let ult_charge_str = "-".repeat(
-                    Math.floor(
-                        (Math.min(
-                            ball.ult_cost,
-                            ball.ult_current_charge
-                        ) / ball.ult_cost) * max_segments
-                    )
-                )
-
-                write_pp_bordered_text(
-                    ctx,
-                    ` ${ult_charge_str} `,
-                    l[0], l[1] + 0, ball.get_current_desc_col().lerp(Colour.yellow, 0.8).css(), CANVAS_FONTS, sizedown ? 8 : 9,
                     false, BALL_DESC_BORDER_SIZE, ball_border_col
                 )
             }
@@ -4811,35 +4399,6 @@ function make_default_player(pid) {
     }
 }
 
-let old_camera_target = null;
-let old_zoom_target = null;
-
-function set_camera_targets(pos, zoom, pos_intens, zoom_intens) {
-    if (!old_camera_target) {
-        old_camera_target = camera_position_target;
-    }
-
-    if (!old_zoom_target) {
-        old_zoom_target = camera_zoom_target;
-    }
-
-    camera_zoom_target = zoom;
-    camera_position_target = pos;
-
-    camera_zoom_lerp_intens = zoom_intens;
-    camera_position_lerp_intens = pos_intens;
-}
-
-function fix_camera_targets() {
-    old_camera_target = camera_position_target;
-    old_zoom_target = camera_zoom_target;
-}
-
-function reset_camera_targets() {
-    camera_zoom_target = old_zoom_target;
-    camera_position_target = old_camera_target;
-}
-
 let last_frame = Date.now();
 
 let colliding_parries = new Set();
@@ -4886,14 +4445,12 @@ function game_loop() {
 
     if (board && render) {
         if (need_stwp_recache) {
-            
             get_wtsp_stwp();
             if (BALL_RENDERING_METHOD != BALL_RENDERING_METHODS.VECTOR) {
                 board.balls.forEach(ball => ball.setup_aero_light_lookup_table());
             }
 
             need_stwp_recache = false;
-            bg_changed = true;
         }
 
         if (board.duration > board.max_game_duration && !switched_to_endgame_col) {
@@ -5012,22 +4569,7 @@ function game_loop() {
             total_steps++;
 
             // COLL_GRANULARITY => do collision checks every N physics steps
-            let times = phys_gran;
-
-            // if cutscene time stop is enabled, skip this completely
-            // and trigger an alternative timer step for only cutscene timers
-            let time_stopped = false;
-            if (cutscene_time_stop_dur > 0) {
-                cutscene_time_stop_dur -= game_delta_time / 1000;
-                times = 0;
-                time_stopped = true;
-
-                board.timers_step(game_delta_time / 1000, true)
-
-                board.duration_plus_cutscenes += game_delta_time / 1000;
-            }
-
-            for (let i=0; i<times; i++) {
+            for (let i=0; i<phys_gran; i++) {
                 board.physics_step(game_delta_time / (1000 * phys_gran));
 
                 if ((i+1) % coll_gran == 0) {
@@ -5586,7 +5128,7 @@ function game_loop() {
                 }
             }
 
-            board.particles_step(game_delta_time, time_stopped);
+            board.particles_step(game_delta_time);
             
             // mysterious powers
             // ....
@@ -5645,15 +5187,12 @@ function game_loop() {
 
             ending_game = false;
             if (board?.remaining_players().length <= 1) {
-                board.ultimates_paused = true;
-
                 if (ending_game_timer <= 0) {
                     // this means if _max is >0, there will always be at least one frame of "grace period"
                     ending_game = true;
                 }
                 ending_game_timer -= game_delta_time;
             } else {
-                board.ultimates_paused = false;
                 ending_game_timer = ending_game_timer_max;
             }
 
@@ -5785,40 +5324,7 @@ function game_loop() {
                         board.balls[follow_target].position.mul(-1).add(board.size.mul(0.5 / zoom_level)),
                         1 - Math.pow(0.01, delta_time / 1000)
                     );
-
-                    camera_data.c_random = c_random;
-                    camera_data.follow_target = follow_target;
-                    camera_data.follow_timeout = follow_timeout;
-
                     break;
-                }
-            }
-
-            camera_operation_timeout -= (delta_time / 1000);
-            if (camera_operation_timeout <= 0) {
-                camera_operation_timeout += camera_operation_timeout_max;
-
-                if (camera_zoom_target) {
-                    let old_zoom = zoom_level;
-                    zoom_level = lerp(zoom_level, camera_zoom_target, 1 - Math.pow(
-                        camera_zoom_lerp_intens, delta_time / 1000
-                    ));
-
-                    if (Math.abs(old_zoom - zoom_level) / old_zoom > 0.0001) {
-                        need_stwp_recache = true;
-                    }
-                }
-
-                if (camera_position_target) {
-                    // lerp target is in worldspace, view_offset is in screenspace
-                    let ss_target = camera_position_target.mul(-1).add(board.size.mul(0.5 / zoom_level));
-
-                    view_offset = view_offset.lerp(
-                        ss_target,
-                        1 - Math.pow(camera_position_lerp_intens, delta_time / 1000)
-                    );
-
-                    bg_changed = true;
                 }
             }
         }

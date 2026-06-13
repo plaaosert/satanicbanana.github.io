@@ -1101,7 +1101,7 @@ button.sandbox-ball-random {
 
   align-items: center;
 
-  margin-bottom: 3.5vmin;
+  margin-bottom: 4vmin;
 }
 
 .new-ballselect .info-container.disabled>*:not(.buttonsets) {
@@ -1182,19 +1182,6 @@ button.sandbox-ball-random {
 
   display: flex;
   flex-direction: row;
-}
-
-.ultimates-prompt {
-  background-image: linear-gradient(white, #f88);
-  color: transparent;
-  background-clip: text;
-}
-
-.ultimates-warning {
-  opacity: 1;
-  transition: opacity 0.5s linear;
-
-  margin-top: 1vmin;
 }
 
 @property --letter-h {

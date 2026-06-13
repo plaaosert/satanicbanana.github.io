@@ -1073,7 +1073,6 @@ class ShieldBall extends WeaponBall {
     grow_chance() {
         if (this.board.random() < 0.1) {
             this.weapon_data[0].size_multiplier *= 1.1;
-            this.weapon_data[0].size_multiplier = Math.min(128, this.weapon_data[0].size_multiplier);
             this.cache_hitboxes_offsets();
             this.cache_weapon_offsets();
         }
