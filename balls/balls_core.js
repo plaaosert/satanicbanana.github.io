@@ -156,7 +156,7 @@ const AERO_LIGHTING_CONFIGS_INFO = {
 
 const AERO_BACKGROUNDS = {
     NONE: "NONE",
-    RENDERED: "RENDERED",
+    // RENDERED: "RENDERED",
     VISTA: "VISTA",
     PARALLAX_GRID: "PARALLAX_GRID",
     MACINTOSH: "MACINTOSH",
@@ -167,9 +167,9 @@ const AERO_BACKGROUNDS_INFO = {
         desc: "No background.",
     },
 
-    [AERO_BACKGROUNDS.RENDERED]: {
-        desc: "A simple cube-like render.",
-    },
+    // [AERO_BACKGROUNDS.RENDERED]: {
+    //     desc: "A simple cube-like render.",
+    // },
 
     [AERO_BACKGROUNDS.VISTA]: {
         desc: "An edited version of a Vista-style wallpaper: https://www.reddit.com/r/FrutigerAero/comments/1eqwt3s/windows_vistainspired_wallpapers_i_made_in_about/",
@@ -278,6 +278,28 @@ const map_configs = {
 
         initial_zoom_level: 1,
         camera_mode: CAMERA_MODES.STATIC,
+    },
+
+    "SUL": {
+        id: "SUL",
+        name: "Standard - Ultimates",
+        desc: "Same as Standard but with ultimates enabled.",
+        gravity: new Vector2(0, 9810),
+        size: 512 * 16,
+        extra_walls: board => null,
+        
+        // objects are generalised ball-like objects that optionally have collision,
+        // but do not interact with weapons
+        // they still run weaponsteps, but collision isn't checked with them
+        // they are usually, but may not be, kinematic
+        extra_objects: board => null,
+
+        extra_balls: board => null,
+
+        initial_zoom_level: 1,
+        camera_mode: CAMERA_MODES.STATIC,
+
+        ultimates_enabled: true
     },
 
     "SNG": {
@@ -467,6 +489,10 @@ const entity_sprites = new Map([
     ["hamer_mogul", 1, "weapon/"],
     ["money_particle", 10, "money/"],
     ["money_particle_r", 10, "money_r/"],
+
+    // Deltarune (Chapter 4) - Hammer of Justice / Rude Buster
+    ["hoj_orb", 5, "etc/hoj_orb/"],
+    ["hoj_dash", 5, "etc/hoj_orb/"],
 
     ["dagger", 1, "weapon/"],
     ["pellet", 1, "weapon/"],
@@ -745,6 +771,9 @@ const entity_sprites = new Map([
     ["superflash1", 7, "superflash/"],
     ["superflash2", 9, "superflash/"],
     ["superflash3", 6, "superflash/"],
+
+    ["ult_flash", 6, "etc/ult_flash/"],
+    ["ult_point", 1, "etc/ult_flash/"],
 
     // Additionals
     ["LONGSORD", 1, "weapon/additional/"],
@@ -1085,11 +1114,6 @@ let audios_list = [
     // A3Zap [FF6 - SNES] + 59greenCherry [FF6 - SNES]
     ["powerup_clone", "snd/powerup_clone.mp3"],
 
-    // upusen https://upusen.bandcamp.com/
-    ["upusen_1", "https://scrimblo.foundation/uploads/bad_customer.mp3", "Bad customers", "upusen"],
-    ["upusen_2", "https://scrimblo.foundation/uploads/upusen_2.mp3", "Wednesday Is Almost Friday", "upusen"],
-    ["upusen_3", "https://scrimblo.foundation/uploads/upusen_not_good.mp3", "Not Good", "upusen"],
-
     ["noise", "snd/noise.mp3"],
 
     // https://soundeffect-lab.info/sound/battle/battle1.html
@@ -1107,12 +1131,6 @@ let audios_list = [
     // Dragon Ball Z
     ["aura_power_fluxing", "snd/aura_power_fluxing.mp3"],
     ["aura_power_fluxing2", "snd/aura_power_fluxing2.mp3"],
-
-    // MAHJONG BANGERS
-    // https://downloads.khinsider.com/game-soundtracks/album/simple-ds-series-vol.-01-the-mahjong-nintendo-ds
-    ["mahjong_04", "https://scrimblo.foundation/uploads/simple_mahjong_04.mp3", "Track 4", "Simple DS Series Vol. 01: The Mahjong"],
-    ["mahjong_win", "https://scrimblo.foundation/uploads/simple_mahjong_jingle_win.mp3", "Jingle #2", "Simple DS Series Vol. 01: The Mahjong"],
-    ["mahjong_lose", "https://scrimblo.foundation/uploads/simple_mahjong_jingle_lose.mp3", "Jingle #7", "Simple DS Series Vol. 01: The Mahjong"],
 ]
 
 // buh
@@ -1132,9 +1150,26 @@ let titles = [
 ]
 
 if (new URLSearchParams(window.location.search).get("nomusic") !== "true") {
+    // upusen https://upusen.bandcamp.com/
+    audios_list.push(   
+        ["upusen_1", "https://scrimblo.foundation/uploads/bad_customer.mp3", "Bad customers", "upusen"],
+        ["upusen_2", "https://scrimblo.foundation/uploads/upusen_2.mp3", "Wednesday Is Almost Friday", "upusen"],
+        ["upusen_3", "https://scrimblo.foundation/uploads/upusen_not_good.mp3", "Not Good", "upusen"],
+    );
+    
     for (let i=1; i<=13; i++) {
         audios_list.push([`2048_${i}`, `https://scrimblo.foundation/uploads/2048_${i}.mp3`, titles[i], "2048 (3DS) -- Zbigniew Siatecki", true]);
     }
+}
+
+if (new URLSearchParams(window.location.search).get("mahjongmusic") !== "true") {
+    // MAHJONG BANGERS
+    // https://downloads.khinsider.com/game-soundtracks/album/simple-ds-series-vol.-01-the-mahjong-nintendo-ds
+    audios_list.push(
+        ["mahjong_04", "https://scrimblo.foundation/uploads/simple_mahjong_04.mp3", "Track 4", "Simple DS Series Vol. 01: The Mahjong"],
+        ["mahjong_win", "https://scrimblo.foundation/uploads/simple_mahjong_jingle_win.mp3", "Jingle #2", "Simple DS Series Vol. 01: The Mahjong"],
+        ["mahjong_lose", "https://scrimblo.foundation/uploads/simple_mahjong_jingle_lose.mp3", "Jingle #7", "Simple DS Series Vol. 01: The Mahjong"],
+    )
 }
 
 if (new URLSearchParams(window.location.search).get("noaudio") == "true") {
@@ -1311,6 +1346,13 @@ function point_collides_line(pos, radius, line) {
     return distance < radius;  
 }
 
+const PARTICLE_TYPE = {
+    NORMAL: 0,
+    TEXT: 1,
+    LINE: 2,
+    BALL: 3,
+}
+
 class Particle {
     static id_inc = 0;
 
@@ -1336,12 +1378,18 @@ class Particle {
 
         this.hide = false;
 
+        this.typ = PARTICLE_TYPE.NORMAL;
+
         // time_locked particles will pause alongside other gameobjects
         // when any form of time stop happens (e.g. cutscene time stop)
         this.time_locked = true;
 
         /** @type {[ParticleComponent]} */
         this.components = [];
+    }
+
+    expire() {
+        this.lifetime = Number.POSITIVE_INFINITY;
     }
 
     /** @param {ParticleComponent} component  */
@@ -1398,6 +1446,60 @@ class ParticleComponent {
 
     pass_time(particle, time_delta) {
         // blank
+    }
+}
+
+class SpriteTrailParticleComponent extends ParticleComponent {
+    constructor(board, lifetime_start=0, initial_opacity=1, pow=1, duration=0.5, freq=0.02) {
+        super(board);
+
+        this.lifetime_start = lifetime_start;
+        this.initial_opacity = initial_opacity;
+        this.pow = pow;
+
+        this.trail_duration = duration;
+
+        this.freq_max = freq;
+        this.freq = this.freq_max;
+    }
+
+    pass_time(particle, time_delta) {
+        this.freq -= time_delta;
+        while (this.freq <= 0) {
+            this.freq += this.freq_max;
+
+            let newpart = new Particle(
+                particle.position, particle.rotation_angle,
+                particle.size / PARTICLE_SIZE_MULTIPLIER,
+                particle.sprites, 0, this.trail_duration,
+                true
+            );
+
+            newpart.add_component(new FadeOutParticleComponent(
+                this.board, this.lifetime_start, this.initial_opacity, this.pow
+            ));
+
+            newpart.add_component(new FrameControlParticleComponent(
+                this.board, particle.cur_frame
+            ));
+
+            newpart.time_locked = particle.time_locked;
+            newpart.render_behind = particle.render_behind;
+            newpart.alternative_layer = particle.alternative_layer;
+
+            this.board.spawn_particle(newpart, particle.position);
+        }
+    }
+}
+
+class FrameControlParticleComponent extends ParticleComponent {
+    constructor(board, initial_frame=0) {
+        super(board);
+        this.frame = initial_frame;
+    }
+
+    pass_time(particle, time_delta) {
+        particle.cur_frame = this.frame;
     }
 }
 
@@ -1845,6 +1947,8 @@ class TextParticle extends Particle {
 
         this.text_size = text_size;
         this.text_modifiers = "";
+
+        this.typ = PARTICLE_TYPE.TEXT;
     }
 }
 
@@ -1862,6 +1966,8 @@ class FadingTextParticle extends Particle {
         this.text_modifiers = "";
 
         this.duration = duration;
+
+        this.typ = PARTICLE_TYPE.TEXT;
     }
 
     pass_time(time_delta) {
@@ -1958,6 +2064,8 @@ class DamageNumberParticle extends Particle {
         this.gravity = board.gravity.mul(0.5);
         
         this.flash_period = 0.1;
+
+        this.typ = PARTICLE_TYPE.TEXT;
     }
 
     pass_time(time_delta) {
@@ -2051,6 +2159,8 @@ class BallParticle extends Particle {
         this.opacity = opacity;
         this.original_opacity = opacity;
         this.aero_canvases = aero_canvases;
+
+        this.typ = PARTICLE_TYPE.BALL;
     }
 }
 
@@ -2171,6 +2281,8 @@ class LineParticle extends Particle {
 
         /** @type {Colour} */
         this.colour = colour;
+
+        this.typ = PARTICLE_TYPE.LINE;
     }
 
     pass_time(time_delta) {
@@ -2392,6 +2504,11 @@ class Board {
         };
 
         this.local_id_inc = -1;
+
+        this.ultimates_enabled = false;
+        this.ultimates_paused = false;
+        this.ultimate_global_cooldown_max = 1;
+        this.ultimate_global_cooldown = 2;
     }
 
     get_local_id() {
@@ -2757,6 +2874,7 @@ class Board {
 
     physics_step(time_delta) {
         this.stepped_physics = true;
+        this.ultimate_global_cooldown -= time_delta;
 
         this.hitstop_time -= time_delta;
         if (this.hitstop_time > 0) {
@@ -3512,7 +3630,8 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
         layers.bg3.ctx.fillRect(0, 0, canvas_width, canvas_height);
 
         if (AERO_BACKGROUND != AERO_BACKGROUNDS.NONE) {
-            if (AERO_BACKGROUND == AERO_BACKGROUNDS.RENDERED) {
+            if (/* AERO_BACKGROUND == AERO_BACKGROUNDS.RENDERED */ false) {
+                // Sent to hell (GONE)
                 let imagedata = layers.bg3.ctx.getImageData(0, 0, canvas_width, canvas_height);
 
                 let floor_col = new Colour(96, 96, 96, 255);
@@ -3575,9 +3694,13 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
                     canvas_width * zoom_level, canvas_height * zoom_level, 0
                 )
             } else if (AERO_BACKGROUND == AERO_BACKGROUNDS.MACINTOSH) {
+                let spos = scaling.wtsp(new Vector2(4096, 4096));
+
                 write_rotated_image(
                     layers.bg3.canvas, layers.bg3.ctx,
-                    canvas_width/2, canvas_height/2, entity_sprites.get("macintosh2")[0], canvas_width, canvas_height, 0
+                    spos.x, spos.y,
+                    entity_sprites.get("macintosh2")[0],
+                    canvas_width * zoom_level, canvas_height * zoom_level, 0
                 )
             } else if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID) {
                 if (background_tint) {
@@ -3789,19 +3912,21 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
         let old_alpha = ctx.globalAlpha;
         let old_filter = ctx.filter;
 
-        ctx.globalAlpha = particle.opacity ?? 1;
+        if (particle.opacity != 1)
+            ctx.globalAlpha = particle.opacity ?? 1;
 
         if (particle.filter)
             ctx.filter = particle.filter ?? "";
 
-        if (typeof sprite === "string") {
+        if (particle.typ == PARTICLE_TYPE.TEXT) {
             write_pp_bordered_text(
                 ctx, sprite,
                 particle_screen_pos.x, particle_screen_pos.y,
                 particle.text_col.css(), CANVAS_FONTS, (particle.text_size * particle.size) / PARTICLE_SIZE_MULTIPLIER,
-                true, particle.text_border_size ?? 1, particle.text_border_col.css(), particle.text_modifiers
+                true, particle.text_border_size ?? 1, particle.text_border_col.css(), particle.text_modifiers,
+                particle.shortcut_pp_text ?? false
             );
-        } else if (particle instanceof LineParticle) {
+        } else if (particle.typ == PARTICLE_TYPE.LINE) {
             let particle_end_pos = scaling.wtsp(particle.target_position);
 
             ctx.lineWidth = particle.size * zoom_level;
@@ -3812,7 +3937,7 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
             ctx.lineTo(particle_end_pos.x, particle_end_pos.y);
             ctx.stroke();
             ctx.closePath();
-        } else if (particle instanceof BallParticle) {
+        } else if (particle.typ == PARTICLE_TYPE.BALL) {
             balls_to_render.unshift({
                 position: particle.position,
                 display: true,
@@ -3833,7 +3958,8 @@ function render_game(board, time_delta, collision_boxes=false, velocity_lines=fa
             );
         }
 
-        ctx.globalAlpha = old_alpha;
+        if (particle.opacity != 1)
+            ctx.globalAlpha = old_alpha;
 
         if (particle.filter)
             ctx.filter = old_filter;
@@ -5519,12 +5645,15 @@ function game_loop() {
 
             ending_game = false;
             if (board?.remaining_players().length <= 1) {
+                board.ultimates_paused = true;
+
                 if (ending_game_timer <= 0) {
                     // this means if _max is >0, there will always be at least one frame of "grace period"
                     ending_game = true;
                 }
                 ending_game_timer -= game_delta_time;
             } else {
+                board.ultimates_paused = false;
                 ending_game_timer = ending_game_timer_max;
             }
 

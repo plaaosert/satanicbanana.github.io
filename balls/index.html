@@ -12,7 +12,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=0.1, user-scalable=yes" />
 
     <link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=02"/>
-	<link rel="stylesheet" type="text/css" href="balls.css?v=39"/>
+	<link rel="stylesheet" type="text/css" href="balls.css?v=40"/>
 </head>
 <body>
 	<div class="topbar">
@@ -184,6 +184,7 @@
 
                         <div class="row spacing sandbox-global-controls">
                             <!-- <button style="font-size: 20px;" onclick="">???</button> -->
+                            <!--
                             <span class="frame-speed-span">Frame speed:</span>
                             <select id="fps-select" onclick="user_interacted_with_fps_select=true;" onchange="user_interacted_with_fps_select=true;">
                                 <option>1/60</option>
@@ -194,6 +195,7 @@
                                 <option>1/480</option>
                                 <option>Realtime (no replay)</option>
                             </select>
+                            -->
                             <button class="enable-on-full-load sandbox-start-button" disabled onclick="replaying=false; spawn_selected_balls()">Start!</button>
                             <button class="enable-on-full-load" disabled onclick="load_replay_button()">Load replay</button>
                             <!-- <button style="font-size: 20px;" onclick="document.querySelector('#modding_frame').classList.toggle('hidden')">"Modding" -></button> -->
@@ -221,7 +223,18 @@
                             <input class="hide-on-low-content-size" type="checkbox" id="mysterious_powers_checkbox">
                             <span class="hide-on-low-content-size" onclick="document.querySelector('#mysterious_powers_checkbox').click()">Enable <span class="mysterious-powers">mysterious powers...</span></span>
                         </div>
+                        <!--
                         <span style="margin-top: 0.5vmin; padding-left:1vmin; padding-right:1vmin; color:#bbb;">Use a frame speed closest to the refresh rate of your screen, or "Realtime" if you don't care about replays. When loading replays, this is set automatically - use speed controls if needed.</span>
+                        -->
+                        <div class="columns" style="margin-top: 0.5vmin; user-select: none;">
+                            <input type="checkbox" id="ultimates_checkbox">
+                            <span onclick="document.querySelector('#ultimates_checkbox').click()">Enable <span class="ultimates-prompt">ultimates?</span></span>
+
+                            <span>&nbsp;&nbsp;&nbsp;</span>
+
+                            <span class="ultimates-warning faded">Ultimates are not fully implemented! Please report all bugs.<br>Current balls with ultimates:<br><span class="ultimates-prompt">Hammer, SORD, dagger, Bow, Magnum, Needle, Railgun, Potion</span><br>All ultimates may change at any time.</span>
+                        </div>
+
                         <span class="mysterious-powers-warning faded">Channeling mysterious powers will prevent replays from being recorded.</span>
                         <span class="mysterious-powers-warning faded">These powers are for joke use only. Please don't take them too seriously.</span>
                     </div>
@@ -651,7 +664,7 @@
                     <span>Background</span>
                     <select id="background" onchange="set_graphics_option('bg', 'background')">
                         <option>None</option>
-                        <option>Rendered</option>
+                        <!-- <option>Rendered</option> -->
                         <option>Vista</option>
                         <option>Parallax grid</option>
                         <option>Macintosh</option>
@@ -898,10 +911,10 @@
     <script src="../shared/js/helpers.js?v=13"></script>
 	<script src="../shared/js/canvas_helpers.js?v=07"></script>
 	
-    <script src="balls_core.js?v=72"></script>
+    <script src="balls_core.js?v=73"></script>
 
-    <script src="balls_balls.js?v=75"></script>
-    <script src="balls_balls_additional.js?v=52"></script>
+    <script src="balls_balls.js?v=76"></script>
+    <script src="balls_balls_additional.js?v=53"></script>
     <script src="balls_balls_powered.js?v=12"></script>
 
     <script src="balls_balls_campaign_lowtier.js?v=06"></script>
@@ -914,7 +927,7 @@
     <script src="balls_gambling_info.js?v=08"></script>
 
     <script src="balls_replay_parsing.js?v=16"></script>
-    <script src="balls_launcher.js?v=99"></script>
+    <script src="balls_launcher.js?v=100"></script>
     
     <script src="balls_campaign.js?v=10"></script>
 

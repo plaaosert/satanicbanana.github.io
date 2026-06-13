@@ -24,6 +24,7 @@ let default_cols = [
     new Colour(255, 182, 201, 255),
     new Colour(230, 230, 230, 255),
 ];
+
 let col_names = [
     "RED",
     "YLW",
@@ -792,9 +793,12 @@ function load_replay(replay_as_text) {
 }
 
 function spawn_selected_balls() {
-    let framespeed = [...fps_checks, 0][
-        document.querySelector("#fps-select").selectedIndex
-    ];
+    // let framespeed = [...fps_checks, 0][
+    //     document.querySelector("#fps-select").selectedIndex
+    // ];
+    
+    // we're finally moving to fixed framespeed
+    framespeed = 144;
     
     let seed = document.querySelector("#sandbox-random-seed").value || Math.random().toString().slice(2);
     
@@ -874,6 +878,9 @@ function spawn_selected_balls() {
 
     // standard map
     let map_config = map_configs["S"];
+    if (document.querySelector("#ultimates_checkbox").checked) {
+        map_config = map_configs["SUL"];
+    }
 
     start_game(
         framespeed, seed,
@@ -907,6 +914,8 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
         board = new Board(new Vector2(boardsiz, boardsiz));
 
         board.powerups_enabled = powerups;
+
+        board.ultimates_enabled = map_config.ultimates_enabled;
 
         screen_to_game_scaling_factor = board.size.x / canvas_width;
 
@@ -1741,7 +1750,7 @@ function update_sim_speed_display(temporary_modifiers=1) {
     
     if (!board) {
         elem.textContent = `Paused (Speed x${game_speed_mult * temporary_modifiers})`;
-        speed_alert_elem.classList.add("hidden");
+        // speed_alert_elem.classList.add("hidden");
         return;
     }
 
@@ -1750,12 +1759,12 @@ function update_sim_speed_display(temporary_modifiers=1) {
     } else {
         if (game_fps_catchup_modifier != 1) {
             elem.textContent = `Speed x${game_speed_mult * temporary_modifiers} (x${game_fps_catchup_modifier.toFixed(2)})`;
-            speed_alert_elem.classList.remove("hidden");
+            // speed_alert_elem.classList.remove("hidden");
             speed_alert_original.textContent = `${board.expected_fps}fps`;
             speed_alert_actual.textContent = `${fps_current.toFixed(0)}fps`;
         } else {
             elem.textContent = `Speed x${game_speed_mult * temporary_modifiers}`;
-            speed_alert_elem.classList.add("hidden");
+            // speed_alert_elem.classList.add("hidden");
         }
     }
 }
@@ -2817,11 +2826,11 @@ document.addEventListener("DOMContentLoaded", function() {
         document.querySelector("#fps-select").value = `1/${fps_picked}`;
     }
 
-    setTimeout(try_detect_framerate, 500);
-    setTimeout(try_detect_framerate, 750);
+    // setTimeout(try_detect_framerate, 500);
+    // setTimeout(try_detect_framerate, 750);
     
-    setTimeout(try_detect_framerate, 1000);
-    setTimeout(try_detect_framerate, 1250);
+    // setTimeout(try_detect_framerate, 1000);
+    // setTimeout(try_detect_framerate, 1250);
 
     window.addEventListener("resize", handle_resize);
 
@@ -2932,11 +2941,12 @@ document.addEventListener("DOMContentLoaded", function() {
                 // increase ball1 by 1 (unless force_ball1 is enabled)
                 let increment = true;
 
+                let maxn = ball_index_max ?? selectable_balls_for_random.length;
                 while (increment) {
                     ball2_index++;
-                    if (ball2_index >= selectable_balls_for_random.length) {
+                    if (ball2_index >= maxn) {
                         ball2_index = 0;
-                        ball1_index = (ball1_index + 1) % selectable_balls_for_random.length;
+                        ball1_index = (ball1_index + 1) % maxn;
                     }
 
                     if (force_ball1) {
@@ -2968,9 +2978,11 @@ document.addEventListener("DOMContentLoaded", function() {
     randomise_ball_info("ball1", "random-ball");
     randomise_ball_info("ball2", "random-ball");
 
-    selected_ball_info['ball1'].name = "dagger"
-    selected_ball_info['ball2'].name = "Super Dummy"
-    selected_ball_info['ball2'].level = 99;
+    // selected_ball_info['ball1'].name = "Super Dummy"
+    // selected_ball_info['ball2'].name = "Potion"
+    // selected_ball_info['ball2'].level = 99;
+
+    // document.querySelector("#ultimates_checkbox").checked = true;
 
     // force ball in slot 1 and slot 2
     // selected_ball_info.ball1.name = "Dummy";
@@ -3045,6 +3057,14 @@ document.addEventListener("DOMContentLoaded", function() {
             document.querySelectorAll(".mysterious-powers-warning").forEach(e => e.classList.remove("faded"));
         } else {
             document.querySelectorAll(".mysterious-powers-warning").forEach(e => e.classList.add("faded"));
+        }
+    })
+
+    document.querySelector("#ultimates_checkbox").addEventListener("change", e => {
+        if (e.target.checked) {
+            document.querySelectorAll(".ultimates-warning").forEach(e => e.classList.remove("faded"));
+        } else {
+            document.querySelectorAll(".ultimates-warning").forEach(e => e.classList.add("faded"));
         }
     })
 
@@ -3162,6 +3182,8 @@ let ball2_index = 0;
 
 let ball1_start_level = 1;
 let ball2_start_level = 1;
+
+let ball_index_max = 8;
 
 let win_matrix = [];
 selectable_balls_for_random.forEach(_ => win_matrix.push(new Array(selectable_balls_for_random.length).fill(0)));

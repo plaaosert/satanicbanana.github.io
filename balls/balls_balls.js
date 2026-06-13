@@ -5,8 +5,13 @@ const PROJ_SIZE_MULTIPLIER = 16;
 const SPOTLIGHT_LIGHT_COL = Colour.from_hex("#FE9EB1");
 const SPOTLIGHT_DARK_COL = Colour.from_hex("#000080");
 
-const DEFAULT_ULT_COST = 160 / 160;
+const DEFAULT_ULT_COST = 160 / 1;
 const DEAL_DAMAGE_ULT_CHARGE = 2;
+
+const APPLY_RUPTURE_ULT_CHARGE = 3;
+const APPLY_POISON_ULT_CHARGE = 4;
+const APPLY_BURN_ULT_CHARGE = 6;
+
 const HP_LOSS_ULT_CHARGE = 0.2;
 const ULT_DEFAULT_CHARGE_COOLDOWN = 8;
 
@@ -393,6 +398,8 @@ class WeaponBall extends Ball {
         this.description_brief = "Does nothing. Unarmed, but not the awesome kind.";
         this.level_description = "This ball has no levelup effect.";
         this.max_level_description = "This ball has no awakening effect.";
+        this.ult_description = "No ult... or no description.";
+
         this.quote = "I won? I won! How'd I win?!";
 
         this.pronoun = PRONOUN.THEY;
@@ -470,6 +477,12 @@ class WeaponBall extends Ball {
             }
         ]
         this.ult_special_lines = [];
+
+        this.ult_ring_delay = 0.2;
+        this.ult_ring_delay_max = 0.2;
+        this.ult_particle_delay = 0.02;
+        this.ult_particle_delay_max = 0.02;
+
         this.speak_voice = null;
 
         this.takes_damage = true;
@@ -947,15 +960,17 @@ class WeaponBall extends Ball {
     create_weapon_afterimage(index, opacity=0.75, duration=0.25, sprite_override=null) {
         let spr_name = sprite_override ?? this.weapon_data[index].sprite;
     
-        let pos = this.get_weapon_offset(0).add(this.position);
+        let pos = this.get_weapon_offset(index).add(this.position);
         let part = this.board.spawn_particle(new Particle(
-            pos, this.weapon_data[0].angle,
-            this.weapon_data[0].size_multiplier / WEAPON_SIZE_MULTIPLIER,
+            pos, this.weapon_data[index].angle,
+            this.weapon_data[index].size_multiplier / WEAPON_SIZE_MULTIPLIER,
             entity_sprites.get(spr_name),
             0, duration
         ), pos).add_component(new FadeOutParticleComponent(
             this.board, 0, opacity, 2
         ));
+
+        part.time_locked = false
 
         part.opacity = opacity;
         part.alternative_layer = "fg3";
@@ -1199,6 +1214,41 @@ class WeaponBall extends Ball {
 
         // move linked hat particle if there is one
         this.update_particles(time_delta);
+
+        this.do_ult_particles(time_delta);
+    }
+
+    do_ult_particles(time_delta) {
+        if (!this.has_an_ultimate()) {
+            return;
+        }
+
+        let amt = Math.pow((this.ult_current_charge / this.ult_cost), 5) * time_delta;
+
+        this.ult_ring_delay -= amt;
+        this.ult_particle_delay -= amt;
+
+        while (this.ult_ring_delay <= 0) {
+            this.ult_ring_delay += this.ult_ring_delay_max;
+
+            this.board.spawn_particle(new Particle(
+                this.position, 0, 2, entity_sprites.get("ult_flash"),
+                12, 2
+            ), this.position);
+        }
+
+        while (this.ult_particle_delay <= 0) {
+            this.ult_particle_delay += this.ult_particle_delay_max;
+
+            let pos = this.position.add(random_on_circle(
+                this.radius * Math.pow(random_float(0, 1, this.independent_random), 2),
+                this.independent_random
+            ));
+
+            this.board.spawn_particle(new AilmentParticle(
+                pos, 0, 1, entity_sprites.get("ult_point"), 1
+            ), pos);
+        }
     }
 
     update_particles(time_delta) {
@@ -1427,14 +1477,15 @@ class WeaponBall extends Ball {
         return true;
     }
 
-    get_closest_enemy_and_distance(predicate=null) {
+    get_closest_enemy_and_distance(predicate=null, alt_pos=null) {
         let enemylist = this.board.balls.filter(b => !this.allied_with(b));
         if (predicate) {
             enemylist = enemylist.filter(b => predicate(b));
         }
 
+        let pos = alt_pos ?? this.position;
         let closest = enemylist.reduce((p, c) => {
-            let d = this.position.sqr_distance(c.position);
+            let d = pos.sqr_distance(c.position);
             if (d < p[1]) {
                 return [c, d];
             }
@@ -1445,7 +1496,7 @@ class WeaponBall extends Ball {
         return closest;
     }
 
-    speak_multiline(text_segs, fontsiz, duration, linecount_start=0, text_spacing_mul=0.55, cutscene=true) {
+    speak_multiline(text_segs, fontsiz, duration, linecount_start=0, text_spacing_mul=0.55, cutscene=true, shortcut_pp_text=false) {
         // there might be some newline mods. if so,
         // speak on separate lines
         let text_lines = [];
@@ -1475,7 +1526,7 @@ class WeaponBall extends Ball {
         for (let i=0; i<text_lines.length; i++) {
             this.speak(
                 text_lines[i], fontsiz, duration, linecount_start + i,
-                text_spacing_mul, cutscene, delays[i]
+                text_spacing_mul, cutscene, delays[i], null, shortcut_pp_text
             );
         }
     }
@@ -1504,9 +1555,10 @@ class WeaponBall extends Ball {
         }
     }
 
-    speak(text_segs, fontsiz, duration, linecount=0, text_spacing_mul=0.55, cutscene=true, initial_delay=0, voice_override=null) {
+    speak(text_segs, fontsiz, duration, linecount=0, text_spacing_mul=0.55, cutscene=true, initial_delay=0, voice_override=null, shortcut_pp_text=false, gain=null) {
         let voice_sound = voice_override ?? this.get_speak_voice();
-        
+        let voice_gain = gain ?? (this.speak_gain ?? 0.15);
+
         // set a series of timers for each letter
         // to spawn a particle
         let d = initial_delay;
@@ -1551,18 +1603,19 @@ class WeaponBall extends Ball {
 
                 if (seg.mods?.fading) {
                     particle.add_component(new FadeOutParticleComponent(
-                        this.board, duration * 0.75, 1
+                        this.board, (duration-d) * 0.75, 1
                     ))
                 }
 
                 particle.text_border_size = 3;
                 particle.text_border_col = col.lerp(Colour.black, 0.8);
                 particle.alternative_layer = "text_main";
+                particle.shortcut_pp_text = true;
 
                 let timer = new Timer((b => {
                     b.spawn_particle(particle, pos);
                     if (c.match(/[a-zA-Z0-9\.\!\?\,\;\:]/))
-                        play_audio(voice_sound, 0.15);
+                        play_audio(voice_sound, voice_gain);
                 }), d);
 
                 if (cutscene) {
@@ -1579,7 +1632,7 @@ class WeaponBall extends Ball {
     }
 
     has_an_ultimate() {
-        return this.ult_cost != -1;
+        return this.ult_cost != -1 && this.show_stats && this.board.ultimates_enabled && !this.board.ultimates_paused;
     }
 
     passive_ultimate_charge(time_delta) {
@@ -1600,21 +1653,28 @@ class WeaponBall extends Ball {
                 return;
             }
 
+            if (this.board.ultimate_global_cooldown > 0) {
+                // wait our turn!
+                return;
+            }
+
             if (this.ult_current_charge >= this.ult_cost) {
                 this.trigger_ultimate();
             }
         }
     }
 
-    ultimate_animation() {
+    ultimate_animation(variant) {
         // override me
     }
 
-    resolve_ultimate() {
+    resolve_ultimate(variant) {
         // override me
     }
 
     trigger_ultimate() {
+        this.board.ultimate_global_cooldown = this.board.ultimate_global_cooldown_max;
+
         this.ult_charge_cooldown = ULT_DEFAULT_CHARGE_COOLDOWN;
         
         // super flash, reset charge
@@ -1638,28 +1698,32 @@ class WeaponBall extends Ball {
 
         let cutscene_duration = this.ult_cutscene_duration ?? 5;
 
+        let ult_variant = 0;
+
+        let allies = this.board.balls.filter(b => this.allied_with(b) && b.id != this.id);
+        let enemies = this.board.balls.filter(b => !this.allied_with(b) && b.id != this.id);
+
+        let applicable_special_lines = this.ult_special_lines.filter(l => {
+            return (
+                this.hp <= l.req_hp &&
+                l.req_enemies.every(proto => enemies.some(b => b.name == proto.ball_name)) &&
+                (l.other_enemies_allowed || enemies.every(b => l.req_enemies.some(proto => proto.ball_name == b.name))) &&
+                l.req_allies.every(proto => allies.some(b => b.name == proto.ball_name))
+            )
+        }).sort((a, b) => a.priority - b.priority);
+
+        let line = this.ult_line;
+
+        if (applicable_special_lines.length > 0) {
+            line = applicable_special_lines[0].text;
+            ult_variant = applicable_special_lines[0].ult_variant ?? 0;
+        }
+
         this.board.set_cutscene_timer(new Timer(b => {
             play_audio("ultimate_activate", 0.08);
             play_audio("aura_power_fluxing2", 0.18);
-            
-            let allies = this.board.balls.filter(b => this.allied_with(b) && b.id != this.id);
-            let enemies = this.board.balls.filter(b => !this.allied_with(b) && b.id != this.id);
 
-            let applicable_special_lines = this.ult_special_lines.filter(l => {
-                return (
-                    this.hp <= l.req_hp &&
-                    l.req_enemies.every(proto => enemies.some(b => b.name == proto.ball_name)) &&
-                    (l.other_enemies_allowed || enemies.every(b => l.req_enemies.some(proto => proto.ball_name == b.name))) &&
-                    l.req_allies.every(proto => allies.some(b => b.name == proto.ball_name))
-                )
-            }).sort((a, b) => a.priority - b.priority);
-
-            let line = this.ult_line;
-            if (applicable_special_lines.length > 0) {
-                line = applicable_special_lines[0].text;
-            }
-
-            this.speak_multiline(line, 22, cutscene_duration - zoom_delay);
+            this.speak_multiline(line, 22, cutscene_duration - zoom_delay, 0, 0.55, true, true);
         }, zoom_delay));
 
         set_camera_targets(
@@ -1674,12 +1738,12 @@ class WeaponBall extends Ball {
         this.board.set_cutscene_timer(new Timer(b => {
             reset_camera_targets();
 
-            this.resolve_ultimate();
+            this.resolve_ultimate(ult_variant);
 
             this.ult_current_charge = 0;
         }, cutscene_duration));
 
-        this.ultimate_animation();
+        this.ultimate_animation(ult_variant);
     }
 
     hit_other(other, with_weapon_index, damage=0, round_up=true) {
@@ -1751,6 +1815,10 @@ class WeaponBall extends Ball {
             final_amt *= this.get_stat(scales_with_stat);
         }
 
+        if (this.charge_ultimate && other.id != this.id) {
+            this.charge_ultimate(APPLY_RUPTURE_ULT_CHARGE * amt);
+        }
+
         other.receive_rupture(this, final_amt);
     }
 
@@ -1768,6 +1836,10 @@ class WeaponBall extends Ball {
         let final_amt = amt;
         if (scales_with_stat) {
             final_amt *= this.get_stat(scales_with_stat);
+        }
+
+        if (this.charge_ultimate && other.id != this.id) {
+            this.charge_ultimate(APPLY_POISON_ULT_CHARGE * (amt * duration));
         }
 
         other.receive_poison(this, final_amt, duration);
@@ -1791,6 +1863,10 @@ class WeaponBall extends Ball {
         let final_amt = amt;
         if (scales_with_stat) {
             final_amt *= this.get_stat(scales_with_stat);
+        }
+
+        if (this.charge_ultimate && other.id != this.id) {
+            this.charge_ultimate(APPLY_BURN_ULT_CHARGE * amt);
         }
 
         other.receive_burn(this, final_amt);
@@ -2239,6 +2315,8 @@ class HammerBall extends WeaponBall {
         this.description_brief = "Has a huge hammer that does lots of damage each hit and knocks enemies back.";
         this.level_description = "Makes the hammer deal even more damage.";
         this.max_level_description = "Adds another smaller hammer that swings independently and faster, dealing half damage.";
+        this.ult_description = "Slams the closest target into a wall at high speed, dealing huge damage.";
+
         this.quote = "I'm sure you understand.\nThe subject of my victory is quite the heavy topic.";
 
         this.pronoun = PRONOUN.HE;
@@ -2268,7 +2346,7 @@ class HammerBall extends WeaponBall {
             TAGS.CAN_AWAKEN,
         ];
 
-        this.ult_cost = DEFAULT_ULT_COST;
+        this.ult_cost = DEFAULT_ULT_COST * 1.2;
         this.ult_line = [
             {
                 text: "Training is over.",
@@ -2317,6 +2395,67 @@ class HammerBall extends WeaponBall {
                         text: "won't lose to you!",
                         initial_delay: 0,
                         delay_per_char: 0.05,
+                        mods: {
+                        }
+                    }
+                ]
+            },
+            {
+                ult_variant: 1,
+                priority: 1,
+                other_enemies_allowed: false,
+                req_enemies: [AxeBall],
+                req_allies: [],
+                req_hp: -1, // disabled :)
+                text: [
+                    {
+                        text: "I see a story lit up in your eyes.",
+                        initial_delay: 0,
+                        delay_per_char: 0.03
+                    },
+                    {
+                        text: "Burning bright, burning black,",
+                        initial_delay: 0.4,
+                        delay_per_char: 0.03,
+                        mods: {
+                            newline: true,
+                        }
+                    },
+                    {
+                        text: "burning up everything.",
+                        initial_delay: 1.1,
+                        delay_per_char: 0.03,
+                        mods: {
+                            newline: true,
+                        }
+                    },
+                    {
+                        text: "So... ",
+                        initial_delay: 1.6,
+                        delay_per_char: 0.03,
+                        mods: {
+                            newline: true,
+                        }
+                    },
+                    {
+                        text: "how do ",
+                        initial_delay: 0.1,
+                        delay_per_char: 0.03,
+                        mods: {
+                        }
+                    },
+                    {
+                        text: "you ",
+                        initial_delay: 0,
+                        delay_per_char: 0.03,
+                        mods: {
+                            shaking: true
+                        }
+                    },
+                    {
+                        text: "want it to end?!",
+                        initial_delay: 0,
+                        delay_per_char: 0.03,
                         mods: {
                         }
                     }
@@ -2392,10 +2531,18 @@ class HammerBall extends WeaponBall {
         this.rotate_weapon(1, this.speed_base * 1.6 * time_delta);
     }
 
-    ultimate_animation() {
+    ultimate_animation(variant) {
+        if (variant == 1) {
+            this.ultimate_animation_hoj_variant();
+            return;
+        }
+
         // set up timer to move ball to the exact hammer incidence point
         // while also rotating hammer to the position right before impact
         let target_ball = this.get_closest_enemy_and_distance()[0];
+        if (!target_ball) {
+            return;
+        }
 
         let target_vector = this.position.sub(target_ball.position).normalize();
         let target_distance = (this.weapon_data[0].size_multiplier / WEAPON_SIZE_MULTIPLIER) * (
@@ -2448,13 +2595,153 @@ class HammerBall extends WeaponBall {
         }, 0.01, true));
     }
 
-    resolve_ultimate() {
-        this.collision = true;
-        this.ultimate_hit_enabled = true;
-        this.weapon_data[0].unparriable = true;
+    ultimate_animation_hoj_variant() {
+        let anim_orb = new Particle(
+            this.position, 0, 1, entity_sprites.get("hoj_orb"),
+            0, 999, true
+        );
 
-        let target_ball = this.get_closest_enemy_and_distance()[0];
-        target_ball.invuln_duration = 0;
+        anim_orb.add_component(new FadeInParticleComponent(
+            this.board, 0.05, 1
+        ));
+
+        let fc = new FrameControlParticleComponent(this.board);
+        anim_orb.add_component(fc);
+
+        anim_orb.time_locked = false;
+
+        let target_angle = deg2rad(90);
+
+        // weapon target angle
+        let initial_angle = this.weapon_data[0].angle;
+        let angle_movement_req = initial_angle - (Math.PI + positive_mod(target_angle, Math.PI * 2) - (Math.PI * 0.11));
+        angle_movement_req = positive_mod(-angle_movement_req, Math.PI * 2);
+
+        let orb_timespeed = 1;
+        let orb_velocity = new Vector2(0, -20000);
+        let orb_gravity = new Vector2(0, 9810 * 5.16);
+
+        let angle1 = -Math.PI;
+        let angle2 = angle_movement_req + Math.PI;
+
+        let initial_delay = 2.7;
+        let hammer_initial_move_time = 0.4;
+        let hammer_delay_time = 0.7;
+        let hammer_second_move_time = 0.5;
+
+        let ttotal = initial_delay + hammer_initial_move_time + hammer_delay_time + hammer_second_move_time;
+
+        this.board.set_cutscene_timer(new Timer(b => {
+            this.board.spawn_particle(anim_orb, this.position);
+            
+            // gravity control + hammer rotate
+            let board_time = this.board.duration_plus_cutscenes;
+            let start_time = this.board.duration_plus_cutscenes;
+            this.board.set_cutscene_timer(new Timer(b2 => {
+                let t = this.board.duration_plus_cutscenes - start_time;
+                let delta_time = this.board.duration_plus_cutscenes - board_time;
+                board_time = this.board.duration_plus_cutscenes;
+
+                // orb
+                anim_orb.set_pos(
+                    anim_orb.position.add(orb_velocity.mul(delta_time * orb_timespeed))
+                );
+
+                orb_velocity = orb_velocity.add(orb_gravity.mul(delta_time * orb_timespeed));
+
+                fc.frame = Math.max(0, Math.round(4 - Math.abs(orb_velocity.y / 5000)));
+
+                orb_timespeed = Math.max(orb_timespeed - (delta_time * (1/1.4)), 0);
+
+                // hammer rotate
+                let angle = 0;
+                if (t >= hammer_initial_move_time && t < (hammer_delay_time + hammer_initial_move_time)) {
+                    // delay, do nothing
+                } else {
+                    let a1prop = 0;
+                    let a2prop = 0;
+                    if (t < hammer_initial_move_time) {
+                        a1prop = 1 - Math.pow(1 - Math.min(1, t / hammer_initial_move_time), 5);
+                    } else {
+                        let nt = t - (hammer_initial_move_time + hammer_delay_time);
+                        a1prop = 1;
+                        a2prop = 1 - Math.pow(1 - Math.min(1, nt / hammer_second_move_time), 5);
+                    }
+
+                    this.weapon_data[0].angle = initial_angle + (angle1 * a1prop) + (angle2 * a2prop);
+                    this.create_weapon_afterimage(0);
+                    this.cache_weapon_offsets();
+                }
+
+                if (t >= (ttotal - initial_delay)) {
+                    return false;
+                }
+
+                return true;
+            }, 0.01, true))
+        }, initial_delay));
+
+        this.board.set_cutscene_timer(new Timer(b => {
+            let delay_max = 0.01;
+            let delay = 0;
+            let times_max = 96;
+            let times = 0;
+            let lt = this.board.duration_plus_cutscenes;
+            this.board.set_cutscene_timer(new Timer(b2 => {
+                let time_delta = this.board.duration_plus_cutscenes - lt;
+                lt = this.board.duration_plus_cutscenes;
+
+                delay -= time_delta;
+                while (delay <= 0) {
+                    delay += delay_max;
+                    times++;
+
+                    for (let i=0; i<4; i++) {
+                        let p = b.spawn_particle(new Particle(
+                            anim_orb.position, random_float(0, Math.PI * 2, this.independent_random), 3,
+                            entity_sprites.get("superflash3"),
+                            16, 800
+                        ), anim_orb.position);
+
+                        p.time_locked = false;
+                        p.alternative_layer = "fg3"
+
+                        if (times % 4 == 0)
+                            play_audio("impact_8bit", 0.03);
+                    }
+                }
+                
+                if (times <= times_max) {
+                    return true;
+                }
+
+                play_audio("sword_schwing", 0.3);
+                play_audio("lightningbolt4", 0.2);
+
+                this.board.spawn_projectile(new HammerHojProjectile(
+                    this.board, this, 0, anim_orb.position, this.ult_impact_damage,
+                    2, Vector2.forward.rotate(this.weapon_data[0].angle + (Math.PI * 0.5)),
+                    20000, Vector2.zero
+                ), anim_orb.position);
+
+                anim_orb.expire();
+            }, 0.01, true));
+        }, ttotal - 0.2));
+    }
+
+    resolve_ultimate(variant) {
+        if (variant == 0) {
+            let target_ball = this.get_closest_enemy_and_distance()[0];
+            if (!target_ball) {
+                return;
+            }
+
+            target_ball.invuln_duration = 0;
+
+            this.collision = true;
+            this.ultimate_hit_enabled = true;
+            this.weapon_data[0].unparriable = true;
+        }
         // this.hit_other(target_ball, 0);
     }
 
@@ -2676,6 +2963,8 @@ class SordBall extends WeaponBall {
         this.description_brief = "Deals more damage and rotates faster after every strike.";
         this.level_description = "Increases the base damage and rotation speed of the sord, and makes it scale faster.";
         this.max_level_description = "Also makes the sord larger(!) after every strike.";
+        this.ult_description = "Channels ancestral power, temporarily increasing rotation speed and sord size while becoming unparriable.";
+        
         this.quote = "I told you about those strikes, bro. I TOLD you.";
 
         this.pronoun = PRONOUN.HE;
@@ -2939,7 +3228,7 @@ class SordBall extends WeaponBall {
         return [p1, p2, new_size, p, new_dir];
     }
 
-    ultimate_animation() {
+    ultimate_animation(variant) {
         let factor = 0.8;
         let pos = this.position;
         let size = 1 * factor;
@@ -2964,7 +3253,7 @@ class SordBall extends WeaponBall {
         }
     }
 
-    resolve_ultimate() {
+    resolve_ultimate(variant) {
         play_audio("lightningbolt4", 0.35);
         play_audio("sword_schwing", 0.15);
 
@@ -2975,11 +3264,13 @@ class SordBall extends WeaponBall {
 
         let closest = this.get_closest_enemy_and_distance()[0];
         
-        let vec = closest.position.sub(this.position).normalize().mul(16000);
-        this.set_velocity(vec);
+        if (closest) {
+            let vec = closest.position.sub(this.position).normalize().mul(16000);
+            this.set_velocity(vec);
 
-        let particle = new Particle(this.position, vec.angle(), 1.5, entity_sprites.get("hand_punch_particles"), 16, 0.4, false);
-        this.board.spawn_particle(particle, this.position);
+            let particle = new Particle(this.position, vec.angle(), 1.5, entity_sprites.get("hand_punch_particles"), 16, 0.4, false);
+            this.board.spawn_particle(particle, this.position);
+        }
 
         this.board.set_timer(new Timer(b => {
             this.speed_mul = 1;
@@ -2998,7 +3289,7 @@ class SordBall extends WeaponBall {
         this.speed_base += (60 / 4) * (1 + (this.level * 0.015));
 
         if (this.level >= AWAKEN_LEVEL) {
-            this.size_base += 0.04 * 16;
+            this.size_base += 0.04;
         }
 
         if (this.skin_name == "Faithful") {
@@ -3073,6 +3364,15 @@ class DaggerBall extends WeaponBall {
             this.tier = TIERS.APLUS;
         }
 
+        this.category = CATEGORIES.STANDARD;
+        this.tags = [
+            TAGS.MELEE,
+            TAGS.OFFENSIVE,
+            TAGS.SCALING,
+            TAGS.LEVELS_UP,
+            TAGS.CAN_AWAKEN,
+        ];
+
         this.ult_cost = DEFAULT_ULT_COST * 1.2;
         this.ult_line = [
             {
@@ -3098,15 +3398,6 @@ class DaggerBall extends WeaponBall {
             }
         ]
         this.speak_voice = "buh11";
-
-        this.category = CATEGORIES.STANDARD;
-        this.tags = [
-            TAGS.MELEE,
-            TAGS.OFFENSIVE,
-            TAGS.SCALING,
-            TAGS.LEVELS_UP,
-            TAGS.CAN_AWAKEN,
-        ];
 
         this.entry_animation = "teleport";
         this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
@@ -3256,7 +3547,7 @@ class DaggerBall extends WeaponBall {
         }
     }
 
-    ultimate_animation() {
+    ultimate_animation(variant) {
         this.board.set_cutscene_timer(new Timer(b => {
             this.board.spawn_particle(new Particle(
                 this.position, 0, 2, entity_sprites.get("entry_teleport"),
@@ -3270,7 +3561,7 @@ class DaggerBall extends WeaponBall {
         }, 4.1));
     }
 
-    resolve_ultimate() {
+    resolve_ultimate(variant) {
         let attack_count = -1;
         let last_attack_time = this.board.duration;
         let attack_pos = null;
@@ -3286,8 +3577,13 @@ class DaggerBall extends WeaponBall {
         this.weapon_data[0].unparriable = true;
 
         let acquire_new_ult_target = (b => {
+            let enemies = this.board.balls.filter(b => !this.allied_with(b));
+            if (enemies.length <= 0) {
+                return false;
+            }
+
             let enemy = seeded_random_from_array(
-                this.board.balls.filter(b => !this.allied_with(b)),
+                enemies,
                 this.board.random
             );
 
@@ -3314,10 +3610,15 @@ class DaggerBall extends WeaponBall {
                 this.position, 0, 2, entity_sprites.get("entry_teleport"),
                 24, 10
             ), this.position).time_locked = false;
+
+            return true;
         })
 
         this.board.set_timer(new Timer(b => {
-            acquire_new_ult_target();
+            let res = acquire_new_ult_target();
+            if (!res) {
+                return;
+            }
 
             // set continuous timer for movement and periodic timer for new attacks
             this.board.set_timer(new Timer(b => {
@@ -3336,8 +3637,8 @@ class DaggerBall extends WeaponBall {
                     attack_target.apply_hitstop(this.ult_attack_delay);
                     this.hitstop = 0;
 
-                    this.speed_base /= 1.75;
-                    this.damage_base /= 1.375;
+                    this.speed_base /= 1.9;
+                    this.damage_base /= 1.45;
 
                     if (attack_count >= this.ult_attack_count_max) {
                         play_audio("strongpunch");
@@ -3366,7 +3667,9 @@ class DaggerBall extends WeaponBall {
                 }
 
                 if (prop >= 1) {
-                    if (attack_count >= this.ult_attack_count_max) {
+                    let res = acquire_new_ult_target();
+
+                    if (attack_count >= this.ult_attack_count_max || !res) {
                         this.collision = true;
                         this.ignore_bounds_checking = false;
                         this.affected_by_gravity = true;
@@ -3384,12 +3687,22 @@ class DaggerBall extends WeaponBall {
                             }
 
                             return true;
-                        }, 0.01, true))
+                        }, 0.01, true));
+
+                        if (attack_count < this.ult_attack_count_max) {
+                            play_audio("strongpunch");
+                            this.speak([{
+                                text: "Disappointing.",
+                                initial_delay: 0,
+                                delay_per_char: 0.02,
+                                mods: {
+                                    fading: true
+                                }
+                            }], 22, 3)
+                        }
 
                         return false;
                     }
-
-                    acquire_new_ult_target();
                 }
 
                 return true;
@@ -3515,6 +3828,39 @@ class BowBall extends WeaponBall {
             TAGS.CAN_AWAKEN,
         ];
 
+        this.ult_cost = DEFAULT_ULT_COST * 1.05;
+        this.ult_line = [
+            {
+                text: "Okay, crazy idea.",
+                initial_delay: 0,
+                delay_per_char: 0.06
+            },
+            {
+                text: "I'll actually ",
+                initial_delay: 0.6,
+                delay_per_char: 0.06,
+                mods: {
+                    newline: true
+                }
+            },
+            {
+                text: "try",
+                initial_delay: 0,
+                delay_per_char: 0.06,
+                mods: {
+                    shaking: true,
+                }
+            },
+            {
+                text: " to aim this one...",
+                initial_delay: 0,
+                delay_per_char: 0.06
+            },
+        ];
+
+        this.speak_voice = "buh7";
+        this.speak_gain = 0.7;
+
         this.weapon_data = [
             new BallWeapon(1, "bow", [
                 {pos: new Vector2(16, 72-16), radius: 12},
@@ -3548,6 +3894,11 @@ class BowBall extends WeaponBall {
         this.multishot_cooldown_max = Math.min(0.05, (this.shot_cooldown_max / 2) / this.multishots_max);
     
         this.sprite_suffix = "";
+
+        this.ult_arrow_size = 2.5;
+        this.ult_arrow_hits = 12;
+        this.ult_arrow_damage = 2;
+        this.ult_arrow_speed = 50000;
     }
 
     set_skin(skin_name) {
@@ -3607,6 +3958,94 @@ class BowBall extends WeaponBall {
                 play_audio("bow2");
             }
         }
+    }
+
+    ultimate_animation(variant) {
+        // quickly lock onto target and make some kind of glowing animation
+        let t_last = this.board.duration_plus_cutscenes;
+        let t_start = this.board.duration_plus_cutscenes;
+
+        let target = this.get_closest_enemy_and_distance()[0];
+        if (!target) {
+            return;
+        }
+
+        let pointing_vector = target.position.sub(this.position);
+        let pointing_angle = positive_mod(pointing_vector.angle(), Math.PI * 2);
+
+        this.board.set_cutscene_timer(new Timer(b => {
+            let time_delta = this.board.duration_plus_cutscenes - t_last;
+            t_last = this.board.duration_plus_cutscenes;
+
+            if (this.board.duration_plus_cutscenes - t_start < 1.5) {
+                return true;
+            }
+
+            let cw_rot = 0;
+            let ccw_rot = 0;
+            let current = this.weapon_data[0].angle;
+            if (pointing_angle > current) {
+                cw_rot = pointing_angle - current;
+                ccw_rot = (current+(Math.PI*2)) - pointing_angle;
+            } else {
+                ccw_rot = current - pointing_angle;
+                cw_rot = pointing_angle - (current-(Math.PI*2));
+            }
+
+            let amt = Math.min(cw_rot, ccw_rot);
+            let factor = 150 * amt;
+
+            // smaller one wins
+            let sign = (cw_rot > ccw_rot ? -1 : 1) * (this.weapon_data[0].reversed ^ this.reversed ? -1 : 1);
+
+            this.rotate_weapon(0, factor * sign * time_delta);
+            this.cache_weapon_offsets();
+            this.cache_hitboxes_offsets();
+
+            if (factor > 0.01)
+                this.create_weapon_afterimage(0);
+
+            if (t_last >= t_start + 4.9) {
+                return false;
+            }
+
+            return true;
+        }, 0.01, true));
+    }
+
+    resolve_ultimate(variant) {
+        // fire a massive arrow which can multi-hit
+        let firing_offset = this.firing_offsets[0].mul(this.weapon_data[0].size_multiplier).rotate(this.weapon_data[0].angle);
+        let fire_pos = this.position.add(firing_offset);
+
+        let n = 1;
+        let angle = deg2rad(22.5);
+        for (let i=0; i<(n*2)+1; i++) {
+            let n_modified = i - n;
+            let a = (angle / n) * n_modified;
+
+            this.board.spawn_projectile(
+                new BowUltProjectile(
+                    this.board,
+                    this, 0, fire_pos, this.ult_arrow_damage, 1 * this.ult_arrow_size,
+                    new Vector2(1, 0).rotate(this.weapon_data[0].angle + a),
+                    this.ult_arrow_speed, Vector2.zero,
+                    this.ult_arrow_hits,
+                    this.sprite_suffix
+                ), fire_pos
+            )
+        }
+
+        play_audio("lightningbolt4", 0.4);
+
+        this.shot_cooldown = this.shot_cooldown_max;
+
+        let target = this.get_closest_enemy_and_distance()[0];
+        if (!target) {
+            return;
+        }
+
+        target.invuln_duration = 0;
     }
 
     hit_other(other, with_weapon_index) {
@@ -3704,6 +4143,68 @@ class MagnumBall extends WeaponBall {
             TAGS.CAN_AWAKEN,
         ];
 
+        this.ult_cost = DEFAULT_ULT_COST * 1.25;
+        this.ult_line = [
+            {
+                text: "Sorry that you had to face me,",
+                initial_delay: 0,
+                delay_per_char: 0.04
+            },
+            {
+                text: "but don't worry.",
+                initial_delay: 0.1,
+                delay_per_char: 0.05,
+                mods: {
+                    newline: true,
+                }
+            },
+            {
+                text: "This clip will make you famous.",
+                initial_delay: 1.6,
+                delay_per_char: 0.04,
+                mods: {
+                    newline: true,
+                }
+            }
+        ]
+        this.ult_special_lines = [
+            {
+                priority: 1,
+                other_enemies_allowed: false,
+                req_enemies: [RailgunBall],
+                req_allies: [],
+                req_hp: 100,
+                text: [
+                    {
+                        text: "You did a good job on that weapon.",
+                        initial_delay: 0,
+                        delay_per_char: 0.04
+                    },
+                    {
+                        text: "But remember... ",
+                        initial_delay: 0.2,
+                        delay_per_char: 0.04,
+                        mods: {
+                            newline: true,
+                        }
+                    },
+                    {
+                        text: "never ",
+                        initial_delay: 0.25,
+                        delay_per_char: 0.1,
+                        mods: {
+                            shaking: true,
+                        }
+                    },
+                    {
+                        text: "discount raw skill.",
+                        initial_delay: 0,
+                        delay_per_char: 0.07,
+                    },
+                ]
+            }
+        ];
+
         this.entry_animation = "snipe";
         this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
         this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
@@ -3742,6 +4243,8 @@ class MagnumBall extends WeaponBall {
 
         this.coin_shot_cooldown_max = 0.475 + (this.level * -0.001);
         this.coin_shot_cooldown = this.coin_shot_cooldown_max;
+
+        this.ult_damage = 7;
     }
 
     weapon_step(board, time_delta) {
@@ -3805,6 +4308,176 @@ class MagnumBall extends WeaponBall {
 
             play_audio("coin");
         }
+    }
+
+    ultimate_animation(variant) {
+        this.board.set_cutscene_timer(new Timer(b => {
+            let vstart = 6000;
+            let v = vstart;
+
+            let coin_firing_offset = this.firing_offsets[1].mul(this.weapon_data[1].size_multiplier).rotate(this.weapon_data[1].angle);
+            let coin_fire_pos = this.position.add(coin_firing_offset);
+
+            let particle = this.board.spawn_particle(new Particle(
+                coin_fire_pos, 0,
+                this.weapon_data[1].size_multiplier / WEAPON_SIZE_MULTIPLIER,
+                entity_sprites.get("coin"), 24, 999,
+                true
+            ), coin_fire_pos);
+
+            particle.time_locked = false;
+
+            let ts = this.board.duration_plus_cutscenes;
+            let ls = this.board.duration_plus_cutscenes;
+            let life = 0;
+
+            let echo_times = 5;
+            let echo_gain = 0.5;
+            let echo_delay_per = 0.4;
+            let echo_delay_cur = 0;
+
+            this.board.set_cutscene_timer(new Timer(b2 => {
+                let time_delta = this.board.duration_plus_cutscenes - ls;
+                ls = this.board.duration_plus_cutscenes;
+
+                echo_delay_cur -= time_delta;
+                if (echo_times > 0 && echo_delay_cur <= 0) {
+                    play_audio("coin", echo_gain);
+
+                    echo_gain *= 0.75;
+                    echo_delay_cur += echo_delay_per;
+                    echo_times--;
+                }
+
+                let trailpart = new Particle(
+                    particle.position, 0, particle.size / PARTICLE_SIZE_MULTIPLIER,
+                    entity_sprites.get("coin"), 0, 0.5, true
+                );
+
+                trailpart.add_component(new FrameControlParticleComponent(
+                    this.board, particle.cur_frame
+                ));
+
+                trailpart.add_component(new FadeOutParticleComponent(
+                    this.board, 0, 0.5, 2
+                ));
+
+                trailpart.time_locked = false;
+
+                this.board.spawn_particle(trailpart, particle.position);
+
+                particle.set_pos(particle.position.add(new Vector2(0, -v * time_delta)));
+                life += time_delta * (v / vstart);
+
+                particle.lifetime = life;
+                v *= Math.pow(0.1, time_delta);
+
+                if (this.board.duration_plus_cutscenes - ts > 0.5) {
+                    let pointing_vector = particle.position.sub(this.position);
+                    let pointing_angle = positive_mod(pointing_vector.angle() + (deg2rad(5)), Math.PI * 2);
+
+                    let cw_rot = 0;
+                    let ccw_rot = 0;
+                    let current = this.weapon_data[0].angle;
+                    if (pointing_angle > current) {
+                        cw_rot = pointing_angle - current;
+                        ccw_rot = (current+(Math.PI*2)) - pointing_angle;
+                    } else {
+                        ccw_rot = current - pointing_angle;
+                        cw_rot = pointing_angle - (current-(Math.PI*2));
+                    }
+
+                    let amt = Math.min(cw_rot, ccw_rot);
+                    let factor = 150 * amt;
+
+                    // smaller one wins
+                    let sign = (cw_rot > ccw_rot ? -1 : 1) * (this.weapon_data[0].reversed ^ this.reversed ? -1 : 1);
+
+                    this.rotate_weapon(0, factor * sign * time_delta);
+                    this.cache_weapon_offsets();
+                    this.cache_hitboxes_offsets();
+                    
+                    if (factor > 0.01)
+                        this.create_weapon_afterimage(0);
+                }
+
+                if (this.board.duration_plus_cutscenes - ts > 2.25) {
+                    return false;
+                }
+
+                return true;
+            }, 0.01, true));
+
+            this.board.set_cutscene_timer(new Timer(b => {
+                let firing_offset = this.firing_offsets[0].mul(this.weapon_data[0].size_multiplier).rotate(this.weapon_data[0].angle);
+                let fire_pos = this.position.add(firing_offset);
+
+                this.board.spawn_projectile(new MagnumUltProjectile(
+                    this.board, this, 0, fire_pos, this.ult_damage, particle.position, 1
+                ), fire_pos);
+
+                particle.expire();
+
+                for (let i=0; i<64; i++) {
+                    let p = b.spawn_particle(new Particle(
+                        particle.position, random_float(0, Math.PI * 2, this.independent_random), 3,
+                        entity_sprites.get("superflash3"),
+                        16 * random_float(0.5, 1.5, this.independent_random), 800
+                    ), particle.position);
+
+                    p.time_locked = false;
+                    p.alternative_layer = "fg3"
+                }
+
+                play_audio("parry2", 0.2);
+
+            }, 2.1));
+
+            let projs = [];
+            this.board.set_cutscene_timer(new Timer(b => {
+                // pick a random point on every wall
+                let positions = [
+                    new Vector2(0, random_float(0.1, 0.9, this.board.random) * this.board.size.y),
+                    new Vector2(random_float(0.1, 0.9, this.board.random) * this.board.size.x, 0),
+                    new Vector2(this.board.size.x, random_float(0.1, 0.9, this.board.random) * this.board.size.y),
+                    new Vector2(random_float(0.1, 0.9, this.board.random) * this.board.size.x, this.board.size.y),
+                ];
+
+                positions.forEach(pos => {
+                    projs.push(
+                        this.board.spawn_projectile(new MagnumUltProjectile(
+                            this.board, this, 0, particle.position, this.ult_damage, pos, 1
+                        ), particle.position)
+                    );
+                })
+
+                play_audio("gun1", 0.4);
+            }, 2.35));
+
+            this.board.set_cutscene_timer(new Timer(b => {
+                projs.forEach(proj => {
+                    let closest = this.get_closest_enemy_and_distance(null, proj.target_position)[0];
+                    if (!closest) {
+                        return;
+                    }
+
+                    this.board.spawn_projectile(new MagnumUltProjectile(
+                        this.board, this, 0, proj.target_position, this.ult_damage, closest.position, 1.5
+                    ), proj.target_position);
+
+                    closest.invuln_duration = 0;
+                })
+
+                play_audio("lightningbolt4", 0.4);
+                play_audio("gun3", 0.2);
+                play_audio("gun_super", 0.2);
+            }, 2.7));
+        }, 2.7));
+    }
+
+    resolve_ultimate(variant) {
+        // override me
+        this.shot_cooldown = this.shot_cooldown_max;
     }
 
     hit_other(other, with_weapon_index) {
@@ -3886,6 +4559,25 @@ class NeedleBall extends WeaponBall {
             TAGS.CAN_AWAKEN,
         ];
 
+        this.ult_cost = DEFAULT_ULT_COST * 0.3;
+        this.ult_line = [
+            {
+                text: "Wait, wait... ",
+                initial_delay: 0,
+                delay_per_char: 0.08
+            },
+            {
+                text: " not... ",
+                initial_delay: 0.15,
+                delay_per_char: 0.08,
+            },
+            {
+                text: "now..!",
+                initial_delay: 0.15,
+                delay_per_char: 0.08,
+            }
+        ]
+
         this.weapon_data = [
             new BallWeapon(can_clone ? 1 : 0.6, "needle", [
                 {pos: new Vector2(60, 64), radius: 4},
@@ -3922,6 +4614,10 @@ class NeedleBall extends WeaponBall {
         this.can_clone = can_clone;
         
         this.set_radius(this.radius * (can_clone ? 1 : 0.75));
+
+        this.ult_clones = 4;
+        this.ult_split_ratio = 0.25;
+        this.ult_bonus_hp = 50;
     }
 
     weapon_step(board, time_delta) {
@@ -3933,6 +4629,64 @@ class NeedleBall extends WeaponBall {
         if (this.parent?.hp <= 0) {
             this.lose_hp(25 * time_delta, this, true);
         }
+    }
+
+    ultimate_animation(variant) {
+        let st = this.board.duration_plus_cutscenes;
+        let lt = this.board.duration_plus_cutscenes;
+
+        let shake_delay_max = 0.02;
+        let shake_delay = 0;
+
+        let opos = this.position;
+
+        this.board.set_cutscene_timer(new Timer(b => {
+            let time_delta = this.board.duration_plus_cutscenes - lt;
+            let t = this.board.duration_plus_cutscenes - st;
+
+            lt = this.board.duration_plus_cutscenes;
+
+            let intensity = Math.pow(t / 5, 2) * 500;
+
+            shake_delay -= time_delta;
+            if (shake_delay <= 0) {
+                shake_delay += shake_delay_max;
+
+                this.create_self_afterimage(0.75, 0.5).time_locked = false;
+                this.set_pos(opos.add(random_on_circle(random_float(0, 1, this.board.random) * intensity, this.board.random)));
+            }
+
+            if (t >= 5) {
+                this.set_pos(opos);
+                return false;
+            }
+
+            return true;
+        }, 0.01, true));
+    }
+
+    resolve_ultimate(variant) {
+        for (let i=0; i<this.ult_clones; i++) {
+            this.board.spawn_particle(new Particle(
+                this.position, random_float(0, Math.PI * 2, this.independent_random), 1.5, entity_sprites.get("explosion"), 24, 3, false
+            ), this.position);
+
+            let ball = this.clone_chance(
+                true, this.ult_split_ratio, false, this.ult_bonus_hp
+            );
+
+            if (ball) {
+                let n = 128;
+                this.board.set_timer(new Timer(b => {
+                    ball.create_self_afterimage(0.8 * (n / 128));
+                    n--;
+                    return n > 0; 
+                }, 0.01, true));
+            }
+        }
+
+        play_audio("bottle_pop", 0.3);
+        play_audio("lightningbolt4", 0.3);
     }
 
     hit_other(other, with_weapon_index) {
@@ -3947,10 +4701,10 @@ class NeedleBall extends WeaponBall {
         return result;
     }
 
-    clone_chance() {
+    clone_chance(always=false, override_split_ratio=null, lose_hp=true, bonus_hp=0) {
         let c = this.board.random();
-        if (this.can_clone && c < this.split_chance) {
-            let hp_proportion = Math.floor(this.hp * this.split_ratio);
+        if (this.can_clone && (always || c < this.split_chance)) {
+            let hp_proportion = Math.floor(this.hp * (override_split_ratio ?? this.split_ratio));
 
             if (hp_proportion > 0) {
                 let new_ball = new NeedleBall(
@@ -3961,6 +4715,8 @@ class NeedleBall extends WeaponBall {
                 );
 
                 new_ball.hp = hp_proportion * 4;
+                new_ball.hp += bonus_hp;
+
                 new_ball.max_hp = new_ball.hp;
                 new_ball.apply_invuln(BALL_INVULN_DURATION);
 
@@ -3971,7 +4727,7 @@ class NeedleBall extends WeaponBall {
                     new_ball.linked_hat_particle = hat_particle;
                 }
 
-                if (true) {
+                if (lose_hp) {
                     let hp_lost = hp_proportion - (hp_proportion * this.split_hp_save);
 
                     this.lose_hp(hp_lost, this);
@@ -3985,6 +4741,8 @@ class NeedleBall extends WeaponBall {
 
                 this.children.push(new_ball);
                 new_ball.parent = this;
+
+                return new_ball;
             }
         }
     }
@@ -4080,6 +4838,75 @@ class RailgunBall extends WeaponBall {
             TAGS.CAN_AWAKEN,
         ];
 
+        this.ult_cost = DEFAULT_ULT_COST * 1.35;
+        this.ult_line = [
+            {
+                text: "Let's kick this thing into full power!",
+                initial_delay: 0,
+                delay_per_char: 0.03
+            },
+            {
+                text: "It's actually pretty dangerous to do this,",
+                initial_delay: 0,
+                delay_per_char: 0.03,
+                mods: {
+                    newline: true,
+                }
+            },
+            {
+                text: "the output isn't qui",
+                initial_delay: 1.1,
+                delay_per_char: 0.03,
+                mods: {
+                    newline: true,
+                }
+            },
+            {
+                text: "eeeEEEEEEEEEEEEwaitWAIT",
+                initial_delay: 0,
+                delay_per_char: 0.03,
+                mods: {
+                    shaking: true,
+                }
+            },
+            {
+                text: "WHOOOOAAAAAA STOP STOP STOP",
+                initial_delay: 1.5,
+                delay_per_char: 0.03,
+                mods: {
+                    newline: true,
+                    shaking: true,
+                }
+            },
+        ]
+        this.ult_special_lines = [
+            {
+                priority: 1,
+                other_enemies_allowed: false,
+                req_enemies: [MagnumBall],
+                req_allies: [],
+                req_hp: 100,
+                text: [
+                    {
+                        text: "Daaad! Watch...",
+                        initial_delay: 0,
+                        delay_per_char: 0.08
+                    },
+                    {
+                        text: "THIS!!!",
+                        initial_delay: 0.57,
+                        delay_per_char: 0.12,
+                        mods: {
+                            newline: true,
+                            shaking: true,
+                        }
+                    }
+                ]
+            }
+        ];
+
+        this.speak_voice = "buh11";
+
         this.entry_animation = "snipe";
         this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
         this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
@@ -4115,6 +4942,17 @@ class RailgunBall extends WeaponBall {
         this.shot_cooldown = this.shot_cooldown_max;
 
         this.hit_decay = 0;
+
+        this.ult_ongoing = false;
+        this.ult_remaining_hits = 0; // number of enhanced shots left
+        this.ult_max_amount = 16; // the number of total enhanced shots per ult
+        this.ult_damage = 20; // main beam damage
+        this.ult_inner_damage = 5; // just a tiny bit of extra damage for the center hit
+        this.ult_shot_cooldown_max = 0.09; // initial gap between railgun hyperbeam shots
+        if (this.level >= AWAKEN_LEVEL) {
+            this.ult_damage *= (2/3);
+            this.ult_inner_damage *= (2/3);
+        }
     }
 
     randomise_weapon_rotations() {
@@ -4148,6 +4986,34 @@ class RailgunBall extends WeaponBall {
         }
     }
 
+    spawn_rail_bullet(fire_pos, end_pos) {
+        if (this.ult_ongoing) {
+            board.spawn_projectile(
+                new RailgunUltProjectile(
+                    this.board,
+                    this, 0, fire_pos, this.ult_damage,
+                    end_pos,
+                ), fire_pos
+            )
+            board.spawn_projectile(
+                new RailgunUltInnerProjectile(
+                    this.board,
+                    this, 0, fire_pos, this.ult_inner_damage,
+                    end_pos,
+                ), fire_pos
+            )
+            play_audio("lightningbolt4", 0.2);
+        } else {
+            board.spawn_projectile(
+                new RailgunProjectile(
+                    this.board,
+                    this, 0, fire_pos, this.proj_damage_base,
+                    end_pos,
+                ), fire_pos
+            )
+        }
+    }
+
     weapon_step(board, time_delta) {
         // rotate the weapon
         this.rotate_weapon(0, this.speed_base * time_delta);
@@ -4165,39 +5031,117 @@ class RailgunBall extends WeaponBall {
 
         if (this.shot_cooldown < 0) {
             this.shot_cooldown = this.shot_cooldown_max;
+            if (this.ult_ongoing) {
+                this.shot_cooldown = this.ult_shot_cooldown_max;
+            }
 
             // schut
             let firing_offset = this.firing_offsets[0].mul(this.weapon_data[0].size_multiplier).rotate(this.weapon_data[0].angle);
             let fire_pos = this.position.add(firing_offset);
 
             let bullet1_end_pos = new Vector2(1, 0).rotate(this.weapon_data[0].angle).mul(10000).add(fire_pos);
-            board.spawn_projectile(
-                new RailgunProjectile(
-                    this.board,
-                    this, 0, fire_pos, this.proj_damage_base,
-                    bullet1_end_pos,
-                ), fire_pos
-            )
+            
+            this.spawn_rail_bullet(fire_pos, bullet1_end_pos);
 
             if (this.level >= AWAKEN_LEVEL) {
                 firing_offset = this.firing_offsets[0].mul(this.weapon_data[1].size_multiplier).rotate(this.weapon_data[1].angle);
                 fire_pos = this.position.add(firing_offset);
 
-                board.spawn_projectile(
-                    new RailgunProjectile(
-                        this.board,
-                        this, 0, fire_pos, this.proj_damage_base,
-                        new Vector2(1, 0).rotate(this.weapon_data[1].angle).mul(10000).add(fire_pos),
-                    ), fire_pos
-                )
-            } else {
+                this.spawn_rail_bullet(
+                    fire_pos,
+                    new Vector2(1, 0).rotate(this.weapon_data[1].angle).mul(10000).add(fire_pos)
+                );
+            }
 
+            this.ult_remaining_hits--;
+            if (this.ult_remaining_hits == 0) {
+                this.ult_ongoing = false;
+                this.board.set_timer(new Timer(b => {
+                    this.speak([{
+                        text: "That was ",
+                        mods: {
+                            fading: true
+                        }
+                    }, {
+                        text: "AWESOME!!",
+                        mods: {
+                            shaking: true,
+                            fading: true
+                        }
+                    }], 22, 4)
+                }, 0.5))
             }
 
             if (this.skin_name == "Chicken") {
                 play_audio("chicken");
             }
         }
+    }
+
+    ultimate_animation(variant) {
+        let initial_angle = this.weapon_data[0].angle;
+
+        let angle_movement_req = initial_angle + Math.PI * 13.37;
+
+        this.collision = false;
+        this.weapon_data[0].unparriable = true;
+        if (this.weapon_data.length > 1) {
+            this.weapon_data[1].unparriable = true;
+        }
+
+        let delay = 2.9;
+
+        let move_time = 2;
+
+        let start_time = this.board.duration_plus_cutscenes;
+        this.board.set_cutscene_timer(new Timer(b => {
+            let t = b.duration_plus_cutscenes - start_time;
+
+            if (t > delay) {
+                let nt = t - delay;
+
+                let prop = Math.pow(nt / move_time, 4);
+
+                this.weapon_data[0].angle = initial_angle + (angle_movement_req * prop);
+                if (this.weapon_data.length > 1) {
+                    this.weapon_data[1].angle = initial_angle + Math.PI + (angle_movement_req * prop);
+                }
+
+                this.cache_weapon_offsets();
+
+                set_camera_targets(
+                    this.position,
+                    this.board.map_config.initial_zoom_level * 1,
+                    0.00005,
+                    0.02 
+                )
+
+                this.create_weapon_afterimage(0, 0.5, 0.5).time_locked = false;
+                if (this.weapon_data.length > 1)
+                    this.create_weapon_afterimage(1, 0.5, 0.5).time_locked = false;
+            }
+
+            if (t > delay + move_time) {
+                return false;
+            }
+
+            return true;
+        }, 0.01, true));
+
+    }
+
+    resolve_ultimate(variant) {
+        this.collision = true;
+        this.weapon_data[0].unparriable = false;
+        if (this.weapon_data.length > 1) {
+            this.weapon_data[1].unparriable = false;
+        }
+
+        this.speed_base = 1200;
+        this.ult_remaining_hits = this.ult_max_amount;
+        this.shot_cooldown = 0.1;
+        this.ult_ongoing = true;
+        this.hit_decay = 0.2;
     }
 
     hit_other(other, with_weapon_index) {
@@ -4207,7 +5151,12 @@ class RailgunBall extends WeaponBall {
     hit_other_with_projectile(other, with_projectile) {
         if (with_projectile.source_weapon_index != 999) {
             this.shot_cooldown = this.shot_cooldown_rapidfire;
-            this.speed_base *= 1.5;
+            if (this.ult_ongoing) {
+                // this.ult_remaining_hits++;
+            } else {
+                this.speed_base *= 1.5;
+            }
+
             this.hit_decay = 0.6;
         }
 
@@ -4217,10 +5166,17 @@ class RailgunBall extends WeaponBall {
             other.apply_invuln(0.015, true);
 
             for (let i=0; i<8; i++) {
-                this.board.spawn_particle(new EnergyBurstParticle(
-                    other.position, 0.6, entity_sprites.get("railgun_point"), 0, 16, true,
-                    25000, 120000, this, new Colour(18, 175, 175, 255), 4, 2, 0, true
-                ), other.position)
+                if (this.ult_ongoing) {
+                    this.board.spawn_particle(new EnergyBurstParticle(
+                        other.position, 0.6, entity_sprites.get("railgun_point"), 0, 16, true,
+                        25000, 120000, this, new Colour(255, 100, 100, 255), 4, 2, 0, true
+                    ), other.position)
+                } else {
+                    this.board.spawn_particle(new EnergyBurstParticle(
+                        other.position, 0.6, entity_sprites.get("railgun_point"), 0, 16, true,
+                        25000, 120000, this, new Colour(18, 175, 175, 255), 4, 2, 0, true
+                    ), other.position)
+                }
             }
         }
 
@@ -4307,6 +5263,36 @@ class PotionBall extends WeaponBall {
             TAGS.CAN_AWAKEN,
         ];
 
+        this.ult_cost = DEFAULT_ULT_COST * 1.25;
+        this.ult_line = [
+            {
+                text: "I'm gonna run out of ingredients at this rate!",
+                initial_delay: 0,
+                delay_per_char: 0.04
+            },
+            {
+                text: "Wait, no I'm not! I should just go ",
+                initial_delay: 0.2,
+                delay_per_char: 0.04,
+                mods: {
+                    newline: true,
+                }
+            },
+            {
+                text: "faster ",
+                initial_delay: 0,
+                delay_per_char: 0.05,
+                mods: {
+                    shaking: true
+                }
+            },
+            {
+                text: "then!",
+                initial_delay: 0,
+                delay_per_char: 0.04,
+            }
+        ]
+
         this.entry_animation = "impact";
         this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
         this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
@@ -4358,6 +5344,11 @@ class PotionBall extends WeaponBall {
         this.duration_mult = 1.2 + (0.0125 * this.level);
 
         this.sprite_suffix = "";
+
+        this.ult_potion_delay_max = 0.16;
+        this.ult_potion_delay = 0;
+        this.ult_potions_left = 0;
+        this.ult_potions_max = 16;
     }
 
     set_skin(skin_name) {
@@ -4408,6 +5399,86 @@ class PotionBall extends WeaponBall {
                 }
             }
         }
+
+        if (this.ult_potions_left > 0) {
+            this.ult_potion_delay -= time_delta;
+            while (this.ult_potion_delay <= 0) {
+                this.ult_potion_delay += this.ult_potion_delay_max;
+                this.ult_potions_left--;
+
+                let fire_pos = new Vector2(
+                    random_float(0.1, 0.9, this.board.random) * this.board.size.x,
+                    -256
+                );
+
+                let i = random_int(0, this.weapon_data.length, this.board.random);
+
+                let proj = board.spawn_projectile(
+                    new PotionBottleProjectile(
+                        this.board,
+                        this, i, fire_pos, this.potion_impact_damage, 1,
+                        random_on_circle(1, this.board.random).add(new Vector2(0, 2)).normalize(),
+                        random_int(8000, 12000, this.board.random), board.gravity, i, this.duration_mult * 0.5,
+                        this.board.random() < 0.5, this.sprite_suffix
+                    ), fire_pos
+                );
+
+                this.board.set_timer(new Timer(b => {
+                    proj.active = false;
+                    proj.make_splash();
+                }, random_float(0.1, 0.7, this.board.random)));
+            }
+        }
+    }
+
+    ultimate_animation(variant) {
+        let st = this.board.duration_plus_cutscenes;
+        let lt = this.board.duration_plus_cutscenes;
+
+        let part_delay_max = 0.02;
+        let part_delay = 4.3;
+
+        this.board.set_cutscene_timer(new Timer(b => {
+            let time_delta = this.board.duration_plus_cutscenes - lt;
+            let t = this.board.duration_plus_cutscenes - st;
+
+            lt = this.board.duration_plus_cutscenes;
+
+            part_delay -= time_delta;
+            if (part_delay <= 0) {
+                part_delay += part_delay_max;
+
+                let vel = new Vector2(0, -18000).add(random_on_circle(7000, this.independent_random));
+                let pos = this.position.add(random_on_circle(this.radius * 0.5, this.independent_random));
+                let part = new MovingParticle(
+                    pos, random_float(0, Math.PI * 2, this.independent_random),
+                    1, entity_sprites.get(`potion${random_int(
+                        1, 4 + (this.level >= AWAKEN_LEVEL ? 1 : 0)
+                    )}${this.sprite_suffix}`), 0, 3, true, vel, 0, true
+                );
+
+                part.add_component(new SpriteTrailParticleComponent(
+                    this.board, 0, 0.4, 2, 0.3
+                ));
+
+                part.time_locked = false;
+
+                this.board.spawn_particle(part, pos);
+
+                play_audio("bottle_pop", 0.15);
+            }
+
+            if (t >= 5) {
+                return false;
+            }
+
+            return true;
+        }, 0.01, true));
+    }
+
+    resolve_ultimate(variant) {
+        this.ult_potion_delay = this.ult_potion_delay_max + 1;
+        this.ult_potions_left = this.ult_potions_max;
     }
 
     parry_weapon(with_weapon_index, other_ball, other_weapon_id) {
@@ -11058,6 +12129,26 @@ class RailgunProjectile extends HitscanProjectile {
     }
 }
 
+class RailgunUltProjectile extends HitscanProjectile {
+    constructor(board, source, source_weapon_index, position, damage, target_position) {
+        super(board, source, source_weapon_index, position, damage, target_position);
+
+        this.max_width = 80;
+        this.sprite_colour = "red";
+        this.parriable = false;
+    }
+}
+
+class RailgunUltInnerProjectile extends HitscanProjectile {
+    constructor(board, source, source_weapon_index, position, damage, target_position) {
+        super(board, source, source_weapon_index, position, damage, target_position);
+
+        this.max_width = 55;
+        this.sprite_colour = "white";
+        this.parriable = false;
+    }
+}
+
 class MagnumProjectile extends HitscanProjectile {
     constructor(board, source, source_weapon_index, position, damage, target_position, ricochets) {
         super(board, source, source_weapon_index, position, damage, target_position);
@@ -11213,6 +12304,16 @@ class MagnumProjectile extends HitscanProjectile {
     }
 }
 
+class MagnumUltProjectile extends HitscanProjectile {
+    constructor(board, source, source_weapon_index, position, damage, target_position, sizmul=1) {
+        super(board, source, source_weapon_index, position, damage, target_position);
+
+        this.max_width = 24 * sizmul;
+        this.sprite_colour = Colour.from_hex("#f80").lerp(Colour.red, Math.min(1, sizmul - 1)).css();
+        this.parriable = false;
+    }
+}
+
 class WandMagentaProjectile extends HitscanProjectile {
     constructor(board, source, source_weapon_index, position, damage, target_position) {
         super(board, source, source_weapon_index, position, damage, target_position);
@@ -11297,6 +12398,72 @@ class ArrowProjectile extends InertiaRespectingStraightLineProjectile {
             {pos: new Vector2(16, 0), radius: 4},
             {pos: new Vector2(20, 0), radius: 4},
         ]);
+    }
+}
+
+class BowUltProjectile extends InertiaRespectingStraightLineProjectile {
+    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel, arrow_hits, sprite_suffix="") {
+        super(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
+    
+        this.sprite = "arrow" + sprite_suffix;
+        this.set_hitboxes([
+            {pos: new Vector2(-20, 0), radius: 4},
+            {pos: new Vector2(-16, 0), radius: 4},
+            {pos: new Vector2(-12, 0), radius: 4},
+            {pos: new Vector2(-8, 0), radius: 4},
+            {pos: new Vector2(-4, 0), radius: 4},
+            {pos: new Vector2(0, 0), radius: 4},
+            {pos: new Vector2(4, 0), radius: 4},
+            {pos: new Vector2(8, 0), radius: 4},
+            {pos: new Vector2(12, 0), radius: 4},
+            {pos: new Vector2(16, 0), radius: 4},
+            {pos: new Vector2(20, 0), radius: 4},
+        ]);
+
+        this.arrow_hits = arrow_hits;
+        this.parriable = false;
+        this.collides_other_projectiles = false;
+
+        this.hit_map = new Map();
+
+        this.afterimage_delay_max = 0.005;
+        this.afterimage_delay = this.afterimage_delay_max;
+    }
+
+    physics_step(time_delta) {
+        super.physics_step(time_delta);
+
+        this.afterimage_delay -= time_delta;
+        while (this.afterimage_delay <= 0) {
+            this.afterimage_delay += this.afterimage_delay_max;
+            this.board.spawn_particle(new Particle(
+                this.position, this.direction_angle,
+                this.size / PROJ_SIZE_MULTIPLIER,
+                entity_sprites.get(this.sprite),
+                0, 0.25
+            ), this.position).add_component(new FadeOutParticleComponent(
+                this.board, 0, 0.75
+            ));
+        }
+    }
+
+    hit_ball(ball, delta_time) {
+        this.ignore_balls.add(ball.id);
+        this.active = true;
+
+        let n = 0;
+        this.board.set_timer(new Timer(b => {
+            if (n % 2 == 1)
+                play_audio("impact");
+
+            this.source.hit_other_with_projectile(
+                ball, this
+            )
+
+            n++;
+
+            return n < this.arrow_hits; 
+        }, 0.01, true));
     }
 }
 
@@ -12543,6 +13710,62 @@ class WrenchLV4HitscanProjectile extends HitscanProjectile {
 
         this.max_width = 8;
         this.sprite_colour = "#9ff";
+    }
+}
+
+class HammerHojProjectile extends InertiaRespectingStraightLineProjectile {
+    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel) {
+        super(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
+    
+        this.sprite = "hoj_dash";
+        this.set_hitboxes([
+            {pos: new Vector2(-12, 0), radius: 24},
+        ]);
+
+        this.particle_cd_max = 0.01;
+        this.particle_cd = this.particle_cd_max;
+
+        this.parriable = false;
+        this.collides_other_projectiles = false;
+    }
+
+    physics_step(time_delta) {
+        super.physics_step(time_delta);
+
+        // find the nearest ball and rotate towards it
+        let cur_dir = this.direction.mul(this.speed);
+
+        // add a flat value to it (scaled by time_delta)
+        let closest_enemy = [...this.board.balls.filter(b => this.can_hit_ball(b))].reduce((p, c) => {
+            return !p || (p[1] > c.position.sqr_distance(this.position)) ? [c, c.position.sqr_distance(this.position)] : p
+        }, null);
+
+        if (closest_enemy) {
+            let vec = closest_enemy[0].position.sub(this.position).normalize();
+
+            cur_dir = cur_dir.add(vec.mul(160000 * time_delta));
+            cur_dir = cur_dir.mul(Math.pow(0.006, time_delta))
+        }
+
+        // recalculate speed and direction
+        this.speed = cur_dir.magnitude();
+        this.set_dir(cur_dir.normalize());
+
+        this.particle_cd -= time_delta;
+        while (this.particle_cd < 0) {
+            this.particle_cd += this.particle_cd_max;
+
+            let pos = this.position.add(this.direction.mul(-12 * this.size, 0));
+
+            this.board.spawn_particle(new Particle(
+                pos, this.direction_angle, this.size / PROJ_SIZE_MULTIPLIER, entity_sprites.get("hoj_dash"), 24, 1, false, 0, true
+            ), pos).add_component(new FadeOutParticleComponent(this.board, 0, 1));
+        }
+    }
+
+    hit_ball(ball, delta_time) {
+        this.ignore_balls.add(ball.id);
+        this.active = true;
     }
 }
 

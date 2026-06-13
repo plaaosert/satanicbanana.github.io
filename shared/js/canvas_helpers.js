@@ -68,7 +68,7 @@ function write_text(ctx, text, x, y, colour, font, fontsize, centered, stroke_w,
     }
     
     if (stroke_w && stroke_style) {
-        ctx.miterLimit = stroke_w;
+        // ctx.miterLimit = stroke_w;
         ctx.lineJoin = "round";
         ctx.strokeStyle = stroke_style;
         ctx.lineWidth = stroke_w;
@@ -78,9 +78,20 @@ function write_text(ctx, text, x, y, colour, font, fontsize, centered, stroke_w,
     ctx.fillText(text, x + offset_x, y + offset_y)
 }
 
-function write_pp_bordered_text(ctx, text, x, y, colour, font, fontsize, centered, radius, border_colour="black", modifiers) {
+function write_pp_bordered_text(ctx, text, x, y, colour, font, fontsize, centered, radius, border_colour="black", modifiers, shortcut_pp_text=false) {
     let lb = -radius;
     let ub = radius+1;
+
+    if (shortcut_pp_text) {
+        write_text(
+            ctx, text,
+            x + 0, y + 0,
+            colour, font, fontsize, centered,
+            radius * 1.5, border_colour, modifiers
+        );
+
+        return;
+    }
 
     for (let xt=lb; xt<ub; xt++) {
         for (let yt=lb; yt<ub; yt++) {
