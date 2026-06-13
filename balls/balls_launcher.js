@@ -569,6 +569,7 @@ const REPLAY_VALUES = {
     "board_size": "z",
     "powerups":"w",
     "positions":"n",
+    "map_config":"x"
 };
 
 function compress_replay(replay) {
