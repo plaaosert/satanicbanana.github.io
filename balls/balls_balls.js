@@ -3344,6 +3344,8 @@ class DaggerBall extends WeaponBall {
         this.description_brief = "Rotates exponentially faster and deals exponentially more damage every time a dagger hit connects. These bonuses decay back to zero when not continually striking.";
         this.level_description = "Increases the delay after not striking until bonuses will decay.";
         this.max_level_description = "When spinning 1000 deg/s or more, shoots small projectiles (1 dmg) at a frequency and velocity based on rotation speed.";
+        this.ult_description = "Disappears before assaulting random targets at blinding speed. Damage and rotation speed increase much slower during this attack."
+        
         this.quote = "surely thats not all youve got.\ncome here and let me destroy you again.";
 
         this.pronoun = PRONOUN.SHE;
@@ -3632,7 +3634,7 @@ class DaggerBall extends WeaponBall {
                 this.set_pos(attack_target.position.add(attack_pos.mul(factor).add(attack_offset)));
 
                 if (prop >= 0.5 && !attacked_yet) {
-                    // this.board.trigger_ultimates_cooldown();
+                    this.board.trigger_ultimates_cooldown();
                     this.hit_other(attack_target, 998);
                     attack_target.last_hit = 0;
                     attack_target.apply_hitstop(this.ult_attack_delay);
@@ -3801,6 +3803,8 @@ class BowBall extends WeaponBall {
         this.description_brief = "Quickly fires sets of multiple arrows at a periodic interval. Successful arrow hits increase the number of arrows in each set and their damage.";
         this.level_description = "Increases arrow speed, slightly increases arrow size and slightly reduces shot delay.";
         this.max_level_description = "Start with +1 multishot. Every shot fires an additional arrow.";
+        this.ult_description = "Actually aims towards the closest target, firing three piercing arrows that each count as many single arrow hits."
+
         this.quote = "Phew! Almost ran out of arrows there.";
 
         this.pronoun = PRONOUN.HE;

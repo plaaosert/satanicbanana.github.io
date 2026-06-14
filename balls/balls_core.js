@@ -2507,7 +2507,7 @@ class Board {
 
         this.ultimates_enabled = false;
         this.ultimates_paused = false;
-        this.ultimate_global_cooldown_max = 4;
+        this.ultimate_global_cooldown_max = 2;
         this.ultimate_global_cooldown = 0;
     }
 
