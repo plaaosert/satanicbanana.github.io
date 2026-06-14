@@ -1673,7 +1673,7 @@ class WeaponBall extends Ball {
     }
 
     trigger_ultimate() {
-        this.board.ultimate_global_cooldown = this.board.ultimate_global_cooldown_max;
+        this.board.trigger_ultimates_cooldown();
 
         this.ult_charge_cooldown = ULT_DEFAULT_CHARGE_COOLDOWN;
         
@@ -3632,6 +3632,7 @@ class DaggerBall extends WeaponBall {
                 this.set_pos(attack_target.position.add(attack_pos.mul(factor).add(attack_offset)));
 
                 if (prop >= 0.5 && !attacked_yet) {
+                    // this.board.trigger_ultimates_cooldown();
                     this.hit_other(attack_target, 998);
                     attack_target.last_hit = 0;
                     attack_target.apply_hitstop(this.ult_attack_delay);
@@ -3640,6 +3641,7 @@ class DaggerBall extends WeaponBall {
                     this.speed_base /= 1.9;
                     this.damage_base /= 1.45;
 
+                    console.log(attack_count, this.ult_attack_count_max)
                     if (attack_count >= this.ult_attack_count_max) {
                         play_audio("strongpunch");
                         this.speak([{
@@ -3669,7 +3671,7 @@ class DaggerBall extends WeaponBall {
                 if (prop >= 1) {
                     let res = acquire_new_ult_target();
 
-                    if (attack_count >= this.ult_attack_count_max || !res) {
+                    if ((attack_count-1) >= this.ult_attack_count_max || !res) {
                         this.collision = true;
                         this.ignore_bounds_checking = false;
                         this.affected_by_gravity = true;
@@ -3692,7 +3694,7 @@ class DaggerBall extends WeaponBall {
                         if (attack_count < this.ult_attack_count_max) {
                             play_audio("strongpunch");
                             this.speak([{
-                                text: "Disappointing.",
+                                text: "disappointing.",
                                 initial_delay: 0,
                                 delay_per_char: 0.02,
                                 mods: {
@@ -3701,6 +3703,7 @@ class DaggerBall extends WeaponBall {
                             }], 22, 3)
                         }
 
+                        console.log("stopping -", attack_count, this.ult_attack_count_max, res)
                         return false;
                     }
                 }

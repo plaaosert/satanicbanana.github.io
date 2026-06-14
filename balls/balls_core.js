@@ -2507,8 +2507,12 @@ class Board {
 
         this.ultimates_enabled = false;
         this.ultimates_paused = false;
-        this.ultimate_global_cooldown_max = 1;
-        this.ultimate_global_cooldown = 2;
+        this.ultimate_global_cooldown_max = 4;
+        this.ultimate_global_cooldown = 0;
+    }
+
+    trigger_ultimates_cooldown() {
+        this.ultimate_global_cooldown = this.ultimate_global_cooldown_max;
     }
 
     get_local_id() {
