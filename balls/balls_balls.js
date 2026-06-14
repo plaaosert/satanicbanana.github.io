@@ -1223,7 +1223,7 @@ class WeaponBall extends Ball {
             return;
         }
 
-        let amt = Math.pow((this.ult_current_charge / this.ult_cost), 5) * time_delta;
+        let amt = Math.pow((Math.min(1, this.ult_current_charge / this.ult_cost)), 5) * time_delta;
 
         this.ult_ring_delay -= amt;
         this.ult_particle_delay -= amt;
