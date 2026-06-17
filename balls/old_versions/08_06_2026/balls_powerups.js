@@ -41,7 +41,6 @@ class Powerup extends WeaponBall {
         );
         this.board.spawn_particle(part, this.position);
         this.linked_particle = part;
-        this.linked_particle.time_locked = false;
     }
 
     powerup_movement(board, time_delta) {

@@ -2632,7 +2632,6 @@ class CursedEnergyBall extends WeaponBall {
                 );
                 board.spawn_particle(part, new_ball.position);
                 new_ball.linked_particle = part;
-                part.time_locked = false;
                 
                 board.spawn_ball(new_ball, position);
 
@@ -3239,8 +3238,6 @@ class LemonBall extends WeaponBall {
             this.position, 0, 0.8, entity_sprites.get("lemon"),
             0, 9999, true
         ), this.position);
-
-        this.linked_particle.time_locked = false;
 
         let b = this;
         this.board.set_timer(new Timer(_ => {

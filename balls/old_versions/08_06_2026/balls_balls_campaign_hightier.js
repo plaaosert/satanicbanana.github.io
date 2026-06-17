@@ -356,8 +356,6 @@ class BallLightningBall extends WeaponBall {
             0, 9999, true
         ), this.position);
 
-        this.linked_particle.time_locked = false;
-
         this.linked_particle.add_component(new OverlayBallParticleComponent(this.board, this));
         this.linked_particle.add_component(new LightningBallParticleComponent(this.board));
     }

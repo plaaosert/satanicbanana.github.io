@@ -1,8 +1,8 @@
 game_id = "balls";
 
-const FILES_PREFIX = "";
+const FILES_PREFIX = "../../";
 
-const GAME_VERSION = "17/06/2026";
+const GAME_VERSION = "08/06/2026";
 
 const AILMENT_CHARS = "➴☣♨";
 
@@ -553,7 +553,6 @@ const entity_sprites = new Map([
     ["holy_hand_grenade_enter", 7, "weapon/holy_hand_grenade/"],
     ["holy_hand_grenade_end", 6, "weapon/holy_hand_grenade/"],
     ["holy_hand_grenade_main", 18, "weapon/holy_hand_grenade/"],
-    ["holy_hand_grenade_whiteout", 6, "weapon/holy_hand_grenade/"],
 
     ["glass1", 1, "weapon/"],
     ["glass2", 1, "weapon/"],
@@ -988,7 +987,6 @@ let audios_list = [
     ["impact_heavy_8bit", 'snd/impact_heavy_8bit.mp3'],
     // https://freesound.org/people/Breviceps/sounds/468443/
     ["impact_squeak", 'snd/impact_squeak.mp3'],
-    ["squeak", 'snd/squeak.mp3'],
     
     // i have no idea (ask vitawrap)
     ["impact_paper", 'snd/impact_paper.mp3'],
@@ -1138,19 +1136,6 @@ let audios_list = [
     // Dragon Ball Z
     ["aura_power_fluxing", "snd/aura_power_fluxing.mp3"],
     ["aura_power_fluxing2", "snd/aura_power_fluxing2.mp3"],
-
-    // https://soundeffect-lab.info/sound/battle/battle2.html
-    ["huge_explosion", "snd/huge_explosion.mp3"],
-    ["holy1", "snd/holy1.mp3"],
-    ["holy2", "snd/holy2.mp3"],
-    ["bloodyhit1", "snd/bloodyhit1.mp3"],
-    ["bloodyhit2", "snd/bloodyhit2.mp3"],
-
-    // CS:GO / CS2
-    ["flash-bang-sfx", "snd/flash-bang-sfx.mp3"],
-
-    // https://pixabay.com/sound-effects/film-special-effects-heartbeat-loud-242421/
-    ["heartbeat", "snd/heartbeat.mp3"]
 ]
 
 // buh
@@ -1246,7 +1231,7 @@ async function play_music(name, gain=null) {
     }
 }
 
-function play_audio_data(buffer_content, gain=null, time_limit_inconsistent_use_sparingly=null) {
+function play_audio_data(buffer_content, gain=null, pitch_mod=null) {
     let source = audio_context.createBufferSource();
 
     source.buffer = buffer_content;
@@ -1261,17 +1246,19 @@ function play_audio_data(buffer_content, gain=null, time_limit_inconsistent_use_
         mod_node = new_gain_node;
     }
 
+    if (pitch_mod) {
+        let new_pitch_node = audio_context.create
+        new_gain_node.connect(audio_context.destination);
+        new_gain_node.gain.setValueAtTime(gain, audio_context.currentTime);
+
+        mod_node = new_gain_node;
+    }
+
     source.connect(mod_node);
 
-    let obj = {source: source, ended: false};
+    let obj = {source: source, ended: false}
     source.addEventListener("ended", () => obj.ended = true);
     audio_playing.push(obj);
-
-    if (time_limit_inconsistent_use_sparingly) {
-        setTimeout(_ => {
-            source.stop();
-        }, time_limit_inconsistent_use_sparingly * 1000);
-    }
 
     source.start();
 
@@ -1464,17 +1451,6 @@ class ParticleComponent {
 
     pass_time(particle, time_delta) {
         // blank
-    }
-}
-
-class RotatingParticleComponent extends ParticleComponent {
-    constructor(board, speed) {
-        super(board);
-        this.speed = speed;
-    }
-
-    pass_time(particle, time_delta) {
-        particle.rotation_angle += (this.speed * time_delta);
     }
 }
 
@@ -1877,7 +1853,7 @@ class EnergyBurstParticle extends MovingParticle {
                     this.linked_ball.board.spawn_particle(new FadingLineParticle(
                         this.last_last_pos, this.position, this.size / 1,
                         this.trail_col, 0.25, 0, true
-                    ), this.last_last_pos).time_locked = this.time_locked;
+                    ), this.last_last_pos)
                 }
 
                 // friction force is the same direction (signs) as velocity
@@ -4468,7 +4444,7 @@ function render_descriptions(board) {
                 write_pp_bordered_text(
                     ctx,
                     ` ${ult_charge_str} `,
-                    l[0], l[1] + 6, ball.get_current_desc_col().lerp(Colour.yellow, 0.8).css(), CANVAS_FONTS, sizedown ? 8 : 9,
+                    l[0], l[1] + 0, ball.get_current_desc_col().lerp(Colour.yellow, 0.8).css(), CANVAS_FONTS, sizedown ? 8 : 9,
                     false, BALL_DESC_BORDER_SIZE, ball_border_col
                 )
             }

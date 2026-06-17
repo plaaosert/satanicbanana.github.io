@@ -2980,8 +2980,8 @@ document.addEventListener("DOMContentLoaded", function() {
     randomise_ball_info("ball2", "random-ball");
 
     // selected_ball_info['ball1'].name = "Super Dummy"
-    // selected_ball_info['ball2'].name = "Glass"
-    // selected_ball_info['ball1'].level = 99;
+    // selected_ball_info['ball2'].name = "Grenade"
+    // selected_ball_info['ball2'].level = 99;
 
     // document.querySelector("#ultimates_checkbox").checked = true;
 

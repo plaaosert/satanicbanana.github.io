@@ -367,8 +367,6 @@ class BallBall extends WeaponBall {
                 new_ball.linked_particle = part;
                 part.rotation_angle = this.weapon_data[i].angle;
                 
-                new_ball.linked_particle.time_locked = false;
-
                 board.spawn_ball(new_ball, position);
                 
                 this.get_new_col(i);
