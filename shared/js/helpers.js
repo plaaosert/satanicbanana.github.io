@@ -770,6 +770,22 @@ function hsvToRgb(h, s, v) {
     return [ r * 255, g * 255, b * 255 ];
 }
 
+function weighted_average_from_colours(...cols_weights) {
+    let s = [0, 0, 0, 0]
+    let t = 0;
+
+    cols_weights.forEach(c => {
+        t += c[1];
+        
+        s[0] += c[0].r * c[1];
+        s[1] += c[0].g * c[1];
+        s[2] += c[0].b * c[1];
+        s[3] += c[0].a * c[1];
+    });
+
+    return new Colour(...(s.map(c => Math.round(c / t))));
+}
+
 class Colour {
     static from_array(arr) {
         return new Colour(
@@ -846,6 +862,8 @@ class Colour {
 }
 
 Colour.black = new Colour(0, 0, 0, 255);
+Colour.grey = new Colour(128, 128, 128, 255);
+Colour.darkgrey = new Colour(64, 64, 64, 255);
 Colour.white = new Colour(255, 255, 255, 255);
 Colour.red = new Colour(255, 0, 0, 255);
 Colour.green = new Colour(0, 255, 0, 255);

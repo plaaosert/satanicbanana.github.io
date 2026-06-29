@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang = "en-US">
+<head>
+	<meta charset = "UTF-8">
+	<title>plorp</title>
+	<meta content="plaao.net >> plorp" property="og:title" />
+    <meta content="plorp!!!!!!!!!!!!!!" property="og:description" />
+    <meta content="https://plaao.net" property="og:url" />
+    <meta content="https://plaao.net/bej/green_funny.png" property="og:image" />
+    <meta content="#cccccc" data-react-helmet="true" name="theme-color" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+
+	<link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=00"/>
+	<link rel="stylesheet" type="text/css" href="plorp.css?v=00"/>
+</head>
+<body>
+	<div class="topbar" style="display: none;">
+		<p class="right-text" style="font-size: 2vmin; top:-8px; color:#ccc;">you have been actively playing for <span class="important" id="session-time">00:00:00</span> in this session, <span class="important" id="all-time">00:00:00:00</span> total and <span class="important" id="global-time">00:00:00:00</span> across all plaao.net games</p>
+	</div>
+
+	<canvas width="8" height="8" id="hidden-prerender-canvas" style="display:none"></canvas>
+
+    <span id="loading_reminder_text" style="align-self: center; justify-self: center;">please be patient while the game loads :3</span>
+
+    <div class="game-supercontainer">
+        <div class="game-container" id="game-container" style="display: none;">
+            <canvas class="game-canvas" id="game-canvas-bg3">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-bg2">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-bg1">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-fg3">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-fg2">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-fg1">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-ui2">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-ui1">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-debug_back">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-debug_front">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+            <canvas class="game-canvas" id="game-canvas-front">
+                This canvas needs to be viewed to be displayed.
+            </canvas>
+        </div>
+
+        <div class="sidebar-ui">
+            <span class="gold-container">◕&nbsp;<span class="gold-value"></span></span>
+
+            <br><br>
+            <span>---</span>
+            <br><br>
+
+            <div class="upgrades-supercontainer flex-rows">
+                <span>Upgrades</span>
+                <br>
+                <div class="upgrades-container normal-upgrades-container">
+                    <div class="upgrade-item flex-cols template">
+                        <div class="flex-rows upgrade-infobox">
+                            <div class="flex-cols upgrade-basic-info">
+                                <span class="upgrade-name"></span>
+                                <span class="upgrade-cost"></span>
+                                <span class="upgrade-cost-max nodisplay"></span>
+                            </div>
+                            <div class="flex-rows">
+                                <span class="upgrade-description"></span>
+                            </div>
+                        </div>
+                        <span class="upgrade-num-owned"></span>
+                        <div class="flex-cols upgrade-buttons">
+                            <span class="inline-button upgrade-button upgrade1">Buy 1</span>
+                            <span class="inline-button upgrade-button upgrademax">Max (<span class="upgrade-max-amt"></span>x, ◕&nbsp;<span class="upgrade-max-cost"></span>)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <br><br>
+            <span>---</span>
+            <br><br>
+
+            <div class="inventory-container">
+                <span>Inventory</span>
+                <br><br>
+                <div class="inventory-view">
+                    <div class="inventory-item template">
+                        <span class="item-name"></span>
+                        <span>&nbsp;|&nbsp;</span>
+                        <span class="item-value-container">◕&nbsp;<span class="item-value"></span></span>
+                        <span>&nbsp;|&nbsp;</span>
+                        <span class="item-number"></span>
+                        <span class="spacer"></span>
+                        <span class="inline-button sell-button sell1">Sell 1</span>
+                        <span class="inline-button sell-button sell25">25%</span>
+                        <span class="inline-button sell-button sell50">50%</span>
+                        <span class="inline-button sell-button sellall">All</span>
+                    </div>
+                </div>
+            </div>
+
+            <br><br>
+            <span>---</span>
+            <br><br>
+
+            <div class="tile-info-view">
+                <span class="tile-target-text">Current target:</span>
+                <br><br>
+
+                <span class="tile-notarget" style="display: none">None</span>
+
+                <div class="tile-hp-container">
+                    <span class="tile-hp"></span>
+                    <span>/</span>
+                    <span class="tile-max-hp"></span>
+                    <span>&nbsp;(</span>
+                    <span class="tile-hp-pct"></span>
+                    <span>%)</span>
+                </div>
+
+                <div class="tile-armour-container">
+                    <span>☖&nbsp;</span>
+                    <span class="tile-armour"></span>
+                </div>
+
+                <br>
+
+                <span class="tile-richnesses-container"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="helptext">
+        <span>Move towards a tile to start hitting it automatically. Each hit produces resources based on <span class="help-important">tile richnesses</span> and <span class="help-important">player luck</span>. Damage dealt provides a bonus to luck (max of <span class="help-important">+300%</span> final luck at damage = <span class="help-important">5%</span> of tile max HP), so upgrading luck directly may often be more effective for gathering resources. I repeat, <span class="help-important">damage might not help.</span></span>
+        <span>Damage determines the... damage... done to tiles on each hit. Tile armour (☖) reduces this damage by a flat value.</span>
+        <span>If armour ☖ is greater than damage, the hit does <span class="help-important">no damage</span> and produces no loot.</span>
+        <span>Sell resources for gold ◕ to use to buy upgrades.</span>
+        <span>Tile HP and armour ☖ is determined by the richness and rarity of the resources in it. The deeper you dig, the rarer the resources you'll find.</span>
+    
+        <span class="inline-button" onclick="document.querySelector('.helptext').classList.add('nodisplay')">Hide help</span>
+    </div>
+
+	<div class="bottombar" id="normal-bottombar" style="display: none;">
+		<p class="left-text" style="font-size: 3vmin; bottom: -8px">plorp v1.0 | plorp<br>
+            <!--
+			<span class="white" style="font-size: 2vmin;">fonts by VileR <a style="position: relative; bottom: 0px; top: 0px; left: 0px;" href="https://int10h.org/oldschool-pc-fonts/">https://int10h.org/oldschool-pc-fonts/</a>. subject to CC-SA 4.0</span>
+            -->
+        </p>
+		<p class="right-text" style="bottom:30px; font-size: 2vmin; color:#ccc;">written in pure JS/HTML</p>
+		<p style="font-size: 2vmin"><a class="right-text" style="top:89px; color:#f20; font-size: 2vmin" href="../index.html" > << go back >> </a></p>
+	</div>
+	
+	<script src="../shared/js/helpers.js?v=00"></script>
+	<script src="../shared/js/canvas_helpers.js?v=00"></script>
+	
+    <script src="lib/game_core_constants.js"></script>
+    <script src="lib/game_core_render_defs.js"></script>
+    <script src="lib/game_core_audio_defs.js"></script>
+    <script src="lib/game_core_render.js"></script>
+    <script src="lib/game_core_audio.js"></script>
+    <script src="lib/game_core_main.js"></script>
+
+    <script src="plorp.js"></script>
+
+	<script src="../shared/js/playtime.js?v=00"></script>
+</body>
+</html>

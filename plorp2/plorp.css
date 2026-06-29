@@ -1,0 +1,203 @@
+body {
+    margin: 0;
+}
+
+.template, .nodisplay {
+    display: none !important;
+}
+
+p {
+    margin: 0;
+}
+
+.flex-rows {
+    display: flex;
+    flex-direction: column;
+}
+
+.flex-cols {
+    display: flex;
+    flex-direction: row;
+}
+
+.game-supercontainer {
+    display: flex;
+    flex-direction: row;
+
+    --canvas-h: calc(100vh - 4px);
+
+    height: 100vh;
+    width: 100vw;
+}
+
+.game-container {
+    flex-grow: 1;
+
+    display: grid;
+
+    width: 100%;
+    height: var(--canvas-h);
+
+    border: 2px solid white;
+}
+
+.game-container canvas {
+    position: unset;
+
+    grid-column: 1;
+    grid-row: 1;
+
+    width: 100%;
+    height: var(--canvas-h);
+
+    border: unset;
+}
+
+.sidebar-ui {
+    color: white;
+
+    --w: calc(600px - 32px - 2px);
+
+    min-width: var(--w);
+    max-width: var(--w);
+
+    background: #222;
+    border: 2px solid white;
+    border-left: none;
+
+    padding: 16px;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.tile-hp-container, .tile-armour-container, .inventory-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.inventory-view {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.inline-button {
+    border: 1px solid white;
+    background-color: #040;
+
+    padding: 2px;
+    padding-left: 4px;
+    padding-right: 4px;
+
+    margin-left: 8px;
+
+    cursor: pointer;
+
+    align-self: center;
+}
+
+.inline-button:hover {
+    background-color: #080;
+}
+
+.inline-button:active {
+    background-color: #020;
+}
+
+.inline-button.disabled {
+    background-color: #222;
+}
+
+.spacer {
+    width: 16px;
+}
+
+.upgrade-infobox {
+    flex-basis: 50%;
+}
+
+.upgrade-buttons {
+    flex-grow: 1;
+}
+
+.upgrade-num-owned {
+    max-width: 64px;
+}
+
+.upgrade-item {
+    gap: 32px;
+    margin-bottom: 16px;
+}
+
+.upgrade-item>* {
+    flex-grow: 1;
+}
+
+.upgrade-basic-info {
+    justify-content: space-between;
+}
+
+.upgrade-num-owned {
+    align-self: center;
+}
+
+.upgrade-buttons {
+    justify-content: flex-end;
+
+    text-wrap: nowrap;
+}
+
+.upgrademax {
+    min-width: 144px;
+    max-width: 144px;
+}
+
+.upgrade-cost {
+    color: gold;
+}
+
+.upgrade-cost-max {
+    color: lime;
+}
+
+.upgrade-name {
+    color: cyan;
+}
+
+.upgrade-desc {
+    color: gray;
+}
+
+.upgrade-num-owned {
+    color: orange;
+}
+
+.helptext {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+
+    width: 512px;
+    height: auto;
+
+    background-color: #111;
+    border: 1px solid white;
+    padding: 16px;
+
+    display: flex;
+    flex-direction: column;
+
+    /* font-size: 12px; */
+
+    gap: 12px;
+
+    color: #cfc;
+
+    margin-top: auto;
+}
+
+.help-important {
+    color: #0df;
+}
