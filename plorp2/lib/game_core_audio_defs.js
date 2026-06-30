@@ -17,6 +17,9 @@ let audios_list = [
 
     // https://dova-s.jp/se/detail/670
     ["system_decision_sound3", "system_decision_sound3.mp3"],
+
+    // https://pixabay.com/sound-effects/film-special-effects-metallic-cling1-105303/
+    ["clink", "clink.mp3"],
 ]
 
 if (new URLSearchParams(window.location.search).get("noaudio") == "true") {

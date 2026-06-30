@@ -429,6 +429,8 @@ class Mine {
 
 class Player {
     static P_EPSILON = 0.001;
+    static BASE_ATTACK_DELAY = 1;
+    static MIN_ATTACK_DELAY = 0.0001;
 
     constructor(mine, particles_board, position, upgrades, inventory, equipment_inventory, currencies) {
         this.position = position;
@@ -436,6 +438,8 @@ class Player {
         this.inventory = inventory;
         this.equipment_inventory = equipment_inventory;
         this.currencies = currencies;
+
+        this.currency_records = {};
 
         this.radius = 7;
     
@@ -471,16 +475,19 @@ class Player {
 
         let base_stats = {
             damage: 5,
-            atk_delay: 1,
+            atk_speed: 1,
+            atk_delay_modifier: 0,
             luck: 1,
             movespeed: 32,
         };
 
         this.stats = base_stats;
 
-        this.get_all_upgrades().forEach(upgrade => {
+        this.get_all_upgrades().sort((a, b) => upgrades_lookup.get(a[0]).priority - upgrades_lookup.get(b[0]).priority).forEach(upgrade => {
             upgrades_lookup.get(upgrade[0]).on_stats(this, upgrade[1]);
         });
+
+        this.stats.atk_delay = Math.max(Player.MIN_ATTACK_DELAY, (Player.BASE_ATTACK_DELAY / this.stats.atk_speed) - this.stats.atk_delay_modifier);
 
         // this.mining_cooldown = this.stats.atk_delay;
     }
@@ -539,6 +546,8 @@ class Player {
         let cur = this.get_currency_amt(currency);
         this.currencies[currency] = cur + amt;
         this.currencies_changed = true;
+
+        this.currency_records[currency] = Math.max(this.currency_records[currency] ?? 0, this.currencies[currency]);
     }
 
     has_currency(currency, amt) {
@@ -583,7 +592,7 @@ class Player {
     sell_item(item, amt) {
         let sell_value = ItemData[item].gold_value * amt;
         if (this.has_item(item, amt)) {
-            play_audio("generic_kaching", 0.225);
+            play_audio("generic_kaching", 0.15);
             this.remove_item(item, amt);
             this.add_currency(Currency.GOLD, sell_value);
         }
@@ -880,7 +889,7 @@ class Upgrade {
      * @param {*} priority Priority of the upgrade effect. Priority is resolved lowest first. Order is not guaranteed within the same priority number. Put multiplicative after additive. Convention for additive is 0, multiplicative is 10.
      * @param {*} on_stats Function (player, number_of_upgrade) => {null} to run during stats calculation.
      */
-    constructor(id, name, col, desc, base_cost, cost_scaling, cost_currency, priority, max_cnt=null, on_stats=null) {
+    constructor(id, name, col, desc, base_cost, cost_scaling, cost_currency, priority, max_cnt=null, on_stats=null, show_unknown=false) {
         this.id = id;
         
         this.name = name;
@@ -892,20 +901,25 @@ class Upgrade {
         this.on_stats = on_stats;
         this.priority = priority;
         this.max_cnt = max_cnt;
+        this.show_unknown = show_unknown;
     }
 
     get_number_buyable(player, cur_owned) {
         let player_currency = player.get_currency_amt(this.cost_currency);
-        let limit = (this.max_cnt ?? Number.POSITIVE_INFINITY - cur_owned);
+        let limit = this.get_max_purchasable(cur_owned);
         
-        return Math.min(
+        return Math.max(0, Math.min(
             limit,
             Math.floor(Upgrade.calc_amount_from_cost(player_currency, this.base_cost, this.cost_scaling, cur_owned) + 1)
-        );
+        ));
     }
 
     get_purchase_cost(cur_owned, buy_amount) {
         return Upgrade.calc_cost_from_amount(this.base_cost, this.cost_scaling, buy_amount-1, cur_owned)
+    }
+
+    get_max_purchasable(cur_owned) {
+        return (this.max_cnt ?? Number.POSITIVE_INFINITY) - cur_owned;
     }
 }
 
@@ -1354,7 +1368,7 @@ function render_ui_inventory(player) {
     let template = e.querySelector(".template");
 
     let elems = [];
-    player.get_all_items().sort((a,b) => a[0].localeCompare(b[0])).sort((a,b) => ItemData[a[0]].gold_value - ItemData[b[0]].gold_value).forEach(item => {
+    player.get_all_items().sort((a,b) => a[0].localeCompare(b[0])).sort((a,b) => ItemData[b[0]].gold_value - ItemData[a[0]].gold_value).forEach(item => {
         let clone = template.cloneNode(true);
 
         clone.classList.remove("template");
@@ -1363,22 +1377,22 @@ function render_ui_inventory(player) {
         clone.querySelector(".item-number").textContent = `${item[1]}x`.padEnd(10, "\xa0");
         clone.querySelector(".item-value").textContent = ItemData[item[0]].gold_value.toString().padEnd(8, "\xa0");
 
-        clone.querySelector(".sell-button.sell1").addEventListener("click", e => {
+        clone.querySelector(".sell-button.sell1").addEventListener("mouseup", e => {
             let n = 1;
             player.sell_item(item[0], n);
         })
 
-        clone.querySelector(".sell-button.sell25").addEventListener("click", e => {
+        clone.querySelector(".sell-button.sell25").addEventListener("mouseup", e => {
             let n = Math.ceil(player.get_item_amt(item[0]) * 0.25);
             player.sell_item(item[0], n);
         })
 
-        clone.querySelector(".sell-button.sell50").addEventListener("click", e => {
+        clone.querySelector(".sell-button.sell50").addEventListener("mouseup", e => {
             let n = Math.ceil(player.get_item_amt(item[0]) * 0.5);
             player.sell_item(item[0], n);
         })
 
-        clone.querySelector(".sell-button.sellall").addEventListener("click", e => {
+        clone.querySelector(".sell-button.sellall").addEventListener("mouseup", e => {
             let n = player.get_item_amt(item[0]);
             player.sell_item(item[0], n);
         })
@@ -1454,24 +1468,37 @@ function render_ui_normal_upgrades(player, upgrades) {
         let max_buy = upgrade.get_number_buyable(player, player_upgrade_cnt);
         let cost_max = upgrade.get_purchase_cost(player_upgrade_cnt, max_buy);
 
-        clone.querySelector(".upgrade-name").textContent = upgrade.name;
-        clone.querySelector(".upgrade-name").style.color = upgrade.col;
+        let show_unknown = upgrade.show_unknown && (player_upgrade_cnt <= 0 && (player.currency_records[upgrade.cost_currency] ?? 0) < cost_1);
+
+        if (upgrade.get_max_purchasable(player_upgrade_cnt) <= 0) {
+            cost_1 = "-"
+            cost_max = "-"
+        }
+
+        clone.querySelector(".upgrade-name").textContent = show_unknown ? "???" : upgrade.name;
+        clone.querySelector(".upgrade-name").style.color = show_unknown ? "#ccc" : upgrade.col;
 
         clone.querySelector(".upgrade-cost").textContent = `${CurrencyIcons[upgrade.cost_currency]} ${cost_1}`;
         clone.querySelector(".upgrade-cost-max").textContent = `${CurrencyIcons[upgrade.cost_currency]} ${cost_max}`;
         
-        clone.querySelector(".upgrade-description").textContent = upgrade.desc;
-        clone.querySelector(".upgrade-num-owned").textContent = upgrade.max_cnt === null ? `${player_upgrade_cnt}x` : `${player_upgrade_cnt}/${upgrade.max_cnt}`
+        clone.querySelector(".upgrade-description").textContent = show_unknown ? "This upgrade is unknown until you can afford it!" : upgrade.desc;
+        clone.querySelector(".upgrade-description").style.color = show_unknown ? "#888" : "";
+
+        clone.querySelector(".upgrade-num-owned").textContent = show_unknown ? "???/???" : (
+            upgrade.max_cnt === null ? `${player_upgrade_cnt}x` : `${player_upgrade_cnt}/${upgrade.max_cnt}`
+        )
+
+        clone.querySelector(".upgrade-num-owned").style.color = cost_1 = "-" ? "gray" : "";
 
         clone.querySelector(".upgrade-max-amt").textContent = `${max_buy}`;
         clone.querySelector(".upgrade-max-cost").textContent = `${cost_max}`;
 
         if (max_buy >= 1) {
-            clone.querySelector(".upgrade1").addEventListener("click", e => {
+            clone.querySelector(".upgrade1").addEventListener("mouseup", e => {
                 player.buy_upgrade(upgrade, 1);
             })
 
-            clone.querySelector(".upgrademax").addEventListener("click", e => {
+            clone.querySelector(".upgrademax").addEventListener("mouseup", e => {
                 player.buy_upgrade(upgrade, max_buy);
             })
 
@@ -1564,44 +1591,56 @@ let default_generation_settings = {
 let upgrades = [
     new Upgrade(
         "damageplus1", "Damage+", "cyan", "Increases damage by +1 per level.",
-        10, 1.5, Currency.GOLD, 0, 25,
+        10, 1.15, Currency.GOLD, 0, 25,
         Upgrade.add_to_stats(["damage", 1])
     ),
 
     new Upgrade(
         "luckplus1", "Luck+", "cyan", "Increases luck by +0.1 per level.",
-        10, 3, Currency.GOLD, 0, 10,
+        10, 1.5, Currency.GOLD, 0, 10,
         Upgrade.add_to_stats(["luck", 0.1])
     ),
 
     new Upgrade(
-        "miningspeedplus1", "Mining Speed+", "cyan", "Reduces base mining delay by 0.01s per level.",
-        50, 1.5, Currency.GOLD, 0, 10,
-        Upgrade.add_to_stats(["atk_delay", -0.01])
+        "miningspeedplus1", "Mining Speed+", "cyan", "Increases mining speed by 2% per level.",
+        20, 1.3, Currency.GOLD, 0, 10,
+        Upgrade.add_to_stats(["atk_speed", 0.02])
     ),
 
     new Upgrade(
-        "movespeedplus1", "Movement Speed+", "cyan", "Increases movement speed by +4 per level.",
-        25, 1.75, Currency.GOLD, 0, 16,
+        "movespeedplus1", "Movement Speed+", "cyan", "Increases movement speed by +4 px/s per level.",
+        25, 1.3, Currency.GOLD, 0, 16,
         Upgrade.add_to_stats(["movespeed", 4])
     ),
 
     new Upgrade(
-        "damageplus2", "Damage++", "#8ff", "Increases damage by +10 per level.",
-        1000, 1.5, Currency.GOLD, 0, 10,
-        Upgrade.add_to_stats(["damage", 10])
+        "miningspeed_from_movespeed1", "Momentum", "#ffa", "Increases mining speed by 10% for every 16 px/s of movement speed (before multipliers).",
+        750, 1.5, Currency.GOLD, 1, 1,
+        (p, n) => {
+            p.stats.atk_speed += Math.floor(p.stats.movespeed / 16) * 0.1
+        },
+        true,
     ),
 
     new Upgrade(
         "luckplus2", "Luck++", "#8ff", "Increases luck by +0.5 per level.",
-        2500, 2, Currency.GOLD, 0, 5,
-        Upgrade.add_to_stats(["luck", 0.5])
+        1000, 1.5, Currency.GOLD, 0, 5,
+        Upgrade.add_to_stats(["luck", 0.5]),
+        true,
     ),
 
     new Upgrade(
-        "miningspeedplus2", "Mining Speed++", "#8ff", "Reduces base mining delay by 0.02s per level.",
-        5000, 1.5, Currency.GOLD, 0, 10,
-        Upgrade.add_to_stats(["atk_delay", -0.02])
+        "damageplus2", "Damage++", "#8ff", "Increases damage by +10 per level.",
+        2500, 1.25, Currency.GOLD, 0, 10,
+        Upgrade.add_to_stats(["damage", 10]),
+        true,
+    ),
+
+    new Upgrade(
+        "miningspeedplus2", "Mining Speed++", "#8ff", "Increases mining speed by 10% per level.",
+        5000, 1.25, Currency.GOLD, 0, 10,
+        Upgrade.add_to_stats(["atk_speed", 0.1]),
+        true,
     ),
 ]
 
