@@ -22,7 +22,7 @@ let handlers = {
     game_postload_fn: () => null,
 }
 
-let rendering_diagnostics = true;
+let rendering_diagnostics = false;
 
 let keys_down = {};
 let keys_pressed_this_frame = {};

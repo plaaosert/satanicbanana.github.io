@@ -10,6 +10,8 @@ gain_node.gain.setValueAtTime(gain, audio_context.currentTime);
 let audio_playing = [];
 let music_audio = null;
 
+let muted = false;
+
 function reset_audio_buffer() {
     audio_context.close();
     audio_context = new AudioContext();

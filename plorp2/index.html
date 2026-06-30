@@ -112,35 +112,46 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <br><br>
-            <span>---</span>
-            <br><br>
-
-            <div class="tile-info-view">
-                <span class="tile-target-text">Current target:</span>
-                <br><br>
-
-                <span class="tile-notarget" style="display: none">None</span>
-
-                <div class="tile-hp-container">
-                    <span class="tile-hp"></span>
-                    <span>/</span>
-                    <span class="tile-max-hp"></span>
-                    <span>&nbsp;(</span>
-                    <span class="tile-hp-pct"></span>
-                    <span>%)</span>
+    <div class="windows">
+        <div class="window minimise-only template">
+            <div class="window-topbar">
+                <span class="window-title">Window Title</span>
+                <div class="controlbuttons">
+                    <img src="assets/img/icons/minimise.png" class="minimise">
                 </div>
-
-                <div class="tile-armour-container">
-                    <span>☖&nbsp;</span>
-                    <span class="tile-armour"></span>
-                </div>
-
-                <br>
-
-                <span class="tile-richnesses-container"></span>
             </div>
+            <div class="window-content">
+            </div>
+        </div>
+    </div>
+
+    <div class="templates nodisplay">
+        <div class="tile-info-view">
+            <span class="tile-target-text">Current target:</span>
+            <br><br>
+
+            <span class="tile-notarget" style="display: none">None</span>
+
+            <div class="tile-hp-container">
+                <span class="tile-hp"></span>
+                <span>/</span>
+                <span class="tile-max-hp"></span>
+                <span>&nbsp;(</span>
+                <span class="tile-hp-pct"></span>
+                <span>%)</span>
+            </div>
+
+            <div class="tile-armour-container">
+                <span>☖&nbsp;</span>
+                <span class="tile-armour"></span>
+            </div>
+
+            <br>
+
+            <span class="tile-richnesses-container"></span>
         </div>
     </div>
 
@@ -174,7 +185,10 @@
     <script src="lib/game_core_audio.js"></script>
     <script src="lib/game_core_main.js"></script>
 
-    <script src="plorp.js"></script>
+    <script src="textconstants.js?v=00"></script>
+    <script src="windowmanager.js?v=00"></script>
+
+    <script src="plorp.js?v=00"></script>
 
 	<script src="../shared/js/playtime.js?v=00"></script>
 </body>

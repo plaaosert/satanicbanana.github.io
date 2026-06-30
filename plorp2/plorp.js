@@ -60,6 +60,11 @@ const TileResource = {
     CUPRITE: "Cuprite",
     COVELLITE: "Covellite",
     NATIVE_COPPER: "Native Copper",
+
+    SIDERITE: "Siderite",
+    LIMONITE: "Limonite",
+    HEMATITE: "Hematite",
+    MAGNETITE: "Magnetite",
 }
 
 const Item = {
@@ -72,11 +77,18 @@ const Item = {
     OBSIDIAN: "Obsidian",
 
     // Ores
+    // Copper
     CHALCOPYRITE: "Chalcopyrite",
     MALACHITE: "Malachite",
     AZURITE: "Azurite",
     CUPRITE: "Cuprite",
     COVELLITE: "Covellite",
+
+    // Iron
+    SIDERITE: "Siderite",
+    LIMONITE: "Limonite",
+    HEMATITE: "Hematite",
+    MAGNETITE: "Magnetite",
 
     // Pure metal nuggets
     COPPER_NUGGET: "Copper Nugget",
@@ -87,10 +99,17 @@ const Item = {
 }
 
 const ItemData = {
+    // Granite
     [Item.GRANITE]: {
         gold_value: 1
     },
 
+    // Rocks
+    [Item.CHALK]: {
+        gold_value: 2
+    },
+
+    // Copper
     [Item.CHALCOPYRITE]: {
         gold_value: 5
     },
@@ -101,6 +120,11 @@ const ItemData = {
 
     [Item.AZURITE]: {
         gold_value: 100
+    },
+
+    // Iron
+    [Item.SIDERITE]: {
+        gold_value: 15
     },
 }
 
@@ -143,6 +167,15 @@ const TileResourceInfo = {
     [TileResource.BEDROCK]: new TileResourceInfoEntry(
         Colour.from_hex("#111"), [], 0, 10000000 - TILE_BASE_MAX_HP, 10000000
     ),
+
+    // Rocks
+    [TileResource.CHALK]: new TileResourceInfoEntry(
+        Colour.from_hex("#eeeeee"), [
+            [1, Item.CHALK]
+        ], 1, 100, 5
+    ),
+
+    // Copper
     [TileResource.CHALCOPYRITE]: new TileResourceInfoEntry(
         Colour.from_hex("#C68346"), [
             [1, Item.CHALCOPYRITE]
@@ -157,7 +190,14 @@ const TileResourceInfo = {
         Colour.from_hex("#3568a2"), [
             [1, Item.AZURITE]
         ], 0.6, 30000, 100
-    )
+    ),
+
+    // Iron
+    [TileResource.SIDERITE]: new TileResourceInfoEntry(
+        Colour.from_hex("#b7a87e"), [
+            [1, Item.SIDERITE]
+        ], 0.9, 4000, 20
+    ),
 }
 
 class ResourceVeinGenerationSettings {
@@ -245,6 +285,8 @@ class ResourceVein {
 }
 
 class Tile {
+    static DEFAULT_TILE_COLOUR = Colour.from_hex("#333");
+
     constructor(richnesses, cleared) {
         this.richnesses = richnesses;
         this.cleared = cleared;
@@ -287,6 +329,7 @@ class Tile {
         this.hp -= dmg_to_take;
         if (this.hp <= 0) {
             this.cleared = true;
+            play_audio(`block_destroy${random_int(1, 5)}`);
         }
 
         return dmg_to_take;
@@ -297,7 +340,7 @@ class Tile {
             return Colour.black;
         }
 
-        let base_colour = Colour.darkgrey;
+        let base_colour = Tile.DEFAULT_TILE_COLOUR;
 
         let lerp_total = 0;
         let cols = Object.keys(this.richnesses).map(k => {
@@ -425,7 +468,7 @@ class Player {
         this.stats_changed = true;
 
         let base_stats = {
-            damage: 2,
+            damage: 5,
             atk_delay: 1,
             luck: 1,
             movespeed: 32,
@@ -437,7 +480,7 @@ class Player {
             upgrades_lookup.get(upgrade[0]).on_stats(this, upgrade[1]);
         });
 
-        this.mining_cooldown = this.stats.atk_delay;
+        // this.mining_cooldown = this.stats.atk_delay;
     }
 
     // Upgrades
@@ -471,6 +514,7 @@ class Player {
         );
 
         if (this.get_currency_amt(upgrade.cost_currency) >= cost) {
+            play_audio("system_decision_sound3", 0.4);
             this.remove_currency(upgrade.cost_currency, cost);
             this.add_upgrade(upgrade, amt);
         }
@@ -537,6 +581,7 @@ class Player {
     sell_item(item, amt) {
         let sell_value = ItemData[item].gold_value * amt;
         if (this.has_item(item, amt)) {
+            play_audio("generic_kaching", 0.225);
             this.remove_item(item, amt);
             this.add_currency(Currency.GOLD, sell_value);
         }
@@ -672,6 +717,8 @@ class Player {
                 this.mining_cooldown += this.stats.atk_delay;
 
                 let dmg_dealt = this.deal_damage(this.mining_target, this.stats.damage);
+                play_audio(`pick_hit${random_int(1, 5)}`);
+                
                 if (dmg_dealt > 0) {
                     this.roll_loot(this.mining_target, dmg_dealt, this.stats.luck)
                 }
@@ -754,7 +801,7 @@ class Player {
             rolls++;
         }
 
-        console.log(`Original luck ${luck}, prop ${tile_dmg_prop.toFixed(3)} => final luck ${final_luck}`)
+        // console.log(`Original luck ${luck}, prop ${tile_dmg_prop.toFixed(3)} => final luck ${final_luck}`)
 
         for (let i=0; i<rolls; i++) {
             // richness determines chance
@@ -831,10 +878,11 @@ class Upgrade {
      * @param {*} priority Priority of the upgrade effect. Priority is resolved lowest first. Order is not guaranteed within the same priority number. Put multiplicative after additive. Convention for additive is 0, multiplicative is 10.
      * @param {*} on_stats Function (player, number_of_upgrade) => {null} to run during stats calculation.
      */
-    constructor(id, name, desc, base_cost, cost_scaling, cost_currency, priority, max_cnt=null, on_stats=null) {
+    constructor(id, name, col, desc, base_cost, cost_scaling, cost_currency, priority, max_cnt=null, on_stats=null) {
         this.id = id;
         
         this.name = name;
+        this.col = col ?? "cyan";
         this.desc = desc;
         this.base_cost = base_cost;
         this.cost_scaling = cost_scaling;
@@ -1347,19 +1395,23 @@ function render_ui_inventory(player) {
 
 function render_ui_tilestats(player) {
     let tile = player.mining_target;
-    let e = document.querySelector(".tile-info-view");
+    let e = document.querySelector(".windows .tile-info-view");
     if (!tile) {
+        toggle_minimise_window(tilestats_window.window, true);
+
         e.querySelector(".tile-notarget").style.display = "";
         e.querySelector(".tile-hp-container").style.display = "none";
         e.querySelector(".tile-armour-container").style.display = "none";
 
         e.querySelector(".tile-richnesses-container").replaceChildren();
     } else {
+        toggle_minimise_window(tilestats_window.window, false);
+
         e.querySelector(".tile-notarget").style.display = "none";
         e.querySelector(".tile-hp-container").style.display = "";
         e.querySelector(".tile-armour-container").style.display = "";
 
-        e.querySelector(".tile-hp").textContent = Math.max(1, Math.floor(tile.hp)).toFixed(0);
+        e.querySelector(".tile-hp").textContent = (tile.hp == tile.max_hp ? tile.max_hp : (Math.max(1, Math.floor(tile.hp)))).toFixed(0);
         e.querySelector(".tile-max-hp").textContent = tile.max_hp.toFixed(0);
         e.querySelector(".tile-hp-pct").textContent = Math.max(1, Math.floor(100 * tile.hp / tile.max_hp)).toFixed(0);
 
@@ -1401,6 +1453,8 @@ function render_ui_normal_upgrades(player, upgrades) {
         let cost_max = upgrade.get_purchase_cost(player_upgrade_cnt, max_buy);
 
         clone.querySelector(".upgrade-name").textContent = upgrade.name;
+        clone.querySelector(".upgrade-name").style.color = upgrade.col;
+
         clone.querySelector(".upgrade-cost").textContent = `${CurrencyIcons[upgrade.cost_currency]} ${cost_1}`;
         clone.querySelector(".upgrade-cost-max").textContent = `${CurrencyIcons[upgrade.cost_currency]} ${cost_max}`;
         
@@ -1453,7 +1507,7 @@ let default_generation_settings = {
             [
                 [1, [TileResource.CHALCOPYRITE, 1]]
             ],
-            0.04, 0.045,
+            0.02, 0.025,
             0, 250,
             0.25, 0.75, 0.4, 0.4,
             0.2,
@@ -1463,10 +1517,34 @@ let default_generation_settings = {
 
         new ResourceVeinGenerationSettings(
             [
+                [1, [TileResource.SIDERITE, 1]]
+            ],
+            0.001, 0.02,
+            5, 750,
+            0.15, 1, 0.4, 0.4,
+            0.2,
+            5, 8,
+            0.2, 0.4
+        ),
+
+        new ResourceVeinGenerationSettings(
+            [
+                [1, [TileResource.CHALK, 1]]
+            ],
+            0.0005, 0.003,
+            25, 250,
+            0.15, 1, 0.4, 0.4,
+            0.2,
+            11, 14,
+            0.1, 0.2
+        ),
+
+        new ResourceVeinGenerationSettings(
+            [
                 [1, [TileResource.MALACHITE, 1]],
                 [0.2, [TileResource.AZURITE, 0.4]],
             ],
-            0.03, 0.04,
+            0.01, 0.02,
             100, 2000,
             0.25, 0.75, 0.4, 0.4,
             2,
@@ -1478,27 +1556,45 @@ let default_generation_settings = {
 
 let upgrades = [
     new Upgrade(
-        "damageplus1", "Damage+", "Increases damage by +1 per level.",
+        "damageplus1", "Damage+", "cyan", "Increases damage by +1 per level.",
         10, 1.5, Currency.GOLD, 0, 25,
         Upgrade.add_to_stats(["damage", 1])
     ),
 
     new Upgrade(
-        "luckplus1", "Luck+", "Increases luck by +0.1 per level.",
+        "luckplus1", "Luck+", "cyan", "Increases luck by +0.1 per level.",
         10, 3, Currency.GOLD, 0, 10,
         Upgrade.add_to_stats(["luck", 0.1])
     ),
 
     new Upgrade(
-        "miningspeedplus1", "Mining Speed+", "Reduces base mining delay by 0.01s per level.",
+        "miningspeedplus1", "Mining Speed+", "cyan", "Reduces base mining delay by 0.01s per level.",
         50, 1.5, Currency.GOLD, 0, 10,
         Upgrade.add_to_stats(["atk_delay", -0.01])
     ),
 
     new Upgrade(
-        "movespeedplus1", "Movement Speed+", "Increases movement speed by +4 per level.",
+        "movespeedplus1", "Movement Speed+", "cyan", "Increases movement speed by +4 per level.",
         25, 1.75, Currency.GOLD, 0, 16,
         Upgrade.add_to_stats(["movespeed", 4])
+    ),
+
+    new Upgrade(
+        "damageplus2", "Damage++", "#8ff", "Increases damage by +10 per level.",
+        1000, 1.5, Currency.GOLD, 0, 10,
+        Upgrade.add_to_stats(["damage", 10])
+    ),
+
+    new Upgrade(
+        "luckplus2", "Luck++", "#8ff", "Increases luck by +0.5 per level.",
+        2500, 2, Currency.GOLD, 0, 5,
+        Upgrade.add_to_stats(["luck", 0.5])
+    ),
+
+    new Upgrade(
+        "miningspeedplus2", "Mining Speed++", "#8ff", "Reduces base mining delay by 0.02s per level.",
+        5000, 1.5, Currency.GOLD, 0, 10,
+        Upgrade.add_to_stats(["atk_delay", -0.02])
     ),
 ]
 
@@ -1514,31 +1610,27 @@ let player = new Player(default_mine, main_particles_board, new Vector2(16, 16),
 // default_mine.set_tile(0, 0, new Tile({}, true));
 let render_distance = 6;
 
-handlers.game_postload_fn = () => {
-    refresh_wtsp_stwp();
-    recenter_view(Vector2.zero);
-    let tpos = scaling.wttp(player.position);
-
-    generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
-}
-
 function input_handler(n) {
     if (keys_pressed_this_frame["KeyQ"]) {
         // default_mine.tiles = new Map();
-        render_distance *= 2;
-        zoom_level /= 2;
-        let tpos = scaling.wttp(player.position);
+        if (zoom_level > 0.5) {
+            render_distance *= 2;
+            zoom_level /= 2;
+            let tpos = scaling.wttp(player.position);
 
-        generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
+            generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
+        }
     }
 
     if (keys_pressed_this_frame["KeyE"]) {
         // default_mine.tiles = new Map();
-        render_distance /= 2;
-        zoom_level *= 2;
-        let tpos = scaling.wttp(player.position);
+        if (zoom_level < 8) {
+            render_distance /= 2;
+            zoom_level *= 2;
+            let tpos = scaling.wttp(player.position);
 
-        generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
+            generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
+        }
     }
 
     if (keys_down["ArrowDown"] || keys_down["KeyS"]) {
@@ -1572,24 +1664,49 @@ function input_handler(n) {
         
         generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
     }
-
-    if (keys_pressed_this_frame["KeyR"]) {
-        // default_mine.tiles = new Map();
-        render_distance = 64;
-        let tpos = scaling.wttp(player.position);
-
-        generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
-    }
 }
 
-handlers.calc_fn = (delta_time) => {
-    let n = player.stats.movespeed * delta_time;
+let tilestats_window = null;
+handlers.game_postload_fn = () => {
+    refresh_wtsp_stwp();
+    recenter_view(Vector2.zero);
+    let tpos = scaling.wttp(player.position);
+
+    generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
+
+    let help_window = spawn_window("minimise-only", "Help");
+    help_window.content.innerHTML = help_html;
+    help_window.content.querySelector(".closebutton").addEventListener("click", e => {
+        toggle_minimise_window(help_window.window);
+    })
+
+    tilestats_window = spawn_window("minimise-only", "Current tile target");
+    tilestats_window.content.append(
+        document.querySelector(".templates .tile-info-view").cloneNode(true)
+    )
+
+    let bbox = tilestats_window.window.getBoundingClientRect();
+    move_window(tilestats_window.window, 8, window.innerHeight - bbox.height - 8);
+    move_window(tilestats_window.window, 8, window.innerHeight - bbox.height - 8);
+
+    toggle_minimise_window(tilestats_window.window, true);
+
+    let bbox2 = tilestats_window.window.getBoundingClientRect();
+    move_window(tilestats_window.window, 8, window.innerHeight - bbox2.height - 8);
+    move_window(tilestats_window.window, 8, window.innerHeight - bbox2.height - 8);
+}
+
+handlers.calc_fn = (dt) => {
+    let max_delta_time = 1/30;
+    let time_delta = Math.min(max_delta_time, dt);
+
+    let n = player.stats.movespeed * time_delta;
 
     input_handler(n);
 
-    main_particles_board.particles_step(delta_time);
+    main_particles_board.particles_step(time_delta);
 
-    player.mining_target_step(delta_time);
+    player.mining_target_step(time_delta);
 }
 
 handlers.render_fn = () => {
