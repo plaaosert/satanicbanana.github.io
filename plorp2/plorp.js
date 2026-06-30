@@ -728,10 +728,12 @@ class Player {
                 this.mining_cooldown += this.stats.atk_delay;
 
                 let dmg_dealt = this.deal_damage(this.mining_target, this.stats.damage);
-                play_audio(`pick_hit${random_int(1, 5)}`);
                 
                 if (dmg_dealt > 0) {
+                    play_audio(`pick_hit${random_int(1, 5)}`);
                     this.roll_loot(this.mining_target, dmg_dealt, this.stats.luck)
+                } else {
+                    play_audio("clink");
                 }
                 let pos = this.mine.get_center_position(this.mining_target.x, this.mining_target.y);
 
