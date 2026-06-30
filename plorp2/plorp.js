@@ -54,6 +54,8 @@ function refresh_wtsp_stwp(override_canvas_width=null) {
 const TileResource = {
     BEDROCK: "Bedrock",
 
+    CHALK: "Chalk",
+
     CHALCOPYRITE: "Chalcopyrite",
     MALACHITE: "Malachite",
     AZURITE: "Azurite",
@@ -1529,7 +1531,12 @@ let default_generation_settings = {
 
         new ResourceVeinGenerationSettings(
             [
-                [1, [TileResource.CHALK, 1]]
+                [
+                    1, [TileResource.CHALK, 1],
+                    1, [TileResource.CHALK, 2],
+                    0.5, [TileResource.CHALK, 3],
+                    0.25, [TileResource.CHALK, 4],
+                ]
             ],
             0.0005, 0.003,
             25, 250,
