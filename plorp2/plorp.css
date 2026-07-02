@@ -142,7 +142,7 @@ p {
 .sidebar-ui {
     color: white;
 
-    --w: calc(632px - 32px - 2px);
+    --w: calc(660px - 32px - 2px);
 
     min-width: var(--w);
     max-width: var(--w);
@@ -151,10 +151,107 @@ p {
     border: 2px solid white;
     border-left: none;
 
-    padding: 16px;
+    /* padding: 16px; */
 
     display: flex;
     flex-direction: column;
+}
+
+.currencies-bar {
+    display: flex;
+    flex-direction: row;
+
+    justify-content: space-between;
+
+    padding: 16px;
+}
+
+.currencies-bar span {
+    text-align: center;
+    flex-grow: 1;
+}
+
+.select-bar {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+
+    justify-content: space-between;
+
+    border-top: 1px solid white;
+
+    margin-bottom: 16px;
+}
+
+.select-bar span {
+    background-color: #333;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    
+    border-bottom: 1px solid white;
+}
+
+.select-bar span:hover {
+    background-color: #777;
+}
+
+.select-bar span:active {
+    background-color: #111;
+}
+
+.select-bar span.selected {
+    background-color: unset;
+    padding-top: 7px;
+    padding-bottom: 8px;
+    
+    border-bottom: unset;
+
+    --accent-col: gray;
+    border-top: 1px solid var(--accent-col);
+}
+
+.select-bar span.selected.upgrades {
+    --accent-col: goldenrod;
+}
+
+.select-bar span.selected.inventory {
+    --accent-col: green;
+}
+
+.select-bar span.selected.powercubes {
+    --accent-col: lightcoral;
+}
+
+.select-bar span.selected:not(:first-child) {
+    border-left: 1px solid white;
+    border-right: 1px solid transparent;
+}
+
+.select-bar span.selected:not(:last-child) {
+    border-right: 1px solid white;
+    border-left: 1px solid transparent;
+}
+
+.select-bar span.selected:not(:last-child):not(:first-child) {
+    border-right: 1px solid white;
+    border-left: 1px solid white;
+}
+
+.sidebar-menu-content {
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.sidebar-menu-content>div {
+    display: none;
+}
+
+.sidebar-menu-content>div.active {
+    display: unset;
+}
+
+.select-bar span {
+    text-align: center;
+    flex-grow: 1;
 }
 
 .tile-hp-container, .tile-armour-container, .inventory-item {
@@ -172,6 +269,14 @@ p {
     display: flex;
     flex-direction: column;
     gap: 4px;
+}
+
+.inv-actionbuttons {
+    margin-left: auto;
+    width: min-content;
+    flex-wrap: nowrap;
+    display: flex;
+    text-wrap: nowrap;
 }
 
 .inline-button {
@@ -290,4 +395,16 @@ p {
 
 .help-important {
     color: #0df;
+}
+
+.player-stats-view {
+    display: flex;
+    flex-direction: column;
+}
+
+.player-stats-entry {
+    display: flex;
+    flex-direction: row;
+
+    justify-content: space-between;
 }

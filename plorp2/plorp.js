@@ -1,5 +1,7 @@
 game_id = "plorp2";
 
+const SAVE_KEY = "plorp2_savedata";
+
 let scaling = {};
 let zoom_level = 4;
 let view_offset = Vector2.zero;
@@ -21,6 +23,16 @@ const PARTICLE_TYPE = {
     TEXT: 1,
     LINE: 2,
 }
+
+const MAX_VISIBLE_UPGRADES = 10;
+
+let ITEM_GAIN_DISPLAY_MAX_TIME = 8000;
+let ITEM_GAIN_DISPLAY_MOVE_TIME = 750;
+let ITEM_GAIN_DISPLAY_EXIT_TIME = ITEM_GAIN_DISPLAY_MAX_TIME - ITEM_GAIN_DISPLAY_MOVE_TIME;
+let item_gain_displays = new Map();
+
+let last_autosave_time = Date.now();
+let AUTOSAVE_DELAY = 60 * 1000;
 
 function refresh_wtsp_stwp(override_canvas_width=null) {
     let t_screen_scaling_factor = 1;
@@ -100,33 +112,86 @@ const Item = {
     // Etc
 }
 
+const ItemRarity = {
+    JUNK: -1,
+    COMMON: 0,
+    UNCOMMON: 1,
+    RARE: 2,
+    MYTHICAL: 3,
+    LEGENDARY: 4,
+    ANCIENT: 5,
+}
+
+const ItemRarityData = {
+    [ItemRarity.JUNK]: {
+        name: "JUNK",
+        col: Colour.from_hex("#bbb"),
+    },
+
+    [ItemRarity.COMMON]: {
+        name: "COMMON",
+        col: Colour.from_hex("#fff"),
+    },
+
+    [ItemRarity.UNCOMMON]: {
+        name: "UNCOMMON",
+        col: Colour.from_hex("#6f6"),
+    },
+
+    [ItemRarity.RARE]: {
+        name: "RARE",
+        col: Colour.from_hex("#39f"),
+    },
+
+    [ItemRarity.MYTHICAL]: {
+        name: "MYTHICAL",
+        col: Colour.from_hex("#a4f"),
+    },
+
+    [ItemRarity.LEGENDARY]: {
+        name: "LEGENDARY",
+        col: Colour.from_hex("#ed8"),
+    },
+
+    [ItemRarity.ANCIENT]: {
+        name: "ANCIENT",
+        col: Colour.from_hex("#f53"),
+    },
+}
+
 const ItemData = {
     // Granite
     [Item.GRANITE]: {
-        gold_value: 1
+        gold_value: 1,
+        rarity: ItemRarity.JUNK,
     },
 
     // Rocks
     [Item.CHALK]: {
-        gold_value: 2
+        gold_value: 2,
+        rarity: ItemRarity.COMMON,
     },
 
     // Copper
     [Item.CHALCOPYRITE]: {
-        gold_value: 5
+        gold_value: 5,
+        rarity: ItemRarity.COMMON,
     },
 
     [Item.MALACHITE]: {
-        gold_value: 50
+        gold_value: 50,
+        rarity: ItemRarity.COMMON,
     },
 
     [Item.AZURITE]: {
-        gold_value: 100
+        gold_value: 100,
+        rarity: ItemRarity.UNCOMMON,
     },
 
     // Iron
     [Item.SIDERITE]: {
-        gold_value: 15
+        gold_value: 15,
+        rarity: ItemRarity.COMMON,
     },
 }
 
@@ -173,7 +238,7 @@ const TileResourceInfo = {
     // Rocks
     [TileResource.CHALK]: new TileResourceInfoEntry(
         Colour.from_hex("#eeeeee"), [
-            [1, Item.CHALK]
+            [1, Item.CHALK],
         ], 1, 100, 5
     ),
 
@@ -440,6 +505,20 @@ class Player {
         this.currencies = currencies;
 
         this.currency_records = {};
+        this.currency_gain_totals = {};
+
+        this.item_gain_totals = {};
+        this.item_records = {};
+
+        Object.keys(Item).forEach(ik => {
+            this.item_gain_totals[Item[ik]] = 0;
+            this.item_records[Item[ik]] = 0;
+        });
+
+        Object.keys(Currency).forEach(ck => {
+            this.currency_records[Currency[ck]] = 0;
+            this.currency_gain_totals[Currency[ck]] = 0;
+        })
 
         this.radius = 7;
     
@@ -460,6 +539,10 @@ class Player {
         this.currencies_changed = true;
         this.upgrades_changed = true;
         this.stats_changed = true;
+
+        this.last_depth = 0;
+
+        this.closed_helpmenu = false;
     }
 
     consume_change(on) {
@@ -468,6 +551,18 @@ class Player {
         this[`${on}_changed`] = false;
 
         return state;
+    }
+
+    get_incalc_stat(key) {
+        return (this.stats[key] + this.stat_additions[key]) * this.stat_multipliers[key];
+    }
+
+    add_incalc_stat(key, amt) {
+        this.stat_additions[key] += amt;
+    }
+
+    mul_incalc_stat(key, amt) {
+        this.stat_additions[key] += amt;
     }
 
     recalculate_stats() {
@@ -481,11 +576,24 @@ class Player {
             movespeed: 32,
         };
 
+        this.stat_additions = {};
+        this.stat_multipliers = {};
+        
+        Object.keys(base_stats).forEach(k => {
+            this.stat_additions[k] = 0;
+            this.stat_multipliers[k] = 1;
+        })
+
         this.stats = base_stats;
 
         this.get_all_upgrades().sort((a, b) => upgrades_lookup.get(a[0]).priority - upgrades_lookup.get(b[0]).priority).forEach(upgrade => {
             upgrades_lookup.get(upgrade[0]).on_stats(this, upgrade[1]);
         });
+
+        // Resolve modifiers
+        Object.keys(base_stats).forEach(k => {
+            this.stats[k] = this.get_incalc_stat(k);
+        })
 
         this.stats.atk_delay = Math.max(Player.MIN_ATTACK_DELAY, (Player.BASE_ATTACK_DELAY / this.stats.atk_speed) - this.stats.atk_delay_modifier);
 
@@ -548,6 +656,7 @@ class Player {
         this.currencies_changed = true;
 
         this.currency_records[currency] = Math.max(this.currency_records[currency] ?? 0, this.currencies[currency]);
+        this.currency_gain_totals[currency] = (this.currency_gain_totals[currency] ?? 0) + Math.max(0, amt);
     }
 
     has_currency(currency, amt) {
@@ -577,6 +686,12 @@ class Player {
         let cur = this.get_item_amt(item);
         this.inventory[item] = cur + amt;
         this.inventory_changed = true;
+
+        this.item_records[item] = Math.max(this.item_records[item] ?? 0, this.item_records[item]);
+        this.item_gain_totals[item] = (this.item_gain_totals[item] ?? 0) + Math.max(0, amt);
+    
+        if (amt > 0)
+            add_item_gain(item, amt);
     }
 
     has_item(item, amt) {
@@ -616,6 +731,11 @@ class Player {
         }
     }
 
+    get_depth() {
+        let tilepos = scaling.wttp(this.position).floor();
+        return Math.floor(Math.abs(tilepos.x) + Math.abs(tilepos.y));
+    }
+    
     move(by, collision=true) {
         if (!collision) {
             this.position = this.position.add(by);
@@ -704,6 +824,12 @@ class Player {
         }
 
         this.last_movement = by;
+
+        let new_depth = this.get_depth();
+        if (new_depth != this.last_depth) {
+            this.recalculate_stats();
+        }
+        this.last_depth = new_depth;
     }
 
     lose_mining_target() {
@@ -847,7 +973,7 @@ class Upgrade {
     static add_to_stats(...stats_and_values) {
         return ((p, n) => {
             stats_and_values.forEach(sv => {
-                p.stats[sv[0]] += sv[1] * n;
+                p.add_incalc_stat(sv[0], sv[1] * n);
             })
         })
     }
@@ -855,7 +981,7 @@ class Upgrade {
     static mul_to_stats(...stats_and_values) {
         return ((p, n) => {
             stats_and_values.forEach(sv => {
-                p.stats[sv[0]] *= Math.pow(sv[1], n);
+                p.mul_incalc_stat(sv[0], Math.pow(sv[1], n));
             })
         })
     }
@@ -890,8 +1016,10 @@ class Upgrade {
      * @param {*} cost_scaling Amount to scale cost per upgrade bought
      * @param {*} priority Priority of the upgrade effect. Priority is resolved lowest first. Order is not guaranteed within the same priority number. Put multiplicative after additive. Convention for additive is 0, multiplicative is 10.
      * @param {*} on_stats Function (player, number_of_upgrade) => {null} to run during stats calculation.
+     * @param {*} show_unknown Show as unknown if the player hasn't been able to afford it yet.
+     * @param {*} hide_logic Change the unknown logic to a different custom function: (player) => [description, condition]
      */
-    constructor(id, name, col, desc, base_cost, cost_scaling, cost_currency, priority, max_cnt=null, on_stats=null, show_unknown=false) {
+    constructor(id, name, col, desc, base_cost, cost_scaling, cost_currency, priority, max_cnt=null, on_stats=null, show_unknown=false, hide_logic=null) {
         this.id = id;
         
         this.name = name;
@@ -904,6 +1032,7 @@ class Upgrade {
         this.priority = priority;
         this.max_cnt = max_cnt;
         this.show_unknown = show_unknown;
+        this.hide_logic = hide_logic;
     }
 
     get_number_buyable(player, cur_owned) {
@@ -1284,7 +1413,7 @@ function render_player(player) {
 function render_particles(particles_board) {
     layers.fg1.ctx.clearRect(0, 0, canvas_width, canvas_height);
     layers.ui2.ctx.clearRect(0, 0, canvas_width, canvas_height);
-    layers.ui1.ctx.clearRect(0, 0, canvas_width, canvas_height);
+    // layers.ui1.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
     particles_board.particles.forEach(particle => {
         if (particle.delay > 0 || particle.hide) {
@@ -1451,6 +1580,80 @@ function render_ui_currencies(player) {
     document.querySelector(".gold-value").textContent = player.get_currency_amt(Currency.GOLD);
 }
 
+function add_item_gain(itemkey, amt) {
+    let old_entry = item_gain_displays.get(itemkey);
+    // debugger;
+
+    item_gain_displays.set(itemkey, {
+        amount: (old_entry?.amount ?? 0) + amt,
+        spawn_time: old_entry === undefined ? Date.now() : Date.now() - ITEM_GAIN_DISPLAY_MOVE_TIME
+    });
+}
+
+function add_message(key, text, col=null) {
+    item_gain_displays.set(key, {
+        override_text: text,
+        override_col: col,
+        spawn_time: Date.now()
+    });
+}
+
+function render_ui_item_gain_displays() {
+    layers.ui1.ctx.clearRect(0, 0, canvas_width, canvas_height);
+
+    let rect = document.querySelector(".game-container").getBoundingClientRect();
+    
+    let origin_pos = new Vector2(rect.right - 16, rect.bottom - 20);
+
+    let keys = [...item_gain_displays.keys()];
+    let keycnt = keys.length;
+
+    let amt_each = 20;
+
+    let cur_time = Date.now();
+    keys.forEach((k, i) => {
+        let display_data = item_gain_displays.get(k);
+        let item_data = ItemData[k];
+        let rarity_data = ItemRarityData[item_data?.rarity];
+        let textcol = rarity_data?.col;
+
+        let offset_x = 0;
+        let offsetmax = 512;
+        let opacity = 1;
+        let tdiff = cur_time - display_data.spawn_time;
+        if (tdiff >= ITEM_GAIN_DISPLAY_MAX_TIME) {
+            item_gain_displays.delete(k);
+            return;
+        }
+
+        if (tdiff < ITEM_GAIN_DISPLAY_MOVE_TIME) {
+            offset_x = offsetmax * Math.pow(1 - (tdiff / ITEM_GAIN_DISPLAY_MOVE_TIME), 3);
+        } else if (tdiff >= ITEM_GAIN_DISPLAY_EXIT_TIME) {
+            opacity = -1 * ((tdiff - ITEM_GAIN_DISPLAY_EXIT_TIME) / ITEM_GAIN_DISPLAY_MOVE_TIME);
+            opacity += 1;
+        }
+
+        let text = "";
+        if (display_data.override_text) {
+            text = display_data.override_text;
+            textcol = display_data.override_col ?? Colour.white;
+        } else {
+            text = `${k} ${("◕ " + item_data.gold_value.toFixed(0)).padStart(8)} ${display_data.amount.toFixed(0).padStart(6)}x`;
+        }
+
+        layers.ui1.ctx.globalAlpha = opacity;
+        write_pp_bordered_text(
+            layers.ui1.ctx, text,
+            origin_pos.x + offset_x, origin_pos.y - (amt_each * i),
+            textcol.css(), CANVAS_FONTS, 20,
+            false, 2, textcol.lerp(Colour.black, 0.75).css(), null,
+            false, true
+        )
+
+        layers.ui1.ctx.globalAlpha = 1;
+    })
+}
+
 /**
  * 
  * @param {Player} player 
@@ -1462,6 +1665,7 @@ function render_ui_normal_upgrades(player, upgrades) {
     let template = elem.querySelector(".template");
 
     let new_elems = [];
+    let shown_cnt = 0;
     upgrades.forEach(upgrade => {
         let clone = template.cloneNode(true);
 
@@ -1470,27 +1674,44 @@ function render_ui_normal_upgrades(player, upgrades) {
         let max_buy = upgrade.get_number_buyable(player, player_upgrade_cnt);
         let cost_max = upgrade.get_purchase_cost(player_upgrade_cnt, max_buy);
 
-        let show_unknown = upgrade.show_unknown && (player_upgrade_cnt <= 0 && (player.currency_records[upgrade.cost_currency] ?? 0) < cost_1);
+        let show_unknown = false;
+        let unknown_string = "This upgrade is unknown until you can afford it!";
+        if (!upgrade.hide_logic) {
+            show_unknown = upgrade.show_unknown && (player_upgrade_cnt <= 0 && (player.currency_records[upgrade.cost_currency] ?? 0) < cost_1);
+        } else {
+            let d = upgrade.hide_logic(player);
+            show_unknown = !d[1];
+            unknown_string = d[0];
+
+            if (show_unknown)
+                max_buy = 0;
+        }
 
         if (upgrade.get_max_purchasable(player_upgrade_cnt) <= 0) {
             cost_1 = "-"
             cost_max = "-"
+            return;
+        }
+
+        shown_cnt++;
+        if (shown_cnt > MAX_VISIBLE_UPGRADES) {
+            return;
         }
 
         clone.querySelector(".upgrade-name").textContent = show_unknown ? "???" : upgrade.name;
-        clone.querySelector(".upgrade-name").style.color = show_unknown ? "#ccc" : upgrade.col;
+        clone.querySelector(".upgrade-name").style.color = show_unknown ? (upgrade.hide_logic ? "#ee9" : "#ccc") : upgrade.col;
 
         clone.querySelector(".upgrade-cost").textContent = `${CurrencyIcons[upgrade.cost_currency]} ${cost_1}`;
         clone.querySelector(".upgrade-cost-max").textContent = `${CurrencyIcons[upgrade.cost_currency]} ${cost_max}`;
         
-        clone.querySelector(".upgrade-description").textContent = show_unknown ? "This upgrade is unknown until you can afford it!" : upgrade.desc;
-        clone.querySelector(".upgrade-description").style.color = show_unknown ? "#888" : "";
+        clone.querySelector(".upgrade-description").textContent = show_unknown ? unknown_string : upgrade.desc;
+        clone.querySelector(".upgrade-description").style.color = show_unknown ? (upgrade.hide_logic ? "#995" : "#888") : "";
 
         clone.querySelector(".upgrade-num-owned").textContent = show_unknown ? "???/???" : (
             upgrade.max_cnt === null ? `${player_upgrade_cnt}x` : `${player_upgrade_cnt}/${upgrade.max_cnt}`
         )
 
-        clone.querySelector(".upgrade-num-owned").style.color = cost_1 = "-" ? "gray" : "";
+        clone.querySelector(".upgrade-num-owned").style.color = (cost_1 == "-" || show_unknown) ? "gray" : "";
 
         clone.querySelector(".upgrade-max-amt").textContent = `${max_buy}`;
         clone.querySelector(".upgrade-max-cost").textContent = `${cost_max}`;
@@ -1525,14 +1746,152 @@ function render_ui_normal_upgrades(player, upgrades) {
 
     if (new_elems.length == 0) {
         let notif = document.createElement("span");
-        notif.textContent = "No upgrades?!";
+        notif.textContent = "No upgrades!";
         new_elems.push(notif);
     }
 
     elem.replaceChildren(template, ...new_elems);
 }
 
+function render_ui_playerstats(player) {
+    let e = document.querySelector(".windows .player-stats-view");
+
+    e.querySelector(".player-damage").textContent = `${player.stats.damage.toFixed(0)}`;
+    e.querySelector(".player-atkspeed").textContent = `${Math.round(player.stats.atk_speed * 100)}%`;
+    e.querySelector(".player-luck").textContent = `${player.stats.luck.toFixed(2)}x`;
+    e.querySelector(".player-movespeed").textContent = `${player.stats.movespeed.toFixed(0)} px/s`;
+
+    let tilepos = scaling.wttp(player.position).floor();
+    e.querySelector(".player-position").textContent = tilepos.toString();
+    e.querySelector(".player-depth").textContent = `${player.get_depth()}m`;
+}
+
+function switch_display_menu(bar_elem, content_parent_elem, menuname) {
+    bar_elem.querySelectorAll(".select-bar-button").forEach(e => e.classList.remove("selected"));
+    bar_elem.querySelector(`.${menuname}`).classList.add("selected");
+
+    [...content_parent_elem.children].forEach(c => c.classList.remove("active"));
+    content_parent_elem.querySelector(`.${menuname}`).classList.add("active");
+}
+
+function get_mine_player_modifications(mine) {
+    // Cleared tiles are modified by the player.
+    // No other tiles are modified by the player.
+    // Worldgen always keeps all near tiles visible so it's OK to just save+load cleared tiles and nothing else.
+    let modifications = [...default_mine.tiles.keys().filter(k => {
+        let tile = default_mine.tiles.get(k);
+        return tile.cleared || tile.hp != tile.max_hp
+    })].map(k => {
+        let tile = default_mine.tiles.get(k);
+        return {
+            key: k,
+            richnesses: tile.richnesses,
+            cleared: tile.cleared,
+            hp: tile.hp,
+        }
+    });
+
+    return modifications;
+}
+
+function save_game_to_string(player, mine) {
+    let ignored_player_vars = [
+        "last_depth", "mining_cooldown", "mining_target", "particles_board",
+        "radius", "select_particle", "stat_additions", "stat_multipliers", "stats",
+        "mine",
+    ]; // plus any "_changed" variable
+
+    let player_vars = {};
+    Object.keys(player).forEach(k => {
+        if (ignored_player_vars.includes(k) || k.endsWith("_changed"))
+            return
+
+        let val = player[k];
+        if (val instanceof Vector2) {
+            val = {typ: "Vector2", params: [val.x, val.y]};
+        }
+
+        player_vars[k] = val;
+    })
+
+    let mine_info = {};
+    mine_info = {
+        tiles: get_mine_player_modifications(mine),
+        seed: mine.seed,
+        generation_settings: mine.generation_settings.name,
+        random_state: mine.random(true)
+    };
+
+    return btoa(JSON.stringify({
+        player: player_vars,
+        mine: mine_info
+    }));
+}
+
+function save_game(msg_prefix="") {
+    try {
+        let start_time = Date.now();
+        let save_string = save_game_to_string(player, default_mine);
+        localStorage.setItem(SAVE_KEY, save_string);
+        let end_time = Date.now();
+        add_message(
+            `${Date.now()}-savedisplay-success`,
+            `Game ${msg_prefix}saved. (took ${Math.max(1, (end_time - start_time)).toFixed(0)}ms)`,
+            Colour.green
+        );
+    } catch {
+        add_message(
+            `${Date.now()}-savedisplay-fail`,
+            "Error saving game. Uh.... ping plaao???",
+            Colour.red
+        )
+    }
+}
+
+/**
+ * THIS CAN ONLY BE RUN AT INITIALISATION TIME!!!!!
+ * @returns {[Player, Mine, ParticleBoard]} Player, mine, particle board
+ */
+function load_game_from_string(save_string) {
+    let savedata = JSON.parse(atob(save_string));
+
+    let newmine = new Mine(savedata.mine.seed, null, generation_settings[savedata.mine.generation_settings]);
+    
+    savedata.mine.tiles.forEach(t => {
+        let newtile = new Tile(t.richnesses, t.cleared);
+        
+        newtile.hp = t.hp;
+        
+        let xy = newmine.index_to_xy(t.key);
+        newmine.set_tile(
+            xy[0], xy[1], newtile
+        )
+    })
+    
+    let particles_board = new ParticleBoard();
+    let player = new Player(
+        newmine, particles_board,
+        new Vector2(...savedata.player.position.params),
+        {}, {}, [], {}
+    );
+
+    Object.keys(savedata.player).forEach(k => {
+        if (savedata.player[k].typ == "Vector2") {
+            player[k] = new Vector2(...savedata.player[k].params);
+        } else {
+            player[k] = savedata.player[k];
+        }
+    })
+
+    // player.mine = newmine;
+
+    player.recalculate_stats();
+
+    return [player, newmine, particles_board];
+}
+
 let default_generation_settings = {
+    name: "default",
     veins: [
         new ResourceVeinGenerationSettings(
             [
@@ -1551,7 +1910,7 @@ let default_generation_settings = {
                 [1, [TileResource.SIDERITE, 1]]
             ],
             0.001, 0.02,
-            5, 750,
+            10, 750,
             0.15, 1, 0.4, 0.4,
             0.2,
             5, 8,
@@ -1562,14 +1921,11 @@ let default_generation_settings = {
             [
                 [
                     1, [TileResource.CHALK, 1],
-                    1, [TileResource.CHALK, 2],
-                    0.5, [TileResource.CHALK, 3],
-                    0.25, [TileResource.CHALK, 4],
                 ]
             ],
             0.0005, 0.003,
             25, 250,
-            0.15, 1, 0.4, 0.4,
+            0.6, 1, 0.4, 0.4,
             0.2,
             11, 14,
             0.1, 0.2
@@ -1590,22 +1946,26 @@ let default_generation_settings = {
     ]
 }
 
+let generation_settings = {
+    default: default_generation_settings
+}
+
 let upgrades = [
     new Upgrade(
         "damageplus1", "Damage+", "cyan", "Increases damage by +1 per level.",
-        10, 1.15, Currency.GOLD, 0, 25,
+        10, 1.15, Currency.GOLD, 0, 50,
         Upgrade.add_to_stats(["damage", 1])
     ),
 
     new Upgrade(
         "luckplus1", "Luck+", "cyan", "Increases luck by +0.1 per level.",
-        10, 1.5, Currency.GOLD, 0, 10,
+        10, 1.5, Currency.GOLD, 0, 50,
         Upgrade.add_to_stats(["luck", 0.1])
     ),
 
     new Upgrade(
         "miningspeedplus1", "Mining Speed+", "cyan", "Increases mining speed by 2% per level.",
-        20, 1.3, Currency.GOLD, 0, 10,
+        20, 1.3, Currency.GOLD, 0, 20,
         Upgrade.add_to_stats(["atk_speed", 0.02])
     ),
 
@@ -1616,12 +1976,17 @@ let upgrades = [
     ),
 
     new Upgrade(
-        "miningspeed_from_movespeed1", "Momentum", "#ffa", "Increases mining speed by 10% for every 16 px/s of movement speed (before multipliers).",
+        "miningspeed_from_movespeed1", "Momentum", "#ffa", "Increases mining speed by 10% (after multipliers) for every 16 px/s of movement speed.",
         750, 1.5, Currency.GOLD, 1, 1,
         (p, n) => {
-            p.stats.atk_speed += Math.floor(p.stats.movespeed / 16) * 0.1
+            p.add_incalc_stat("atk_speed", Math.floor(p.get_incalc_stat("movespeed") / 16) * 0.1)
         },
-        true,
+        true, (p) => {
+            return [
+                `Collect 25x total Chalk (current: ${p.item_gain_totals[Item.CHALK]}x)`,
+                p.item_gain_totals[Item.CHALK] >= 25
+            ]
+        }
     ),
 
     new Upgrade(
@@ -1644,6 +2009,22 @@ let upgrades = [
         Upgrade.add_to_stats(["atk_speed", 0.1]),
         true,
     ),
+
+    new Upgrade(
+        "depth_luck1", "Depth Delver", "#ffa", "Multiplies luck by 1.5x when over 100m deep.",
+        20000, 1.25, Currency.GOLD, 10, 1,
+        (p, n) => {
+            if (p.get_depth() > 100) {
+                p.mul_incalc_stat("luck", 1.5)
+            }
+        },
+        true, (p) => {
+            return [
+                "Collect 1x total Azurite",
+                p.item_records[Item.AZURITE] >= 1
+            ]
+        }
+    ),
 ]
 
 let upgrades_lookup = new Map();
@@ -1659,6 +2040,10 @@ let player = new Player(default_mine, main_particles_board, new Vector2(16, 16),
 let render_distance = 6;
 
 function input_handler(n) {
+    if (keys_pressed_this_frame["KeyR"]) {
+        save_game("manually ");
+    }
+    
     if (keys_pressed_this_frame["KeyQ"]) {
         // default_mine.tiles = new Map();
         if (zoom_level > 0.5) {
@@ -1715,18 +2100,35 @@ function input_handler(n) {
 }
 
 let tilestats_window = null;
-handlers.game_postload_fn = () => {
-    refresh_wtsp_stwp();
-    recenter_view(Vector2.zero);
-    let tpos = scaling.wttp(player.position);
-
-    generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
-
+let playerstats_window = null;
+function setup_windows() {
     let help_window = spawn_window("minimise-only", "Help");
     help_window.content.innerHTML = help_html;
     help_window.content.querySelector(".closebutton").addEventListener("click", e => {
         toggle_minimise_window(help_window.window);
+        player.closed_helpmenu = true;
     })
+
+    if (player.closed_helpmenu) {
+        toggle_minimise_window(help_window.window, true);
+    }
+
+    playerstats_window = spawn_window("minimise-only", "Stats");
+    playerstats_window.content.append(
+        document.querySelector(".templates .player-stats-view").cloneNode(true)
+    )
+
+    let psbbox = document.querySelector(".sidebar-ui").getBoundingClientRect();
+    let psb_wnd_bbox = playerstats_window.window.getBoundingClientRect();
+    move_window(playerstats_window.window, psbbox.x - psb_wnd_bbox.width - 8, 8);
+    move_window(playerstats_window.window, psbbox.x - psb_wnd_bbox.width - 8, 8);
+
+    toggle_minimise_window(playerstats_window.window, true);
+
+    move_window(playerstats_window.window, psbbox.x - psb_wnd_bbox.width - 8, 8);
+    move_window(playerstats_window.window, psbbox.x - psb_wnd_bbox.width - 8, 8);
+
+    toggle_minimise_window(playerstats_window.window, false);
 
     tilestats_window = spawn_window("minimise-only", "Current tile target");
     tilestats_window.content.append(
@@ -1744,6 +2146,65 @@ handlers.game_postload_fn = () => {
     move_window(tilestats_window.window, 8, window.innerHeight - bbox2.height - 8);
 }
 
+handlers.game_postload_fn = () => {
+    let load_string = localStorage.getItem(SAVE_KEY);
+    if (load_string) {
+        try {
+            let res = load_game_from_string(load_string);
+
+            player = res[0];
+            default_mine = res[1];
+            main_particles_board = res[2];
+
+            add_message(
+                `${Date.now()}-load-success`,
+                "Loaded game successfully!"
+            )
+        } catch {
+            add_message(
+                `${Date.now()}-load-fail`,
+                "Failed to load game. Savefile looks corrupt... ping plaao...?",
+                Colour.red
+            )
+        }
+    } else {
+        add_message(
+            `${Date.now()}-load-fail`,
+            "There was no save. Starting new game!",
+            Colour.yellow
+        )
+    }
+
+    setTimeout(_ => add_message(
+        `${Date.now()}-autosave-display`,
+        `Autosaving every ${(AUTOSAVE_DELAY / 1000).toFixed(0)}s (press 'R' to save manually)`,
+    ), 1000);
+
+    refresh_wtsp_stwp();
+    recenter_view(Vector2.zero);
+    let tpos = scaling.wttp(player.position);
+
+    generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
+
+    // Set up select-bar listeners
+    let main_selectbar = document.querySelector(".select-bar");
+    let main_contentarea = document.querySelector(".sidebar-menu-content");
+    main_selectbar.querySelectorAll(".select-bar-button").forEach(e => {
+        e.addEventListener("mouseup", evt => {
+            switch_display_menu(main_selectbar, main_contentarea, [...e.classList].filter(c => c != "select-bar-button")[0]);
+        })
+    })
+
+    switch_display_menu(main_selectbar, main_contentarea, "upgrades");
+
+    setup_windows();
+
+    // setTimeout(_ => item_gain_displays.set(Item.CHALCOPYRITE, {
+    //     amount: 32,
+    //     spawn_time: Date.now()
+    // }), 1000);
+}
+
 handlers.calc_fn = (dt) => {
     let max_delta_time = 1/30;
     let time_delta = Math.min(max_delta_time, dt);
@@ -1755,6 +2216,12 @@ handlers.calc_fn = (dt) => {
     main_particles_board.particles_step(time_delta);
 
     player.mining_target_step(time_delta);
+
+    if (Date.now() >= last_autosave_time + AUTOSAVE_DELAY) {
+        last_autosave_time = Date.now();
+
+        save_game("auto");
+    }
 }
 
 handlers.render_fn = () => {
@@ -1762,9 +2229,11 @@ handlers.render_fn = () => {
     render_tiles(default_mine);
     render_player(player);
     render_particles(main_particles_board);
+    render_ui_item_gain_displays();
 
     if (player.consume_change("inventory")) {
         render_ui_inventory(player);
+        render_ui_normal_upgrades(player, upgrades);
     }
 
     if (player.consume_change("target")) {
@@ -1778,5 +2247,9 @@ handlers.render_fn = () => {
 
     if (player.consume_change("upgrades")) {
         render_ui_normal_upgrades(player, upgrades);
+    }
+
+    if (player.consume_change("stats")) {
+        render_ui_playerstats(player);
     }
 }

@@ -153,6 +153,12 @@ document.addEventListener("DOMContentLoaded", e => {
         cur_mousepos_y = e.clientY;
 
         handle_window_movement();
+    });
+
+    window.addEventListener("resize", e => {
+        Object.keys(windows).forEach(k => {
+            move_window(windows[k].elem, windows[k].position.x, windows[k].position.y, false);
+        })
     })
     
     document.addEventListener("mousemove", e => {

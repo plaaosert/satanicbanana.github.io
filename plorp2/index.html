@@ -60,52 +60,59 @@
         </div>
 
         <div class="sidebar-ui">
-            <span class="gold-container">◕&nbsp;<span class="gold-value"></span></span>
+            <div class="currencies-bar">
+                <span class="gold-container">◕&nbsp;<span class="gold-value"></span></span>
+            </div>
 
-            <span>---</span>
+            <div class="select-bar">
+                <span class="select-bar-button upgrades">◕ Upgrades</span>
+                <span class="select-bar-button inventory">☁ Inventory</span>
+                <span class="select-bar-button powercubes">❒ Powercubes</span>
+            </div>
 
-            <div class="upgrades-supercontainer flex-rows">
-                <span>Upgrades</span>
-                <br>
-                <div class="upgrades-container normal-upgrades-container">
-                    <div class="upgrade-item flex-cols template">
-                        <div class="flex-rows upgrade-infobox">
-                            <div class="flex-cols upgrade-basic-info">
-                                <span class="upgrade-name"></span>
-                                <span class="upgrade-cost"></span>
-                                <span class="upgrade-cost-max nodisplay"></span>
+            <div class="sidebar-menu-content">
+                <div class="upgrades upgrades-supercontainer flex-rows">
+                    <div class="upgrades-container normal-upgrades-container">
+                        <div class="upgrade-item flex-cols template">
+                            <div class="flex-rows upgrade-infobox">
+                                <div class="flex-cols upgrade-basic-info">
+                                    <span class="upgrade-name"></span>
+                                    <span class="upgrade-cost"></span>
+                                    <span class="upgrade-cost-max nodisplay"></span>
+                                </div>
+                                <div class="flex-rows">
+                                    <span class="upgrade-description"></span>
+                                </div>
                             </div>
-                            <div class="flex-rows">
-                                <span class="upgrade-description"></span>
+                            <span class="upgrade-num-owned"></span>
+                            <div class="flex-cols upgrade-buttons">
+                                <span class="inline-button upgrade-button upgrade1">Buy 1</span>
+                                <span class="inline-button upgrade-button upgrademax">Max (<span class="upgrade-max-amt"></span>x, ◕&nbsp;<span class="upgrade-max-cost"></span>)</span>
                             </div>
-                        </div>
-                        <span class="upgrade-num-owned"></span>
-                        <div class="flex-cols upgrade-buttons">
-                            <span class="inline-button upgrade-button upgrade1">Buy 1</span>
-                            <span class="inline-button upgrade-button upgrademax">Max (<span class="upgrade-max-amt"></span>x, ◕&nbsp;<span class="upgrade-max-cost"></span>)</span>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <span>---</span>
-
-            <div class="inventory-container">
-                <span>Inventory</span>
-                <br><br>
-                <div class="inventory-view">
-                    <div class="inventory-item template">
-                        <span class="item-name"></span>
-                        <span>&nbsp;|&nbsp;</span>
-                        <span class="item-value-container">◕&nbsp;<span class="item-value"></span></span>
-                        <span>&nbsp;|&nbsp;</span>
-                        <span class="item-number"></span>
-                        <span class="spacer"></span>
-                        <span class="inline-button sell-button sell1">Sell 1</span>
-                        <span class="inline-button sell-button sell25">25%</span>
-                        <span class="inline-button sell-button sell50">50%</span>
-                        <span class="inline-button sell-button sellall">All</span>
+                <div class="inventory inventory-container">
+                    <div class="inventory-view">
+                        <div class="inventory-item template">
+                            <span class="item-name"></span>
+                            <span>&nbsp;|&nbsp;</span>
+                            <span class="item-value-container">◕&nbsp;<span class="item-value"></span></span>
+                            <span>&nbsp;|&nbsp;</span>
+                            <span class="item-number"></span>
+                            <div class="inv-actionbuttons">
+                                <span class="inline-button sell-button sell1">Sell 1</span>
+                                <span class="inline-button sell-button sell25">25%</span>
+                                <span class="inline-button sell-button sell50">50%</span>
+                                <span class="inline-button sell-button sellall">All</span>
+                            </div>
+                        </div>
                     </div>
+                </div>
+
+                <div class="powercubes powercubes-container">
+                    <span>haha made you look (wip)</span>
                 </div>
             </div>
         </div>
@@ -125,6 +132,34 @@
     </div>
 
     <div class="templates nodisplay">
+        <div class="player-stats-view">
+            <div class="player-stats-entry">
+                <span>Damage per hit</span>
+                <span class="player-damage"></span>
+            </div>
+            <div class="player-stats-entry">
+                <span>Mining speed</span>
+                <span class="player-atkspeed"></span>
+            </div>
+            <div class="player-stats-entry">
+                <span>Luck</span>
+                <span class="player-luck"></span>
+            </div>
+            <div class="player-stats-entry">
+                <span>Movement speed</span>
+                <span class="player-movespeed"></span>
+            </div>
+            <br>
+            <div class="player-stats-entry">
+                <span>Position</span>
+                <span class="player-position"></span>
+            </div>
+            <div class="player-stats-entry">
+                <span></span>
+                <span class="player-depth-span">(depth: <span class="player-depth"></span>)</span>
+            </div>
+        </div>
+
         <div class="tile-info-view">
             <span class="tile-target-text">Current target:</span>
             <br><br>
@@ -172,10 +207,10 @@
 	</div>
 	
 	<script src="../shared/js/helpers.js?v=00"></script>
-	<script src="../shared/js/canvas_helpers.js?v=00"></script>
+	<script src="../shared/js/canvas_helpers.js?v=01"></script>
 	
     <script src="lib/game_core_constants.js"></script>
-    <script src="lib/game_core_render_defs.js"></script>
+    <script src="lib/game_core_render_defs.js?v=00"></script>
     <script src="lib/game_core_audio_defs.js"></script>
     <script src="lib/game_core_render.js"></script>
     <script src="lib/game_core_audio.js"></script>
@@ -184,7 +219,7 @@
     <script src="textconstants.js?v=01"></script>
     <script src="windowmanager.js?v=01"></script>
 
-    <script src="plorp.js?v=02"></script>
+    <script src="plorp.js?v=03"></script>
 
 	<script src="../shared/js/playtime.js?v=00"></script>
 </body>
