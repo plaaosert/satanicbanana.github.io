@@ -55,7 +55,7 @@ function write_rotated_image(canvas, ctx, x, y, image, w, h, angle_rad) {
     }
 }
 
-function write_text(ctx, text, x, y, colour, font, fontsize, centered, stroke_w, stroke_style, modifiers) {
+function write_text(ctx, text, x, y, colour, font, fontsize, centered, stroke_w, stroke_style, modifiers, right_align=false) {
     ctx.font = `${modifiers ?? ""} ${fontsize}px ${font}`;
     ctx.fillStyle = colour;
 
@@ -65,6 +65,9 @@ function write_text(ctx, text, x, y, colour, font, fontsize, centered, stroke_w,
     if (centered) {
         let metrics = ctx.measureText(text);
         offset_x -= metrics.width / 2;
+    } else if (right_align) {
+        let metrics = ctx.measureText(text);
+        offset_x -= metrics.width; 
     }
     
     if (stroke_w && stroke_style) {
@@ -78,7 +81,7 @@ function write_text(ctx, text, x, y, colour, font, fontsize, centered, stroke_w,
     ctx.fillText(text, x + offset_x, y + offset_y)
 }
 
-function write_pp_bordered_text(ctx, text, x, y, colour, font, fontsize, centered, radius, border_colour="black", modifiers, shortcut_pp_text=false) {
+function write_pp_bordered_text(ctx, text, x, y, colour, font, fontsize, centered, radius, border_colour="black", modifiers, shortcut_pp_text=false, right_align=false) {
     let lb = -radius;
     let ub = radius+1;
 
@@ -87,7 +90,8 @@ function write_pp_bordered_text(ctx, text, x, y, colour, font, fontsize, centere
             ctx, text,
             x + 0, y + 0,
             colour, font, fontsize, centered,
-            radius * 1.5, border_colour, modifiers
+            radius * 1.5, border_colour, modifiers,
+            right_align
         );
 
         return;
@@ -100,7 +104,7 @@ function write_pp_bordered_text(ctx, text, x, y, colour, font, fontsize, centere
                     ctx, text,
                     x + xt, y + yt,
                     border_colour, font, fontsize, centered,
-                    null, null, modifiers
+                    null, null, modifiers, right_align
                 );
             }
         }
@@ -110,7 +114,7 @@ function write_pp_bordered_text(ctx, text, x, y, colour, font, fontsize, centere
         ctx, text,
         x + 0, y + 0,
         colour, font, fontsize, centered,
-        null, null, modifiers
+        null, null, modifiers, right_align
     );
 }
 
