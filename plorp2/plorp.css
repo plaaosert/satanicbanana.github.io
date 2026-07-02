@@ -271,6 +271,14 @@ p {
     gap: 4px;
 }
 
+.inventory-item .item-name {
+    --textcol: white;
+    --bordercol: #222;
+
+    color: var(--textcol);
+    text-shadow: -1px -1px 0 var(--bordercol), 1px -1px 0 var(--bordercol), -1px 1px 0 var(--bordercol), 1px 1px 0 var(--bordercol);
+}
+
 .inv-actionbuttons {
     margin-left: auto;
     width: min-content;

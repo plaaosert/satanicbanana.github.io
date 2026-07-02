@@ -67,6 +67,12 @@ const TileResource = {
     BEDROCK: "Bedrock",
 
     CHALK: "Chalk",
+    SAND: "Sand",
+
+    AMBER: "Amber",
+    AMETHYST: "Amethyst",
+    PERIDOT: "Peridot",
+    RUBY: "Ruby",
 
     CHALCOPYRITE: "Chalcopyrite",
     MALACHITE: "Malachite",
@@ -89,6 +95,12 @@ const Item = {
     CHALK: "Chalk",
     CLAY: "Clay",
     OBSIDIAN: "Obsidian",
+
+    // Gems
+    AMBER: "Amber",
+    AMETHYST: "Amethyst",
+    PERIDOT: "Peridot",
+    RUBY: "Ruby",
 
     // Ores
     // Copper
@@ -140,7 +152,7 @@ const ItemRarityData = {
 
     [ItemRarity.RARE]: {
         name: "RARE",
-        col: Colour.from_hex("#39f"),
+        col: Colour.from_hex("#8cf"),
     },
 
     [ItemRarity.MYTHICAL]: {
@@ -171,6 +183,28 @@ const ItemData = {
         gold_value: 2,
         rarity: ItemRarity.COMMON,
     },
+
+    // Gems
+    [Item.AMBER]: {
+        gold_value: 100,
+        rarity: ItemRarity.UNCOMMON
+    },
+
+    [Item.AMETHYST]: {
+        gold_value: 500,
+        rarity: ItemRarity.UNCOMMON
+    },
+
+    [Item.PERIDOT]: {
+        gold_value: 1000,
+        rarity: ItemRarity.RARE
+    },
+
+    [Item.RUBY]: {
+        gold_value: 2500,
+        rarity: ItemRarity.RARE
+    },
+
 
     // Copper
     [Item.CHALCOPYRITE]: {
@@ -240,6 +274,37 @@ const TileResourceInfo = {
         Colour.from_hex("#eeeeee"), [
             [1, Item.CHALK],
         ], 1, 100, 5
+    ),
+
+    [TileResource.SAND]: new TileResourceInfoEntry(
+        Colour.from_hex("#e5c69d"), [
+            
+        ], 1, 30, 0
+    ),
+
+    // Gems
+    [TileResource.AMBER]: new TileResourceInfoEntry(
+        Colour.from_hex("#ffe43a"), [
+            [1, Item.AMBER]
+        ], 0.05, 50, 50
+    ),
+
+    [TileResource.AMETHYST]: new TileResourceInfoEntry(
+        Colour.from_hex("#b082e4"), [
+            [1, Item.AMETHYST]
+        ], 0.03, 50, 100
+    ),
+
+    [TileResource.PERIDOT]: new TileResourceInfoEntry(
+        Colour.from_hex("#b4c39c"), [
+            [1, Item.PERIDOT]
+        ], 0.02, 50, 250
+    ),
+
+    [TileResource.RUBY]: new TileResourceInfoEntry(
+        Colour.from_hex("#bc6675"), [
+            [1, Item.RUBY]
+        ], 0.015, 50, 500
     ),
 
     // Copper
@@ -687,7 +752,7 @@ class Player {
         this.inventory[item] = cur + amt;
         this.inventory_changed = true;
 
-        this.item_records[item] = Math.max(this.item_records[item] ?? 0, this.item_records[item]);
+        this.item_records[item] = Math.max(this.item_records[item] ?? 0, this.inventory[item]);
         this.item_gain_totals[item] = (this.item_gain_totals[item] ?? 0) + Math.max(0, amt);
     
         if (amt > 0)
@@ -952,7 +1017,7 @@ class Player {
 
                 let chance = on_tile.richnesses[k];
                 chance *= data.rarity_modifier;
-                if (this.mine.random() < chance) {
+                if (this.mine.random() < chance && data.loot_table.length > 0) {
                     let res_item = weighted_seeded_random_from_arr(data.loot_table, this.mine.random)[1];
 
                     this.add_item(res_item, 1);
@@ -1505,6 +1570,9 @@ function render_ui_inventory(player) {
         clone.classList.remove("template");
 
         clone.querySelector(".item-name").textContent = item[0].padEnd(16, "\xa0");
+        clone.querySelector(".item-name").style.setProperty("--textcol", ItemRarityData[ItemData[item[0]].rarity].col.css())        
+        clone.querySelector(".item-name").style.setProperty("--bordercol", ItemRarityData[ItemData[item[0]].rarity].col.lerp(Colour.black, 0.8).css())
+
         clone.querySelector(".item-number").textContent = `${item[1]}x`.padEnd(10, "\xa0");
         clone.querySelector(".item-value").textContent = ItemData[item[0]].gold_value.toString().padEnd(8, "\xa0");
 
@@ -1901,7 +1969,7 @@ let default_generation_settings = {
             0, 250,
             0.25, 0.75, 0.4, 0.4,
             0.2,
-            3, 6,
+            3, 5,
             0.25, 0.6
         ),
 
@@ -1926,7 +1994,7 @@ let default_generation_settings = {
             0.0005, 0.003,
             25, 250,
             0.6, 1, 0.4, 0.4,
-            0.2,
+            -0.8,
             11, 14,
             0.1, 0.2
         ),
@@ -1942,7 +2010,56 @@ let default_generation_settings = {
             2,
             3, 6,
             0.25, 0.6
-        )
+        ),
+
+        new ResourceVeinGenerationSettings(
+            [
+                [1, [TileResource.SAND, 0.5]],
+                [0.02, [TileResource.AMBER, 4]]
+            ],
+            0.004, 0.002,
+            10, 500,
+            0.6, 1, 0.4, 0.4,
+            -1,
+            6, 8,
+            0.4, 0.7
+        ),
+
+        new ResourceVeinGenerationSettings(
+            [
+                [1, [TileResource.AMETHYST, 1]]
+            ],
+            0.001, 0.002,
+            50, 2000,
+            0.75, 1, 0.2, 0,
+            0.25,
+            1, 3,
+            0.9, 1
+        ),
+
+        new ResourceVeinGenerationSettings(
+            [
+                [1, [TileResource.PERIDOT, 1]]
+            ],
+            0.00075, 0.002,
+            100, 5000,
+            0.75, 1, 0.2, 0,
+            0,
+            1, 2,
+            0.9, 1
+        ),
+
+        new ResourceVeinGenerationSettings(
+            [
+                [1, [TileResource.RUBY, 1]]
+            ],
+            0.0005, 0.0015,
+            500, 10000,
+            0.75, 1, 0.2, 0,
+            1,
+            1, 2,
+            0.9, 1
+        ),
     ]
 }
 
