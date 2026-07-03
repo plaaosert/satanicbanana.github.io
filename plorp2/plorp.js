@@ -739,6 +739,13 @@ class Player {
 
         this.stats = base_stats;
 
+        // Housekeeping on upgrades list
+        Object.keys(this.upgrades).forEach(k => {
+            if (!upgrades_lookup.get(k)) {
+                this.upgrades[k] = 0;
+            }
+        })
+
         this.get_all_upgrades().sort((a, b) => upgrades_lookup.get(a[0]).priority - upgrades_lookup.get(b[0]).priority).forEach(upgrade => {
             upgrades_lookup.get(upgrade[0]).on_stats(this, upgrade[1]);
         });
@@ -756,8 +763,8 @@ class Player {
     // Upgrades
     get_all_upgrades() {
         return Object.keys(this.upgrades).map(k => {
-            return [k, this.upgrades[k]]
-        }).filter(e => e[1] != 0);
+            return [k, this.upgrades[k], upgrades_lookup.get(k)]
+        }).filter(e => e[1] != 0 && e[2]);
     }
 
     get_upgrade_count_by_id(upgradeid) {
