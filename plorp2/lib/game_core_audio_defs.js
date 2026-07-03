@@ -6,6 +6,11 @@ let audios_list = [
     ["pick_hit2", "pick_hit2.wav"],
     ["pick_hit3", "pick_hit3.wav"],
     ["pick_hit4", "pick_hit4.wav"],
+
+    ["pick_crit1", "pick_crit1.mp3"],
+    ["pick_crit2", "pick_crit2.mp3"],
+    ["pick_crit3", "pick_crit3.mp3"],
+    ["pick_crit4", "pick_crit4.mp3"],
     
     ["block_destroy1", "block_destroy1.wav"],
     ["block_destroy2", "block_destroy2.wav"],
@@ -20,6 +25,8 @@ let audios_list = [
 
     // https://pixabay.com/sound-effects/film-special-effects-metallic-cling1-105303/
     ["clink", "clink.mp3"],
+
+    ["ascension", "ascension.mp3"],
 ]
 
 if (new URLSearchParams(window.location.search).get("noaudio") == "true") {

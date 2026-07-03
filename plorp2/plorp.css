@@ -10,6 +10,10 @@ p {
     margin: 0;
 }
 
+.inventory-container {
+    user-select: none;
+}
+
 .window {
     position: absolute;
 
@@ -182,23 +186,26 @@ p {
     margin-bottom: 16px;
 }
 
-.select-bar span {
+.select-bar>span {
     background-color: #333;
     padding-top: 8px;
     padding-bottom: 8px;
     
     border-bottom: 1px solid white;
+
+    display: flex;
+    justify-content: center;
 }
 
-.select-bar span:hover {
+.select-bar>span:hover {
     background-color: #777;
 }
 
-.select-bar span:active {
+.select-bar>span:active {
     background-color: #111;
 }
 
-.select-bar span.selected {
+.select-bar>span.selected {
     background-color: unset;
     padding-top: 7px;
     padding-bottom: 8px;
@@ -209,29 +216,29 @@ p {
     border-top: 1px solid var(--accent-col);
 }
 
-.select-bar span.selected.upgrades {
+.select-bar>span.selected.upgrades {
     --accent-col: goldenrod;
 }
 
-.select-bar span.selected.inventory {
+.select-bar>span.selected.inventory {
     --accent-col: green;
 }
 
-.select-bar span.selected.powercubes {
+.select-bar>span.selected.powercubes {
     --accent-col: lightcoral;
 }
 
-.select-bar span.selected:not(:first-child) {
+.select-bar>span.selected:not(:first-child) {
     border-left: 1px solid white;
     border-right: 1px solid transparent;
 }
 
-.select-bar span.selected:not(:last-child) {
+.select-bar>span.selected:not(:last-child) {
     border-right: 1px solid white;
     border-left: 1px solid transparent;
 }
 
-.select-bar span.selected:not(:last-child):not(:first-child) {
+.select-bar>span.selected:not(:last-child):not(:first-child) {
     border-right: 1px solid white;
     border-left: 1px solid white;
 }
@@ -249,7 +256,7 @@ p {
     display: unset;
 }
 
-.select-bar span {
+.select-bar>span {
     text-align: center;
     flex-grow: 1;
 }
@@ -415,4 +422,256 @@ p {
     flex-direction: row;
 
     justify-content: space-between;
+}
+
+.pickicon {
+    align-items: center;
+}
+
+.pickicon {
+    font-size: 14px;
+}
+
+.pickicon img {
+    border: 1px solid white;
+    padding: 4px;
+    margin-right: 8px;
+}
+
+.pickicon input {
+    display: inline;
+    width: min-content;
+}
+
+.player-stats-icon {
+    width: 64px;
+    height: 64px;
+}
+
+.shaking-text {
+    display: inline-block;
+}
+
+.shaking-text span {
+    display: inline-block;
+}
+
+.ascend-text {
+    font-size: 22px;
+    --shadowcol: #a77;
+
+    text-shadow: 1px 1px 3px var(--shadowcol), -1px 1px 3px var(--shadowcol), 1px -1px 3px var(--shadowcol), -1px -1px 3px var(--shadowcol);
+}
+
+.ascend-button {
+    background-color: #400;
+    text-align: center;
+    border: 2px solid #944;
+
+    padding-top: 16px;
+    padding-bottom: 16px;
+}
+
+.ascend-button:hover {
+    background-color: #722;
+    border: 2px solid #a55;
+}
+
+.ascend-button:active {
+    background-color: #200;
+    border: 2px solid #733;
+}
+
+.ascend-button.disabled {
+    background-color: #222;
+    border: 2px solid #888;
+}
+
+.ascend-button .ascend-text.disabled {
+    color: #999;
+    --shadowcol: #444;
+}
+
+.powercubes-projected-gain {
+    font-size: 22px;
+
+    background-color: #833;
+    border: 1px solid #b55;
+    padding: 2px;
+
+    margin-left: 12px;
+}
+
+.powercubes-projected-gain-mini {
+    font-size: 12px;
+
+    flex-grow: 0;
+
+    background-color: #833;
+    border: 1px solid #b55;
+
+    padding: 2px;
+
+    margin-left: 12px;
+    margin-bottom: auto;
+    margin-top: auto;
+}
+
+.powercubes-infotext {
+    margin-top: 8px;
+}
+
+.infotext {
+    font-size: 14px;
+    color: #ddd;
+}
+
+.powercubes-upgrades-container {
+    margin-top: 24px;
+}
+
+.powercubes-choices-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.powercubes-choices {
+    margin-top: 24px;
+}
+
+.powercubes-choice {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+}
+
+@property --hmul {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+@keyframes powercubes_choice_float {
+  from {--hmul: 0}
+  to {--hmul: 1}
+}
+
+.powercubes-choices .powercubes-choice-button {
+    background-color: #400;
+    border: 1px solid #a33;
+    padding: 16px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    flex-basis: 50%;
+}
+
+.powercubes-choices .powercubes-choice-button:not(.unselected) {
+    --t: 2.5s;
+    --idx: 0;
+    --cnt_total: 2;
+
+    animation: 2.5s ease-in-out calc(var(--t) * var(--idx) / var(--cnt_total)) powercubes_choice_float;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+
+    --hmul: 0;
+    --maxh: -8px;
+    --minh: -4px;
+    --diffh: calc(var(--maxh) - var(--minh));
+
+    --hmod: calc(var(--minh) + (var(--diffh) * var(--hmul)));
+    transform: translateY(var(--hmod));
+
+    --shadowcol: rgba(32, 8, 8, 128);
+    box-shadow: 0px calc(var(--hmod) * -1) 2px var(--shadowcol);
+}
+
+.powercubes-choices .powercubes-choice-button .choicename {
+    font-size: 22px;
+    margin-bottom: 8px;
+    text-shadow:
+    1px 1px 2px #666,
+    -1px 1px 2px #666,
+    1px -1px 2px #666,
+    -1px -1px 2px #666;
+}
+
+.powercubes-choices .powercubes-choice-button .choicedesc {
+    font-size: 14px;
+    margin: auto;
+    text-align: center;
+}
+
+.powercubes-choices .powercubes-choice-button.unselected {
+    background-color: #333;
+    border: 1px solid #ccc;
+
+    opacity: 0.4;
+
+    transform: unset;
+}
+
+.powercubes-choices .powercubes-choice-button.choice-available {
+    background-color: #040;
+    border: 1px solid #3a3;
+
+    --shadowcol: rgba(8, 32, 8, 128);
+}
+
+.powercubes-choices .powercubes-choice-button.choice-available:hover {
+    background-color: #070;
+    border: 1px solid #5e5;
+}
+
+.powercubes-choices .powercubes-choice-button.choice-available:active {
+    background-color: #020;
+    border: 1px solid #191;
+
+    transform: unset;
+    box-shadow: unset;
+}
+
+.reset-powercubes-toggle {
+    background-color: #400;
+    border: 1px solid #a33;
+    padding: 8px;
+    text-align: center;
+
+    margin-top: 16px;
+
+    transform: translateY(-4px);
+    box-shadow: 0px 4px 2px rgba(32, 8, 8, 128);
+}
+
+.reset-powercubes-toggle:hover {
+    background-color: #700;
+    border: 1px solid #e77;
+}
+
+.reset-powercubes-toggle:active {
+    background-color: #200;
+    border: 1px solid #822;
+
+    transform: unset;
+    box-shadow: unset;
+}
+
+.reset-powercubes-toggle.disabled {
+    background-color: #333;
+    border: 1px solid #ccc;
+
+    opacity: 0.4;
+
+    transform: unset;
+    box-shadow: unset;
+}
+
+.powercubes-next-req {
+    margin-top: 8px;
+    text-align: center;
+
+    color: #bbb;
 }

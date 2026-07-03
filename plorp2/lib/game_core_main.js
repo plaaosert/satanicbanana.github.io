@@ -84,7 +84,7 @@ function game_loop() {
 
     // ---- final accounting
     cleanup_durations.push(cleanup_end_time - cleanup_start_time);
-    cleanup_durations = calc_durations.slice(-120);
+    cleanup_durations = cleanup_durations.slice(-120);
 
     // next frame
     let frame_end_time = Date.now();

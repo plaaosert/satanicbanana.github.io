@@ -11,7 +11,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 
 	<link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=00"/>
-	<link rel="stylesheet" type="text/css" href="plorp.css?v=01"/>
+	<link rel="stylesheet" type="text/css" href="plorp.css?v=02"/>
 </head>
 <body>
 	<div class="topbar" style="display: none;">
@@ -62,12 +62,13 @@
         <div class="sidebar-ui">
             <div class="currencies-bar">
                 <span class="gold-container">◕&nbsp;<span class="gold-value"></span></span>
+                <span class="powercubes-container nodisplay">❒&nbsp;<span class="powercubes-value"></span></span>
             </div>
 
             <div class="select-bar">
                 <span class="select-bar-button upgrades">◕ Upgrades</span>
                 <span class="select-bar-button inventory">☁ Inventory</span>
-                <span class="select-bar-button powercubes">❒ Powercubes</span>
+                <span class="select-bar-button powercubes">❒ Powercubes<span class="powercubes-projected-gain-mini">+12</span></span>
             </div>
 
             <div class="sidebar-menu-content">
@@ -112,7 +113,49 @@
                 </div>
 
                 <div class="powercubes powercubes-container">
-                    <span>haha made you look (wip)</span>
+                    <div class="flex-rows">
+                        <div class="ascend-button disabled">
+                            <span class="ascend-text shaking-text disabled">Collapse</span>
+                            <span class="powercubes-projected-gain nodisplay">+12</span>
+                            <!-- <span class="powercubes-explainer">(◕ 12 * time 1.1x * equipment 1.25x)</span> -->
+                        </div>
+                        <span class="powercubes-next-req">+12</span>
+                        <span class="powercubes-infotext infotext">
+                            Collapse your being into ❒ Powercubes based on your current ◕ gold value.<br>
+                            <span class="red">You will lose: </span>◕ Gold, ◕ Upgrades, ☁ Inventory<br>
+                            <span class="green">You will keep: </span>everything else (including the state of the mine)<br>
+                        </span>
+                        <div class="powercubes-choices-container">
+                            <div class="powercubes-choices flex-rows">
+                                <div class="powercubes-choice flex-cols template">
+                                    <div class="powercubes-choice-button template">
+                                        <span class="choicename"></span>
+                                        <span class="choicedesc"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="reset-powercubes-toggle">Reset facets (forces instant collapse)</span>
+                        </div>
+                        <div class="powercubes-upgrades-container">
+                            <div class="upgrade-item flex-cols template">
+                                <div class="flex-rows upgrade-infobox">
+                                    <div class="flex-cols upgrade-basic-info">
+                                        <span class="upgrade-name"></span>
+                                        <span class="upgrade-cost"></span>
+                                        <span class="upgrade-cost-max nodisplay"></span>
+                                    </div>
+                                    <div class="flex-rows">
+                                        <span class="upgrade-description"></span>
+                                    </div>
+                                </div>
+                                <span class="upgrade-num-owned"></span>
+                                <div class="flex-cols upgrade-buttons">
+                                    <span class="inline-button upgrade-button upgrade1">Buy 1</span>
+                                    <span class="inline-button upgrade-button upgrademax">Max (<span class="upgrade-max-amt"></span>x, ◕&nbsp;<span class="upgrade-max-cost"></span>)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -157,6 +200,26 @@
             <div class="player-stats-entry">
                 <span></span>
                 <span class="player-depth-span">(depth: <span class="player-depth"></span>)</span>
+            </div>
+            <br>
+            <div class="player-stats-entry">
+                <span>Crit</span>
+                <span class="player-crit"></span>
+            </div>
+            <div class="player-stats-entry">
+                <span>Flurry</span>
+                <span class="player-flurry"></span>
+            </div>
+            <br>
+            <div class="player-stats-entry pickicon">
+                <img src="assets/img/icons/unknown.png" class="player-stats-icon" id="player_stats_icon">
+                <div class="flex-rows">
+                    <span>Pick a different player icon...</span>
+                    <span>if you like.</span>
+                    <br>
+                    <input type="file" accept="image/*" onchange="onFileSelected(event)">
+                    <span class="inline-button" style="align-self: flex-start; margin-top: 4px" onclick="clear_custom_icon()">get rid of it</span>
+                </div>
             </div>
         </div>
 
@@ -206,20 +269,20 @@
 		<p style="font-size: 2vmin"><a class="right-text" style="top:89px; color:#f20; font-size: 2vmin" href="../index.html" > << go back >> </a></p>
 	</div>
 	
-	<script src="../shared/js/helpers.js?v=00"></script>
-	<script src="../shared/js/canvas_helpers.js?v=01"></script>
+	<script src="../shared/js/helpers.js?v=01"></script>
+	<script src="../shared/js/canvas_helpers.js?v=02"></script>
 	
-    <script src="lib/game_core_constants.js"></script>
-    <script src="lib/game_core_render_defs.js?v=00"></script>
-    <script src="lib/game_core_audio_defs.js"></script>
-    <script src="lib/game_core_render.js"></script>
-    <script src="lib/game_core_audio.js"></script>
-    <script src="lib/game_core_main.js"></script>
+    <script src="lib/game_core_constants.js?v=01"></script>
+    <script src="lib/game_core_render_defs.js?v=01"></script>
+    <script src="lib/game_core_audio_defs.js?v=01"></script>
+    <script src="lib/game_core_render.js?v=01"></script>
+    <script src="lib/game_core_audio.js?v=01"></script>
+    <script src="lib/game_core_main.js?v=01"></script>
 
-    <script src="textconstants.js?v=01"></script>
-    <script src="windowmanager.js?v=02"></script>
+    <script src="textconstants.js?v=02"></script>
+    <script src="windowmanager.js?v=03"></script>
 
-    <script src="plorp.js?v=04"></script>
+    <script src="plorp.js?v=05"></script>
 
 	<script src="../shared/js/playtime.js?v=00"></script>
 </body>

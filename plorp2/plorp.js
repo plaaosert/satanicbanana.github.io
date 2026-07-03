@@ -25,6 +25,7 @@ const PARTICLE_TYPE = {
 }
 
 const MAX_VISIBLE_UPGRADES = 10;
+const MAX_POWERCUBE_VISIBLE_UPGRADES = 6;
 
 let ITEM_GAIN_DISPLAY_MAX_TIME = 8000;
 let ITEM_GAIN_DISPLAY_MOVE_TIME = 750;
@@ -33,6 +34,8 @@ let item_gain_displays = new Map();
 
 let last_autosave_time = Date.now();
 let AUTOSAVE_DELAY = 60 * 1000;
+
+let shake_elems = [];
 
 function refresh_wtsp_stwp(override_canvas_width=null) {
     let t_screen_scaling_factor = 1;
@@ -230,11 +233,13 @@ const ItemData = {
 }
 
 const Currency = {
-    GOLD: "Gold"
+    GOLD: "Gold",
+    POWERCUBES: "Powercubes",
 }
 
 const CurrencyIcons = {
-    [Currency.GOLD]: "◕"
+    [Currency.GOLD]: "◕",
+    [Currency.POWERCUBES]: "❒",
 }
 
 // const TrashRockSpawnSettings = [
@@ -286,25 +291,25 @@ const TileResourceInfo = {
     [TileResource.AMBER]: new TileResourceInfoEntry(
         Colour.from_hex("#ffe43a"), [
             [1, Item.AMBER]
-        ], 0.05, 50, 50
+        ], 0.03, 50, 50
     ),
 
     [TileResource.AMETHYST]: new TileResourceInfoEntry(
         Colour.from_hex("#b082e4"), [
             [1, Item.AMETHYST]
-        ], 0.03, 50, 100
+        ], 0.02, 50, 100
     ),
 
     [TileResource.PERIDOT]: new TileResourceInfoEntry(
         Colour.from_hex("#b4c39c"), [
             [1, Item.PERIDOT]
-        ], 0.02, 50, 250
+        ], 0.01, 50, 250
     ),
 
     [TileResource.RUBY]: new TileResourceInfoEntry(
         Colour.from_hex("#bc6675"), [
             [1, Item.RUBY]
-        ], 0.015, 50, 500
+        ], 0.005, 50, 500
     ),
 
     // Copper
@@ -419,7 +424,7 @@ class ResourceVein {
 class Tile {
     static DEFAULT_TILE_COLOUR = Colour.from_hex("#333");
 
-    constructor(richnesses, cleared) {
+    constructor(richnesses, cleared, features=null) {
         this.richnesses = richnesses;
         this.cleared = cleared;
 
@@ -432,6 +437,8 @@ class Tile {
         this.y = null;
 
         this.colour = this.determine_colour();
+
+        this.features = features ?? {};
     }
 
     get_armour() {
@@ -494,7 +501,11 @@ class Tile {
     }
 
     get_colour_css() {
-        return this.colour.css();
+        return this.get_colour().css();
+    }
+
+    get_colour() {
+        return this.colour;
     }
 }
 
@@ -572,8 +583,14 @@ class Player {
         this.currency_records = {};
         this.currency_gain_totals = {};
 
+        this.currency_records_alltime = {};
+
         this.item_gain_totals = {};
         this.item_records = {};
+
+        this.item_records_alltime = {};
+
+        this.reset_records = {};
 
         Object.keys(Item).forEach(ik => {
             this.item_gain_totals[Item[ik]] = 0;
@@ -604,10 +621,74 @@ class Player {
         this.currencies_changed = true;
         this.upgrades_changed = true;
         this.stats_changed = true;
+        this.position_changed = true;
+        this.icon_changed = true;
+        this.powercube_choices_changed = true;
 
         this.last_depth = 0;
 
         this.closed_helpmenu = false;
+        this.custom_icon_b64 = null;
+
+        this.spawnpoint = new Vector2(16, 16);
+
+        this.hide_display = false;
+        this.lock_input = false;
+    }
+
+    calc_collapse_gain() {
+        // Collapse gain is by default based on just money
+        // First one at 5000
+        // Cost increases by 1.25x every time
+        let score_total = this.get_currency_amt(Currency.GOLD);
+        
+        let powercubes_amt = Upgrade.calc_amount_from_cost(
+            score_total, 5000, 1.2, 0
+        ) + 1;
+
+        return Math.max(0, Math.floor(powercubes_amt));
+    }
+    
+    calc_next_collapse_target() {
+        let cur = this.calc_collapse_gain();
+
+        return Upgrade.calc_cost_from_amount(
+            5000, 1.2, cur, 0
+        );
+    }
+
+    reset_collapse() {
+        // Collapse resets money, inventory and *GOLD* upgrades
+        // and moves the player back to the spawnpoint
+        this.reset_records["collapse"] = (this.reset_records["collapse"] ?? 0) + 1;
+
+        let powercubes_gain = this.calc_collapse_gain();
+
+        this.position = this.spawnpoint;
+        this.get_all_items().forEach(item => {
+            this.remove_item(item[0], item[1])
+        });
+        this.remove_currency(Currency.GOLD, this.get_currency_amt(Currency.GOLD));
+        this.get_all_upgrades().forEach(upgrade => {
+            let upg_obj = upgrades_lookup.get(upgrade[0]);
+            if (upg_obj.cost_currency == Currency.GOLD) {
+                this.set_upgrade_count(upg_obj, 0);
+            }
+        });
+
+        this.add_currency(Currency.POWERCUBES, powercubes_gain);
+
+        this.currency_records_alltime = this.currency_records;
+        this.currency_records = {};
+
+        this.item_records_alltime = this.item_records;
+        this.item_records = {};
+
+        let bonus_start_gold = this.get_upgrade_count_by_id("pc-bonus-starting-gold1") * 250;
+        this.add_currency(Currency.GOLD, bonus_start_gold);
+
+        this.mining_target = null;
+        this.position_changed = true;
     }
 
     consume_change(on) {
@@ -639,6 +720,13 @@ class Player {
             atk_delay_modifier: 0,
             luck: 1,
             movespeed: 32,
+            lightlevel: 8,
+            lightlevel_enabled: false,
+
+            crit_chance: 0,
+            crit_damage: 3,
+            flurry_chance: 0,
+            flurry_effectiveness: 4,
         };
 
         this.stat_additions = {};
@@ -672,15 +760,16 @@ class Player {
         }).filter(e => e[1] != 0);
     }
 
+    get_upgrade_count_by_id(upgradeid) {
+        return this.upgrades[upgradeid] ?? 0;
+    }
+
     get_upgrade_count(upgrade) {
         return this.upgrades[upgrade.id] ?? 0;
     }
 
     add_upgrade(upgrade, amt) {
         this.set_upgrade_count(upgrade, (this.upgrades[upgrade.id] ?? 0) + amt);
-        this.upgrades_changed = true;
-        
-        this.recalculate_stats();
     }
 
     set_upgrade_count(upgrade, to) {
@@ -802,6 +891,9 @@ class Player {
     }
     
     move(by, collision=true) {
+        if (this.lock_input)
+            return;
+
         if (!collision) {
             this.position = this.position.add(by);
             return;
@@ -893,6 +985,7 @@ class Player {
         let new_depth = this.get_depth();
         if (new_depth != this.last_depth) {
             this.recalculate_stats();
+            this.position_changed = true;
         }
         this.last_depth = new_depth;
     }
@@ -907,25 +1000,51 @@ class Player {
 
     deal_damage(to_tile, damage_amt) {
         this.target_changed = true;
-        return to_tile.take_damage(damage_amt);
+
+        let final_damage = damage_amt;
+        let crit = false;
+        if (this.mine.random() < this.stats.crit_chance) {
+            final_damage *= this.stats.crit_damage;
+            crit = true;
+        }
+
+        return [to_tile.take_damage(final_damage), crit];
     }
 
     mining_target_step(delta_time) {
+        if (this.lock_input)
+            return;
+
         let target_thresh = BASE_TILE_SCALE / 4;
 
         if (this.mining_target) {
             this.mining_cooldown -= delta_time;
             while (this.mining_cooldown <= 0) {
-                this.mining_cooldown += this.stats.atk_delay;
+                let result = this.deal_damage(this.mining_target, this.stats.damage);
+                let dmg_dealt = result[0];
+                let crit = result[1];
 
-                let dmg_dealt = this.deal_damage(this.mining_target, this.stats.damage);
-                
                 if (dmg_dealt > 0) {
-                    play_audio(`pick_hit${random_int(1, 5)}`);
-                    this.roll_loot(this.mining_target, dmg_dealt, this.stats.luck)
+                    play_audio(`pick_${crit ? "crit" : "hit"}${random_int(1, 5)}`, crit ? 0.25 : 0.1);
+
+                    if (this.mine.random() < this.stats.flurry_chance) {
+                        this.mining_cooldown += this.stats.atk_delay / this.stats.flurry_effectiveness;
+                    } else {
+                        this.mining_cooldown += this.stats.atk_delay;
+                    }
+
+                    let luck = this.stats.luck;
+                    if (crit) {
+                        // play_audio("clink");
+                        luck *= this.stats.crit_damage;
+                    }
+
+                    this.roll_loot(this.mining_target, dmg_dealt, luck)
                 } else {
                     play_audio("clink");
+                    this.mining_cooldown += this.stats.atk_delay;
                 }
+
                 let pos = this.mine.get_center_position(this.mining_target.x, this.mining_target.y);
 
                 this.particles_board.spawn_particle(new Particle(
@@ -1034,6 +1153,11 @@ class Player {
     }
 }
 
+const UTYP = {
+    NORMAL: "Normal",
+    POWERCUBE: "Powercube",
+}
+
 class Upgrade {
     static add_to_stats(...stats_and_values) {
         return ((p, n) => {
@@ -1084,7 +1208,7 @@ class Upgrade {
      * @param {*} show_unknown Show as unknown if the player hasn't been able to afford it yet.
      * @param {*} hide_logic Change the unknown logic to a different custom function: (player) => [description, condition]
      */
-    constructor(id, name, col, desc, base_cost, cost_scaling, cost_currency, priority, max_cnt=null, on_stats=null, show_unknown=false, hide_logic=null) {
+    constructor(id, name, col, desc, base_cost, cost_scaling, cost_currency, priority, max_cnt=null, on_stats=null, show_unknown=false, hide_logic=null, hide_if_unknown=false) {
         this.id = id;
         
         this.name = name;
@@ -1098,6 +1222,7 @@ class Upgrade {
         this.max_cnt = max_cnt;
         this.show_unknown = show_unknown;
         this.hide_logic = hide_logic;
+        this.hide_if_unknown = hide_if_unknown;
     }
 
     get_number_buyable(player, cur_owned) {
@@ -1261,6 +1386,50 @@ class RemoveFirstFrameComponent extends ParticleComponent {
     }
 }
 
+class FadeInParticleComponent extends ParticleComponent {
+    constructor(board, lifetime_end=0, initial_opacity=1, pow=1) {
+        super(board);
+
+        this.pow = pow;
+        this.initial_opacity = initial_opacity;
+        this.lifetime_end = lifetime_end;
+    }
+
+    pass_time(particle, time_delta) {
+        if (this.lifetime_end && particle.lifetime > this.lifetime_end)
+            return;
+
+        let operant_duration = this.lifetime_end ? this.lifetime_end : particle.duration;
+        let effective_lifetime = particle.lifetime;
+
+        let prop = Math.max(0, Math.min(1, effective_lifetime / operant_duration));
+
+        particle.opacity = this.initial_opacity * Math.pow(prop, this.pow);
+    }
+}
+
+class FadeOutParticleComponent extends ParticleComponent {
+    constructor(board, lifetime_start=0, initial_opacity=1, pow=1) {
+        super(board);
+
+        this.pow = pow;
+        this.initial_opacity = initial_opacity;
+        this.lifetime_start = lifetime_start;
+    }
+
+    pass_time(particle, time_delta) {
+        if (particle.lifetime < this.lifetime_start)
+            return;
+
+        let operant_duration = particle.duration - this.lifetime_start;
+        let effective_lifetime = particle.lifetime - this.lifetime_start;
+
+        let prop = 1 - Math.max(0, Math.min(1, effective_lifetime / operant_duration));
+
+        particle.opacity = this.initial_opacity * Math.pow(prop, this.pow);
+    }
+}
+
 /**
  * 
  * @param {number} x 
@@ -1400,7 +1569,7 @@ function generate_chunk(rx, ry, radius, mine) {
     }
 }
 
-function render_tiles(mine) {
+function render_tiles(player, mine) {
     layers.fg3.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
     /** @type {CanvasRenderingContext2D} */
@@ -1427,14 +1596,50 @@ function render_tiles(mine) {
             let ty = sy + y;
 
             let tile = mine.get_tile(tx, ty);
+            let fillcol = null;
             if (tile && !tile.cleared) {
-                let col = tile.get_colour_css();
-                ctx.fillStyle = col;
+                let col = tile.get_colour();
+                fillcol = col;
             } else {
-                ctx.fillStyle = Colour.black.css();
+                fillcol = Colour.black;
                 // no need to fill, we already cleared the canvas
                 continue;
             }
+
+            // experimental lighting
+            // lighting is equal to the largest between:
+            // closeness to player
+            // closeness to a cleared tile
+            let finalcol = fillcol;
+            if (player.stats.lightlevel_enabled) {
+                let closest_cleared_tile_distance = 999;
+                let d = 3;
+                for (let x=-d; x<=d; x++) {
+                    for (let y=-d; y<=d; y++) {
+                        let dist = Math.sqrt(
+                            Math.pow(x, 2) + Math.pow(y, 2)
+                        );
+
+                        if (dist < closest_cleared_tile_distance && mine.get_tile(tx+x, ty+y)?.cleared) {
+                            closest_cleared_tile_distance = dist;
+                        }
+                    }
+                }
+
+                let distance_from_player = player.position.distance(mine.get_center_position(tx, ty));
+
+                let ll = player.stats.lightlevel * BASE_TILE_SCALE;
+                let player_dist_light = Math.max(0, (ll - distance_from_player)) / ll;
+                let cleared_dist_light = 0.75 * (Math.max(0, d - closest_cleared_tile_distance) / d);
+                let lightlevel = Math.min(1, Math.max(player_dist_light, cleared_dist_light));
+                if (!tile) {
+                    lightlevel = 1;
+                }
+
+                finalcol = Colour.black.lerp(fillcol, lightlevel);
+            }   
+
+            ctx.fillStyle = finalcol.css();
 
             let screenpos = scaling.ttsp(new Vector2(tx, ty)).round();
             ctx.fillRect(screenpos.x, screenpos.y, s, s);
@@ -1460,6 +1665,10 @@ function render_tiles(mine) {
 function render_player(player) {
     layers.fg2.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
+    if (player.hide_display) {
+        return;
+    }
+
     let bbox = player.get_bbox();
     let bbox_inner = player.get_bbox(-1);
 
@@ -1472,7 +1681,7 @@ function render_player(player) {
     // layers.fg2.ctx.fillRect(innerpos.x, innerpos.y, bbox_inner.width * zoom_level, bbox_inner.height * zoom_level);
 
     let ppos = scaling.wtsp(player.position).round();
-    write_rotated_image(layers.fg2, layers.fg2.ctx, ppos.x, ppos.y, entity_sprites.get("orb")[0], bbox.width * zoom_level, bbox.height * zoom_level, 0)
+    write_rotated_image(layers.fg2, layers.fg2.ctx, ppos.x, ppos.y, entity_sprites.get(player.custom_icon_b64 ? "orb_custom" : "orb")[0], bbox.width * zoom_level, bbox.height * zoom_level, 0)
 }
 
 function render_particles(particles_board) {
@@ -1554,6 +1763,70 @@ function recenter_view(on_world_position) {
     refresh_wtsp_stwp();
 }
 
+function begin_collapse_animation(player) {
+    document.querySelector(".reset-powercubes-toggle").classList.add("disabled");
+    document.querySelector(".ascend-button").classList.add("disabled");
+
+    player.lock_input = true;
+    let part = main_particles_board.spawn_particle(
+        new Particle(
+            player.position, 0, 99,
+            entity_sprites.get("tileflash"),
+            0, 3, false
+        ), player.position
+    );
+    part.add_component(new FadeInParticleComponent(
+        main_particles_board, 1.7
+    ));
+    part.add_component(new FadeOutParticleComponent(
+        main_particles_board, 1.7
+    ));
+
+    play_audio("ascension");
+    setTimeout(() => {
+        player.reset_collapse();
+        player.hide_display = true;
+    }, 1700);
+
+    setTimeout(() => {
+        last_autosave_time = Date.now() - (AUTOSAVE_DELAY - 1000);
+
+        player.reset_collapse();
+        player.hide_display = false;
+        player.lock_input = false;
+
+        for (let i=0; i<6; i++) {
+            setTimeout(() => {
+                main_particles_board.spawn_particle(
+                    new Particle(
+                        player.position, (Math.PI / 3) * i, 2,
+                        entity_sprites.get("ult_flash"),
+                        24, 3, false
+                    ), player.position
+                ).opacity = (i / 12) + 0.5;
+            }, i * 200);
+        }
+    }, 4300);
+}
+
+function try_reset_powercube_facets(player) {
+    if (confirm(`Are you sure you want to collapse to reset your facet picks (and gain ${player.calc_collapse_gain()} powercubes)?`)) {
+        powercube_choice_upgrades.forEach(upg => {
+            player.set_upgrade_count(upg, 0);
+        });
+
+        begin_collapse_animation(player);
+    }
+}
+
+function try_collapse(player) {
+    if (player.calc_collapse_gain() > 0) {
+        if (confirm(`Are you sure you want to collapse and gain ${player.calc_collapse_gain()} powercubes?`)) {
+            begin_collapse_animation(player);
+        }
+    }
+}
+
 function render_ui_inventory(player) {
     let e = document.querySelector(".inventory-view");
 
@@ -1573,8 +1846,8 @@ function render_ui_inventory(player) {
         clone.querySelector(".item-name").style.setProperty("--textcol", ItemRarityData[ItemData[item[0]].rarity].col.css())        
         clone.querySelector(".item-name").style.setProperty("--bordercol", ItemRarityData[ItemData[item[0]].rarity].col.lerp(Colour.black, 0.8).css())
 
-        clone.querySelector(".item-number").textContent = `${item[1]}x`.padEnd(10, "\xa0");
-        clone.querySelector(".item-value").textContent = ItemData[item[0]].gold_value.toString().padEnd(8, "\xa0");
+        clone.querySelector(".item-number").textContent = `${format_number(item[1])}x`.padEnd(10, "\xa0");
+        clone.querySelector(".item-value").textContent = format_number(ItemData[item[0]].gold_value).padEnd(8, "\xa0");
 
         clone.querySelector(".sell-button.sell1").addEventListener("mouseup", e => {
             let n = 1;
@@ -1626,11 +1899,11 @@ function render_ui_tilestats(player) {
         e.querySelector(".tile-hp-container").style.display = "";
         e.querySelector(".tile-armour-container").style.display = "";
 
-        e.querySelector(".tile-hp").textContent = (tile.hp == tile.max_hp ? tile.max_hp : (Math.max(1, Math.floor(tile.hp)))).toFixed(0);
-        e.querySelector(".tile-max-hp").textContent = tile.max_hp.toFixed(0);
+        e.querySelector(".tile-hp").textContent = format_number(Math.round(tile.hp == tile.max_hp ? tile.max_hp : (Math.max(1, Math.floor(tile.hp)))));
+        e.querySelector(".tile-max-hp").textContent = format_number(Math.round(tile.max_hp));
         e.querySelector(".tile-hp-pct").textContent = Math.max(1, Math.floor(100 * tile.hp / tile.max_hp)).toFixed(0);
 
-        e.querySelector(".tile-armour").textContent = tile.armour.toFixed(1);
+        e.querySelector(".tile-armour").textContent = format_number(Math.round(tile.armour * 10) / 10);
 
         let relem = e.querySelector(".tile-richnesses-container")
         let new_elems = [];
@@ -1645,7 +1918,42 @@ function render_ui_tilestats(player) {
 }
 
 function render_ui_currencies(player) {
-    document.querySelector(".gold-value").textContent = player.get_currency_amt(Currency.GOLD);
+    document.querySelector(".gold-value").textContent = format_number(player.get_currency_amt(Currency.GOLD));
+
+    let powercubes = player.get_currency_amt(Currency.POWERCUBES);
+    if (powercubes > 0) {
+        document.querySelector(".powercubes-container").classList.remove("nodisplay");
+        document.querySelector(".powercubes-value").textContent = format_number(powercubes);
+    } else {
+        document.querySelector(".powercubes-container").classList.add("nodisplay");
+    }
+}
+
+function shake_fn(e) {
+    let vec = random_on_circle(e.getBoundingClientRect().height * 0.05);
+    e.style.transform = `translate(${vec.x}px, ${vec.y}px)`
+}
+
+function setup_shaking_text() {
+    document.querySelectorAll(".shaking-text").forEach(setup_shaking_text_elem);
+}
+
+function setup_shaking_text_elem(elem) {
+    let elems = [];
+    let txt = elem.textContent;
+    for (let i=0; i<txt.length; i++) {
+        let e = document.createElement("span");
+        e.textContent = txt[i];
+        elems.push(e);
+        shake_elems.push({
+            parent: elem,
+            e: e,
+            timeout: 0.03
+        })
+    }
+
+    elem.textContent = "";
+    elem.replaceChildren(...elems);
 }
 
 function add_item_gain(itemkey, amt) {
@@ -1659,7 +1967,7 @@ function add_item_gain(itemkey, amt) {
 }
 
 function add_message(key, text, col=null) {
-    item_gain_displays.set(key, {
+    item_gain_displays.set(key ?? `${Date.now()}-${Math.random()}`, {
         override_text: text,
         override_col: col,
         spawn_time: Date.now()
@@ -1706,7 +2014,7 @@ function render_ui_item_gain_displays() {
             text = display_data.override_text;
             textcol = display_data.override_col ?? Colour.white;
         } else {
-            text = `${k} ${("◕ " + item_data.gold_value.toFixed(0)).padStart(8)} ${display_data.amount.toFixed(0).padStart(6)}x`;
+            text = `${k} ${("◕ " + format_number(Math.floor(item_data.gold_value))).padStart(8)} ${format_number(Math.floor(display_data.amount)).padStart(6)}x`;
         }
 
         layers.ui1.ctx.globalAlpha = opacity;
@@ -1727,8 +2035,8 @@ function render_ui_item_gain_displays() {
  * @param {Player} player 
  * @param {[Upgrade]} upgrades 
  */
-function render_ui_normal_upgrades(player, upgrades) {
-    let elem = document.querySelector(".upgrades-container");
+function render_ui_upgrades(player, upgrades, elem_classname, max_upgrade_cnt) {
+    let elem = document.querySelector(`.${elem_classname}`);
 
     let template = elem.querySelector(".template");
 
@@ -1755,6 +2063,10 @@ function render_ui_normal_upgrades(player, upgrades) {
                 max_buy = 0;
         }
 
+        if (show_unknown && upgrade.hide_if_unknown) {
+            return;
+        }
+
         if (upgrade.get_max_purchasable(player_upgrade_cnt) <= 0) {
             cost_1 = "-"
             cost_max = "-"
@@ -1762,15 +2074,15 @@ function render_ui_normal_upgrades(player, upgrades) {
         }
 
         shown_cnt++;
-        if (shown_cnt > MAX_VISIBLE_UPGRADES) {
+        if (shown_cnt > max_upgrade_cnt) {
             return;
         }
 
         clone.querySelector(".upgrade-name").textContent = show_unknown ? "???" : upgrade.name;
         clone.querySelector(".upgrade-name").style.color = show_unknown ? (upgrade.hide_logic ? "#ee9" : "#ccc") : upgrade.col;
 
-        clone.querySelector(".upgrade-cost").textContent = `${CurrencyIcons[upgrade.cost_currency]} ${cost_1}`;
-        clone.querySelector(".upgrade-cost-max").textContent = `${CurrencyIcons[upgrade.cost_currency]} ${cost_max}`;
+        clone.querySelector(".upgrade-cost").textContent = `${CurrencyIcons[upgrade.cost_currency]} ${format_number(cost_1)}`;
+        clone.querySelector(".upgrade-cost-max").textContent = `${CurrencyIcons[upgrade.cost_currency]} ${format_number(cost_max)}`;
         
         clone.querySelector(".upgrade-description").textContent = show_unknown ? unknown_string : upgrade.desc;
         clone.querySelector(".upgrade-description").style.color = show_unknown ? (upgrade.hide_logic ? "#995" : "#888") : "";
@@ -1781,8 +2093,8 @@ function render_ui_normal_upgrades(player, upgrades) {
 
         clone.querySelector(".upgrade-num-owned").style.color = (cost_1 == "-" || show_unknown) ? "gray" : "";
 
-        clone.querySelector(".upgrade-max-amt").textContent = `${max_buy}`;
-        clone.querySelector(".upgrade-max-cost").textContent = `${cost_max}`;
+        clone.querySelector(".upgrade-max-amt").textContent = `${format_number(Math.max(0, max_buy))}`;
+        clone.querySelector(".upgrade-max-cost").textContent = `${format_number(Math.max(0, cost_max))}`;
 
         if (max_buy >= 1) {
             clone.querySelector(".upgrade1").addEventListener("mouseup", e => {
@@ -1821,17 +2133,118 @@ function render_ui_normal_upgrades(player, upgrades) {
     elem.replaceChildren(template, ...new_elems);
 }
 
+/**
+ * 
+ * @param {Player} player 
+ * @param {*} choices 
+ */
+function render_ui_powercube_choices(player, choices_set) {
+    // choices is a list of [{
+    //    upgrade_req: "upgrade_key",
+    //    choices: [Upgrade, Upgrade, Upgrade, ...]
+    // }]
+    let elem = document.querySelector(".powercubes-choices-container .powercubes-choices");
+
+    let template1 = elem.querySelector(".powercubes-choice.template")
+    let template2 = elem.querySelector(".powercubes-choice-button.template")
+
+    let new_parent_elems = [];
+    choices_set.forEach(choice => {
+        if (player.get_upgrade_count_by_id(choice.upgrade_req) <= 0)
+            return;
+
+        let choice_available = choice.choices.every(upg => player.get_upgrade_count_by_id(upg.id) <= 0);
+
+        let clone = template1.cloneNode(true);
+        let new_elems = [];
+
+        choice.choices.forEach(upg => {
+            let cloneb = template2.cloneNode(true);
+
+            if (choice_available) {
+                cloneb.classList.add("choice-available");
+                cloneb.addEventListener("mouseup", e => {
+                    player.add_upgrade(upg, 1);
+                    player.powercube_choices_changed = true;
+                })
+            } else if (player.get_upgrade_count_by_id(upg.id) <= 0) {
+                cloneb.classList.add("unselected");
+            }
+
+            cloneb.querySelector(".choicename").textContent = upg.name;
+            cloneb.querySelector(".choicedesc").textContent = upg.desc;
+            cloneb.classList.remove("template");
+
+            new_elems.push(cloneb);
+        })
+
+        clone.classList.remove("template");
+        clone.replaceChildren(...new_elems);
+        new_parent_elems.push(clone);
+    })
+
+    elem.replaceChildren(template1, ...new_parent_elems);
+}
+
+function render_ui_powercube_buttons(player, powercube_choices) {
+    let gain = player.calc_collapse_gain();
+    if (gain > 0) {
+        document.querySelector(".ascend-button").classList.remove("disabled")
+        document.querySelector(".ascend-text").classList.remove("disabled")
+
+        document.querySelector(".ascend-button .powercubes-projected-gain").classList.remove("nodisplay");
+        document.querySelector(".ascend-button .powercubes-projected-gain").textContent = `+❒${format_number(gain)}`;
+
+        document.querySelector(".powercubes-projected-gain-mini").classList.remove("nodisplay");
+        document.querySelector(".powercubes-projected-gain-mini").textContent = `+${format_number(gain)}`;
+        
+        document.querySelector(".powercubes-next-req").textContent = `next: ◕ ${format_number(player.calc_next_collapse_target())}`
+    } else {
+        document.querySelector(".ascend-button").classList.add("disabled");
+        document.querySelector(".ascend-text").classList.add("disabled")
+
+        document.querySelector(".powercubes-projected-gain").classList.add("nodisplay");
+        document.querySelector(".powercubes-projected-gain-mini").classList.add("nodisplay");
+
+        document.querySelector(".powercubes-next-req").textContent = `next: ◕ ${format_number(player.calc_next_collapse_target())}`
+    }
+
+    let choice_taken = powercube_choices.some(choice => {
+        return choice.choices.some(upg => player.get_upgrade_count_by_id(upg.id) > 0);
+    });
+
+    if (choice_taken) {
+        document.querySelector(".reset-powercubes-toggle").classList.remove("disabled");
+    } else {
+        document.querySelector(".reset-powercubes-toggle").classList.add("disabled");
+    }
+}
+
 function render_ui_playerstats(player) {
     let e = document.querySelector(".windows .player-stats-view");
 
-    e.querySelector(".player-damage").textContent = `${player.stats.damage.toFixed(0)}`;
+    e.querySelector(".player-damage").textContent = `${format_number(Math.round(player.stats.damage))}`;
     e.querySelector(".player-atkspeed").textContent = `${Math.round(player.stats.atk_speed * 100)}%`;
-    e.querySelector(".player-luck").textContent = `${player.stats.luck.toFixed(2)}x`;
+    e.querySelector(".player-luck").textContent = `${format_number(Math.round(player.stats.luck * 100) / 100)}x`;
     e.querySelector(".player-movespeed").textContent = `${player.stats.movespeed.toFixed(0)} px/s`;
 
     let tilepos = scaling.wttp(player.position).floor();
     e.querySelector(".player-position").textContent = tilepos.toString();
     e.querySelector(".player-depth").textContent = `${player.get_depth()}m`;
+
+    if (player.stats.crit_chance == 0) {
+        e.querySelector(".player-crit").parentElement.classList.add("nodisplay");
+    } else {
+        e.querySelector(".player-crit").parentElement.classList.remove("nodisplay");
+        e.querySelector(".player-crit").textContent = `${(player.stats.crit_chance * 100).toFixed(0)}%, ${player.stats.crit_damage}x dmg`
+    }
+
+    if (player.stats.flurry_chance == 0) {
+        e.querySelector(".player-flurry").parentElement.classList.add("nodisplay");
+    } else {
+        e.querySelector(".player-flurry").parentElement.classList.remove("nodisplay");
+        e.querySelector(".player-flurry").textContent = `${(player.stats.flurry_chance * 100).toFixed(0)}%, ${player.stats.flurry_effectiveness}x speed`
+    }
 }
 
 function switch_display_menu(bar_elem, content_parent_elem, menuname) {
@@ -1851,12 +2264,17 @@ function get_mine_player_modifications(mine) {
         return tile.cleared || tile.hp != tile.max_hp
     })].map(k => {
         let tile = default_mine.tiles.get(k);
-        return {
+        let obj = {
             key: k,
-            richnesses: tile.richnesses,
             cleared: tile.cleared,
+            features: tile.features,
             hp: tile.hp,
         }
+        if (!tile.cleared) {
+            obj.richnesses = tile.richnesses
+        }
+
+        return obj;
     });
 
     return modifications;
@@ -1866,7 +2284,7 @@ function save_game_to_string(player, mine) {
     let ignored_player_vars = [
         "last_depth", "mining_cooldown", "mining_target", "particles_board",
         "radius", "select_particle", "stat_additions", "stat_multipliers", "stats",
-        "mine",
+        "mine", "hide_display", "lock_input",
     ]; // plus any "_changed" variable
 
     let player_vars = {};
@@ -1923,10 +2341,13 @@ function save_game(msg_prefix="") {
 function load_game_from_string(save_string) {
     let savedata = JSON.parse(atob(save_string));
 
-    let newmine = new Mine(savedata.mine.seed, null, generation_settings[savedata.mine.generation_settings]);
+    let newmine = new Mine(
+        savedata.mine.seed, null,
+        generation_settings[savedata.mine.generation_settings]
+    );
     
     savedata.mine.tiles.forEach(t => {
-        let newtile = new Tile(t.richnesses, t.cleared);
+        let newtile = new Tile(t.richnesses ?? {}, t.cleared, t.features);
         
         newtile.hp = t.hp;
         
@@ -1944,7 +2365,7 @@ function load_game_from_string(save_string) {
     );
 
     Object.keys(savedata.player).forEach(k => {
-        if (savedata.player[k].typ == "Vector2") {
+        if (savedata.player[k]?.typ == "Vector2") {
             player[k] = new Vector2(...savedata.player[k].params);
         } else {
             player[k] = savedata.player[k];
@@ -1956,6 +2377,33 @@ function load_game_from_string(save_string) {
     player.recalculate_stats();
 
     return [player, newmine, particles_board];
+}
+
+function onFileSelected(event) {
+    var selectedFile = event.target.files[0];
+    var reader = new FileReader();
+
+    var imgtag = document.getElementById("player_stats_icon");
+    imgtag.title = selectedFile.name;
+
+    reader.onload = function(event) {
+        imgtag.src = event.target.result;
+        player.custom_icon_b64 = imgtag.src;
+        player.icon_changed = true;
+
+        last_autosave_time = Date.now();
+        save_game("auto");
+    };
+
+    reader.readAsDataURL(selectedFile);
+}
+
+function clear_custom_icon() {
+    player.custom_icon_b64 = null;
+    player.icon_changed = true;
+
+    last_autosave_time = Date.now();
+    save_game("auto");
 }
 
 let default_generation_settings = {
@@ -2067,7 +2515,19 @@ let generation_settings = {
     default: default_generation_settings
 }
 
-let upgrades = [
+let normal_upgrades = [
+    // SOMNIA
+    new Upgrade(
+        "somnia-lightlevelplus1", "Light+", "pink", "Increases light level by +0.2px per level.",
+        10, 1.35, Currency.GOLD, 0, 40,
+        Upgrade.add_to_stats(["lightlevel", 0.2]), false, (p) => {
+            return [
+                `Choose the Somnia path.`,
+                p.get_upgrade_count(upgrades_lookup.get("pcx1-darkness")) >= 1
+            ]
+        }, true
+    ),
+
     new Upgrade(
         "damageplus1", "Damage+", "cyan", "Increases damage by +1 per level.",
         10, 1.15, Currency.GOLD, 0, 50,
@@ -2093,23 +2553,23 @@ let upgrades = [
     ),
 
     new Upgrade(
-        "miningspeed_from_movespeed1", "Momentum", "#ffa", "Increases mining speed by 10% (after multipliers) for every 16 px/s of movement speed.",
-        750, 1.5, Currency.GOLD, 1, 1,
+        "somnia-miningspeed_from_movespeed1", "Momentum", "pink", "Increases final mining speed by 10% for every 16 px/s of movement speed.",
+        777, 1.5, Currency.GOLD, 101, 1,
         (p, n) => {
             p.add_incalc_stat("atk_speed", Math.floor(p.get_incalc_stat("movespeed") / 16) * 0.1)
         },
         true, (p) => {
             return [
-                `Collect 25x total Chalk (current: ${p.item_gain_totals[Item.CHALK]}x)`,
-                p.item_gain_totals[Item.CHALK] >= 25
+                `Pick the Somnia facet.`,
+                p.get_upgrade_count(upgrades_lookup.get("pcx1-darkness")) >= 1
             ]
-        }
+        }, true
     ),
 
     new Upgrade(
-        "luckplus2", "Luck++", "#8ff", "Increases luck by +0.5 per level.",
+        "luckplus2", "Luck++", "#8ff", "Increases luck by +0.25 per level.",
         1000, 1.5, Currency.GOLD, 0, 5,
-        Upgrade.add_to_stats(["luck", 0.5]),
+        Upgrade.add_to_stats(["luck", 0.25]),
         true,
     ),
 
@@ -2128,6 +2588,20 @@ let upgrades = [
     ),
 
     new Upgrade(
+        "somnia-luckpluslight1", "Clarity", "orchid", "Increases final luck by +0.05 per level for every 1px of light level.",
+        6666, 1.4, Currency.GOLD, 101, 10,
+        (p, n) => {
+            p.add_incalc_stat("luck", Math.floor(p.get_incalc_stat("lightlevel") / 1) * 0.05 * n)
+        },
+        true, (p) => {
+            return [
+                `Pick the Somnia facet.`,
+                p.get_upgrade_count(upgrades_lookup.get("pcx1-darkness")) >= 1
+            ]
+        }, true
+    ),
+
+    new Upgrade(
         "depth_luck1", "Depth Delver", "#ffa", "Multiplies luck by 1.5x when over 100m deep.",
         20000, 1.25, Currency.GOLD, 10, 1,
         (p, n) => {
@@ -2142,10 +2616,104 @@ let upgrades = [
             ]
         }
     ),
+
+    new Upgrade(
+        "somnia-miningspeed-from-depth", "Pressure", "pink", "Increases movement speed by 1px for every 3m current depth.",
+        55555, 1.5, Currency.GOLD, 1, 1,
+        (p, n) => {
+            p.add_incalc_stat("movespeed", Math.floor(p.last_depth / 3) * 1)
+        },
+        true, (p) => {
+            return [
+                `Pick the Somnia facet.`,
+                p.get_upgrade_count(upgrades_lookup.get("pcx1-darkness")) >= 1
+            ]
+        }, true
+    ),
+
+    new Upgrade(
+        "damageplus3", "Damage++", "cyan", "Increases damage by +15 per level.",
+        1e6, 1.15, Currency.GOLD, 0, 50,
+        Upgrade.add_to_stats(["damage", 15]),
+        true,
+    ),
+
+    new Upgrade(
+        "luckplus3", "Luck++", "cyan", "Increases luck by +0.3 per level.",
+        2e6, 1.5, Currency.GOLD, 0, 20,
+        Upgrade.add_to_stats(["luck", 0.3]),
+        true,
+    ),
+]
+
+let powercube_upgrades = [
+    new Upgrade(
+        "pc-bonusall1", "Powercube Infusion", "coral", "Increases damage by +5, luck by +0.25, mining speed by 10% and movement speed by 8px/s per level.",
+        1, 1.25, Currency.POWERCUBES, 0, 32,
+        Upgrade.add_to_stats(["damage", 5], ["luck", 0.25], ["atk_speed", 0.1], ["movespeed", 8])
+    ),
+
+    new Upgrade(
+        "pc-choice1", "Facet Alignment", "red", "Unlocks the first Powercube facet choice.",
+        8, 2, Currency.POWERCUBES, 0, 1,
+        () => null
+    ),
+
+    new Upgrade(
+        "pc-bonus-starting-gold1", "Troves", "coral", "Start future collapses with ◕ 250 per level.",
+        2, 1.25, Currency.POWERCUBES, 0, 8,
+        () => null
+    ),
+
+    new Upgrade(
+        "pc-bonus-crit-flurry-power", "Resurgence", "coral", "+0.1x crit damage/luck and +0.2x flurry speed per level. (no effect on chance)",
+        16, 1.25, Currency.POWERCUBES, 0, 10,
+        Upgrade.add_to_stats(["crit_damage", 0.1], ["flurry_effectiveness", 0.2])
+    ),
+
+    new Upgrade(
+        "pc-bonus-crit-flurry", "Convergence", "coral", "+1% crit chance and +1% flurry chance per level.",
+        64, 1.25, Currency.POWERCUBES, 0, 10,
+        Upgrade.add_to_stats(["crit_chance", 1], ["flurry_chance", 1])
+    ),
+]
+
+let powercube_choice_upgrades = [
+    new Upgrade(
+        "pcx1-darkness", "Somnia", "", "Enables darkness, but unlocks powerful ◕ upgrades.",
+        1, 1, Currency.POWERCUBES, 0, 1, (p, n) => {
+            p.stats.lightlevel_enabled = true;
+        }
+    ),
+
+    new Upgrade(
+        "pcx1-crit", "Clarity", "", "+20% base crit chance. (Crits have 3x damage and luck)",
+        1, 1, Currency.POWERCUBES, 0, 1,
+        Upgrade.add_to_stats(["crit_chance", 0.2])
+    ),
+
+    new Upgrade(
+        "pcx1-bonus-richness", "Rage", "", "+20% base flurry chance. (Flurry hits have 0.25x cooldown)",
+        1, 1, Currency.POWERCUBES, 0, 1,
+        Upgrade.add_to_stats(["flurry_chance", 0.2])
+    ),
+]
+
+let powercube_choices = [
+    {
+        upgrade_req: "pc-choice1",
+        choices: [
+            powercube_choice_upgrades[0],
+            powercube_choice_upgrades[1],
+            powercube_choice_upgrades[2],
+        ]
+    }
 ]
 
 let upgrades_lookup = new Map();
-upgrades.forEach(u => upgrades_lookup.set(u.id, u));
+normal_upgrades.forEach(u => upgrades_lookup.set(u.id, u));
+powercube_upgrades.forEach(u => upgrades_lookup.set(u.id, u));
+powercube_choice_upgrades.forEach(u => upgrades_lookup.set(u.id, u));
 
 let default_mine = new Mine("123", null, default_generation_settings);
 let main_particles_board = new ParticleBoard();
@@ -2183,36 +2751,36 @@ function input_handler(n) {
         }
     }
 
+    if (keys_pressed_this_frame["KeyG"]) {
+        // default_mine.tiles = new Map();
+        rendering_diagnostics = !rendering_diagnostics;
+        add_message(null, "Toggled diagnostics rendering")
+    }
+
+    if (keys_pressed_this_frame["KeyH"]) {
+        // default_mine.tiles = new Map();
+        player.stats.lightlevel_enabled = !player.stats.lightlevel_enabled;
+        add_message(null, "Forced lightlevel toggle")
+    }
+
     if (keys_down["ArrowDown"] || keys_down["KeyS"]) {
         // default_mine.tiles = new Map();
         player.move(new Vector2(0, n), default_mine);
-        let tpos = scaling.wttp(player.position);
-
-        generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
     }
 
     if (keys_down["ArrowUp"] || keys_down["KeyW"]) {
         // default_mine.tiles = new Map();
         player.move(new Vector2(0, -n), default_mine);
-        let tpos = scaling.wttp(player.position);
-        
-        generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
     }
 
     if (keys_down["ArrowLeft"] || keys_down["KeyA"]) {
         // default_mine.tiles = new Map();
         player.move(new Vector2(-n, 0), default_mine);
-        let tpos = scaling.wttp(player.position);
-        
-        generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
     }
 
     if (keys_down["ArrowRight"] || keys_down["KeyD"]) {
         // default_mine.tiles = new Map();
         player.move(new Vector2(n, 0), default_mine);
-        let tpos = scaling.wttp(player.position);
-        
-        generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
     }
 }
 
@@ -2297,6 +2865,8 @@ handlers.game_postload_fn = () => {
         `Autosaving every ${(AUTOSAVE_DELAY / 1000).toFixed(0)}s (press 'R' to save manually)`,
     ), 1000);
 
+    setup_shaking_text();
+
     refresh_wtsp_stwp();
     recenter_view(Vector2.zero);
     let tpos = scaling.wttp(player.position);
@@ -2316,6 +2886,20 @@ handlers.game_postload_fn = () => {
 
     setup_windows();
 
+    document.querySelector(".ascend-button").addEventListener("click", e => {
+        if (player.lock_input || document.querySelector(".ascend-button").classList.add("disabled"))
+            return;
+
+        try_collapse(player);
+    });
+
+    document.querySelector(".reset-powercubes-toggle").addEventListener("click", e => {
+        if (player.lock_input || document.querySelector(".reset-powercubes-toggle").classList.contains("disabled"))
+            return;
+
+        try_reset_powercube_facets(player);
+    });
+
     // setTimeout(_ => item_gain_displays.set(Item.CHALCOPYRITE, {
     //     amount: 32,
     //     spawn_time: Date.now()
@@ -2334,23 +2918,40 @@ handlers.calc_fn = (dt) => {
 
     player.mining_target_step(time_delta);
 
+    shake_elems.forEach(el => {
+        if (el.parent.classList.contains("disabled")) {
+            el.e.style.transform = "";
+            return;
+        }
+
+        el.timeout -= dt;
+        while (el.timeout <= 0) {
+            el.timeout += random_int(40, 50) / 1000;
+            shake_fn(el.e);
+        }
+    })
+
     if (Date.now() >= last_autosave_time + AUTOSAVE_DELAY) {
         last_autosave_time = Date.now();
-
         save_game("auto");
+    }
+
+    if (player.consume_change("position")) {
+        let tpos = scaling.wttp(player.position);
+        generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
     }
 }
 
 handlers.render_fn = () => {
     recenter_view(player.position);
-    render_tiles(default_mine);
+    render_tiles(player, default_mine);
     render_player(player);
     render_particles(main_particles_board);
     render_ui_item_gain_displays();
 
     if (player.consume_change("inventory")) {
         render_ui_inventory(player);
-        render_ui_normal_upgrades(player, upgrades);
+        player.upgrades_changed = true;
     }
 
     if (player.consume_change("target")) {
@@ -2359,14 +2960,27 @@ handlers.render_fn = () => {
 
     if (player.consume_change("currencies")) {
         render_ui_currencies(player);
-        render_ui_normal_upgrades(player, upgrades);
+        render_ui_powercube_buttons(player, powercube_choices);
+        player.upgrades_changed = true;
     }
 
     if (player.consume_change("upgrades")) {
-        render_ui_normal_upgrades(player, upgrades);
+        render_ui_upgrades(player, normal_upgrades, "upgrades-container", MAX_VISIBLE_UPGRADES);
+        render_ui_upgrades(player, powercube_upgrades, "powercubes-upgrades-container", MAX_POWERCUBE_VISIBLE_UPGRADES);
+        render_ui_powercube_choices(player, powercube_choices);
     }
 
     if (player.consume_change("stats")) {
         render_ui_playerstats(player);
+    }
+
+    if (player.consume_change("icon")) {
+        document.querySelector("#player_stats_icon").src = player.custom_icon_b64 ?? "assets/img/sprites/player/orb.png";
+        entity_sprites.set("orb_custom", [document.querySelector("#player_stats_icon")]);
+    }
+
+    if (player.consume_change("powercube_choices")) {
+        render_ui_powercube_choices(player, powercube_choices);
+        render_ui_powercube_buttons(player, powercube_choices);
     }
 }
