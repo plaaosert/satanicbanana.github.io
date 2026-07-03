@@ -2674,7 +2674,7 @@ let powercube_upgrades = [
     new Upgrade(
         "pc-bonus-crit-flurry", "Convergence", "coral", "+1% crit chance and +1% flurry chance per level.",
         64, 1.25, Currency.POWERCUBES, 0, 10,
-        Upgrade.add_to_stats(["crit_chance", 1], ["flurry_chance", 1])
+        Upgrade.add_to_stats(["crit_chance", 0.01], ["flurry_chance", 0.01])
     ),
 ]
 
