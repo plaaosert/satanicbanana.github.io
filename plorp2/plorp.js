@@ -1962,7 +1962,7 @@ function add_item_gain(itemkey, amt) {
 
     item_gain_displays.set(itemkey, {
         amount: (old_entry?.amount ?? 0) + amt,
-        spawn_time: old_entry === undefined ? Date.now() : Date.now() - ITEM_GAIN_DISPLAY_MOVE_TIME
+        spawn_time: old_entry === undefined ? Date.now() : Math.max(old_entry.spawn_time, Date.now() - ITEM_GAIN_DISPLAY_MOVE_TIME)
     });
 }
 
