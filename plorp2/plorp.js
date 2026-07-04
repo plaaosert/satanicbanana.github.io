@@ -783,9 +783,14 @@ class Player {
         this.get_all_items().forEach(item => {
             this.remove_item(item[0], item[1])
         });
+
         this.remove_currency(Currency.GOLD, this.get_currency_amt(Currency.GOLD));
         this.get_all_upgrades().forEach(upgrade => {
             let upg_obj = upgrades_lookup.get(upgrade[0]);
+            if (upg_obj.id == "somnia2-torch") {
+                return;
+            }
+
             if (upg_obj.cost_currency == Currency.GOLD) {
                 this.set_upgrade_count(upg_obj, 0);
             }
