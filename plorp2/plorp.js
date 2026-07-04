@@ -993,7 +993,7 @@ class Player {
         if (upgrade.id == "somnia2-torch") {
             this.add_equipment_item(new EquipmentItem(
                 "torch", "Torch", "Lights up the darkness.",
-                "torch", 1, true, ItemRarity.COMMON,
+                "torch", amt, true, ItemRarity.COMMON,
                 "TORCH", "Places a torch on the current tile.", false
             ))
         }
