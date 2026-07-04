@@ -296,7 +296,7 @@ p {
 
 .inline-button {
     border: 1px solid white;
-    background-color: #040;
+    background-color: #060;
 
     padding: 4px;
     padding-left: 8px;
@@ -310,11 +310,11 @@ p {
 }
 
 .inline-button:hover {
-    background-color: #080;
+    background-color: #0a0;
 }
 
 .inline-button:active {
-    background-color: #020;
+    background-color: #030;
 }
 
 .inline-button.disabled {
@@ -841,4 +841,35 @@ p {
 .equip-item-quickslot1 {
     position: absolute;
     color: white;
+}
+
+.savebuttons {
+    margin-top: 16px;
+
+    display: flex;
+    flex-direction: row;
+
+    gap: 8px;
+}
+
+.savebuttons span {
+    flex-basis: 100%;
+    text-wrap: nowrap;
+    text-align: center;
+    margin: 0;
+}
+
+.reset-game {
+    background-color: #600;
+    color: #faa;
+}
+
+.reset-game:hover {
+    background-color: #b33;
+    color: #fdd;
+}
+
+.reset-game:active {
+    background-color: #300;
+    color: #d66;
 }

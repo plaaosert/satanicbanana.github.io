@@ -11,7 +11,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 
 	<link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=00"/>
-	<link rel="stylesheet" type="text/css" href="plorp.css?v=03"/>
+	<link rel="stylesheet" type="text/css" href="plorp.css?v=04"/>
 </head>
 <body>
 	<div class="topbar" style="display: none;">
@@ -288,6 +288,18 @@
                     <span class="inline-button" style="align-self: flex-start; margin-top: 4px" onclick="clear_custom_icon()">get rid of it</span>
                 </div>
             </div>
+            <div class="savebuttons">
+                <span class="inline-button save-to-file" onclick="try_export_save()">
+                    Export game save file
+                </span>
+                <span class="inline-button reset-game" onclick="try_reset_game()">
+                    Reset game
+                </span>
+            </div>
+            <div class="savebuttons">
+                <span>Load save: </span>
+                <input type="file" accept="text/plain" onchange="try_load_save(event)">
+            </div>
         </div>
 
         <div class="tile-info-view">
@@ -349,7 +361,7 @@
     <script src="textconstants.js?v=02"></script>
     <script src="windowmanager.js?v=03"></script>
 
-    <script src="plorp.js?v=09"></script>
+    <script src="plorp.js?v=10"></script>
 
 	<script src="../shared/js/playtime.js?v=00"></script>
 </body>

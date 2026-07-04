@@ -1,6 +1,7 @@
 game_id = "plorp2";
 
 const SAVE_KEY = "plorp2_savedata";
+const BACKUP_SAVE_KEY = "plorp2_backup_savedata";
 
 let scaling = {};
 let zoom_level = 4;
@@ -2475,6 +2476,7 @@ function render_ui_powercube_choices(player, choices_set) {
     let template2 = elem.querySelector(".powercubes-choice-button.template")
 
     let new_parent_elems = [];
+    let choices_added = 0;
     choices_set.forEach(choice => {
         if (choice.upgrade_req.some(uid => player.get_upgrade_count_by_id(uid) <= 0))
             return;
@@ -2507,9 +2509,16 @@ function render_ui_powercube_choices(player, choices_set) {
         clone.classList.remove("template");
         clone.replaceChildren(...new_elems);
         new_parent_elems.push(clone);
+        choices_added++;
     })
 
     elem.replaceChildren(template1, ...new_parent_elems);
+
+    if (choices_added <= 0) {
+        document.querySelector(".powercubes-choices-container").classList.add("nodisplay");
+    } else {
+        document.querySelector(".powercubes-choices-container").classList.remove("nodisplay");
+    }
 }
 
 function render_ui_powercube_buttons(player, powercube_choices) {
@@ -2795,6 +2804,8 @@ function save_game(msg_prefix="") {
             `Game ${msg_prefix}saved. (took ${Math.max(1, (end_time - start_time)).toFixed(0)}ms)`,
             Colour.green
         );
+
+        return save_string;
     } catch {
         add_message(
             `${Date.now()}-savedisplay-fail`,
@@ -2853,6 +2864,52 @@ function load_game_from_string(save_string) {
     player.recalculate_stats();
 
     return [player, newmine, particles_board];
+}
+
+function download_text_to_file(content, filename) {
+    let elem = document.createElement('a');
+    let filecontent = new Blob([content], { type: 'text/plain' });
+
+    elem.href = URL.createObjectURL(filecontent);
+    elem.download = filename;
+    elem.click();
+
+    URL.revokeObjectURL(elem.href);
+}
+
+function try_export_save() {
+    last_autosave_time = Date.now();
+    let save_string = save_game("manually ");
+
+    let d = new Date();
+    download_text_to_file(
+        save_string,
+        `plorp2save-${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}-${d.getHours()}_${d.getMinutes()}_${d.getSeconds()}.txt`
+    )
+}
+
+function try_reset_game() {
+    if (confirm("Are you sure? (Resetting the game will destroy ALL data. It is not a secret achievement or an easter egg. This will obliterate your save data completely and forever. You cannot undo this!)")) {
+        if (confirm("Really sure? (If someone told you this has a secret behind it, they're wrong and probably malicious - you should not talk to them again.)")) {
+            if (confirm("100% sure? (Final chance to back out...!)")) {
+                localStorage.removeItem(SAVE_KEY);
+                window.location.reload();
+            }
+        }
+    }
+}
+
+function try_load_save(event) {
+    var selectedFile = event.target.files[0];
+    var reader = new FileReader();
+
+    reader.onload = function(event) {
+        localStorage.setItem(BACKUP_SAVE_KEY, localStorage.getItem(SAVE_KEY));
+        localStorage.setItem(SAVE_KEY, event.target.result);
+        window.location.reload();
+    };
+
+    reader.readAsText(selectedFile);
 }
 
 function onFileSelected(event) {
@@ -3301,7 +3358,7 @@ normal_upgrades.forEach(u => upgrades_lookup.set(u.id, u));
 powercube_upgrades.forEach(u => upgrades_lookup.set(u.id, u));
 powercube_choice_upgrades.forEach(u => upgrades_lookup.set(u.id, u));
 
-let default_mine = new Mine("123", null, default_generation_settings);
+let default_mine = new Mine(`${Math.random()}-${Math.random()}`, null, default_generation_settings);
 let main_particles_board = new ParticleBoard();
 let player = new Player(default_mine, main_particles_board, new Vector2(16, 16), {}, {}, {}, {});
 // player.add_item(Item.CHALCOPYRITE, 1)
@@ -3475,11 +3532,25 @@ handlers.game_postload_fn = () => {
                 "Loaded game successfully!"
             )
         } catch {
-            add_message(
-                `${Date.now()}-load-fail`,
-                "Failed to load game. Savefile looks corrupt... ping plaao...?",
-                Colour.red
-            )
+            // try to reload backup if it exists
+            let backup = localStorage.getItem(BACKUP_SAVE_KEY);
+            if (backup) {
+                if (confirm("Load failed, but there is a backup. Restore to the backup? (you will lose this corrupted save)")) {
+                    localStorage.setItem(SAVE_KEY, backup);
+                } else {
+                    add_message(
+                        `${Date.now()}-load-fail`,
+                        "Failed to load game. Savefile looks corrupt... ping plaao...?",
+                        Colour.red
+                    )
+                }
+            } else {
+                add_message(
+                    `${Date.now()}-load-fail`,
+                    "Failed to load game. Savefile looks corrupt... ping plaao...?",
+                    Colour.red
+                )
+            }
         }
     } else {
         add_message(
