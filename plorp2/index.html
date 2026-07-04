@@ -11,7 +11,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 
 	<link rel="stylesheet" type="text/css" href="../shared/css/games.css?v=00"/>
-	<link rel="stylesheet" type="text/css" href="plorp.css?v=02"/>
+	<link rel="stylesheet" type="text/css" href="plorp.css?v=03"/>
 </head>
 <body>
 	<div class="topbar" style="display: none;">
@@ -174,7 +174,56 @@
         </div>
     </div>
 
+    <div class="equip-item-quickslot1 nodisplay">
+        <div class="equipment-inventory-item">
+            <img class="item-icon" src="assets/img/icons/unknown.png">
+            <span class="itemname">Item</span>
+            <span class="iteminfo">x34,520</span> <!-- Depends on what the item is. Quantity if stackable, equip slot if equippable, else "-" -->
+        </div>
+    </div>
+
     <div class="templates nodisplay">
+        <div class="equipment-inventory-view">
+            <div class="equipment-inventory-items">
+                <div class="equipment-inventory-item template">
+                    <img class="item-icon" src="assets/img/icons/unknown.png">
+                    <span class="itemname">Item</span>
+                    <span class="iteminfo">x34,520</span> <!-- Depends on what the item is. Quantity if stackable, equip slot if equippable, else "-" -->
+                </div>
+            </div>
+            <div class="equipment-inventory-selected-item flex-rows">
+                <div class="equipment-inventory-selected-noitem nodisplay">
+                    <span>Select an item to view its info.</span>
+                </div>
+                <div class="equipment-inventory-selected-item-info">
+                    <div class="flex-cols item-basic-info">
+                        <img class="item-bigicon" src="assets/img/icons/unknown.png">
+                        <div class="flex-rows">
+                            <span class="itemname">Item</span>
+                            <span class="itemrarity" style="color: rgba(170, 68, 255, 1)">Mythical</span>
+                            <span class="itemquantity">x34,520</span>
+                        </div>
+                    </div>
+                    <span class="itemdesc">This is an item description that tells you what the item is. This is usually flavour text.</span>
+                    <span class="item-usedesc-container"><span class="useheader">Use:</span><span class="item-usedesc">This is a description of what the item does when used. Will be hidden if there isn't a use.</span></span>
+                    <span class="item-equipdesc">This is a description of what the item does when equipped. Will be hidden if it can't be equipped.</span>
+                    <div class="equipment-actionbuttons">
+                        <div class="flex-cols actionbuttons-subrow use">
+                            <span class="inline-button use1button">Use 1</span>
+                            <span class="inline-button usemaxbutton">Use all (<span class="usemaxcnt"></span>34,520)</span>
+                        </div>
+                        <div class="flex-cols actionbuttons-subrow equip">
+                            <span class="inline-button use1button">Equip</span>
+                        </div>
+                        <div class="flex-cols actionbuttons-subrow sell">
+                            <span class="inline-button sell1button">Sell 1</span>
+                            <span class="inline-button sellmaxbutton">Sell all (<span class="sellmaxcnt"></span>34,520)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="player-stats-view">
             <div class="player-stats-entry">
                 <span>Damage per hit</span>
@@ -203,12 +252,30 @@
             </div>
             <br>
             <div class="player-stats-entry">
+                <span>Light level</span>
+                <span class="player-lightlevel"></span>
+            </div>
+            <div class="player-stats-entry">
+                <span>Torch light level</span>
+                <span class="player-torchlightlevel"></span>
+            </div>
+            <br>
+            <div class="player-stats-entry">
                 <span>Crit</span>
                 <span class="player-crit"></span>
             </div>
             <div class="player-stats-entry">
+                <span>Cleave on crit</span>
+                <span class="player-cleave-crit"></span>
+            </div>
+            <br>
+            <div class="player-stats-entry">
                 <span>Flurry</span>
                 <span class="player-flurry"></span>
+            </div>
+            <div class="player-stats-entry">
+                <span>Flurry chains:</span>
+                <span class="player-flurry-chains"></span>
             </div>
             <br>
             <div class="player-stats-entry pickicon">
@@ -273,7 +340,7 @@
 	<script src="../shared/js/canvas_helpers.js?v=02"></script>
 	
     <script src="lib/game_core_constants.js?v=01"></script>
-    <script src="lib/game_core_render_defs.js?v=01"></script>
+    <script src="lib/game_core_render_defs.js?v=02"></script>
     <script src="lib/game_core_audio_defs.js?v=01"></script>
     <script src="lib/game_core_render.js?v=01"></script>
     <script src="lib/game_core_audio.js?v=01"></script>
@@ -282,7 +349,7 @@
     <script src="textconstants.js?v=02"></script>
     <script src="windowmanager.js?v=03"></script>
 
-    <script src="plorp.js?v=07"></script>
+    <script src="plorp.js?v=08"></script>
 
 	<script src="../shared/js/playtime.js?v=00"></script>
 </body>

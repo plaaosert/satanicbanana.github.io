@@ -318,6 +318,7 @@ p {
 }
 
 .inline-button.disabled {
+    cursor: default;
     background-color: #222;
 }
 
@@ -464,6 +465,8 @@ p {
 }
 
 .ascend-button {
+    cursor: pointer;
+
     background-color: #400;
     text-align: center;
     border: 2px solid #944;
@@ -483,6 +486,8 @@ p {
 }
 
 .ascend-button.disabled {
+    cursor: default;
+
     background-color: #222;
     border: 2px solid #888;
 }
@@ -542,7 +547,9 @@ p {
 .powercubes-choice {
     display: flex;
     flex-direction: row;
+    
     gap: 16px;
+    margin-top: 16px;
 }
 
 @property --hmul {
@@ -557,6 +564,8 @@ p {
 }
 
 .powercubes-choices .powercubes-choice-button {
+    cursor: default;
+
     background-color: #400;
     border: 1px solid #a33;
     padding: 16px;
@@ -606,6 +615,8 @@ p {
 }
 
 .powercubes-choices .powercubes-choice-button.unselected {
+    cursor: default;
+
     background-color: #333;
     border: 1px solid #ccc;
 
@@ -615,6 +626,8 @@ p {
 }
 
 .powercubes-choices .powercubes-choice-button.choice-available {
+    cursor: pointer;
+
     background-color: #040;
     border: 1px solid #3a3;
 
@@ -635,6 +648,8 @@ p {
 }
 
 .reset-powercubes-toggle {
+    cursor: pointer;
+    
     background-color: #400;
     border: 1px solid #a33;
     padding: 8px;
@@ -660,6 +675,8 @@ p {
 }
 
 .reset-powercubes-toggle.disabled {
+    cursor: default;
+
     background-color: #333;
     border: 1px solid #ccc;
 
@@ -674,4 +691,154 @@ p {
     text-align: center;
 
     color: #bbb;
+}
+
+.equipment-inventory-view {
+    display: flex;
+}
+
+.equipment-inventory-items {
+    min-width: 500px;
+    max-width: 500px;
+
+    min-height: 400px;
+    max-height: 400px;
+
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.equipment-inventory-items::-webkit-scrollbar {
+    display: none;
+}
+
+.equipment-inventory-selected-item {
+    min-width: 300px;
+    max-width: 300px;
+
+    min-height: 100%;
+    flex-grow: 1;
+
+    border-left: 1px solid white;
+}
+
+.equipment-inventory-item {
+    --maincol: white;
+    --bgcol: white;
+
+    border: 1px solid var(--maincol);
+
+    min-width: 80px;
+    max-width: 80px;
+    aspect-ratio: 1/1;
+
+    font-size: 14px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.equipment-inventory-item {
+    background-color: var(--bgcol);
+    opacity: 0.6;
+
+    transition: opacity 0.15s ease-in-out;
+}
+
+.equipment-inventory-item:hover {
+    opacity: 1;
+}
+
+.equipment-inventory-item.selected {
+    opacity: 1;
+}
+
+.equipment-inventory-item .itemname {
+    color: var(--maincol);
+}
+
+.equipment-inventory-item .item-icon {
+    aspect-ratio: 1/1;
+    min-width: 32px;
+    max-width: 32px;
+
+    margin-bottom: 4px;
+}
+
+.equipment-actionbuttons {
+    display: flex;
+    flex-direction: column;
+
+    justify-content: center;
+    align-items: center;
+
+    gap: 8px;
+
+    margin-top: auto;
+}
+
+.equipment-inventory-selected-item-info {
+    display: flex;
+    flex-direction: column;
+
+    flex-grow: 1;
+
+    gap: 8px;
+
+    padding: 8px;
+    padding-left: 16px;
+}
+
+.equipment-inventory-selected-item .item-bigicon {
+    min-width: 64px;
+    max-width: 64px;
+
+    aspect-ratio: 1/1;
+
+    padding: 8px;
+    border: 1px solid white;
+
+    margin-right: 8px;
+}
+
+.item-basic-info {
+    margin-bottom: 8px;
+}
+
+.actionbuttons-subrow {
+    width: 100%;
+    gap: 16px;
+}
+
+.actionbuttons-subrow .inline-button {
+    flex-basis: 100%;
+    margin: 0;
+    flex-wrap: nowrap;
+    text-wrap: nowrap;
+}
+
+.actionbuttons-subrow .inline-button:first-child {
+    flex-grow: 0;
+}
+
+.equipment-inventory-selected-noitem {
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    flex-grow: 1;
+}
+
+.useheader {
+    background-color: #040;
+    color: lime;
+    margin-right: 8px;
+}
+
+.equip-item-quickslot1 {
+    position: absolute;
+    color: white;
 }

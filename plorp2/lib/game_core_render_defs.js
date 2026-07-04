@@ -5,4 +5,6 @@ const entity_sprite_defs = [
     ["tileflash", 1, "sprites/"],
     ["break", 9, "tiles/break/"],
     ["ult_flash", 6, "sprites/player/ult_flash/"],
+
+    ["torch", 1, "sprites/items/"],
 ];
