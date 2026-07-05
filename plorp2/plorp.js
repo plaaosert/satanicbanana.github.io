@@ -1345,6 +1345,7 @@ class Player {
                     }
 
                     if (this.mine.random() < flurry_chance) {
+                        // console.log("Flurry");
                         this.mining_cooldown += this.stats.atk_delay / this.stats.flurry_effectiveness;
                         
                         if (this.stats.flurry_chains_max > 0) {
@@ -1354,6 +1355,7 @@ class Player {
                             let dmg = result[0] * dmg_mod;
 
                             for (let i=0; i<chains; i++) {
+                                // console.log("Chain");
                                 let found = false;
                                 let tries = 4;
                                 let tile = null;
@@ -1363,7 +1365,7 @@ class Player {
                                     let newpos = pos.add(pos_offset);
 
                                     tile = this.mine.get_tile(pos.x, pos.y);
-                                    if (tile && !tile.cleared) {
+                                    if (tile && (!tile.cleared || i==0)) {
                                         found = true;
                                         pos = newpos;
                                     }
