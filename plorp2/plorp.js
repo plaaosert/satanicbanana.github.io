@@ -1324,10 +1324,16 @@ class Player {
                             let cleave_dmg = result[0] * this.stats.crit_cleave;
 
                             let positions = [
+                                new Vector2(1, -1),
+                                new Vector2(1, 1),
                                 new Vector2(1, 0),
-                                new Vector2(-1, 0),
+
                                 new Vector2(0, 1),
-                                new Vector2(0, -1)
+                                new Vector2(0, -1),
+
+                                new Vector2(-1, -1),
+                                new Vector2(-1, 0),
+                                new Vector2(-1, 1),
                             ]
 
                             positions.forEach(p => {
@@ -3369,7 +3375,7 @@ let powercube_choice_upgrades = [
 
     // Clarity
     new Upgrade(
-        "pcx2-crit-dmg", "Flare", "", "Crits also hit directly adjacent tiles (cleave) for 25% damage.",
+        "pcx2-crit-dmg", "Flare", "", "Crits also hit adjacent tiles (cleave) for 25% damage.",
         1, 1, Currency.POWERCUBES, 0, 1,
         Upgrade.add_to_stats(["crit_cleave", 0.25])
     ),
@@ -3388,9 +3394,9 @@ let powercube_choice_upgrades = [
     ),
 
     new Upgrade(
-        "pcx2-flurry", "Reverberation", "", "Flurry hits randomly chain to nearby tiles 1-5 times. Each chain gets 0.5x damage.",
+        "pcx2-flurry", "Reverberation", "", "Flurry hits randomly chain to nearby tiles 2-6 times. Each chain gets 0.5x damage.",
         1, 1, Currency.POWERCUBES, 0, 1,
-        Upgrade.add_to_stats(["flurry_chains_min", 1], ["flurry_chains_max", 5])
+        Upgrade.add_to_stats(["flurry_chains_min", 2], ["flurry_chains_max", 6])
     ),
 ]
 
