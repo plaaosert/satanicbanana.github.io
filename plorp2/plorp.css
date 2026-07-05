@@ -12,6 +12,8 @@ p {
 
 .inventory-container {
     user-select: none;
+    display: flex;
+    flex-direction: column;
 }
 
 .window {
@@ -276,6 +278,8 @@ p {
     display: flex;
     flex-direction: column;
     gap: 4px;
+
+    margin-top: 16px;
 }
 
 .inventory-item .item-name {

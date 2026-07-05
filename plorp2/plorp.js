@@ -72,6 +72,7 @@ const TileResource = {
 
     CHALK: "Chalk",
     SAND: "Sand",
+    LIMESTONE: "Limestone",
 
     AMBER: "Amber",
     AMETHYST: "Amethyst",
@@ -94,6 +95,7 @@ const TileResource = {
 const Item = {
     // Trash rocks
     GRANITE: "Granite",
+    LIMESTONE: "Limestone",
 
     // Non-trash rocks
     CHALK: "Chalk",
@@ -188,6 +190,11 @@ const ItemData = {
         rarity: ItemRarity.COMMON,
     },
 
+    [Item.LIMESTONE]: {
+        gold_value: 2,
+        rarity: ItemRarity.COMMON,
+    },
+
     // Gems
     [Item.AMBER]: {
         gold_value: 100,
@@ -230,6 +237,10 @@ const ItemData = {
     [Item.SIDERITE]: {
         gold_value: 15,
         rarity: ItemRarity.COMMON,
+    },
+    [Item.HEMATITE]: {
+        gold_value: 500,
+        rarity: ItemRarity.UNCOMMON,
     },
 }
 
@@ -282,6 +293,12 @@ const TileResourceInfo = {
         ], 1, 100, 5
     ),
 
+    [TileResource.LIMESTONE]: new TileResourceInfoEntry(
+        Colour.from_hex("#dcd8c7"), [
+            [1, Item.LIMESTONE],
+        ], 1, 5000, 30
+    ),
+
     [TileResource.SAND]: new TileResourceInfoEntry(
         Colour.from_hex("#e5c69d"), [
             
@@ -292,49 +309,55 @@ const TileResourceInfo = {
     [TileResource.AMBER]: new TileResourceInfoEntry(
         Colour.from_hex("#ffe43a"), [
             [1, Item.AMBER]
-        ], 0.03, 50, 50
+        ], 0.03, 50, 100
     ),
 
     [TileResource.AMETHYST]: new TileResourceInfoEntry(
         Colour.from_hex("#b082e4"), [
             [1, Item.AMETHYST]
-        ], 0.02, 50, 100
+        ], 0.02, 50, 200
     ),
 
     [TileResource.PERIDOT]: new TileResourceInfoEntry(
         Colour.from_hex("#b4c39c"), [
             [1, Item.PERIDOT]
-        ], 0.01, 50, 250
+        ], 0.015, 50, 800
     ),
 
     [TileResource.RUBY]: new TileResourceInfoEntry(
         Colour.from_hex("#bc6675"), [
             [1, Item.RUBY]
-        ], 0.005, 50, 500
+        ], 0.0075, 50, 1750
     ),
 
     // Copper
     [TileResource.CHALCOPYRITE]: new TileResourceInfoEntry(
         Colour.from_hex("#C68346"), [
             [1, Item.CHALCOPYRITE]
-        ], 1, 2500, 15
+        ], 1, 4000, 15
     ),
     [TileResource.MALACHITE]: new TileResourceInfoEntry(
         Colour.from_hex("#0bda51"), [
             [1, Item.MALACHITE]
-        ], 0.8, 10000, 50
+        ], 0.8, 90000, 50
     ),
     [TileResource.AZURITE]: new TileResourceInfoEntry(
         Colour.from_hex("#3568a2"), [
             [1, Item.AZURITE]
-        ], 0.6, 30000, 100
+        ], 0.6, 180000, 100
     ),
 
     // Iron
     [TileResource.SIDERITE]: new TileResourceInfoEntry(
         Colour.from_hex("#b7a87e"), [
             [1, Item.SIDERITE]
-        ], 0.9, 4000, 20
+        ], 0.9, 32000, 20
+    ),
+
+    [TileResource.HEMATITE]: new TileResourceInfoEntry(
+        Colour.from_hex("#000000"), [
+            [1, Item.HEMATITE]
+        ], 0.7, 4800000, 500
     ),
 }
 
@@ -752,7 +775,7 @@ class Player {
         this.lock_input = false;
     }
 
-    calc_collapse_gain() {
+    calc_collapse_gain(without_bonus=false) {
         // Collapse gain is by default based on just money
         // First one at 5000
         // Cost increases by 1.25x every time
@@ -762,11 +785,18 @@ class Player {
             score_total, 5000, 1.2, 0
         ) + 1;
 
-        return Math.max(0, Math.floor(powercubes_amt));
+        let powercubes_bonus = 1;
+        powercubes_bonus += this.get_upgrade_count_by_id("pc-bonus-powercubes") * 0.2;
+
+        if (without_bonus) {
+            return Math.max(0, Math.floor(powercubes_amt));
+        } else {
+            return Math.max(0, Math.round(Math.floor(powercubes_amt) * powercubes_bonus));
+        }
     }
     
     calc_next_collapse_target() {
-        let cur = this.calc_collapse_gain();
+        let cur = this.calc_collapse_gain(true);
 
         return Upgrade.calc_cost_from_amount(
             5000, 1.2, cur, 0
@@ -1000,7 +1030,11 @@ class Player {
     }
 
     set_upgrade_count(upgrade, to) {
-        this.upgrades[upgrade.id] = to;
+        this.set_upgrade_count_by_id(upgrade.id, to);
+    }
+
+    set_upgrade_count_by_id(upgradeid, to) {
+        this.upgrades[upgradeid] = to;
         this.upgrades_changed = true;
 
         this.recalculate_stats();
@@ -1085,10 +1119,12 @@ class Player {
         this.inventory_changed = true;
     }
 
-    sell_item(item, amt) {
+    sell_item(item, amt, sound=true) {
         let sell_value = ItemData[item].gold_value * amt;
         if (this.has_item(item, amt)) {
-            play_audio("generic_kaching", 0.15);
+            if (sound)
+                play_audio("generic_kaching", 0.15);
+            
             this.remove_item(item, amt);
             this.add_currency(Currency.GOLD, sell_value);
         }
@@ -2203,9 +2239,25 @@ function render_ui_inventory(player) {
         let notif = document.createElement("span");
         notif.textContent = "No items...";
         elems.push(notif);
+
+        document.querySelector(".inventory .sellallbutton").classList.add("nodisplay");
+    } else {
+        document.querySelector(".inventory .sellallbutton").classList.remove("nodisplay");
     }
 
     e.replaceChildren(template, ...elems)
+}
+
+function try_sellall() {
+    let clicked = false;
+    player.get_all_items().forEach(item => {
+        player.sell_item(item[0], item[1], false);
+        clicked = true;
+    })
+
+    if (clicked) {
+        play_audio("generic_kaching", 0.15);
+    }
 }
 
 function render_ui_tilestats(player) {
@@ -2421,7 +2473,7 @@ function render_ui_upgrades(player, upgrades, elem_classname, max_upgrade_cnt) {
         clone.querySelector(".upgrade-num-owned").style.color = (cost_1 == "-" || show_unknown) ? "gray" : "";
 
         clone.querySelector(".upgrade-max-amt").textContent = `${format_number(Math.max(0, max_buy))}`;
-        clone.querySelector(".upgrade-max-cost").textContent = `${format_number(Math.max(0, cost_max))}`;
+        clone.querySelector(".upgrade-max-cost").textContent = `${CurrencyIcons[upgrade.cost_currency]} ${format_number(Math.max(0, cost_max))}`;
 
         if (max_buy >= 1) {
             clone.querySelector(".upgrade1").addEventListener("mouseup", e => {
@@ -2995,6 +3047,19 @@ let default_generation_settings = {
 
         new ResourceVeinGenerationSettings(
             [
+                [1, [TileResource.LIMESTONE, 0.5]],
+                [0.1, [TileResource.HEMATITE, 1.5]]
+            ],
+            0.001, 0.002,
+            275, 3500,
+            0.6, 1, 0.4, 0.4,
+            1,
+            6, 8,
+            0.4, 0.7
+        ),
+
+        new ResourceVeinGenerationSettings(
+            [
                 [1, [TileResource.SAND, 0.5]],
                 [0.02, [TileResource.AMBER, 4]]
             ],
@@ -3097,10 +3162,12 @@ let normal_upgrades = [
     ),
 
     new Upgrade(
-        "somnia-miningspeed_from_movespeed1", "Momentum", "pink", "Increases final mining speed by 10% for every 16 px/s of movement speed.",
-        777, 1.5, Currency.GOLD, 101, 1,
+        "somnia-luckfromlowdepth", "Memory", "pink", "Multiplies luck by 2x when less than 150m deep.",
+        555, 1.5, Currency.GOLD, 101, 1,
         (p, n) => {
-            p.add_incalc_stat("atk_speed", Math.floor(p.get_incalc_stat("movespeed") / 16) * 0.1)
+            if (p.get_depth() < 150) {
+                p.mul_incalc_stat("luck", 2)
+            }
         },
         true, (p) => {
             return [
@@ -3132,7 +3199,7 @@ let normal_upgrades = [
     ),
 
     new Upgrade(
-        "somnia-luckpluslight1", "Clarity", "orchid", "Increases final luck by +0.05 per level for every 1ti of light level.",
+        "somnia-luckpluslight1", "Unfailing Sight", "orchid", "Increases final luck by +0.05 per level for every 1ti of light level.",
         6666, 1.4, Currency.GOLD, 101, 10,
         (p, n) => {
             p.add_incalc_stat("luck", Math.floor(p.get_incalc_stat("lightlevel") / 1) * 0.05 * n)
@@ -3162,10 +3229,10 @@ let normal_upgrades = [
     ),
 
     new Upgrade(
-        "somnia-miningspeed-from-depth", "Pressure", "pink", "Increases movement speed by 1px for every 3m current depth.",
+        "somnia-miningspeed-from-depth", "Pressure", "pink", "Increases movement speed by 1px for every 3m current depth (max: +100px)",
         55555, 1.5, Currency.GOLD, 1, 1,
         (p, n) => {
-            p.add_incalc_stat("movespeed", Math.floor(p.last_depth / 3) * 1)
+            p.add_incalc_stat("movespeed", Math.min(100, Math.floor(p.last_depth / 3) * 1))
         },
         true, (p) => {
             return [
@@ -3192,9 +3259,9 @@ let normal_upgrades = [
 
             let torch_dist_factor = Math.max(0, (torch_ll - distance_from_torch)) / torch_ll;
 
-            p.mul_incalc_stat("damage", 1 + torch_dist_factor);
-            p.mul_incalc_stat("luck", 1 + torch_dist_factor);
-            p.mul_incalc_stat("atk_speed", 1 + torch_dist_factor);
+            p.mul_incalc_stat("damage", 1 + (torch_dist_factor * 0.5));
+            p.mul_incalc_stat("luck", 1 + (torch_dist_factor * 0.5));
+            p.mul_incalc_stat("atk_speed", 1 + (torch_dist_factor * 0.5));
         },
         true, (p) => {
             return [
@@ -3221,20 +3288,28 @@ let normal_upgrades = [
 
 let powercube_upgrades = [
     new Upgrade(
+        "pc-momentum", "Momentum", "coral", "Increases final mining speed by 10% for every 16 px/s of movement speed.",
+        1, 1.5, Currency.POWERCUBES, 101, 1,
+        (p, n) => {
+            p.add_incalc_stat("atk_speed", Math.floor(p.get_incalc_stat("movespeed") / 16) * 0.1)
+        }
+    ),
+
+    new Upgrade(
         "pc-bonusall1", "Powercube Infusion", "coral", "Increases damage by +5, luck by +0.25, mining speed by 10% and movement speed by 8px/s per level.",
         1, 1.25, Currency.POWERCUBES, 0, 32,
         Upgrade.add_to_stats(["damage", 5], ["luck", 0.25], ["atk_speed", 0.1], ["movespeed", 8])
     ),
 
     new Upgrade(
-        "pc-choice1", "Facet Alignment", "red", "Unlocks the first Powercube facet choice.",
-        8, 2, Currency.POWERCUBES, 0, 1,
+        "pc-bonus-powercubes", "Manifestation", "coral", "Gain +20% more powercubes on collapse.",
+        4, 1.2, Currency.POWERCUBES, 0, 20,
         () => null
     ),
 
     new Upgrade(
-        "pc-bonus-starting-gold1", "Troves", "coral", "Start future collapses with ◕ 250 per level.",
-        2, 1.25, Currency.POWERCUBES, 0, 8,
+        "pc-choice1", "Facet Alignment", "red", "Unlocks the first Powercube facet choice.",
+        8, 2, Currency.POWERCUBES, 0, 1,
         () => null
     ),
 
@@ -3367,6 +3442,7 @@ let player = new Player(default_mine, main_particles_board, new Vector2(16, 16),
 // default_mine.set_tile(0, 0, new Tile({}, true));
 let render_distance = 6;
 
+let kp = null;
 function input_handler(n) {
     if (keys_pressed_this_frame["KeyR"]) {
         save_game("manually ");
@@ -3415,24 +3491,52 @@ function input_handler(n) {
         add_message(null, "DEBUG: reset powercube facets")
     }
 
-    if (keys_down["ArrowDown"] || keys_down["KeyS"]) {
+    if (keys_pressed_this_frame["ShiftLeft"]) {
+        kp = null;
+    }
+
+    if (kp == "Down" || keys_down["ArrowDown"] || keys_down["KeyS"]) {
+        if (keys_down_this_frame["ShiftLeft"]) {
+            kp = "Down";
+        }
+
         // default_mine.tiles = new Map();
         player.move(new Vector2(0, n), default_mine);
     }
 
     if (keys_down["ArrowUp"] || keys_down["KeyW"]) {
+        if (keys_down_this_frame["ShiftLeft"]) {
+            kp = "Up";
+        }
+
         // default_mine.tiles = new Map();
         player.move(new Vector2(0, -n), default_mine);
     }
 
     if (keys_down["ArrowLeft"] || keys_down["KeyA"]) {
+        if (keys_down_this_frame["ShiftLeft"]) {
+            kp = "Left";
+        }
+
         // default_mine.tiles = new Map();
         player.move(new Vector2(-n, 0), default_mine);
     }
 
     if (keys_down["ArrowRight"] || keys_down["KeyD"]) {
+        if (keys_down_this_frame["ShiftLeft"]) {
+            kp = "Right";
+        }
+
         // default_mine.tiles = new Map();
         player.move(new Vector2(n, 0), default_mine);
+    }
+
+    if (keys_pressed_this_frame["ShiftLeft"]) {
+        if (kp == null) {
+            play_audio("automove_cancel");
+        } else {
+            play_audio("automove_confirm");
+        }
     }
 }
 
@@ -3587,7 +3691,7 @@ handlers.game_postload_fn = () => {
     setup_windows();
 
     document.querySelector(".ascend-button").addEventListener("click", e => {
-        if (player.lock_input || document.querySelector(".ascend-button").classList.add("disabled"))
+        if (player.lock_input || document.querySelector(".ascend-button").classList.contains("disabled"))
             return;
 
         try_collapse(player);
@@ -3682,6 +3786,7 @@ handlers.render_fn = () => {
     if (player.consume_change("upgrades")) {
         render_ui_upgrades(player, normal_upgrades, "upgrades-container", MAX_VISIBLE_UPGRADES);
         render_ui_upgrades(player, powercube_upgrades, "powercubes-upgrades-container", MAX_POWERCUBE_VISIBLE_UPGRADES);
+        render_ui_powercube_buttons(player, powercube_choices);
         render_ui_powercube_choices(player, powercube_choices);
     }
 
