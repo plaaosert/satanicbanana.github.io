@@ -27,6 +27,12 @@ let audios_list = [
     ["clink", "clink.mp3"],
 
     ["ascension", "ascension.mp3"],
+
+    // https://dova-s.jp/se/detail/1486/track/2 (edited)
+    ["automove_confirm", "automove_confirm.mp3"],
+    
+    // https://dova-s.jp/se/detail/1479
+    ["automove_cancel", "automove_cancel.mp3"],
 ]
 
 if (new URLSearchParams(window.location.search).get("noaudio") == "true") {

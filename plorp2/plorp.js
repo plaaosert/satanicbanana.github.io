@@ -3491,51 +3491,70 @@ function input_handler(n) {
         add_message(null, "DEBUG: reset powercube facets")
     }
 
+    let prev_kp = kp;
     if (keys_pressed_this_frame["ShiftLeft"]) {
         kp = null;
     }
 
     if (kp == "Down" || keys_down["ArrowDown"] || keys_down["KeyS"]) {
-        if (keys_down_this_frame["ShiftLeft"]) {
+        if (keys_pressed_this_frame["ShiftLeft"]) {
             kp = "Down";
+        }
+
+        if (kp != "Down") {
+            kp = null;
         }
 
         // default_mine.tiles = new Map();
         player.move(new Vector2(0, n), default_mine);
     }
 
-    if (keys_down["ArrowUp"] || keys_down["KeyW"]) {
-        if (keys_down_this_frame["ShiftLeft"]) {
+    if (kp == "Up" || keys_down["ArrowUp"] || keys_down["KeyW"]) {
+        if (keys_pressed_this_frame["ShiftLeft"]) {
             kp = "Up";
+        }
+
+        if (kp != "Up") {
+            kp = null;
         }
 
         // default_mine.tiles = new Map();
         player.move(new Vector2(0, -n), default_mine);
     }
 
-    if (keys_down["ArrowLeft"] || keys_down["KeyA"]) {
-        if (keys_down_this_frame["ShiftLeft"]) {
+    if (kp == "Left" || keys_down["ArrowLeft"] || keys_down["KeyA"]) {
+        if (keys_pressed_this_frame["ShiftLeft"]) {
             kp = "Left";
+        }
+
+        if (kp != "Left") {
+            kp = null;
         }
 
         // default_mine.tiles = new Map();
         player.move(new Vector2(-n, 0), default_mine);
     }
 
-    if (keys_down["ArrowRight"] || keys_down["KeyD"]) {
-        if (keys_down_this_frame["ShiftLeft"]) {
+    if (kp == "Right" || keys_down["ArrowRight"] || keys_down["KeyD"]) {
+        if (keys_pressed_this_frame["ShiftLeft"]) {
             kp = "Right";
+        }
+
+        if (kp != "Right") {
+            kp = null;
         }
 
         // default_mine.tiles = new Map();
         player.move(new Vector2(n, 0), default_mine);
     }
 
-    if (keys_pressed_this_frame["ShiftLeft"]) {
+    if (prev_kp != kp) {
         if (kp == null) {
-            play_audio("automove_cancel");
+            add_message(null, `Automove cancelled`, Colour.yellow);
+            play_audio("automove_cancel", 0.3);
         } else {
-            play_audio("automove_confirm");
+            add_message(null, `Automove enabled: ${kp}`, Colour.yellow);
+            play_audio("automove_confirm", 0.3);
         }
     }
 }

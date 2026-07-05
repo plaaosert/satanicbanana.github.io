@@ -4,6 +4,7 @@ let help_html = `<div class="helptext"><span>Move towards a tile to start hittin
         <span>Sell resources for gold ◕ to use to buy upgrades.</span>
         <span>Tile HP and armour ☖ is determined by the richness and rarity of the resources in it. The deeper you dig, the rarer the resources you'll find.</span>
         <span>Press <span class="help-important">Q</span> to zoom out and <span class="help-important">E</span> to zoom in.</span>
+        <span>Press <span class="help-important">Left Shift</span> while moving to lock your direction. Press it again to unlock.</span>
 
         <span>You can drag windows around!</span>
 
