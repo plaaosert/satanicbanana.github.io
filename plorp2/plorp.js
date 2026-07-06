@@ -1901,7 +1901,7 @@ function generate_chunk(rx, ry, radius, mine) {
                 }
             })
 
-            if (Math.abs(vx) == 1 || Math.abs(vy) == 1) {
+            if ((Math.abs(vx) == 1 && Math.abs(vy) == 0) || (Math.abs(vy) == 1 && Math.abs(vx) == 0)) {
                 richnesses = {
                     [TileResource.CHALCOPYRITE]: random_float(0.1, 0.2, get_seeded_randomiser(mine.get_xy_seed(vx, vy)))
                 };
