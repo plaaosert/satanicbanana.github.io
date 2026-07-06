@@ -463,6 +463,8 @@ class Tile {
         this.colour = this.determine_colour();
 
         this.features = features ?? {};
+
+        this.last_light_level = 1;
     }
 
     get_armour() {
@@ -1899,6 +1901,10 @@ function generate_chunk(rx, ry, radius, mine) {
                 }
             })
 
+            Object.keys(richnesses).forEach(rk => {
+                richnesses[rk] = Math.round(richnesses[rk] * 1000) / 1000;
+            });
+
             // console.log(vx, vy);
             mine.set_tile(vx, vy, new Tile(richnesses, false));
 
@@ -2004,6 +2010,8 @@ function render_tiles(player, mine) {
                 let lightlevel = Math.min(1, Math.max(player_dist_light, cleared_dist_light, torch_dist_light));
                 if (!tile) {
                     lightlevel = 1;
+                } else {
+                    tile.last_light_level = lightlevel;
                 }
 
                 finalcol = Colour.black.lerp(fillcol, lightlevel);
@@ -2796,17 +2804,22 @@ function get_mine_player_modifications(mine) {
     // Worldgen always keeps all near tiles visible so it's OK to just save+load cleared tiles and nothing else.
     let modifications = [...default_mine.tiles.keys().filter(k => {
         let tile = default_mine.tiles.get(k);
-        return tile.cleared || Math.round(tile.hp) != tile.max_hp || Object.keys(tile.features).length !== 0  // todo think about a dedicated MODIFIED flag?
+        return tile.cleared || ((Math.round(tile.hp) / tile.max_hp) <= 0.98) || Object.keys(tile.features).length !== 0  // todo think about a dedicated MODIFIED flag?
     })].map(k => {
         let tile = default_mine.tiles.get(k);
         let obj = {
-            key: k,
-            cleared: tile.cleared,
-            hp: Math.round(tile.hp),
+            key: k
         }
 
         if (!tile.cleared) {
-            obj.richnesses = tile.richnesses
+            let new_richnesses = {};
+            Object.keys(tile.richnesses).forEach(rk => {
+                new_richnesses[rk] = Math.round(tile.richnesses[rk] * 1000) / 1000;
+            })
+
+            obj.richnesses = new_richnesses;
+            // If the tile has a HP, it's not cleared. We don't need to store the cleared state separately.
+            obj.hp = Math.round(tile.hp)
         }
 
         if (Object.keys(tile.features).length !== 0) {
@@ -2847,10 +2860,11 @@ function save_game_to_string(player, mine) {
         random_state: mine.random(true)
     };
 
-    return btoa(JSON.stringify({
+    return "plorp2save" + JSON.stringify({
+        version: "v1",
         player: player_vars,
         mine: mine_info
-    }));
+    });
 }
 
 function save_game(msg_prefix="") {
@@ -2876,11 +2890,36 @@ function save_game(msg_prefix="") {
 }
 
 /**
+ * Don't call this on its own. load_game_from_string will get the version
+ * and redirect here if it needs to.
+ * @param {*} save_string 
+ */
+function load_game_from_string_v2(save_string) {
+    let savedata = JSON.parse(save_string.split("plorp2save", 2)[1]);
+
+    // unused but kept just in case its needed later :)
+
+    return [player, newmine, particles_board];
+}
+
+/**
  * THIS CAN ONLY BE RUN AT INITIALISATION TIME!!!!!
  * @returns {[Player, Mine, ParticleBoard]} Player, mine, particle board
  */
 function load_game_from_string(save_string) {
-    let savedata = JSON.parse(atob(save_string));
+    let need_to_decode = !save_string.startsWith("plorp2save");
+
+    let savedata = null;
+    if (need_to_decode) {
+        savedata = JSON.parse(atob(save_string));
+    } else {
+        savedata = JSON.parse(save_string.split("plorp2save", 2)[1]);
+    }
+
+    let version = savedata.save_version;
+    if (version == "v2") {
+        return load_game_from_string_v2(save_string);
+    }
 
     let newmine = new Mine(
         savedata.mine.seed, null,
@@ -2888,11 +2927,21 @@ function load_game_from_string(save_string) {
     );
     
     savedata.mine.tiles.forEach(t => {
-        let newtile = new Tile(t.richnesses ?? {}, t.cleared, t.features ?? {});
-        
-        newtile.hp = Math.max(0, t.hp);
-        
+        let new_richnesses = {};
+        Object.keys(t.richnesses ?? {}).forEach(rk => {
+            new_richnesses[rk] = Math.round(t.richnesses[rk] * 1000) / 1000;
+        })
+
+        let cleared = (t.hp ?? 0) <= 0;
         let xy = newmine.index_to_xy(t.key);
+
+        if (xy[0] == 0 && xy[1] == 0)
+            cleared = true;
+
+        let newtile = new Tile(new_richnesses, cleared, t.features ?? {});
+        
+        newtile.hp = Math.max(0, t.hp ?? 0);
+        
         newmine.set_tile(
             xy[0], xy[1], newtile
         )

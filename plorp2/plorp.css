@@ -248,14 +248,23 @@ p {
 .sidebar-menu-content {
     padding-left: 16px;
     padding-right: 16px;
+
+    height: 100%;
+    overflow: auto;
 }
 
 .sidebar-menu-content>div {
-    display: none;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-menu-content>div:not(.active) {
+    display: none !important;
 }
 
 .sidebar-menu-content>div.active {
-    display: unset;
+    /* display: unset; */
 }
 
 .select-bar>span {
