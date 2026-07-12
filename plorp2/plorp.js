@@ -3,8 +3,21 @@ game_id = "plorp2";
 const SAVE_KEY = "plorp2_savedata";
 const BACKUP_SAVE_KEY = "plorp2_backup_savedata";
 
+let break_sound_cooldown_max = 0.15;
+let break_sound_cooldown = 0;
+let break_max_gain = 0.1;
+
+let hit_sound_cooldown_max = 0.02;
+let hit_sound_cooldown = 0;
+let hit_max_gain = 0.1;
+let crit_max_gain = 0.25;
+
+let clink_sound_cooldown_max = 0.15;
+let clink_sound_cooldown = 0;
+let clink_max_gain = 0.1;
+
 let scaling = {};
-let zoom_level = 4;
+let zoom_level = 2;
 let view_offset = Vector2.zero;
 
 scaling.screen_scaling_factor = 1;
@@ -197,22 +210,22 @@ const ItemData = {
 
     // Gems
     [Item.AMBER]: {
-        gold_value: 100,
+        gold_value: 200,
         rarity: ItemRarity.UNCOMMON
     },
 
     [Item.AMETHYST]: {
-        gold_value: 500,
+        gold_value: 750,
         rarity: ItemRarity.UNCOMMON
     },
 
     [Item.PERIDOT]: {
-        gold_value: 1000,
+        gold_value: 3000,
         rarity: ItemRarity.RARE
     },
 
     [Item.RUBY]: {
-        gold_value: 2500,
+        gold_value: 15000,
         rarity: ItemRarity.RARE
     },
 
@@ -239,7 +252,7 @@ const ItemData = {
         rarity: ItemRarity.COMMON,
     },
     [Item.HEMATITE]: {
-        gold_value: 500,
+        gold_value: 300,
         rarity: ItemRarity.UNCOMMON,
     },
 }
@@ -283,7 +296,7 @@ const TILE_BASE_ARMOUR = 0;
 const GRANITE_CHANCE_PER_HIT = 0.5;
 const TileResourceInfo = {
     [TileResource.BEDROCK]: new TileResourceInfoEntry(
-        Colour.from_hex("#111"), [], 0, 10000000 - TILE_BASE_MAX_HP, 10000000
+        Colour.from_hex("#111"), [], 0, 1e300 - TILE_BASE_MAX_HP, 1e300
     ),
 
     // Rocks
@@ -464,7 +477,19 @@ class Tile {
 
         this.features = features ?? {};
 
+        this.modified = false;
+
         this.last_light_level = 1;
+    }
+
+    recalculate() {
+        let hp_prop = this.hp / this.max_hp;
+
+        this.max_hp = this.get_max_hp();
+        this.hp = Math.ceil(this.max_hp * hp_prop);
+
+        this.armour = this.get_armour();
+        this.colour = this.determine_colour();
     }
 
     get_armour() {
@@ -495,7 +520,13 @@ class Tile {
         if (this.hp <= 0) {
             this.hp = 0;
             this.cleared = true;
-            play_audio(`block_destroy${random_int(1, 5)}`);
+            
+            let gain_lerp_amt = (break_sound_cooldown_max - Math.max(0, break_sound_cooldown)) / break_sound_cooldown_max;
+            gain_lerp_amt = Math.pow(gain_lerp_amt, 3);
+            let gain = lerp(0, break_max_gain, gain_lerp_amt);
+            // console.log(gain);
+            play_audio(`block_destroy${random_int(1, 5)}`, gain);
+            break_sound_cooldown = break_sound_cooldown_max;
         }
 
         return dmg_to_take;
@@ -536,6 +567,339 @@ class Tile {
     }
 }
 
+class GameObject {
+    constructor() {
+        this.position = Vector2.zero;
+        this.mine = null;
+
+        this.sprite = "";
+        this.sprite_frame = 0;
+        this.sprite_size = 1;
+        this.sprite_rotation = 0;
+    }
+
+    spawn(mine) {
+        // nothing
+    }
+
+    pass_time(time_delta) {
+        // nothing
+        return true;
+    }
+}
+
+class ObjRegenerator extends GameObject {
+    constructor(player, total_tiles, initial_delay, delay_cut_per, radius) {
+        super();
+        
+        this.player = player;
+        this.total_tiles = total_tiles;
+        this.radius = radius * BASE_TILE_SCALE;
+
+        this.delay_max = initial_delay;
+        this.delay_cut_per = delay_cut_per;
+        this.delay = this.delay_max;
+    }
+
+    pass_time(time_delta) {
+        this.delay -= time_delta;
+        while (this.delay <= 0) {
+            this.delay_max *= this.delay_cut_per;
+            this.delay += this.delay_max;
+
+            let player_tilepos = scaling.wttp(this.player.position).floor();
+
+            let pos = null;
+            let ready = false;
+            let tilepos = null;
+            let tile = null;
+            let tries = 0;
+            while (!ready) {
+                tries++;
+                if (tries >= 16) {
+                    tile = null;
+                    break;
+                }
+
+                pos = this.position.add(random_on_circle(
+                    Math.pow(random_float(0, 1), 2) * this.radius
+                ));
+
+                if (pos.sqr_distance(this.player.position) <= Math.pow(this.player.radius * 8, 2)) {
+                    tile = null;
+                    ready = false;
+                    continue;
+                }
+
+                tilepos = scaling.wttp(pos).floor();
+                tile = this.mine.get_tile(tilepos.x, tilepos.y);
+                if (!tile || !tile.cleared || Object.keys(tile.features).length != 0) {
+                    tile = null;
+                    ready = false;
+                    continue;
+                }
+
+                // tile is existent, not cleared and not
+                // intersecting the player... so we can do it!
+                ready = true;
+            }
+
+            if (tile) {
+                // VOID IT
+                this.mine.v_void_tile(tilepos);
+
+                generate_around_player();
+                let pos = this.mine.get_center_position(tile.x, tile.y);
+                main_particles_board.spawn_particle(new Particle(
+                    pos, 0, 1, entity_sprites.get("tileflash"),
+                    0, 0.25
+                ), pos);
+                
+                main_particles_board.spawn_particle(new Particle(
+                    pos, 0, 1.1, entity_sprites.get("tile_selector"),
+                    0, 0.25
+                ), pos);
+
+                play_audio("block_destroy_reverse", 0.1);
+            }
+
+
+            this.total_tiles--;
+            if (this.total_tiles <= 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+class ObjPaintSplatter extends GameObject {
+    constructor(player, resource, amount, splat_radius, level=0) {
+        super();
+        
+        this.player = player;
+
+        this.level = level;
+
+        this.resource = resource;
+        this.amount = amount;
+        this.splat_radius = splat_radius;
+
+        this.sprite = "paintsplatter";
+        this.sprite_frame = 0;
+        this.sprite_size_base = 16 * (this.level == 0 ? 2 : 1);
+        this.sprite_size = this.sprite_size_base;
+        this.sprite_filter = "";
+
+        this.velocity = random_on_circle(random_float(256, 512) * 2 * (this.level == 0 ? 1 : 0.5));
+        this.traveltime_max = random_float(0.4, 0.6) * (this.level == 0 ? 1 : 0.75);
+        this.traveltime = this.traveltime_max;
+    }
+
+    spawn(mine) {
+        this.sprite_rotation = this.velocity.angle();
+
+        let col = TileResourceInfo[this.resource].colour;
+        let hsv = rgbToHsv(col.r, col.g, col.b);
+        this.sprite_filter = `hue-rotate(${hsv[0] * 360}deg) saturate(${Math.round(hsv[1] * 100)}%)`;
+    }
+
+    pass_time(time_delta) {
+        this.traveltime -= time_delta;
+
+        this.position = this.position.add(this.velocity.mul(time_delta));
+        this.velocity = this.velocity.lerp(Vector2.zero, 1 - Math.pow(0.02, time_delta))
+
+        let t = this.traveltime_max - this.traveltime;
+        let arct = this.traveltime_max;
+        let harct = arct / 2;
+        if (t < arct) {
+            let prop = 1 - (Math.abs(t - harct) * (1 / harct));
+            this.sprite_size = this.sprite_size_base * (1 + (prop * 1));
+        } else {
+            this.sprite_size = this.sprite_size_base;
+        }
+
+        if (this.traveltime <= 0) {
+            if (this.level == 1) {
+                let n = 160;
+                for (let i=0; i<n; i++) {
+                    let mag = Math.pow(random_float(0, 1), random_int(1, 3)) * this.splat_radius * BASE_TILE_SCALE;
+                    let tpos = scaling.wttp(this.position.add(random_on_circle(mag))).floor();
+                    let tile = this.mine.get_tile(tpos.x, tpos.y);
+                    
+                    if (!tile || tile.cleared) {
+                        continue;
+                    }
+
+                    tile.richnesses[this.resource] = Math.min(
+                        1, (tile.richnesses[this.resource] ?? 0) + (this.amount / n)
+                    );
+
+                    tile.modified = true;
+
+                    tile.recalculate();
+                }
+            } else {
+                let n = 8;
+                for (let i=0; i<n; i++) {
+                    this.mine.spawn_object(new ObjPaintSplatter(
+                        this.player, this.resource, this.amount, this.splat_radius, 1
+                    ), this.position);
+                }
+            }
+
+            play_audio("splort", 0.3 * (this.level == 0 ? 1 : 0.5));
+
+            return false;
+        }
+
+        return true;
+    }
+}
+
+class ObjSmallBomb extends GameObject {
+    constructor(player) {
+        super();
+
+        this.player = player;
+
+        this.fuse_time_max = 4;
+        this.fuse_time = this.fuse_time_max;
+
+        this.beep_time_max = 1;
+        this.beep_time_min = 0.02;
+        this.beep_time = this.beep_time_max;
+
+        this.s_damage = 1000;
+        this.s_num = 48;
+        this.s_spd_penalty = 2;
+        this.s_speed = 460;
+        this.s_luck_mul = 0.1;
+
+        this.sprite = "smallbomb";
+        this.sprite_frame = 0;
+        this.sprite_size_base = 16;
+        this.sprite_size = this.sprite_size_base;
+
+        this.velocity = random_on_circle(random_float(128, 256));
+    }
+
+    pass_time(time_delta) {
+        this.fuse_time -= time_delta;
+        this.sprite_frame = Math.floor((1 - (this.fuse_time / this.fuse_time_max)) * 7);
+
+        this.position = this.position.add(this.velocity.mul(time_delta));
+        this.velocity = this.velocity.lerp(Vector2.zero, 1 - Math.pow(0.0005, time_delta))
+
+        let t = this.fuse_time_max - this.fuse_time;
+        let arct = 0.3;
+        let harct = arct / 2;
+        if (t < arct) {
+            let prop = 1 - (Math.abs(t - harct) * (1 / harct));
+            this.sprite_size = this.sprite_size_base * (1 + (prop * 0.5));
+        } else {
+            this.sprite_size = this.sprite_size_base;
+        }
+
+        if (this.fuse_time <= 0) {
+            for (let i=0; i<this.s_num; i++) {
+                let angle = deg2rad((360 / this.s_num) * i);
+
+                for (let j=0; j<3; j++) {
+                    this.mine.spawn_object(new ObjBombRay(
+                        this.player, this.s_luck_mul, this.s_damage,
+                        new Vector2(this.s_speed, 0).rotate(angle),
+                        0.001 * this.s_spd_penalty, 2, 0.9, 0.9, 0.98
+                    ), this.position);
+                }
+            }
+
+            play_directional_audio("block_destroy1", this.position, this.player.position, 0.2);
+            play_directional_audio("block_destroy3", this.position, this.player.position, 0.2);
+            play_directional_audio("block_destroy4", this.position, this.player.position, 0.2);
+
+            // main_particles_board.spawn_particle(new Particle(
+                // this.position, 0, 16, entity_sprites.get("explosion"),
+                // 16, 100
+            // ), this.position);
+
+            return false;
+        }
+
+        this.beep_time -= time_delta;
+        while (this.beep_time <= 0) {
+            this.beep_time += lerp(this.beep_time_min, this.beep_time_max, this.fuse_time / this.fuse_time_max);
+            play_directional_audio("bomb_beep", this.position, this.player.position);
+        }
+
+        return true;
+    }
+}
+
+class ObjBombRay extends GameObject {
+    constructor(player, luck_mul, power, velocity, vel_freq, dmg_freq, proration_power, proration_velocity, decay_over_time) {
+        super();
+
+        this.luck_mul = luck_mul;
+
+        this.player = player;
+        this.power = power;
+        this.velocity = velocity;
+
+        this.vel_freq_max = vel_freq;
+        this.vel_freq = this.vel_freq_max;
+
+        this.dmg_freq_max = dmg_freq;
+        this.dmg_freq = this.dmg_freq_max;
+        
+        this.proration_power = proration_power;
+        this.proration_velocity = proration_velocity;
+
+        this.decay_over_time = decay_over_time;
+
+        // this.sprite = "orb";
+    }
+
+    pass_time(time_delta) {
+        this.vel_freq -= time_delta;
+
+        while (this.vel_freq <= 0) {
+            this.vel_freq += this.vel_freq_max;
+
+            this.position = this.position.add(this.velocity.mul(time_delta));
+
+            // now deal damage
+            this.dmg_freq -= 1;
+            while (this.dmg_freq <= 0) {
+                this.dmg_freq += this.dmg_freq_max;
+
+                let tilepos = scaling.wttp(this.position).floor();
+                let tile = this.mine.get_tile(tilepos.x, tilepos.y);
+                if (tile && !tile.cleared) {
+                    // deal damage to tile, lose velocity and power
+                    // stop if power <= 0.01
+                    let res = player.damage_and_loot(tile, this.power, true, false, false, this.luck_mul);
+                
+                    if (res[0] > 0) {
+                        this.velocity = this.velocity.mul(this.proration_velocity);
+                        this.power *= this.proration_power;
+                    } else {
+                        // immediately destroy if hitting something that it can't damage
+                        return false;
+                    }
+                }
+            }
+
+            this.velocity = this.velocity.mul(this.decay_over_time);
+            this.power *= this.decay_over_time;
+        }
+
+        return this.power > 0.01;
+    }
+}
+
 class Mine {
     static MAX_SIZE = 1e7;
     static SIZEPAD = 1e6;
@@ -553,6 +917,33 @@ class Mine {
         }, 0);
 
         this.torch_positions = [];
+
+        this.objects = [];
+    }
+
+    step_objects(time_delta) {
+        let olen = this.objects.length;
+        let remove_indexes = [];
+        for (let i=0; i<olen; i++) {
+            let obj = this.objects[i];
+
+            if (!obj.pass_time(time_delta)) {
+                remove_indexes.unshift(i);
+            };
+        }
+
+        remove_indexes.forEach(i => {
+            this.objects.splice(i, 1);
+        });
+    }
+
+    spawn_object(object, position) {
+        object.position = position;
+        object.mine = this;
+
+        object.spawn(this);
+
+        this.objects.push(object);
     }
 
     distance_from_origin(x, y) {
@@ -609,6 +1000,14 @@ class Mine {
 
     v_set_tile(vec, tile) {
         return this.set_tile(vec.x, vec.y, tile);
+    }
+
+    void_tile(x, y) {
+        this.tiles.set(this.xy_to_index(x, y), null);
+    }
+
+    v_void_tile(vec) {
+        this.void_tile(vec.x, vec.y);
     }
 }
 
@@ -703,7 +1102,36 @@ const EquipmentItemFunctions = {
         p.mine.register_torch_gain(pos.x, pos.y);
         p.recalculate_stats();
         return n;
-    }
+    },
+
+    BOMB: (p, item, n) => {
+        for (let i=0; i<n; i++) {
+            p.mine.spawn_object(new ObjSmallBomb(p), p.position);
+        }
+
+        return n;
+    },
+
+    PAINT: (p, item, n) => {
+        let tile_resource_key = item.id.replace("paint-", "");
+
+        for (let i=0; i<n; i++) {
+            p.mine.spawn_object(
+                new ObjPaintSplatter(p, tile_resource_key, 8, 4),
+                p.position
+            );
+        }
+
+        return n;
+    },
+
+    REGENERATOR: (p, item, n) => {
+        for (let i=0; i<n; i++) {
+            p.mine.spawn_object(new ObjRegenerator(p, 64, 0.3, 0.95, 8), p.position);
+        }
+
+        return n;
+    },
 }
 
 class Player {
@@ -769,6 +1197,8 @@ class Player {
         this.last_depth = 0;
 
         this.closed_helpmenu = false;
+        this.closed_statsmenu = false;
+        
         this.custom_icon_b64 = null;
 
         this.spawnpoint = new Vector2(16, 16);
@@ -820,13 +1250,11 @@ class Player {
         this.remove_currency(Currency.GOLD, this.get_currency_amt(Currency.GOLD));
         this.get_all_upgrades().forEach(upgrade => {
             let upg_obj = upgrades_lookup.get(upgrade[0]);
-            if (upg_obj.id == "somnia2-torch") {
+            if (!upg_obj.reset_on_collapse) {
                 return;
             }
 
-            if (upg_obj.cost_currency == Currency.GOLD) {
-                this.set_upgrade_count(upg_obj, 0);
-            }
+            this.set_upgrade_count(upg_obj, 0);
         });
 
         this.add_currency(Currency.POWERCUBES, powercubes_gain);
@@ -1022,12 +1450,8 @@ class Player {
     add_upgrade(upgrade, amt) {
         this.set_upgrade_count(upgrade, (this.upgrades[upgrade.id] ?? 0) + amt);
     
-        if (upgrade.id == "somnia2-torch") {
-            this.add_equipment_item(new EquipmentItem(
-                "torch", "Torch", "Lights up the darkness.",
-                "torch", amt, true, ItemRarity.COMMON,
-                "TORCH", "Places a torch on the current tile.", false
-            ))
+        if (upgrade.fn_on_buy !== null) {
+            upgrade.fn_on_buy(player, amt);
         }
     }
 
@@ -1263,6 +1687,50 @@ class Player {
         this.target_changed = true;
     }
 
+    /**
+     * Shorthand function to deal damage and roll loot.
+     * Default behaviour is to deal damage with default luck
+     * and no crit chance, with flash and sound disabled.
+     * Returns the result as [damage, did_crit]
+     */
+    damage_and_loot(to_tile, damage_amt, flash=false, sound=false, clink_sound=false, luck_mul=1, can_crit=false) {
+        let result = this.deal_damage(to_tile, damage_amt, can_crit ? null : 0);
+        let luck = this.stats.luck * luck_mul;
+        this.roll_loot(to_tile, result[0], luck);
+    
+        let crit = result[1];
+        if (result[0] > 0) {
+            if (sound) {
+                let gain_lerp_amt = (hit_sound_cooldown_max - Math.max(0, hit_sound_cooldown)) / hit_sound_cooldown_max;
+                gain_lerp_amt = Math.pow(gain_lerp_amt, 3);
+                let gain = lerp(0, crit ? crit_max_gain : hit_max_gain, gain_lerp_amt);
+                // console.log(gain);
+
+                play_audio(`pick_${crit ? "crit" : "hit"}${random_int(1, 5)}`, gain);
+                hit_sound_cooldown = hit_sound_cooldown_max;
+            }
+        } else {
+            if (clink_sound) {
+                let gain_lerp_amt = (clink_sound_cooldown_max - Math.max(0, clink_sound_cooldown)) / clink_sound_cooldown_max;
+                gain_lerp_amt = Math.pow(gain_lerp_amt, 3);
+                let gain = lerp(0, clink_max_gain, gain_lerp_amt);
+                
+                play_audio("clink");
+                clink_sound_cooldown = clink_sound_cooldown_max;
+            }
+        }
+
+        if (flash) {
+            let pos = this.mine.get_center_position(to_tile.x, to_tile.y);
+
+            this.particles_board.spawn_particle(new Particle(
+                pos, 0, 1, entity_sprites.get("tileflash"), 0, 0.1
+            ), pos).render_behind = true;
+        }
+
+        return result;
+    }
+
     deal_damage(to_tile, damage_amt, crit_chance_override=null) {
         this.target_changed = true;
 
@@ -1282,8 +1750,15 @@ class Player {
         let crit = result[1];
 
         if (dmg_dealt > 0) {
-            if (sound)
-                play_audio(`pick_${crit ? "crit" : "hit"}${random_int(1, 5)}`, crit ? 0.25 : 0.1);
+            if (sound) {
+                let gain_lerp_amt = (hit_sound_cooldown_max - Math.max(0, hit_sound_cooldown)) / hit_sound_cooldown_max;
+                gain_lerp_amt = Math.pow(gain_lerp_amt, 3);
+                let gain = lerp(0, crit ? crit_max_gain : hit_max_gain, gain_lerp_amt);
+                // console.log(gain);
+
+                play_audio(`pick_${crit ? "crit" : "hit"}${random_int(1, 5)}`, gain);
+                hit_sound_cooldown = hit_sound_cooldown_max;
+            }
 
             let luck = this.stats.luck;
             if (crit) {
@@ -1293,8 +1768,14 @@ class Player {
 
             this.roll_loot(tile, dmg_dealt, luck)
         } else {
-            if (sound)
+            if (sound) {
+                let gain_lerp_amt = (clink_sound_cooldown_max - Math.max(0, clink_sound_cooldown)) / clink_sound_cooldown_max;
+                gain_lerp_amt = Math.pow(gain_lerp_amt, 3);
+                let gain = lerp(0, clink_max_gain, gain_lerp_amt);
+                
                 play_audio("clink");
+                clink_sound_cooldown = clink_sound_cooldown_max;
+            }
         }
 
         if (flash) {
@@ -1302,7 +1783,7 @@ class Player {
 
             this.particles_board.spawn_particle(new Particle(
                 pos, 0, 1, entity_sprites.get("tileflash"), 0, 0.1
-            ), pos);
+            ), pos).render_behind = true;
         }
 
         return [dmg_dealt, crit];
@@ -1434,6 +1915,7 @@ class Player {
                 this.select_particle = new Particle(
                     new_tile_part_pos, 0, 1.1, entity_sprites.get("tile_selector"), 3, Number.POSITIVE_INFINITY, true                    
                 );
+                this.select_particle.render_behind = true;
 
                 this.select_particle.add_component(new RemoveFirstFrameComponent(this.particles_board));
 
@@ -1549,8 +2031,11 @@ class Upgrade {
      * @param {*} on_stats Function (player, number_of_upgrade) => {null} to run during stats calculation.
      * @param {*} show_unknown Show as unknown if the player hasn't been able to afford it yet.
      * @param {*} hide_logic Change the unknown logic to a different custom function: (player) => [description, condition]
+     * @param {*} hide_if_unknown Hide completely if unknown (rather than showing description and "???")
+     * @param {*} reset_on_collapse Reset this upgrade to 0 on collapse. Default is true if it's a gold upgrade, else false.
+     * @param {*} fn_on_buy Function (player, number_bought) => {null} to run on purchase.
      */
-    constructor(id, name, col, desc, base_cost, cost_scaling, cost_currency, priority, max_cnt=null, on_stats=null, show_unknown=false, hide_logic=null, hide_if_unknown=false) {
+    constructor(id, name, col, desc, base_cost, cost_scaling, cost_currency, priority, max_cnt=null, on_stats=null, show_unknown=false, hide_logic=null, hide_if_unknown=false, reset_on_collapse=null, fn_on_buy=null) {
         this.id = id;
         
         this.name = name;
@@ -1565,6 +2050,8 @@ class Upgrade {
         this.show_unknown = show_unknown;
         this.hide_logic = hide_logic;
         this.hide_if_unknown = hide_if_unknown;
+        this.reset_on_collapse = reset_on_collapse ?? (this.cost_currency == Currency.GOLD);
+        this.fn_on_buy = fn_on_buy;
     }
 
     get_number_buyable(player, cur_owned) {
@@ -1922,10 +2409,10 @@ function generate_chunk(rx, ry, radius, mine) {
 }
 
 function render_tiles(player, mine) {
-    layers.fg3.ctx.clearRect(0, 0, canvas_width, canvas_height);
+    layers.bg3.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
     /** @type {CanvasRenderingContext2D} */
-    let ctx = layers.fg3.ctx;
+    let ctx = layers.bg3.ctx;
 
     // Get the tile position of what would be screenpos 0,0
     // Floor that 
@@ -1963,7 +2450,7 @@ function render_tiles(player, mine) {
                         PARTICLE_SIZE_MULTIPLIER * zoom_level * 0.25,
                     ));
                     write_rotated_image(
-                        layers.fg3.canvas, layers.fg3.ctx,
+                        layers.bg3.canvas, layers.bg3.ctx,
                         pos.x, pos.y, entity_sprites.get("torch")[0],
                         PARTICLE_SIZE_MULTIPLIER * zoom_level * 0.5, PARTICLE_SIZE_MULTIPLIER * zoom_level * 0.5
                     )
@@ -2037,7 +2524,7 @@ function render_tiles(player, mine) {
             if (frame > 0) {
                 let pos = screenpos
                 write_rotated_image(
-                    layers.fg3.canvas, layers.fg3.ctx,
+                    layers.bg3.canvas, layers.bg3.ctx,
                     pos.x, pos.y, breaksprites[frame],
                     PARTICLE_SIZE_MULTIPLIER * zoom_level, PARTICLE_SIZE_MULTIPLIER * zoom_level
                 )
@@ -2047,7 +2534,7 @@ function render_tiles(player, mine) {
 }
 
 function render_player(player) {
-    layers.fg2.ctx.clearRect(0, 0, canvas_width, canvas_height);
+    layers.fg3.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
     if (player.hide_display) {
         return;
@@ -2059,18 +2546,51 @@ function render_player(player) {
     let outerpos = scaling.wtsp(bbox.tl);
     let innerpos = scaling.wtsp(bbox_inner.tl);
 
-    // layers.fg2.ctx.fillStyle = "white";
-    // layers.fg2.ctx.fillRect(outerpos.x, outerpos.y, bbox.width * zoom_level, bbox.height * zoom_level);
-    // layers.fg2.ctx.fillStyle = "lime";
-    // layers.fg2.ctx.fillRect(innerpos.x, innerpos.y, bbox_inner.width * zoom_level, bbox_inner.height * zoom_level);
+    // layers.fg3.ctx.fillStyle = "white";
+    // layers.fg3.ctx.fillRect(outerpos.x, outerpos.y, bbox.width * zoom_level, bbox.height * zoom_level);
+    // layers.fg3.ctx.fillStyle = "lime";
+    // layers.fg3.ctx.fillRect(innerpos.x, innerpos.y, bbox_inner.width * zoom_level, bbox_inner.height * zoom_level);
 
     let ppos = scaling.wtsp(player.position).round();
-    write_rotated_image(layers.fg2, layers.fg2.ctx, ppos.x, ppos.y, entity_sprites.get(player.custom_icon_b64 ? "orb_custom" : "orb")[0], bbox.width * zoom_level, bbox.height * zoom_level, 0)
+    write_rotated_image(layers.fg3, layers.fg3.ctx, ppos.x, ppos.y, entity_sprites.get(player.custom_icon_b64 ? "orb_custom" : "orb")[0], bbox.width * zoom_level, bbox.height * zoom_level, 0)
+}
+
+function render_objects(mine) {
+    layers.fg2.ctx.clearRect(0, 0, canvas_width, canvas_height);
+
+    mine.objects.forEach(obj => {
+        if (!obj.sprite)
+            return;
+
+        let obj_screen_pos = scaling.wtsp(obj.position);
+        let siz = obj.sprite_size * scaling.true_zoom_level;
+        
+        // obj_screen_pos = obj_screen_pos.add(new Vector2(-siz, -siz).mul(0.5));
+
+        let sprite = entity_sprites.get(obj.sprite)[obj.sprite_frame];
+
+        let old_filter = null;
+        if (obj.sprite_filter) {
+            old_filter = layers.fg2.ctx.filter;
+            layers.fg2.ctx.filter = obj.sprite_filter;
+        }
+
+        write_rotated_image(
+            layers.fg2.canvas, layers.fg2.ctx,
+            obj_screen_pos.x, obj_screen_pos.y,
+            sprite, siz, siz, obj.sprite_rotation
+        );
+
+        if (obj.sprite_filter) {
+            layers.fg2.ctx.filter = old_filter;
+        }
+    });
 }
 
 function render_particles(particles_board) {
     layers.fg1.ctx.clearRect(0, 0, canvas_width, canvas_height);
     layers.ui2.ctx.clearRect(0, 0, canvas_width, canvas_height);
+    layers.bg2.ctx.clearRect(0, 0, canvas_width, canvas_height);
     // layers.ui1.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
     particles_board.particles.forEach(particle => {
@@ -2415,7 +2935,7 @@ function render_ui_item_gain_displays() {
             text = display_data.override_text;
             textcol = display_data.override_col ?? Colour.white;
         } else {
-            text = `${k} ${("◕ " + format_number(Math.floor(item_data.gold_value))).padStart(8)} ${format_number(Math.floor(display_data.amount)).padStart(6)}x`;
+            text = `${k} ${("◕ " + format_number(Math.floor(item_data.gold_value))).padStart(8)} ${format_number(Math.floor(display_data.amount)).padStart(8)}x`;
         }
 
         layers.ui1.ctx.globalAlpha = opacity;
@@ -2527,7 +3047,7 @@ function render_ui_upgrades(player, upgrades, elem_classname, max_upgrade_cnt) {
 
     if (new_elems.length == 0) {
         let notif = document.createElement("span");
-        notif.textContent = "No upgrades!";
+        notif.textContent = "Nothing!";
         new_elems.push(notif);
     }
 
@@ -2685,7 +3205,7 @@ function render_ui_playerstats(player) {
 }
 
 function render_ui_equip_inventory(player) {
-    let elem = document.querySelector(".windows .equipment-inventory-view");
+    let elem = document.querySelector(".equipment-supercontainer .equipment-inventory-view");
 
     let template = elem.querySelector(".equipment-inventory-items .equipment-inventory-item.template");
 
@@ -2715,10 +3235,17 @@ function render_ui_equip_inventory(player) {
         if (player.equipment_selected_item_id == item.id) {
             clone.classList.add("selected");
             selected_item = item;
+            clone.addEventListener("click", e => {
+                e.stopPropagation();
+                return false;
+            });
         } else {
             clone.addEventListener("click", e => {
                 player.equipment_selected_item_id = item.id;
                 render_ui_equip_inventory(player);
+
+                e.stopPropagation();
+                return false;
             })
         }
 
@@ -2810,11 +3337,15 @@ function get_mine_player_modifications(mine) {
     // Worldgen always keeps all near tiles visible so it's OK to just save+load cleared tiles and nothing else.
     let modifications = [...default_mine.tiles.keys().filter(k => {
         let tile = default_mine.tiles.get(k);
-        return tile.cleared || ((Math.round(tile.hp) / tile.max_hp) <= 0.98) || Object.keys(tile.features).length !== 0  // todo think about a dedicated MODIFIED flag?
+        return tile.modified || tile.cleared || ((Math.round(tile.hp) / tile.max_hp) <= 0.98) || Object.keys(tile.features).length !== 0  // todo think about a dedicated MODIFIED flag?
     })].map(k => {
         let tile = default_mine.tiles.get(k);
         let obj = {
-            key: k
+            key: k,
+        }
+
+        if (tile.modified) {
+            obj.modified = true;
         }
 
         if (!tile.cleared) {
@@ -2845,6 +3376,9 @@ function save_game_to_string(player, mine) {
         "mine", "hide_display", "lock_input",
     ]; // plus any "_changed" variable
 
+    player.closed_helpmenu = help_window.window.classList.contains("minimised");
+    player.closed_statsmenu = playerstats_window.window.classList.contains("minimised");
+
     let player_vars = {};
     Object.keys(player).forEach(k => {
         if (ignored_player_vars.includes(k) || k.endsWith("_changed"))
@@ -2868,6 +3402,7 @@ function save_game_to_string(player, mine) {
 
     return "plorp2save" + JSON.stringify({
         version: "v1",
+        zoom_level: zoom_level,
         player: player_vars,
         mine: mine_info
     });
@@ -2881,7 +3416,7 @@ function save_game(msg_prefix="") {
         let end_time = Date.now();
         add_message(
             `${Date.now()}-savedisplay-success`,
-            `Game ${msg_prefix}saved. (took ${Math.max(1, (end_time - start_time)).toFixed(0)}ms)`,
+            `Game ${msg_prefix}saved. (took ${Math.max(1, (end_time - start_time)).toFixed(0)}ms, game size ${format_number(Math.round(new TextEncoder().encode(save_string).length / 1024))}kb)`,
             Colour.green
         );
 
@@ -2947,7 +3482,8 @@ function load_game_from_string(save_string) {
         let newtile = new Tile(new_richnesses, cleared, t.features ?? {});
         
         newtile.hp = Math.max(0, t.hp ?? 0);
-        
+        newtile.modified = t.modified ? true : false;
+
         newmine.set_tile(
             xy[0], xy[1], newtile
         )
@@ -2977,6 +3513,16 @@ function load_game_from_string(save_string) {
     // player.mine = newmine;
 
     player.recalculate_stats();
+
+    // finally zoom level
+    let new_zoom_level = savedata.zoom_level;
+    if (new_zoom_level) {
+        // render distance is 10 at zoom level 2,
+        // 5 at 4, 2.5 at 8, ...
+        // so it's 20 / zoom_level
+        render_distance = 20 / new_zoom_level;
+        zoom_level = new_zoom_level;
+    }
 
     return [player, newmine, particles_board];
 }
@@ -3052,6 +3598,17 @@ function clear_custom_icon() {
 
     last_autosave_time = Date.now();
     save_game("auto");
+}
+
+function play_directional_audio(audioname, position1, position2, gain=0.1) {
+    let dist = position1.distance(position2);
+    let dmax = 64 * BASE_TILE_SCALE;
+    let prop = 1 - Math.min(1, Math.max(dist - (BASE_TILE_SCALE * 1), 0) / dmax);
+
+    if (prop <= 0)
+        return;
+
+    play_audio(audioname, gain * prop);
 }
 
 let default_generation_settings = {
@@ -3179,17 +3736,6 @@ let generation_settings = {
 let normal_upgrades = [
     // SOMNIA
     new Upgrade(
-        "somnia2-torch", "☄ Torch", "lightpink", "Grants a torch. Torches do not reset on collapse.",
-        100, 1.1, Currency.GOLD, 0, 999,
-        (p, n) => null, false, (p) => {
-            return [
-                `Pick the Somnia facet.`,
-                p.has_upgrade_by_id("pcx2-darkness-darker")
-            ]
-        }, true
-    ),
-
-    new Upgrade(
         "somnia-lightlevelplus1", "Light+", "pink", "Increases light level by +0.2ti per level.",
         10, 1.35, Currency.GOLD, 0, 40,
         Upgrade.add_to_stats(["lightlevel", 0.2]), false, (p) => {
@@ -3292,7 +3838,7 @@ let normal_upgrades = [
     ),
 
     new Upgrade(
-        "somnia-miningspeed-from-depth", "Pressure", "pink", "Increases movement speed by 1px for every 3m current depth (max: +100px)",
+        "somnia-miningspeed-from-depth", "Pressure", "pink", "Increases movement speed by 1px/s for every 3m current depth (max: +100px/s)",
         55555, 1.5, Currency.GOLD, 1, 1,
         (p, n) => {
             p.add_incalc_stat("movespeed", Math.min(100, Math.floor(p.last_depth / 3) * 1))
@@ -3390,6 +3936,12 @@ let powercube_upgrades = [
 
     new Upgrade(
         "pc-choice2", "Facet Tempering", "red", "Unlocks the second Powercube facet choice.",
+        256, 2, Currency.POWERCUBES, 0, 1,
+        () => null
+    ),
+
+    new Upgrade(
+        "pc-basictools", "Ropes? Bombs?", "red", "Unlocks an assortment of basic mining tools. These items do not reset on collapse.",
         256, 2, Currency.POWERCUBES, 0, 1,
         () => null
     ),
@@ -3491,10 +4043,111 @@ let powercube_choices = [
     },
 ]
 
+function makepaintitem(tile_resource) {
+    let picked_info = TileResourceInfo[tile_resource];
+
+    let loot_table = picked_info.loot_table;
+    let rarity = ItemRarity.COMMON;
+    if (loot_table[0]) {
+        rarity = ItemData[loot_table[0][1]].rarity
+    }
+
+    return new EquipmentItem(
+        `paint-${tile_resource}`, `Paint "${tile_resource}"`,
+        `A highly pressurised canister of paint which is likely to explode the moment you open it. The paint looks a lot like ${tile_resource}.`,
+        "paintcanister", 1, true, rarity,
+        `PAINT`, "Blasts the paint in a random direction.", false
+    )
+}
+
+let equipmentshop_upgrades = [
+    // SOMNIA
+    new Upgrade(
+        "somnia2-torch", "Torch", "lightpink", "A torch to light your surroundings.",
+        100, 1.1, Currency.GOLD, 0, 999,
+        (p, n) => null, false, (p) => {
+            return [
+                `Pick the Somnia facet.`,
+                p.has_upgrade_by_id("pcx2-darkness-darker")
+            ]
+        }, true, false, (p, n) => {
+            p.add_equipment_item(new EquipmentItem(
+                "torch", "Torch", "Lights up the darkness.",
+                "torch", n, true, ItemRarity.COMMON,
+                "TORCH", "Places a torch on the current tile.", false
+            ))
+        }
+    ),
+
+    new Upgrade(
+        "equipment-bomb", "Bomb", "goldenrod", "A bomb with a sizeable blast radius.",
+        1000, 1.075, Currency.GOLD, 0, 999,
+        (p, n) => null, false, (p) => {
+            return [
+                `Unlock it in the Powercubes menu.`,
+                p.has_upgrade_by_id("pc-basictools")
+            ]
+        }, true, false, (p, n) => {
+            p.add_equipment_item(new EquipmentItem(
+                "bomb", "Bomb", "After a short delay, produces a sizeable blast.",
+                "smallbomb_item", n, true, ItemRarity.COMMON,
+                "BOMB", "Throws the bomb in the vicinity.", false
+            ))
+        }
+    ),
+
+    new Upgrade(
+        "equipment-paint", "\"Paint\"", "goldenrod", "A canister of paint that might trick prospectors. Provided in a random colour matching low-tier minerals.",
+        1500, 1.2, Currency.GOLD, 0, 999,
+        (p, n) => null, false, (p) => {
+            return [
+                `Unlock it in the Powercubes menu.`,
+                p.has_upgrade_by_id("pc-basictools")
+            ]
+        }, true, false, (p, n) => {
+            let original_upgrade_count = p.get_upgrade_count_by_id("equipment-paint") - n;
+
+            let candidates = balance_weighted_array([
+                [1, TileResource.CHALCOPYRITE],
+                [0.25, TileResource.CHALK],
+                [1, TileResource.SIDERITE],
+                [0.5, TileResource.MALACHITE],
+            ]);
+
+            for (let i=0; i<n; i++) {
+                let upgrade_count = original_upgrade_count + i;
+                let picked = weighted_seeded_random_from_arr(
+                    candidates, get_seeded_randomiser(`PAINT-${upgrade_count}`)
+                )[1];
+
+                p.add_equipment_item(makepaintitem(picked));
+            }
+        }
+    ),
+
+    new Upgrade(
+        "equipment-regenerator", "Regenerator", "goldenrod", "A curious device that can return local reality to a previous state.",
+        5000, 1.25, Currency.GOLD, 0, 999,
+        (p, n) => null, false, (p) => {
+            return [
+                `Unlock it in the Powercubes menu.`,
+                p.has_upgrade_by_id("pc-basictools")
+            ]
+        }, true, false, (p, n) => {
+            p.add_equipment_item(new EquipmentItem(
+                "regenerator", "Regenerator", "Returns some empty tiles in the vicinity to their natural state. Won't affect tiles with features (like torches) on them.",
+                "regenerator", n, true, ItemRarity.UNCOMMON,
+                "REGENERATOR", "Activates the regenerator around yourself.", false
+            ))
+        }
+    ),
+]
+
 let upgrades_lookup = new Map();
 normal_upgrades.forEach(u => upgrades_lookup.set(u.id, u));
 powercube_upgrades.forEach(u => upgrades_lookup.set(u.id, u));
 powercube_choice_upgrades.forEach(u => upgrades_lookup.set(u.id, u));
+equipmentshop_upgrades.forEach(u => upgrades_lookup.set(u.id, u));
 
 let default_mine = new Mine(`${Math.random()}-${Math.random()}`, null, default_generation_settings);
 let main_particles_board = new ParticleBoard();
@@ -3503,10 +4156,26 @@ let player = new Player(default_mine, main_particles_board, new Vector2(16, 16),
 // player.add_currency(Currency.GOLD, 1000);
 
 // default_mine.set_tile(0, 0, new Tile({}, true));
-let render_distance = 6;
+let render_distance = 10;
 
 let kp = null;
+function generate_around_player() {
+    let tpos = scaling.wttp(player.position);
+
+    generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
+}
+
 function input_handler(n) {
+    if (keys_pressed_this_frame["KeyM"]) {
+        add_message(null, "Makin test object");
+        default_mine.spawn_object(new ObjSmallBomb(player), player.position);
+    }
+
+    if (keys_pressed_this_frame["KeyN"]) {
+        add_message(null, "Makin splort object");
+        default_mine.spawn_object(new ObjPaintSplatter(player, TileResource.CHALCOPYRITE, 7, 4), player.position);
+    }
+
     if (keys_pressed_this_frame["KeyR"]) {
         save_game("manually ");
     }
@@ -3516,9 +4185,7 @@ function input_handler(n) {
         if (zoom_level > 0.5) {
             render_distance *= 2;
             zoom_level /= 2;
-            let tpos = scaling.wttp(player.position);
-
-            generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
+            generate_around_player();
         }
     }
 
@@ -3527,9 +4194,7 @@ function input_handler(n) {
         if (zoom_level < 8) {
             render_distance /= 2;
             zoom_level *= 2;
-            let tpos = scaling.wttp(player.position);
-
-            generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
+            generate_around_player();
         }
     }
 
@@ -3630,21 +4295,29 @@ function check_equipment_window() {
     if (showing_equip_inventory_window)
         return true;
 
-    if (Object.keys(player.equipment_inventory).length === 0)
+    if (Object.keys(player.equipment_inventory).length === 0 && !player.has_upgrade_by_id("pcx2-darkness-darker"))
         return false;
 
     showing_equip_inventory_window = true;
 
-    equipment_inventory_window = spawn_window("minimise-only", "Equipment");
-    equipment_inventory_window.content.append(
+    document.querySelector(".select-bar-button.equipment").classList.remove("nodisplay");
+    document.querySelector(".select-bar.main-select-bar").style.setProperty("--num-cols", 4);
+
+    // equipment_inventory_window = spawn_window("minimise-only", "Equipment");
+    document.querySelector(".equipment-menu-content .equipment-items").append(
         document.querySelector(".templates .equipment-inventory-view").cloneNode(true)
     )
 
-    document.querySelector(".windows .equipment-inventory-view .actionbuttons-subrow.use .use1button").addEventListener("click", e => {
+    document.querySelector(".equipment-menu-content .equipment-inventory-items").addEventListener("click", e => {
+        player.equipment_selected_item_id = -1;
+        player.equip_inventory_changed = true;
+    });
+
+    document.querySelector(".equipment-inventory-view .actionbuttons-subrow.use .use1button").addEventListener("click", e => {
         player.use_equipment_item_by_id(player.equipment_selected_item_id, 1);
     })
 
-    document.querySelector(".windows .equipment-inventory-view .actionbuttons-subrow.use .usemaxbutton").addEventListener("click", e => {
+    document.querySelector(".equipment-inventory-view .actionbuttons-subrow.use .usemaxbutton").addEventListener("click", e => {
         player.use_equipment_item_by_id(player.equipment_selected_item_id, Number.POSITIVE_INFINITY);
     })
 
@@ -3656,8 +4329,9 @@ function check_equipment_window() {
     return true;
 }
 
+let help_window = null;
 function setup_windows() {
-    let help_window = spawn_window("minimise-only", "Help");
+    help_window = spawn_window("minimise-only", "Help");
     help_window.content.innerHTML = help_html;
     help_window.content.querySelector(".closebutton").addEventListener("click", e => {
         toggle_minimise_window(help_window.window);
@@ -3686,6 +4360,10 @@ function setup_windows() {
     move_window(playerstats_window.window, psbbox.x - psb_wnd_bbox.width - 8, 8);
 
     toggle_minimise_window(playerstats_window.window, false);
+
+    if (player.closed_statsmenu) {
+        toggle_minimise_window(playerstats_window.window, true);
+    }
 
     tilestats_window = spawn_window("minimise-only", "Current tile target");
     tilestats_window.content.append(
@@ -3757,11 +4435,11 @@ handlers.game_postload_fn = () => {
     recenter_view(Vector2.zero);
     let tpos = scaling.wttp(player.position);
 
-    generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
+    generate_around_player();
 
     // Set up select-bar listeners
-    let main_selectbar = document.querySelector(".select-bar");
-    let main_contentarea = document.querySelector(".sidebar-menu-content");
+    let main_selectbar = document.querySelector(".select-bar.main-select-bar");
+    let main_contentarea = document.querySelector(".main-menu-content");
     main_selectbar.querySelectorAll(".select-bar-button").forEach(e => {
         e.addEventListener("mouseup", evt => {
             switch_display_menu(main_selectbar, main_contentarea, [...e.classList].filter(c => c != "select-bar-button")[0]);
@@ -3769,6 +4447,16 @@ handlers.game_postload_fn = () => {
     })
 
     switch_display_menu(main_selectbar, main_contentarea, "upgrades");
+
+    let equipment_selectbar = document.querySelector(".select-bar.equipment-select-bar");
+    let equipment_contentarea = document.querySelector(".equipment-menu-content");
+    equipment_selectbar.querySelectorAll(".select-bar-button").forEach(e => {
+        e.addEventListener("mouseup", evt => {
+            switch_display_menu(equipment_selectbar, equipment_contentarea, [...e.classList].filter(c => c != "select-bar-button")[0]);
+        })
+    })
+
+    switch_display_menu(equipment_selectbar, equipment_contentarea, "equipment-items");
 
     setup_windows();
 
@@ -3801,6 +4489,12 @@ handlers.game_postload_fn = () => {
     window.addEventListener("resize", resolve_qs);
     resolve_qs();
 
+    let e = document.querySelectorAll(".welcometext");
+
+    e.forEach(el => {
+        el.innerHTML = `<span>${[...el.textContent].join("</span><span>")}</span>`;
+    });
+
     // setTimeout(_ => item_gain_displays.set(Item.CHALCOPYRITE, {
     //     amount: 32,
     //     spawn_time: Date.now()
@@ -3815,8 +4509,8 @@ handlers.calc_fn = (dt) => {
 
     input_handler(n);
 
+    default_mine.step_objects(time_delta);
     main_particles_board.particles_step(time_delta);
-
     player.mining_target_step(time_delta);
 
     shake_elems.forEach(el => {
@@ -3832,22 +4526,26 @@ handlers.calc_fn = (dt) => {
         }
     })
 
+    if (player.consume_change("position")) {
+        let tpos = scaling.wttp(player.position);
+        generate_around_player();
+    }
+
+    break_sound_cooldown -= time_delta;
+
     if (Date.now() >= last_autosave_time + AUTOSAVE_DELAY) {
         last_autosave_time = Date.now();
         save_game("auto");
-    }
-
-    if (player.consume_change("position")) {
-        let tpos = scaling.wttp(player.position);
-        generate_chunk(tpos.x, tpos.y, render_distance, default_mine);
     }
 }
 
 handlers.render_fn = () => {
     recenter_view(player.position);
+
     render_tiles(player, default_mine);
     render_player(player);
     render_particles(main_particles_board);
+    render_objects(default_mine);
     render_ui_item_gain_displays();
 
     if (player.consume_change("inventory")) {
@@ -3868,6 +4566,8 @@ handlers.render_fn = () => {
     if (player.consume_change("upgrades")) {
         render_ui_upgrades(player, normal_upgrades, "upgrades-container", MAX_VISIBLE_UPGRADES);
         render_ui_upgrades(player, powercube_upgrades, "powercubes-upgrades-container", MAX_POWERCUBE_VISIBLE_UPGRADES);
+        render_ui_upgrades(player, equipmentshop_upgrades, "equipmentshop-upgrades-container", MAX_VISIBLE_UPGRADES);
+
         render_ui_powercube_buttons(player, powercube_choices);
         render_ui_powercube_choices(player, powercube_choices);
     }

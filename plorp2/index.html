@@ -65,13 +65,14 @@
                 <span class="powercubes-container nodisplay">❒&nbsp;<span class="powercubes-value"></span></span>
             </div>
 
-            <div class="select-bar">
+            <div class="select-bar main-select-bar">
                 <span class="select-bar-button upgrades">◕ Upgrades</span>
                 <span class="select-bar-button inventory">☁ Inventory</span>
                 <span class="select-bar-button powercubes">❒ Powercubes<span class="powercubes-projected-gain-mini">+12</span></span>
+                <span class="select-bar-button equipment nodisplay">♐ Equipment</span>
             </div>
 
-            <div class="sidebar-menu-content">
+            <div class="sidebar-menu-content main-menu-content">
                 <div class="upgrades upgrades-supercontainer flex-rows">
                     <div class="upgrades-container normal-upgrades-container">
                         <div class="upgrade-item flex-cols template">
@@ -153,6 +154,43 @@
                                 <div class="flex-cols upgrade-buttons">
                                     <span class="inline-button upgrade-button upgrade1">Buy 1</span>
                                     <span class="inline-button upgrade-button upgrademax">Max (<span class="upgrade-max-amt"></span>x, <span class="upgrade-max-cost"></span>)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="equipment equipment-supercontainer flex-rows">
+                    <span>All equipment items (including shop items and buy counts) do not reset on collapse.</span><br>
+
+                    <div class="select-bar equipment-select-bar">
+                        <span class="select-bar-button equipment-items selected">♐ Items</span>
+                        <span class="select-bar-button equipment-shop">✻ Shop</span>
+                    </div>
+
+                    <div class="equipment-menu-content sidebar-menu-content">
+                        <div class="equipment-items">
+                            
+                        </div>
+
+                        <div class="equipment-shop">
+                            <div class="equipmentshop-upgrades-container">
+                                <div class="upgrade-item flex-cols template">
+                                    <div class="flex-rows upgrade-infobox">
+                                        <div class="flex-cols upgrade-basic-info">
+                                            <span class="upgrade-name"></span>
+                                            <span class="upgrade-cost"></span>
+                                            <span class="upgrade-cost-max nodisplay"></span>
+                                        </div>
+                                        <div class="flex-rows">
+                                            <span class="upgrade-description"></span>
+                                        </div>
+                                    </div>
+                                    <span class="upgrade-num-owned"></span>
+                                    <div class="flex-cols upgrade-buttons">
+                                        <span class="inline-button upgrade-button upgrade1">Buy 1</span>
+                                        <span class="inline-button upgrade-button upgrademax">Max (<span class="upgrade-max-amt"></span>x, <span class="upgrade-max-cost"></span>)</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

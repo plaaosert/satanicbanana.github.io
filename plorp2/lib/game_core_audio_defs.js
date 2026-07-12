@@ -17,6 +17,15 @@ let audios_list = [
     ["block_destroy3", "block_destroy3.wav"],
     ["block_destroy4", "block_destroy4.wav"],
 
+    ["block_destroy_reverse", "block_destroy_reverse.mp3?v=01"],
+
+    ["bomb_beep", "bomb_beep.wav"],
+
+    ["ascension", "ascension.mp3"],
+
+    // https://soundeffects.fandom.com/wiki/Sound_Ideas,_SPLAT,_CARTOON_-_PIE_IN_FACE_SPLAT
+    ["splort", "splort.mp3"],
+
     // i wish i knew
     ["generic_kaching", "generic-ka-ching.mp3"],
 
@@ -25,8 +34,6 @@ let audios_list = [
 
     // https://pixabay.com/sound-effects/film-special-effects-metallic-cling1-105303/
     ["clink", "clink.mp3"],
-
-    ["ascension", "ascension.mp3"],
 
     // https://dova-s.jp/se/detail/1486/track/2 (edited)
     ["automove_confirm", "automove_confirm.mp3"],
