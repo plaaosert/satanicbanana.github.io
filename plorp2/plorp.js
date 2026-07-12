@@ -3881,14 +3881,14 @@ let normal_upgrades = [
     ),
 
     new Upgrade(
-        "damageplus3", "Damage++", "cyan", "Increases damage by +15 per level.",
+        "damageplus3", "Damage+++", "cyan", "Increases damage by +15 per level.",
         1e6, 1.15, Currency.GOLD, 0, 50,
         Upgrade.add_to_stats(["damage", 15]),
         true,
     ),
 
     new Upgrade(
-        "luckplus3", "Luck++", "cyan", "Increases luck by +0.3 per level.",
+        "luckplus3", "Luck+++", "cyan", "Increases luck by +0.3 per level.",
         2e6, 1.5, Currency.GOLD, 0, 20,
         Upgrade.add_to_stats(["luck", 0.3]),
         true,
