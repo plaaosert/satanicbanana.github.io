@@ -3172,7 +3172,7 @@ function render_ui_playerstats(player) {
         e.querySelector(".player-torchlightlevel").parentElement.classList.add("nodisplay");
     } else {
         e.querySelector(".player-torchlightlevel").parentElement.classList.remove("nodisplay");
-        e.querySelector(".player-torchlightlevel").textContent = `${player.stats.torch_lightlevel.toFixed(0)}ti`;
+        e.querySelector(".player-torchlightlevel").textContent = `${player.stats.torch_lightlevel.toFixed(1)}ti`;
     }
 
     if (player.stats.crit_chance == 0) {
