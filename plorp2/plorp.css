@@ -26,6 +26,15 @@ p {
   }
 }
 
+.popups-container .popup {
+    position: absolute;
+
+    z-index: 10;
+
+    top: 8px;
+    left: 8px;
+}
+
 .helpheader .welcometext {
     opacity: 1;
     transition: opacity 0.5s linear;
@@ -798,23 +807,34 @@ p {
     color: #bbb;
 }
 
+.equipment-inventory-gridcontainer {
+    display: grid;
+}
+
 .equipment-inventory-view {
     display: flex;
     flex-direction: column;
 
+    align-items: center;
+
     height: 100%;
+    min-height: 0;
 }
 
 .equipment-inventory-items::-webkit-scrollbar {
-    display: none;
+    /* display: none; */
 }
 
 .equipment-inventory-selected-item {
     margin-bottom: 16px;
 
+    color: white;
+
     padding: 8px;
     border: 1px solid white;
     background-color: #181818;
+
+    max-width: 500px;
 }
 
 .equipment-inventory-item {
@@ -838,14 +858,128 @@ p {
     align-items: center;
 }
 
-.equipment-inventory-items {
+.equipment-inventory-griditem, .popup.dnd-item {
+    background-color: var(--bgcol);
+    border: 1px solid var(--maincol);
+
+    display: grid;
+
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+}
+
+.equipment-inventory-griditem.use-selected {
+    background-color: #870;
+}
+
+.equipment-inventory-griditem.qs-selected::before {
+    content: "";
+
+    position: absolute;
+    z-index: 1;
+
+    margin-left: -1px;
+    margin-top: -1px;
+
+    /* this breaks on non-1x1 items... todo... fix... */
+    height: calc(var(--itemsize) - 2px);
+    width: calc(var(--itemsize) - 2px);
+
+    border: 1px dashed cyan;
+}
+
+.equipment-inventory-griditem * {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.equipment-inventory-griditem .item-quant {
+    text-align: end;
+    align-self: end;
+
+    text-shadow: 1px 0px 0px black, 
+                 0px 1px 0px black, 
+                 -1px 0px 0px black, 
+                 0px -1px 0px black, 
+                 1px 1px 0px black, 
+                -1px 1px 0px black, 
+                -1px -1px 0px black, 
+                 1px -1px 0px black;
+}
+
+.popup.dnd-item img {
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+}
+
+.equipment-inventory-griditem img {
+    width: 100%;
+    height: 100%;
+}
+
+.equipment-inventory-griditem.dragged {
+    opacity: 0;
+}
+
+/* .equipment-inventory-items {
     margin-bottom: auto;
-    overflow-y: auto;
+    overflow-y: scroll;
 
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
-    gap: 5.4px;
+    gap: 2px;
+
+    min-height: 0;
+    padding-bottom: 16px;
+} */
+
+.equipment-inventory-gridback {
+    display: inline;
+
+    /* width: 48px;
+    height: 48px; */
+
+    background-color: #111;
+    border: 1px solid #333;
+}
+
+.equipment-inventory-gridback.bad {
+    background-color: #422;
+}
+
+.equipment-inventory-gridback.good {
+    background-color: #242;
+}
+
+.equipment-inventory-grid, .equipment-inventory-items-grid {
+    display: grid;
+
+    grid-column: 1;
+    grid-row: 1;
+
+    /* column-gap: 8px; */
+
+    width: min-content;
+    height: min-content;
 }
 
 .equipment-inventory-item {
@@ -923,6 +1057,10 @@ p {
     margin-bottom: 8px;
 }
 
+.equipment-inventory-selected-item-info .itemdesc {
+    white-space: pre-wrap;
+}
+
 .actionbuttons-subrow {
     width: 100%;
     gap: 16px;
@@ -959,6 +1097,10 @@ p {
     color: white;
 }
 
+.equip-item-quickslot1.use-selected {
+    border: 1px solid red;
+}
+
 .savebuttons {
     margin-top: 16px;
 
@@ -988,4 +1130,63 @@ p {
 .reset-game:active {
     background-color: #300;
     color: #d66;
+}
+
+.equipped-view {
+    display: flex;
+    flex-direction: column;
+
+    justify-content: center;
+    align-items: center;
+
+    gap: 8px;
+
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid white;
+}
+
+.equipped-view .equipment-row {
+    display: flex;
+    flex-direction: row;
+
+    gap: 8px;
+}
+
+.equipped-view .equipment-item.blank {
+    visibility: hidden;
+}
+
+.equipped-view .equipment-item {
+    --bgcol: #000;
+
+    border: 1px solid white;
+    background-color: var(--bgcol);
+
+    width: var(--itemsize);
+    height: var(--itemsize);
+
+    padding: 4px;
+}
+
+.equipped-view .equipment-item img, .popup.dnd-item img {
+    width: 100%;
+    height: 100%;
+}
+
+.equipment-menu-content {
+    overflow-y: hidden;
+}
+
+.popup.dnd-item {
+    position: absolute;
+}
+
+.crosshair {
+    position: absolute;
+
+    cursor: none;
+
+    left: 0;
+    top: 0;
 }

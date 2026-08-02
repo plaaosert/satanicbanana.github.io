@@ -16,4 +16,6 @@ const entity_sprite_defs = [
 
     // https://opengameart.org/content/explosion-animations
     ["explosion", 10, "sprites/fx/explosion/"],
+
+    ["ground_item", 35, "sprites/entities/ground_item/"],
 ];

@@ -12,3 +12,7 @@ let help_html = `<div class="helptext"><span class="helpheader"><span class="wel
         <span>To hide this message, either click the "-" button in the top right of this window, or click the button below:</span>
 
         <span class="inline-button closebutton">Hide help</span></div>`
+
+let changelog = [
+    
+]

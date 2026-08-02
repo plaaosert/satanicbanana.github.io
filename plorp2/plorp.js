@@ -20,6 +20,9 @@ let scaling = {};
 let zoom_level = 2;
 let view_offset = Vector2.zero;
 
+let mouse_x = 0;
+let mouse_y = 0;
+
 scaling.screen_scaling_factor = 1;
 scaling.true_zoom_level = 1;
 scaling.stwp = v => Vector2.zero;
@@ -36,10 +39,34 @@ const PARTICLE_TYPE = {
     NORMAL: 0,
     TEXT: 1,
     LINE: 2,
+    CIRCLE: 3,
 }
 
 const MAX_VISIBLE_UPGRADES = 10;
-const MAX_POWERCUBE_VISIBLE_UPGRADES = 6;
+const MAX_POWERCUBE_VISIBLE_UPGRADES = 5;
+
+const PLAYER_MAX_INVENTORY_SIZE_X = 12;
+const PLAYER_MAX_INVENTORY_SIZE_Y = 8;
+
+let selected_equipment_item_info = {
+    inventory_elem: null,
+    elem: null,
+    item: null,
+    offset: null,
+    original_pos: null,
+    offset: null,
+}
+
+let selected_use_equip_item = null;
+let selected_use_equip_item_particles = [];
+
+let showing_equipitem_popup = false;
+
+let equip_inventory_itemelements = new Map();
+
+let equipment_griditems = [];
+
+let equipment_inventory_bbox = null;
 
 let ITEM_GAIN_DISPLAY_MAX_TIME = 8000;
 let ITEM_GAIN_DISPLAY_MOVE_TIME = 750;
@@ -568,7 +595,12 @@ class Tile {
 }
 
 class GameObject {
+    static id_inc = 0;
+
     constructor() {
+        this.id = GameObject.id_inc;
+        GameObject.id_inc++;
+
         this.position = Vector2.zero;
         this.mine = null;
 
@@ -584,6 +616,126 @@ class GameObject {
 
     pass_time(time_delta) {
         // nothing
+        return true;
+    }
+}
+
+class GroundItem extends GameObject {
+    constructor(player, item, quantity, start_magnetised=false) {
+        super();
+        
+        this.player = player;
+        this.item = item;
+        this.quantity = quantity;
+        
+        this.determine_sprite();
+
+        this.magnetised = start_magnetised ? true : false;
+
+        this.velocity = null;
+        this.friction = 0.01;
+        this.mag_sqr_range = 128 * 128;
+
+        this.linger_time_max = 0.5;
+        this.linger_time = this.linger_time_max;
+
+        this.last_pos = null;
+        this.last_last_pos = null;
+
+        this.trail_delay_max = 0.01;
+        this.trail_delay = this.trail_delay_max;
+
+        this.mag_speed = 0;
+        this.mag_speed_inc = 200000;
+
+        this.disabling = false;
+        this.check_period_max = 0.2;
+        this.check_period = this.check_period_max;
+    }
+
+    determine_sprite() {
+        this.quant_tier = Math.floor(Math.min(Math.log10(this.quantity), 4));
+        this.sprite = "ground_item";
+        this.sprite_size *= 10;
+        this.sprite_frame = ((ItemData[this.item].rarity + 1) * 5) + this.quant_tier;
+    }
+
+    spawn(mine) {
+        this.linger_time *= random_float(0.5, 1, mine.random);
+        this.velocity = random_on_circle(random_float(80, 240, mine.random), mine.random);
+    }
+
+    pass_time(time_delta) {
+        if (this.disabling)
+            return false;
+
+        if (!this.last_pos) {
+            this.last_pos = this.position;
+            this.last_last_pos = this.position;
+        }
+
+        this.position = this.position.add(this.velocity.mul(time_delta));
+    
+        this.trail_delay -= time_delta;
+        while (this.trail_delay <= 0) {
+            this.trail_delay += this.trail_delay_max;
+
+            main_particles_board.spawn_particle(new FadingLineParticle(
+                this.last_last_pos, this.position,
+                4, ItemRarityData[ItemData[this.item].rarity].col,
+                0.05, 0, true
+            ), this.last_last_pos);
+
+            this.last_last_pos = this.last_pos;
+            this.last_pos = this.position;
+        }
+
+        this.linger_time -= time_delta;
+        if (this.linger_time <= 0) {
+            if (this.magnetised) {
+                if (this.position.sqr_distance(this.player.position) <= 48) {
+                    this.player.add_item(this.item, this.quantity);
+                    play_audio(`pickup${Math.max(1, Math.min(5, ItemData[this.item].rarity+2))}`, 0.05);
+                    return false;
+                }
+
+                this.mag_speed += this.mag_speed_inc * time_delta;
+                this.velocity = this.player.position.sub(this.position).normalize().mul(time_delta * this.mag_speed);
+            } else {
+                let sqdist = this.player.position.sqr_distance(this.position);
+                if (sqdist <= this.mag_sqr_range) {
+                    this.magnetised = true;
+                }
+            }
+        }
+
+        this.check_period -= time_delta;
+        if (this.check_period <= 0) {
+            this.check_period += this.check_period_max;
+
+            let surrounding_objects = this.mine.objects.filter(obj => {
+                return (obj instanceof GroundItem) && (obj.quant_tier == this.quant_tier) && (obj.id != this.id) && (
+                    this.position.sqr_distance(obj.position) < 125
+                )
+            });
+
+            // if 4+ surrounding objects, merge
+            if (surrounding_objects.length >= 4) {
+                let qtot = 0;
+                surrounding_objects.forEach(obj => {
+                    obj.disabling = true;
+                    qtot += obj.quantity;
+                });
+
+                this.quantity += qtot;
+                this.check_period += this.check_period_max * 2;
+            }
+        }
+
+        if (!this.magnetised) {
+            this.velocity = this.velocity.lerp(Vector2.zero, 1 - Math.pow(this.friction, time_delta));
+        }
+
         return true;
     }
 }
@@ -675,10 +827,11 @@ class ObjRegenerator extends GameObject {
 }
 
 class ObjPaintSplatter extends GameObject {
-    constructor(player, resource, amount, splat_radius, level=0) {
+    constructor(player, target_dir, resource, amount, splat_radius, level=0) {
         super();
         
         this.player = player;
+        this.target_dir = target_dir;
 
         this.level = level;
 
@@ -692,7 +845,9 @@ class ObjPaintSplatter extends GameObject {
         this.sprite_size = this.sprite_size_base;
         this.sprite_filter = "";
 
-        this.velocity = random_on_circle(random_float(256, 512) * 2 * (this.level == 0 ? 1 : 0.5));
+        this.velocity = (target_dir ?? random_on_circle(1)).mul(random_float(256, 512) * 2 * (this.level == 0 ? 1 : 0.5));
+        // this.velocity = random_on_circle(random_float(256, 512) * 2 * (this.level == 0 ? 1 : 0.5));
+        
         this.traveltime_max = random_float(0.4, 0.6) * (this.level == 0 ? 1 : 0.75);
         this.traveltime = this.traveltime_max;
     }
@@ -745,7 +900,7 @@ class ObjPaintSplatter extends GameObject {
                 let n = 8;
                 for (let i=0; i<n; i++) {
                     this.mine.spawn_object(new ObjPaintSplatter(
-                        this.player, this.resource, this.amount, this.splat_radius, 1
+                        this.player, null, this.resource, this.amount, this.splat_radius, 1
                     ), this.position);
                 }
             }
@@ -760,10 +915,11 @@ class ObjPaintSplatter extends GameObject {
 }
 
 class ObjSmallBomb extends GameObject {
-    constructor(player) {
+    constructor(player, target_dir=null) {
         super();
 
         this.player = player;
+        this.target_dir = target_dir;
 
         this.fuse_time_max = 4;
         this.fuse_time = this.fuse_time_max;
@@ -783,7 +939,7 @@ class ObjSmallBomb extends GameObject {
         this.sprite_size_base = 16;
         this.sprite_size = this.sprite_size_base;
 
-        this.velocity = random_on_circle(random_float(128, 256));
+        this.velocity = (target_dir ?? random_on_circle(1)).mul(random_float(128, 256));
     }
 
     pass_time(time_delta) {
@@ -880,7 +1036,7 @@ class ObjBombRay extends GameObject {
                 if (tile && !tile.cleared) {
                     // deal damage to tile, lose velocity and power
                     // stop if power <= 0.01
-                    let res = player.damage_and_loot(tile, this.power, true, false, false, this.luck_mul);
+                    let res = player.damage_and_loot(tile, this.power, false, true, false, false, this.luck_mul);
                 
                     if (res[0] > 0) {
                         this.velocity = this.velocity.mul(this.proration_velocity);
@@ -1024,16 +1180,22 @@ const EquipSlot = {
 class EquipmentAffix {
     /**
      * Create an affix to put on an EquipmentItem.
-     * @param {*} name The name of the affix (when not on an item)
-     * @param {*} visible_affix_text The text to put on the item's name.
-     * @param {Upgrade} effect An Upgrade object defining the effect of the affix. Applied after the base effect and after normal upgrades.
+     * @param {string} name The name of the affix (when not on an item)
+     * @param {string} desc The description to show on an item. Use !v! to replace with the affix's magnitude and !p! to replace with the affix's magnitude as a percentage (including the % symbol).
+     * @param {string} visible_affix_text The text to put on the item's name.
+     * @param {Upgrade} effect An Upgrade object defining the effect of the affix. Applied as upgrades, so priority depends on upgrade.
      * @param {boolean} in_front If true, visible_affix_text will be placed at the front of the item name. Otherwise, it will be placed at the end.
      */
-    constructor(name, visible_affix_text, effect, in_front) {
+    constructor(name, desc, visible_affix_text, effect, in_front=false) {
         this.name = name;
+        this.desc = desc;
         this.visible_affix_text = visible_affix_text;
         this.effect = effect;
         this.in_front = in_front;
+    }
+
+    get_description(magnitude) {
+        return this.desc.replaceAll("!v!", format_number(magnitude)).replaceAll("!p!", `${(Math.round(magnitude * 10000) / 100).toFixed(2)}%`);
     }
 }
 
@@ -1047,15 +1209,16 @@ class EquipmentItem {
      * @param {*} quantity Quantity. Sell will sell 1 at a time, use will consume an amount based on function behaviour (usually 1) and equip will equip all at once (reversible)
      * @param {*} stackable If true, item will stack in the inventory with other items that share its ID. It won't automatically stack into an equip slot.
      * @param {*} rarity Rarity of the item. Purely cosmetic.
+     * @param {[number, number]} size Size of the item in the inventory in X, Y.
      * @param {*} sell_value Sell value. If 0, the item cannot be sold.
-     * @param {*} on_use Function (player, item_obj, amount_used) => {amount_to_consume} - if null, the item is not usable.
+     * @param {*} on_use String key to EquipmentItemFunctions; (player, item_obj, amount_used) => {amount_to_consume} - if null, the item is not usable.
      * @param {*} on_use_desc Description of what happens when used.
      * @param {*} can_use_max If true, the item can be bulk used.
      * @param {*} equip_slot Slot the item is equippable to. If NONE, cannot be equipped.
-     * @param {Upgrade} equipped_effect An Upgrade object defining the base effect of the item. Applied before affixes and after normal upgrades.
-     * @param {EquipmentAffix} affixes Affixes on the object. Affix effects are applied directly after the base effect.
+     * @param {[string, number]} equipped_effect [key, magnitude] defining the base effect of the item. Applied as upgrades, so priority depends on upgrade.
+     * @param {[[string, number]]} affixes [key, magnitude] that refers to affixes on the object.
      */
-    constructor(id, name, desc, sprite, quantity, stackable, rarity, on_use=null, on_use_desc="", can_use_max=true, equip_slot=EquipSlot.NONE, equipped_effect=null, affixes=null, sell_value=0) {
+    constructor(id, name, desc, sprite, quantity, stackable, rarity, size, on_use=null, on_use_desc="", can_use_max=true, equip_slot=EquipSlot.NONE, equipped_effect=null, affixes=null, sell_value=0) {
         this.id = id;
         this.quantity = quantity;
         this.stackable = stackable;
@@ -1063,6 +1226,7 @@ class EquipmentItem {
         this.desc = desc;
         this.sprite = sprite;
         this.rarity = rarity;
+        this.size = size;
         this.sell_value = sell_value;
         this.on_use = on_use;
         this.on_use_desc = on_use_desc;
@@ -1071,12 +1235,14 @@ class EquipmentItem {
         this.equipped_effect = equipped_effect;
         this.affixes = affixes ?? [];
 
-        this.full_name = this.get_full_name();
+        this.xpos = 0;
+        this.ypos = 0;
     }
 
-    get_full_name() {
-        let name_base = this.name;
-        this.affixes.forEach(affix => {
+    static get_full_name(eqp) {
+        let name_base = eqp.name;
+        eqp.affixes.forEach(affix_data => {
+            let affix = EquipEffects[affix_data[0]];
             if (affix.in_front) {
                 name_base = `${affix.visible_affix_text}${name_base}`;
             } else {
@@ -1086,52 +1252,98 @@ class EquipmentItem {
 
         return name_base;
     }
+
+    static get_description(eqp) {
+        let txt = `${eqp.desc}`;
+
+        if (eqp.equipped_effect) {
+            txt += `\n\n${EquipEffects[eqp.equipped_effect[0]].get_description(eqp.equipped_effect[1])}`;
+
+            if (eqp.affixes.length > 0) {
+                txt += "\n\n";
+
+                txt += eqp.affixes.map(afx => {
+                    return `${EquipEffects[afx[0]].get_description(afx[1])}`
+                }).join("\n");
+            }
+        }
+
+        return txt;
+    }
+}
+
+const EquipmentItemFunctionType = {
+    NOTARGET: 0,
+    POSTARGET: 1,
+    TILETARGET: 2, // TODO
+}
+
+class EquipmentItemFunction {
+    constructor(type, fn, params) {
+        this.type = type;
+        this.fn = fn;
+        this.params = params;
+    }
 }
 
 const EquipmentItemFunctions = {
-    TORCH: (p, item, n) => {
-        let pos = scaling.wttp(p.position).floor();
-        let tile = p.mine.get_tile(pos.x, pos.y);
-        if (!tile)
-            return 0;
+    TORCH: new EquipmentItemFunction(
+        EquipmentItemFunctionType.NOTARGET,
+        (p, item, n) => {
+            let pos = scaling.wttp(p.position).floor();
+            let tile = p.mine.get_tile(pos.x, pos.y);
+            if (!tile)
+                return 0;
 
-        if (tile.features?.torch)
-            return 0;
+            if (tile.features?.torch)
+                return 0;
 
-        tile.features.torch = true;
-        p.mine.register_torch_gain(pos.x, pos.y);
-        p.recalculate_stats();
-        return n;
-    },
+            tile.features.torch = true;
+            p.mine.register_torch_gain(pos.x, pos.y);
+            p.recalculate_stats();
+            return n;
+        }, {}
+    ),
 
-    BOMB: (p, item, n) => {
-        for (let i=0; i<n; i++) {
-            p.mine.spawn_object(new ObjSmallBomb(p), p.position);
-        }
+    BOMB: new EquipmentItemFunction(
+        EquipmentItemFunctionType.POSTARGET,
+        (p, item, n, targetpos) => {
+            let dir = targetpos.sub(p.position).normalize();
+            for (let i=0; i<n; i++) {
+                p.mine.spawn_object(new ObjSmallBomb(p, dir), p.position);
+            }
 
-        return n;
-    },
+            return n;
+        }, {minrange: 0.5, maxrange: 1.25}
+    ),
 
-    PAINT: (p, item, n) => {
-        let tile_resource_key = item.id.replace("paint-", "");
+    PAINT: new EquipmentItemFunction(
+        EquipmentItemFunctionType.POSTARGET,
+            (p, item, n, targetpos) => {
+            let tile_resource_key = item.id.replace("paint-", "");
 
-        for (let i=0; i<n; i++) {
-            p.mine.spawn_object(
-                new ObjPaintSplatter(p, tile_resource_key, 8, 4),
-                p.position
-            );
-        }
+            let dir = targetpos.sub(p.position).normalize();
+            for (let i=0; i<n; i++) {
+                p.mine.spawn_object(
+                    new ObjPaintSplatter(p, dir, tile_resource_key, 8, 4),
+                    p.position
+                );
+            }
 
-        return n;
-    },
+            return n;
+        }, {minrange: 3.25, maxrange: 7.5}
+    ),
 
-    REGENERATOR: (p, item, n) => {
-        for (let i=0; i<n; i++) {
-            p.mine.spawn_object(new ObjRegenerator(p, 64, 0.3, 0.95, 8), p.position);
-        }
+    REGENERATOR: new EquipmentItemFunction(
+        EquipmentItemFunctionType.NOTARGET,
+            (p, item, n) => {
+            for (let i=0; i<n; i++) {
+                p.mine.spawn_object(new ObjRegenerator(p, 64, 0.3, 0.95, 8), p.position);
+            }
 
-        return n;
-    },
+            return n;
+        }, {}
+    ),
 }
 
 class Player {
@@ -1146,6 +1358,8 @@ class Player {
         this.equipment_inventory = equipment_inventory;
         this.equipment_selected_item_id = -1;
         
+        this.equipped_items = {};
+
         this.currencies = currencies;
 
         this.currency_records = {};
@@ -1295,6 +1509,13 @@ class Player {
     recalculate_stats() {
         this.stats_changed = true;
 
+        // Fix up possible save issues
+        Object.keys(this.equipment_inventory).forEach(k => {
+            this.equipment_inventory[k].xpos = this.equipment_inventory[k].xpos ?? 0;
+            this.equipment_inventory[k].ypos = this.equipment_inventory[k].ypos ?? 0;
+            this.equipment_inventory[k].size = this.equipment_inventory[k].size ?? [1, 1];
+        })
+
         let base_stats = {
             damage: 5,
             atk_speed: 1,
@@ -1333,8 +1554,13 @@ class Player {
             }
         })
 
-        this.get_all_upgrades().sort((a, b) => upgrades_lookup.get(a[0]).priority - upgrades_lookup.get(b[0]).priority).forEach(upgrade => {
-            upgrades_lookup.get(upgrade[0]).on_stats(this, upgrade[1]);
+        let all_upgrades = [
+            ...this.get_all_upgrades().map(u => [upgrades_lookup.get(u[0]), u[1]]),
+            ...this.get_equipment_upgrades()
+        ]
+
+        all_upgrades.sort((a, b) => a[0].priority - b[0].priority).forEach(upgrade => {
+            upgrade[0].on_stats(this, upgrade[1]);
         });
 
         // Resolve modifiers
@@ -1348,16 +1574,134 @@ class Player {
     }
 
     // Equipment
+    get_equipment_upgrades() {
+        let upgrades = [];
+        Object.keys(this.equipped_items).forEach(slot => {
+            let equip_item = this.equipped_items[slot];
+            if (equip_item) {
+                // base equipped_effect
+                // plus affixes
+                // both are same format [key, magnitude]
+                let affixes = [];
+                if (equip_item.equipped_effect) {
+                    affixes.push(equip_item.equipped_effect);
+                }
+
+                affixes.push(...equip_item.affixes);
+
+                affixes.forEach(afx => {
+                    upgrades.push([EquipEffects[afx[0]].effect, afx[1]])
+                })
+            }
+        })
+
+        return upgrades;
+    }
+
+    get_equipped_item_in_slot(slot) {
+        return this.equipped_items[slot] ?? null;
+    }
+
+    equip_item_by_id(equipment_item_id) {
+        let eqp = this.get_equipment_item_by_id(equipment_item_id);
+        this.equip_item_in_slot(eqp, eqp.equip_slot);
+    }
+
+    equip_item_in_slot(equipment_item, slot, remove_from_inventory=true) {
+        if (remove_from_inventory)
+            delete this.equipment_inventory[equipment_item.id];
+
+        this.unequip_item_from_slot(slot);
+
+        this.equipped_items[slot] = equipment_item;
+
+        this.equip_inventory_changed = true;
+        this.recalculate_stats();
+    }
+
+    unequip_item_from_slot(slot) {
+        let prev_equipped = this.get_equipped_item_in_slot(slot);
+        if (prev_equipped) {
+            let result = this.add_equipment_item(prev_equipped);
+            if (!result) {
+                return false;
+            }
+        }
+
+        this.equipped_items[slot] = null;
+    }
+
+    get_equipment_item_in_position(xpos, ypos) {
+        // Only one item can (should...) be on a specific position,
+        // so go through each item until we find an item colliding with that position
+        let item_found = null;
+        Object.keys(this.equipment_inventory).forEach(k => {
+            if (item_found)
+                return;
+
+            let item = this.equipment_inventory[k];
+
+            // Max pos is ()pos + size[n] - 1
+            // e.g. (0, 1) with size [2, 2],
+            // occupied positions are:
+            // (0, 1), (1, 1), (0, 2), (1, 2)
+            let max_x = item.xpos + item.size[0];
+            let max_y = item.ypos + item.size[1];
+
+            if (
+                xpos >= item.xpos &&
+                ypos >= item.ypos &&
+                xpos < max_x &&
+                ypos < max_y
+            ) {
+                item_found = item;
+            }
+        });
+
+        return item_found;
+    }
+
+    find_position_for_equipment_item(equipment_item) {
+        for (let y=0; y<PLAYER_MAX_INVENTORY_SIZE_Y; y++) {
+            // if max size is 8 and size is 2, max y is 8 - 2 + 1 = 7
+            if (y > PLAYER_MAX_INVENTORY_SIZE_Y - equipment_item.size[1])
+                continue;
+
+            for (let x=0; x<PLAYER_MAX_INVENTORY_SIZE_X; x++) {
+                if (x > PLAYER_MAX_INVENTORY_SIZE_X - equipment_item.size[0])
+                    continue;
+
+                if (!this.get_equipment_item_in_position(x, y)) {
+                    return [x, y];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    try_add_equipment_item(equipment_item) {
+        let res = this.add_equipment_item(equipment_item)
+        if (!res) {
+            // TODO: do something... drop on floor?
+        }
+
+        return res;
+    }
+
     // Equipment is stackable with the same ID
     /**
      * 
      * @param {EquipmentItem} equipment_item 
      */
-    add_equipment_item(equipment_item) {
+    add_equipment_item(equipment_item, force_pos=null) {
+        // We've got equipment inventory positions now
+        // So we need to find a valid position for it
+        // Go from 0, 0 to max_inventory_size in both directions
         if (!equipment_item.stackable) {
             let existent_item = this.get_equipment_item_by_id(equipment_item.id);
             while (existent_item?.id == equipment_item.id) {
-                equipment_item.id = `${equipment_item.id}${Math.random()}`;
+                equipment_item.id = `${equipment_item.id}:${random_int(0, 999)}`;
             }
         }
 
@@ -1366,23 +1710,40 @@ class Player {
         if (existent_item) {
             existent_item.quantity += equipment_item.quantity;
         } else {
-            this.equipment_inventory[equipment_item.id] = equipment_item;
+            // This is the only point in which we care about placement
+            // If force_pos, don't check position (we trust our friends!)
+            let pos = force_pos ?? this.find_position_for_equipment_item(equipment_item);
+
+            if (pos) {
+                equipment_item.xpos = pos[0];
+                equipment_item.ypos = pos[1];
+
+                this.equipment_inventory[equipment_item.id] = equipment_item;
+            } else {
+                // WE COULDNT FIND A SLOT!!!!
+                return false;
+            }
         }
 
         this.equip_inventory_changed = true;
+        return true;
     }
 
-    remove_equipment_item(equipment_item, amt) {
+    remove_equipment_item(equipment_item, amt=null) {
         let existent_item = this.get_equipment_item_by_id(equipment_item.id);
 
         if (existent_item) {
-            existent_item.quantity -= amt;
+            existent_item.quantity -= (amt ?? existent_item.quantity);
             if (existent_item.quantity <= 0) {
-                delete this.equipment_inventory[existent_item.id];
+                this.delete_equipment_item(existent_item);
             }
 
             this.equip_inventory_changed = true;
         }
+    }
+
+    delete_equipment_item(equipment_item) {
+        delete this.equipment_inventory[equipment_item.id];
     }
 
     /**
@@ -1390,7 +1751,7 @@ class Player {
      * @param {EquipmentItem} equipment_item 
      * @param {number} amt 
      */
-    use_equipment_item(equipment_item, amt) {
+    use_equipment_item(equipment_item, amt, targetpos=null) {
         let valid_amt = Math.min(equipment_item.quantity, amt);
         if (!equipment_item.can_use_max) {
             valid_amt = Math.min(1, valid_amt);
@@ -1398,17 +1759,28 @@ class Player {
 
         if (valid_amt > 0) {
             if (equipment_item.on_use) {
-                let fn = EquipmentItemFunctions[equipment_item.on_use];
+                let iteminfo = EquipmentItemFunctions[equipment_item.on_use];
+                let fn = iteminfo.fn;
                 if (fn) {
-                    let num_consumed = fn(this, equipment_item, valid_amt);
+                    let num_consumed = null;
+                    switch (iteminfo.type) {
+                        case EquipmentItemFunctionType.NOTARGET:
+                            num_consumed = fn(this, equipment_item, valid_amt);
+                            break;
+
+                        case EquipmentItemFunctionType.POSTARGET:
+                            num_consumed = fn(this, equipment_item, valid_amt, targetpos);
+                            break;
+                    }
+
                     this.remove_equipment_item(equipment_item, num_consumed);
                 }
             }
         }
     }
 
-    use_equipment_item_by_id(equipment_item_id, amt) {
-        this.use_equipment_item(this.get_equipment_item_by_id(equipment_item_id), amt);
+    use_equipment_item_by_id(equipment_item_id, amt, targetpos=null) {
+        this.use_equipment_item(this.get_equipment_item_by_id(equipment_item_id), amt, targetpos);
     }
 
     /**
@@ -1497,6 +1869,8 @@ class Player {
         this.currencies_changed = true;
 
         this.currency_records[currency] = Math.max(this.currency_records[currency] ?? 0, this.currencies[currency]);
+        this.currency_records_alltime[currency] = Math.max(this.currency_records_alltime[currency] ?? 0, this.currencies[currency]);
+        
         this.currency_gain_totals[currency] = (this.currency_gain_totals[currency] ?? 0) + Math.max(0, amt);
     }
 
@@ -1693,10 +2067,10 @@ class Player {
      * and no crit chance, with flash and sound disabled.
      * Returns the result as [damage, did_crit]
      */
-    damage_and_loot(to_tile, damage_amt, flash=false, sound=false, clink_sound=false, luck_mul=1, can_crit=false) {
+    damage_and_loot(to_tile, damage_amt, direct_hit=true, flash=false, sound=false, clink_sound=false, luck_mul=1, can_crit=false) {
         let result = this.deal_damage(to_tile, damage_amt, can_crit ? null : 0);
         let luck = this.stats.luck * luck_mul;
-        this.roll_loot(to_tile, result[0], luck);
+        this.roll_loot(to_tile, result[0], luck, direct_hit);
     
         let crit = result[1];
         if (result[0] > 0) {
@@ -1744,7 +2118,7 @@ class Player {
         return [to_tile.take_damage(final_damage), crit];
     }
 
-    hit_tile(tile, damage_amount=null, luck_mul=1, crit_chance=null, sound=true, flash=true) {
+    hit_tile(tile, direct_hit=true, damage_amount=null, luck_mul=1, crit_chance=null, sound=true, flash=true) {
         let result = this.deal_damage(tile, damage_amount ?? this.stats.damage, crit_chance);
         let dmg_dealt = result[0];
         let crit = result[1];
@@ -1766,7 +2140,7 @@ class Player {
                 luck *= this.stats.crit_damage;
             }
 
-            this.roll_loot(tile, dmg_dealt, luck)
+            this.roll_loot(tile, dmg_dealt, luck, direct_hit)
         } else {
             if (sound) {
                 let gain_lerp_amt = (clink_sound_cooldown_max - Math.max(0, clink_sound_cooldown)) / clink_sound_cooldown_max;
@@ -1798,7 +2172,7 @@ class Player {
         if (this.mining_target) {
             this.mining_cooldown -= delta_time;
             while (this.mining_cooldown <= 0) {
-                let result = this.hit_tile(this.mining_target, this.stats.damage);
+                let result = this.hit_tile(this.mining_target, true, this.stats.damage);
 
                 if (result[0] > 0) {
                     // Cleave
@@ -1822,7 +2196,7 @@ class Player {
                             positions.forEach(p => {
                                 let tile = this.mine.get_tile(this.mining_target.x + p.x, this.mining_target.y + p.y);
                                 if (tile && !tile.cleared)
-                                    this.hit_tile(tile, cleave_dmg, 1, 0, false, true);
+                                    this.hit_tile(tile, false, cleave_dmg, 1, 0, false, true);
                             });
                         }
                     }
@@ -1862,7 +2236,7 @@ class Player {
 
                                 if (tile && !tile.cleared && !(tile.x == this.mining_target.x && tile.y == this.mining_target.y)) {
                                     setTimeout(() => {
-                                        this.hit_tile(tile, dmg, 1, null, true, true);
+                                        this.hit_tile(tile, false, dmg, 1, null, true, true);
                                     }, (this.stats.atk_delay / this.stats.flurry_effectiveness) * 1000 * (i+1));
                                 }
                             }
@@ -1929,7 +2303,7 @@ class Player {
         }
     }
 
-    roll_loot(on_tile, damage_dealt, luck) {
+    roll_loot(on_tile, damage_dealt, luck, is_direct_hit=true) {
         // each tile gives loot each time it's hit
         // damage dealt has limited impact on loot (up to +300% luck at 5% tile max hp)
         // (so more hits, e.g. low damage, is overall better for high value)
@@ -1950,6 +2324,46 @@ class Player {
 
         // console.log(`Original luck ${luck}, prop ${tile_dmg_prop.toFixed(3)} => final luck ${final_luck}`)
 
+        // get the position of us versus the tile, then pick that side of the tile to spawn loot from
+        // essentially, get our position versus the tile center position,
+        // find the greater value, then use the sign to determine side
+        let tile_centerpos = this.mine.get_center_position(on_tile.x, on_tile.y);
+        let posdiff = this.position.sub(tile_centerpos);
+        let item_spawn_pos = null;
+        if (is_direct_hit) {
+            if (Math.abs(posdiff.x) > Math.abs(posdiff.y)) {
+                // xdiff is greater so l/r
+                // it will be l if posdiff.x is positive else r
+                if (posdiff.x > 0) {
+                    item_spawn_pos = new Vector2(
+                        tile_centerpos.x + (BASE_TILE_SCALE / 2),
+                        this.position.y
+                    )
+                } else {
+                    item_spawn_pos = new Vector2(
+                        tile_centerpos.x - (BASE_TILE_SCALE / 2),
+                        this.position.y
+                    )
+                }
+            } else {
+                // u/d
+                if (posdiff.y > 0) {
+                    item_spawn_pos = new Vector2(
+                        this.position.x,
+                        tile_centerpos.y + (BASE_TILE_SCALE / 2),
+                    )
+                } else {
+                    item_spawn_pos = new Vector2(
+                        this.position.x,
+                        tile_centerpos.y - (BASE_TILE_SCALE / 2),
+                    )
+                }
+            }
+        } else {
+            item_spawn_pos = tile_centerpos
+        }
+
+        let items_to_add = new Map();
         for (let i=0; i<rolls; i++) {
             // richness determines chance
             // + yield modifier
@@ -1963,17 +2377,43 @@ class Player {
                 if (this.mine.random() < chance && data.loot_table.length > 0) {
                     let res_item = weighted_seeded_random_from_arr(data.loot_table, this.mine.random)[1];
 
-                    this.add_item(res_item, 1);
+                    // this.add_item(res_item, 1);
+                    items_to_add.set(res_item, (items_to_add.get(res_item) ?? 0) + 1);
                     added_anything = true;
                 }
             })
 
             if (!added_anything) {
                 if (this.mine.random() < GRANITE_CHANCE_PER_HIT) {
-                    this.add_item(Item.GRANITE, 1);
+                    items_to_add.set(Item.GRANITE, (items_to_add.get(Item.GRANITE) ?? 0) + 1);
+                    // this.add_item(Item.GRANITE, 1);
                 }
             }
         }
+
+        items_to_add.keys().forEach(item => {
+            let quant = items_to_add.get(item);
+
+            // Bundle 10+ items into higher tier items
+            // So we want to do 1, 10, 100, 1000, ...
+            let digits = [];
+            while (quant != 0) {
+                digits.push(quant % 10);
+                quant = Math.trunc(quant / 10);
+            };
+
+            for (let i=0; i<digits.length; i++) {
+                let factor = Math.pow(10, i);
+                let n = factor * digits[i];
+
+                if (n == 0)
+                    continue
+
+                this.mine.spawn_object(new GroundItem(
+                    this, item, n
+                ), item_spawn_pos);
+            }
+        })
     }
 }
 
@@ -2018,6 +2458,21 @@ class Upgrade {
         let s = start_amount
 
         return (Math.log(-((1 - c) * (a - (b * Math.pow(c, s)) / (1 - c))) / b) - s * Math.log(c) - Math.log(c)) / Math.log(c)
+    }
+
+    static id_inc = 0;
+
+    /**
+     * @param {*} priority Priority of the upgrade effect. Priority is resolved lowest first. Order is not guaranteed within the same priority number. Put multiplicative after additive. Convention for additive is 0, multiplicative is 10.
+     * @param {*} on_stats Function (player, number_of_upgrade) => {null} to run during stats calculation.
+     * @returns an anonymous Upgrade object (DON'T RENDER IT OR ADD IT TO PERMANENT LISTS!)
+     */
+    static anonymous(priority, on_stats) {
+        Upgrade.id_inc++;
+        return new Upgrade(
+            `anonymous-${Upgrade.id_inc}`, "anonymous", "", "", 1, 2, Currency.GOLD,
+            priority, 0, on_stats
+        );
     }
 
     /**
@@ -2071,6 +2526,38 @@ class Upgrade {
     get_max_purchasable(cur_owned) {
         return (this.max_cnt ?? Number.POSITIVE_INFINITY) - cur_owned;
     }
+}
+
+const EquipEffects = {
+    // Base effects (not affixes)
+    BASE_DAMAGE_FLAT: new EquipmentAffix(
+        "Base Flat Damage",
+        "+!v! damage", "", Upgrade.anonymous(
+            0, Upgrade.add_to_stats(["damage", 1])
+        )
+    ),
+
+    // Affixes
+    PREFIX_DAMAGE_FLAT: new EquipmentAffix(
+        "Prefix Flat Damage T1",
+        "+!v! damage", "Blazing ", Upgrade.anonymous(
+            0, Upgrade.add_to_stats(["damage", 1])
+        ), true
+    ),
+
+    SUFFIX_DAMAGE_FLAT: new EquipmentAffix(
+        "Suffix Flat Damage T1",
+        "+!v! damage", " of Force", Upgrade.anonymous(
+            0, Upgrade.add_to_stats(["damage", 1])
+        )
+    ),
+
+    SUFFIX_ATK_SPEED: new EquipmentAffix(
+        "Suffix Attack Speed T1",
+        "+!p! mining speed", " of Rage", Upgrade.anonymous(
+            0, Upgrade.add_to_stats(["atk_speed", 1])
+        )
+    ),
 }
 
 class ParticleBoard {
@@ -2177,6 +2664,76 @@ class Particle {
     }
 }
 
+class CircleParticle extends Particle {
+    constructor(position, radius, stroke_size, colour, duration, delay=0, render_behind=0) {
+        super(position, 0, radius, [null], 0, duration, false, delay, render_behind);
+
+        this.stroke_size = stroke_size;
+        this.colour = colour;
+        this.typ = PARTICLE_TYPE.CIRCLE;
+    }
+
+    pass_time(time_delta) {
+        let result = super.pass_time(time_delta);
+        if (result) {
+            // effectively disable cur_frame
+            this.cur_frame = 0;
+        }
+
+        return result;
+    }
+}
+
+class LineParticle extends Particle {
+    constructor(position, target_position, width, colour, duration, delay=0, render_behind=false) {
+        super(position, 0, width, [null], 0, duration, false, delay, render_behind);
+
+        /** @type {Vector2} */
+        this.target_position = target_position;
+
+        /** @type {Colour} */
+        this.colour = colour;
+
+        this.typ = PARTICLE_TYPE.LINE;
+    }
+
+    pass_time(time_delta) {
+        let result = super.pass_time(time_delta);
+        if (result) {
+            // effectively disable cur_frame
+            this.cur_frame = 0;
+        }
+
+        return result;
+    }
+}
+
+class FadingLineParticle extends LineParticle {
+    constructor(position, target_position, width, colour, duration, delay=0, render_behind=false) {
+        super(position, target_position, width, colour, duration, delay, render_behind);
+    
+        this.base_width = width;
+        this.get_current_width()
+    }
+
+    get_current_width() {
+        let proportion = this.lifetime / this.duration;
+        // let siz = 1 - (2 * Math.abs(proportion - 0.5));
+        let siz = 1 - proportion;
+
+        this.size = Math.max(0, siz) * this.base_width;
+    }
+
+    pass_time(time_delta) {
+        let result = super.pass_time(time_delta);
+        if (result) {
+            this.get_current_width();
+        }
+
+        return result;
+    }
+}
+
 class ParticleComponent {
     static id_inc = 0;
 
@@ -2256,6 +2813,18 @@ class FadeOutParticleComponent extends ParticleComponent {
         let prop = 1 - Math.max(0, Math.min(1, effective_lifetime / operant_duration));
 
         particle.opacity = this.initial_opacity * Math.pow(prop, this.pow);
+    }
+}
+
+class FollowPlayerParticleComponent extends ParticleComponent {
+    constructor(board, player) {
+        super(board);
+
+        this.player = player;
+    }
+
+    pass_time(particle, time_delta) {
+        particle.position = this.player.position;
     }
 }
 
@@ -2640,6 +3209,14 @@ function render_particles(particles_board) {
             ctx.beginPath();
             ctx.moveTo(particle_screen_pos.x, particle_screen_pos.y);
             ctx.lineTo(particle_end_pos.x, particle_end_pos.y);
+            ctx.stroke();
+            ctx.closePath();
+        } else if (particle.typ == PARTICLE_TYPE.CIRCLE) {
+            ctx.lineWidth = particle.stroke_size * zoom_level;
+            ctx.strokeStyle = particle.colour.css();
+
+            ctx.beginPath();
+            ctx.arc(particle_screen_pos.x, particle_screen_pos.y, particle.size * zoom_level, 0, Math.PI * 2);
             ctx.stroke();
             ctx.closePath();
         } else {
@@ -3172,7 +3749,7 @@ function render_ui_playerstats(player) {
         e.querySelector(".player-torchlightlevel").parentElement.classList.add("nodisplay");
     } else {
         e.querySelector(".player-torchlightlevel").parentElement.classList.remove("nodisplay");
-        e.querySelector(".player-torchlightlevel").textContent = `${player.stats.torch_lightlevel.toFixed(0)}ti`;
+        e.querySelector(".player-torchlightlevel").textContent = `${player.stats.torch_lightlevel.toFixed(1)}ti`;
     }
 
     if (player.stats.crit_chance == 0) {
@@ -3207,11 +3784,14 @@ function render_ui_playerstats(player) {
 function render_ui_equip_inventory(player) {
     let elem = document.querySelector(".equipment-supercontainer .equipment-inventory-view");
 
-    let template = elem.querySelector(".equipment-inventory-items .equipment-inventory-item.template");
+    let template = elem.querySelector(".equipment-inventory-items-grid .equipment-inventory-griditem.template");
 
     // first render the items
     let new_elems = [];
     let selected_item = null;
+    let selected_elem = null;
+
+    equip_inventory_itemelements = new Map();
     Object.keys(player.equipment_inventory).forEach(ek => {
         /** @type {EquipmentItem} */
         let item = player.equipment_inventory[ek];
@@ -3220,10 +3800,79 @@ function render_ui_equip_inventory(player) {
 
         let clone = template.cloneNode(true);
 
-        clone.style.setProperty("--maincol", ItemRarityData[item.rarity].col.css());
-        clone.style.setProperty("--bgcol", ItemRarityData[item.rarity].col.lerp(Colour.black, 0.8).css());
+        clone.style.setProperty("--maincol", ItemRarityData[item.rarity].col.lerp(Colour.empty, 0.4).css());
+        clone.style.setProperty("--bgcol", ItemRarityData[item.rarity].col.lerp(Colour.empty, 0.8).css());
     
         clone.querySelector(".item-icon").src = `assets/img/sprites/items/${item.sprite}.png`;
+        clone.querySelector(".item-quant").textContent = item.quantity;
+        if (item.stackable) {
+            clone.querySelector(".item-quant").classList.remove("nodisplay");
+        } else {
+            clone.querySelector(".item-quant").classList.add("nodisplay");
+        }
+
+        clone.style.gridColumn = `${item.xpos + 1} / span ${item.size[0]}`;
+        clone.style.gridRow = `${item.ypos + 1} / span ${item.size[1]}`;
+
+        if (selected_use_equip_item?.id == item.id) {
+            clone.classList.add("use-selected");
+        }
+
+        if (player.equipment_selected_item_id == item.id) {
+            clone.classList.add("qs-selected");
+        }
+
+        equip_inventory_itemelements.set(item.id, clone);
+
+        clone.addEventListener("contextmenu", e => {
+            e.preventDefault();
+            return false;
+        })
+
+        clone.addEventListener("mousedown", e => {
+            // Dragged items temporarily leave the inventory.
+            // TODO: what if a save happens then the game crashes? item lost?
+            if (e.ctrlKey) {
+                player.equipment_selected_item_id = item.id;
+                play_audio("automove_confirm", 0.3);
+                player.equip_inventory_changed = true;
+                return;
+            }
+
+            if (e.button === 0)
+                initiate_dnd_from_inventory(item);
+        });
+
+        clone.addEventListener("mouseup", e => {
+            if (e.ctrlKey) {
+                return;
+            }
+            
+            if (e.button === 2) {
+                if (selected_use_equip_item) {
+                    equipitem_cancel_use();
+                } else {
+                    equipitem_try_use(player, item);
+                }
+
+                equipitem_targeter_move();
+                player.equip_inventory_changed = true;
+            }
+        })
+
+        clone.addEventListener("mouseenter", e => {
+            equipitem_show_hover_popup(item);
+        });
+
+        clone.addEventListener("mouseleave", e => {
+            equipitem_hide_hover_popup();
+        });
+
+        if (player.equipment_selected_item_id == item.id) {
+            selected_item = item;
+        }
+
+        /*
         clone.querySelector(".itemname").textContent = item.name;
 
         if (item.equip_slot != EquipSlot.NONE) {
@@ -3234,6 +3883,7 @@ function render_ui_equip_inventory(player) {
 
         if (player.equipment_selected_item_id == item.id) {
             clone.classList.add("selected");
+            selected_elem = clone;
             selected_item = item;
             clone.addEventListener("click", e => {
                 e.stopPropagation();
@@ -3248,63 +3898,29 @@ function render_ui_equip_inventory(player) {
                 return false;
             })
         }
+        */
 
         clone.classList.remove("template");
         new_elems.push(clone);
     });
 
-    elem.querySelector(".equipment-inventory-items").replaceChildren(
+    elem.querySelector(".equipment-inventory-items-grid").replaceChildren(
         template, ...new_elems
     )
     
     if (selected_item) {
-        let infoelem = elem.querySelector(".equipment-inventory-selected-item-info");
-
-        infoelem.classList.remove("nodisplay");
-        elem.querySelector(".equipment-inventory-selected-noitem").classList.add("nodisplay");
-
-        infoelem.querySelector(".item-basic-info .item-bigicon").src = `assets/img/sprites/items/${selected_item.sprite}.png`;
-        infoelem.querySelector(".item-basic-info .itemname").textContent = selected_item.full_name;
-        infoelem.querySelector(".item-basic-info .itemrarity").textContent = ItemRarityData[selected_item.rarity].name;
-        infoelem.querySelector(".item-basic-info .itemrarity").style.color = ItemRarityData[selected_item.rarity].col.css();
-        infoelem.querySelector(".item-basic-info .itemquantity").textContent = `x${format_number(selected_item.quantity)}`;
-
-        infoelem.querySelector(".itemdesc").textContent = selected_item.desc;
-        infoelem.querySelector(".item-usedesc").textContent = selected_item.on_use_desc;
-        infoelem.querySelector(".item-equipdesc").classList.add("nodisplay");
-
-        if (selected_item.on_use) {
-            infoelem.querySelector(".actionbuttons-subrow.use").classList.remove("nodisplay");
-
-            if (selected_item.can_use_max) {
-                infoelem.querySelector(".actionbuttons-subrow.use .usemaxbutton").classList.remove("nodisplay");
-            } else {
-                infoelem.querySelector(".actionbuttons-subrow.use .usemaxbutton").classList.add("nodisplay");
-            }
-        } else {
-            infoelem.querySelector(".actionbuttons-subrow.use").classList.add("nodisplay");
-        }
-
-        // TODO implement when we come to equipment
-        if (selected_item.equip_slot != EquipSlot.NONE) {
-            infoelem.querySelector(".actionbuttons-subrow.equip").classList.remove("nodisplay");
-        } else {
-            infoelem.querySelector(".actionbuttons-subrow.equip").classList.add("nodisplay");
-        }
-
-        // TODO implement if we decide to still let selling happen (still not sure)
-        if (selected_item.sell_value) {
-            infoelem.querySelector(".actionbuttons-subrow.sell").classList.remove("nodisplay");
-        } else {
-            infoelem.querySelector(".actionbuttons-subrow.sell").classList.add("nodisplay");
-        }
+        // moved to popup
     } else {
-        elem.querySelector(".equipment-inventory-selected-item-info").classList.add("nodisplay");
-        elem.querySelector(".equipment-inventory-selected-noitem").classList.remove("nodisplay");
+        document.querySelector(".equipment-inventory-selected-item-info").classList.add("nodisplay");
+        document.querySelector(".equipment-inventory-selected-noitem").classList.remove("nodisplay");
     }
 
     let qs = document.querySelector(".equip-item-quickslot1 .equipment-inventory-item");
     if (selected_item) {
+        if (selected_item.id == selected_use_equip_item?.id) {
+            qs.classList.add("use-selected");
+        }
+
         qs.classList.remove("nodisplay");
 
         qs.style.setProperty("--maincol", ItemRarityData[selected_item.rarity].col.css());
@@ -3320,6 +3936,425 @@ function render_ui_equip_inventory(player) {
         }
     } else {
         qs.classList.add("nodisplay");
+    }
+
+    render_equipped_items(player);
+
+    if (selected_elem) {
+        selected_elem.scrollIntoView({container: "nearest", inline: "nearest"});
+    }
+}
+
+function render_equipped_items(player) {
+    let view = document.querySelector(".equipped-view");
+
+    // we need to select each SLOT (aside from NONE) and find the relevant item
+    // then show the item with the correct background colour
+    // and make it clickable to select it
+    Object.keys(EquipSlot).forEach(k => {
+        let slot = EquipSlot[k];
+        if (k == "NONE")
+            return
+
+        let elem = view.querySelector(`.${slot.toLowerCase()}`);
+        let equipped = player.get_equipped_item_in_slot(slot);
+
+        elem.querySelectorAll("img").forEach(e => e.remove());
+
+        // Make new image tag, set elem's --bgcol to rarity col
+        let im = document.createElement("img");
+        if (equipped) {
+            im.src = `assets/img/sprites/items/${equipped.sprite}.png`;
+            elem.style.setProperty("--bgcol", ItemRarityData[equipped.rarity].col.lerp(Colour.black, 0.75).css())
+        } else {
+            im.src = `assets/img/sprites/items/placeholder_${slot.toLowerCase()}_basic.png`
+            elem.style.setProperty("--bgcol", "");
+        }
+
+        elem.append(im);
+    })
+}
+
+// Selected item drag and drop
+function initiate_dnd_from_inventory(equip_item) {
+    equipitem_hide_hover_popup();
+    // player.equipment_selected_item_id = equip_item.id;
+    player.delete_equipment_item(equip_item);
+    equipitem_dnd_setup(equip_inventory_itemelements.get(equip_item.id), equip_item);
+}
+
+function equipitem_dnd_setup(inventory_elem, equip_item) {
+    let elem_template = document.querySelector(".popup.dnd-item");
+
+    let clone = elem_template.cloneNode(true);
+
+    // Set the clone to the size of the equip item
+    let bbox = inventory_elem.getBoundingClientRect();
+
+    clone.style.width = `${bbox.width}px`;
+    clone.style.height = `${bbox.height}px`;
+
+    // Get offset by comparing bbox left/top to mouse position
+    let offset = new Vector2(
+        mouse_x - bbox.left,
+        mouse_y - bbox.top,
+    );
+
+    clone.querySelector("img").src = inventory_elem.querySelector("img").src;
+
+    clone.style.setProperty("--maincol", inventory_elem.style.getPropertyValue("--maincol"));
+    clone.style.setProperty("--bgcol", inventory_elem.style.getPropertyValue("--bgcol"));
+
+    clone.classList.remove("template");
+    clone.style.opacity = "0";
+
+    clone.addEventListener("mouseup", e => {
+        equipitem_dnd_mouseup();
+    })
+
+    document.querySelector(".popups-container").append(clone);
+
+    selected_equipment_item_info.inventory_elem = inventory_elem;
+    selected_equipment_item_info.elem = clone;
+    selected_equipment_item_info.item = equip_item;
+    selected_equipment_item_info.offset = new Vector2(bbox.width / 2, bbox.height / 2);
+
+    // Eat the mouseup if the distance between new pos and original_pos is <value
+    // This means long drags will trigger on one mouse cycle
+    // but a click will need another click to trigger
+    selected_equipment_item_info.original_pos = new Vector2(mouse_x, mouse_y);
+    selected_equipment_item_info.hidden = true;
+
+    equipment_inventory_bbox = document.querySelector(".equipment-menu-content .equipment-items .equipment-inventory-grid").getBoundingClientRect();
+
+    equipitem_dnd_move();
+}
+
+function equipitem_dnd_get_inv_position() {
+    if (equipment_inventory_bbox.width > 0 &&
+        mouse_x >= equipment_inventory_bbox.left &&
+        mouse_x < (equipment_inventory_bbox.left + equipment_inventory_bbox.width) &&
+        mouse_y >= equipment_inventory_bbox.top &&
+        mouse_y < (equipment_inventory_bbox.top + equipment_inventory_bbox.height)
+    ) {
+        // As long as we're inside the inventory, try to resolve the position to something valid.
+        // This means pushing it to the right if we're on the left, down if we're on the top, etc.
+        // Remember that the center of the mouse position is the center of the item,
+        // not the top left,
+        // so to get the top left position we need to shift size/2 in both axes
+        let inv_x = mouse_x - equipment_inventory_bbox.left;
+        let inv_y = mouse_y - equipment_inventory_bbox.top;
+
+        // assume square
+        let inv_sf = PLAYER_MAX_INVENTORY_SIZE_X / equipment_inventory_bbox.width;
+        
+        let inv_grid_x = (inv_x * inv_sf) - (selected_equipment_item_info.item.size[0] / 2);
+        let inv_grid_y = (inv_y * inv_sf) - (selected_equipment_item_info.item.size[1] / 2);
+
+        // Now bring back in range before rounding
+        // [0, maxsize-size-1]
+        inv_grid_x = Math.round(
+            Math.max(0, Math.min(inv_grid_x, PLAYER_MAX_INVENTORY_SIZE_X - selected_equipment_item_info.item.size[0]))
+        )
+        
+        inv_grid_y = Math.round(
+            Math.max(0, Math.min(inv_grid_y, PLAYER_MAX_INVENTORY_SIZE_Y - selected_equipment_item_info.item.size[1]))
+        )
+
+        return [inv_grid_x, inv_grid_y];
+    } else {
+        return null;
+    }
+}
+
+function equipitem_dnd_get_overlap_ids(pos=null) {
+    let fpos = pos ?? equipitem_dnd_get_inv_position();
+
+    let overlaps_ids = new Set();
+    // overlaps_ids.add(selected_equipment_item_info.item.id);
+    for (let x=0; x<selected_equipment_item_info.item.size[0]; x++) {
+        for (let y=0; y<selected_equipment_item_info.item.size[1]; y++) {
+            let item = player.get_equipment_item_in_position(pos[0] + x, pos[1] + y);
+            if (item) {
+                overlaps_ids.add(item.id)
+            }
+        }
+    }
+
+    return overlaps_ids;
+}
+
+function equipitem_dnd_move() {
+    if (!selected_equipment_item_info.elem) {
+        return
+    }
+
+    // Move its x and y to mouse_x, mouse_y, offset by offset
+    selected_equipment_item_info.elem.style.left = `${mouse_x - selected_equipment_item_info.offset.x}px`;
+    selected_equipment_item_info.elem.style.top = `${mouse_y - selected_equipment_item_info.offset.y}px`;
+
+    if (selected_equipment_item_info.hidden) {
+        if (new Vector2(mouse_x, mouse_y).distance(selected_equipment_item_info.original_pos) > 16) {
+            // If we're still hidden and we moved away from the original position far enough,
+            equipitem_dnd_unhide();
+        }
+    }
+
+    equipment_griditems.forEach(row => row.forEach(elem => {
+        elem.classList.remove("bad");
+        elem.classList.remove("good");
+    }));
+
+    if (!selected_equipment_item_info.hidden) {
+        // Check if overlapping inventory, if yes highlight gridback tiles underneath
+        // Green if intersections count is <= 1, else red
+        let pos = equipitem_dnd_get_inv_position();
+        if (pos) {
+            // We have gridpos so now need to check overlaps
+            let overlaps_ids = equipitem_dnd_get_overlap_ids(pos);
+
+            let clsname = overlaps_ids.size > 1 ? "bad" : "good";
+            for (let x=0; x<selected_equipment_item_info.item.size[0]; x++) {
+                for (let y=0; y<selected_equipment_item_info.item.size[1]; y++) {
+                    equipment_griditems[pos[0] + x][pos[1] + y].classList.add(clsname);
+                }
+            }
+        }
+    }
+}
+
+function equipitem_dnd_unhide() {
+    selected_equipment_item_info.elem.style.opacity = "";
+    selected_equipment_item_info.hidden = false;
+
+    selected_equipment_item_info.inventory_elem.classList.add("dragged");
+}
+
+function equipitem_dnd_mouseup() {
+    // If we're already unhidden, do whatever this item's going to do at the current location
+    let taken_action = false;
+    let dnd_item = selected_equipment_item_info.item;
+    
+    if (!selected_equipment_item_info.hidden) {
+        // Lots of stuff depending on where we are and what we're doing
+        let inventory_pos = equipitem_dnd_get_inv_position();
+        let new_dnd = false;
+        if (inventory_pos) {
+            // inside inventory
+            // here's what could happen:
+            // - 0 overlaps: put item in new position
+            // - 1 overlap: put item in new position, initiate drag on original item
+            // - 2+ overlaps: return item to original position
+            let overlaps = equipitem_dnd_get_overlap_ids(inventory_pos);
+            if (overlaps.size == 0) {
+                player.add_equipment_item(selected_equipment_item_info.item, inventory_pos);
+                taken_action = true;
+            } else if (overlaps.size == 1) {
+                let item_to_add = selected_equipment_item_info.item;
+
+                let overlap_item = player.get_equipment_item_by_id([...overlaps.values()][0]);
+                if (overlap_item) {
+                    equipitem_dnd_remove();
+                    initiate_dnd_from_inventory(overlap_item);
+                    equipitem_dnd_unhide();
+                    equipitem_dnd_move();
+                    new_dnd = true;
+                }
+
+                player.add_equipment_item(item_to_add, inventory_pos);
+                taken_action = true;
+            } else {
+                // do nothing, but keep the dnd active
+                new_dnd = true;
+                taken_action = true;
+            }
+        } else {
+            // TODO:
+            // - drop item in world when mouseover canvas
+            // - equip item when mouseover equip slots
+            // - other inventories?
+        }
+
+        if (!new_dnd)
+            equipitem_dnd_remove();
+    } else {
+        // If we're still hidden, unhide and do nothing else
+        equipitem_dnd_unhide();
+        equipitem_dnd_move();
+        taken_action = true;
+    }
+
+    if (!taken_action) {
+        // Return item to original position
+        // TODO what if dragged from equip slot or other inventory?
+        player.add_equipment_item(dnd_item, [
+            dnd_item.xpos,
+            dnd_item.ypos,
+        ]);
+    }
+}
+
+function equipitem_dnd_remove() {
+    selected_equipment_item_info.elem.remove();
+
+    selected_equipment_item_info.elem = null;
+    selected_equipment_item_info.item = null;
+
+    selected_equipment_item_info.inventory_elem.classList.remove("dragged");
+
+    equipment_griditems.forEach(row => row.forEach(elem => {
+        elem.classList.remove("bad");
+        elem.classList.remove("good");
+    }))
+}
+
+function equipitem_show_hover_popup(selected_item) {
+    if (showing_equipitem_popup)
+        equipitem_hide_hover_popup();
+
+    showing_equipitem_popup = true;
+
+    let popup = document.querySelector(".popup.equipment-inventory-selected-item");
+    popup.classList.remove("nodisplay");
+
+    let infoelem = popup.querySelector(".equipment-inventory-selected-item-info");
+
+    infoelem.classList.remove("nodisplay");
+    document.querySelector(".equipment-inventory-selected-noitem").classList.add("nodisplay");
+
+    infoelem.querySelector(".item-basic-info .item-bigicon").src = `assets/img/sprites/items/${selected_item.sprite}.png`;
+    infoelem.querySelector(".item-basic-info .itemname").textContent = EquipmentItem.get_full_name(selected_item);
+    infoelem.querySelector(".item-basic-info .itemrarity").textContent = ItemRarityData[selected_item.rarity].name;
+    infoelem.querySelector(".item-basic-info .itemrarity").style.color = ItemRarityData[selected_item.rarity].col.css();
+    infoelem.querySelector(".item-basic-info .itemquantity").textContent = `x${format_number(selected_item.quantity)}`;
+
+    infoelem.querySelector(".itemdesc").textContent = EquipmentItem.get_description(selected_item);
+    infoelem.querySelector(".item-usedesc").textContent = selected_item.on_use_desc;
+    infoelem.querySelector(".item-equipdesc").classList.add("nodisplay");
+
+    if (selected_item.on_use) {
+        // infoelem.querySelector(".actionbuttons-subrow.use").classList.remove("nodisplay");
+        infoelem.querySelector(".item-usedesc-container").classList.remove("nodisplay");
+
+        /*
+        if (selected_item.can_use_max) {
+            infoelem.querySelector(".actionbuttons-subrow.use .usemaxbutton").classList.remove("nodisplay");
+        } else {
+            infoelem.querySelector(".actionbuttons-subrow.use .usemaxbutton").classList.add("nodisplay");
+        }
+        */
+    } else {
+        // infoelem.querySelector(".actionbuttons-subrow.use").classList.add("nodisplay");
+        infoelem.querySelector(".item-usedesc-container").classList.add("nodisplay");
+    }
+
+    // TODO implement when we come to equipment
+    if (selected_item.equip_slot != EquipSlot.NONE) {
+        // infoelem.querySelector(".actionbuttons-subrow.equip").classList.remove("nodisplay");
+    } else {
+        // infoelem.querySelector(".actionbuttons-subrow.equip").classList.add("nodisplay");
+    }
+
+    // TODO implement if we decide to still let selling happen (still not sure)
+    if (selected_item.sell_value) {
+        // infoelem.querySelector(".actionbuttons-subrow.sell").classList.remove("nodisplay");
+    } else {
+        // infoelem.querySelector(".actionbuttons-subrow.sell").classList.add("nodisplay");
+    }
+
+    equipitem_move_hover_popup();
+}
+
+function equipitem_move_hover_popup() {
+    if (!showing_equipitem_popup)
+        return;
+
+    let popup = document.querySelector(".popup.equipment-inventory-selected-item");
+
+    let rect = popup.getBoundingClientRect();
+
+    let left = mouse_x + 4;
+    let top = mouse_y + 4;
+
+    if (left + rect.width > window.innerWidth) {
+        left = mouse_x - rect.width - 4;
+    }
+
+    if (top + rect.height > window.innerHeight) {
+        top = mouse_y - rect.height - 4;
+    }
+
+    // TODO move popup to make sure it's onscreen if it goes offscreen
+
+    popup.style.left = `${left}px`;
+    popup.style.top = `${top}px`;
+}
+
+function equipitem_hide_hover_popup() {
+    let popup = document.querySelector(".popup.equipment-inventory-selected-item");
+    popup.classList.add("nodisplay");
+    showing_equipitem_popup = false;
+}
+
+function equipitem_try_use(player, item) {
+    // If needs a target, engage crosshair, else just use it
+    // player.equipment_selected_item_id = item.id;
+
+    let item_fn = EquipmentItemFunctions[item.on_use];
+    if (item_fn.type == EquipmentItemFunctionType.NOTARGET) {
+        player.use_equipment_item(item, 1);
+    } else if (item_fn.type == EquipmentItemFunctionType.POSTARGET) {
+        selected_use_equip_item = item;
+
+        if (item_fn.params.minrange) {
+            selected_use_equip_item_particles.push(
+                main_particles_board.spawn_particle(new CircleParticle(
+                    player.position, item_fn.params.minrange,
+                    1, Colour.from_hex("#00ccff"), 9999
+                ), player.position).add_component(new FollowPlayerParticleComponent(
+                    main_particles_board, player
+                ))
+            );
+        }
+
+        if (item_fn.params.maxrange) {
+            selected_use_equip_item_particles.push(
+                main_particles_board.spawn_particle(new CircleParticle(
+                    player.position, item_fn.params.maxrange,
+                    1, Colour.from_hex("#ffcc00"), 9999
+                ), player.position).add_component(new FollowPlayerParticleComponent(
+                    main_particles_board, player
+                ))
+            );
+        }
+    }
+}
+
+let crosshair = null;
+function equipitem_targeter_move() {
+    if (selected_use_equip_item) {
+        crosshair.classList.remove("nodisplay");
+        let rect = crosshair.getBoundingClientRect();
+        crosshair.style.left = `${mouse_x - (rect.width / 2)}px`;
+        crosshair.style.top = `${mouse_y - (rect.height / 2)}px`;
+    } else {
+        crosshair.classList.add("nodisplay");
+    }
+}
+
+function equipitem_cancel_use() {
+    selected_use_equip_item = null;
+    selected_use_equip_item_particles.forEach(p => p.expire());
+    selected_use_equip_item_particles = [];
+}
+
+//
+
+function render_show_hide_tabs(player) {
+    if (player.currency_records_alltime[Currency.POWERCUBES] > 0) {
+        document.querySelector(".powercubes-upgrades-container").classList.remove("nodisplay");
+    } else {
+        document.querySelector(".powercubes-upgrades-container").classList.add("nodisplay");
     }
 }
 
@@ -4055,7 +5090,7 @@ function makepaintitem(tile_resource) {
     return new EquipmentItem(
         `paint-${tile_resource}`, `Paint "${tile_resource}"`,
         `A highly pressurised canister of paint which is likely to explode the moment you open it. The paint looks a lot like ${tile_resource}.`,
-        "paintcanister", 1, true, rarity,
+        "paintcanister", 1, true, rarity, [1, 1],
         `PAINT`, "Blasts the paint in a random direction.", false
     )
 }
@@ -4071,9 +5106,9 @@ let equipmentshop_upgrades = [
                 p.has_upgrade_by_id("pcx2-darkness-darker")
             ]
         }, true, false, (p, n) => {
-            p.add_equipment_item(new EquipmentItem(
+            p.try_add_equipment_item(new EquipmentItem(
                 "torch", "Torch", "Lights up the darkness.",
-                "torch", n, true, ItemRarity.COMMON,
+                "torch", n, true, ItemRarity.COMMON, [1, 1],
                 "TORCH", "Places a torch on the current tile.", false
             ))
         }
@@ -4088,9 +5123,9 @@ let equipmentshop_upgrades = [
                 p.has_upgrade_by_id("pc-basictools")
             ]
         }, true, false, (p, n) => {
-            p.add_equipment_item(new EquipmentItem(
+            p.try_add_equipment_item(new EquipmentItem(
                 "bomb", "Bomb", "After a short delay, produces a sizeable blast.",
-                "smallbomb_item", n, true, ItemRarity.COMMON,
+                "smallbomb_item", n, true, ItemRarity.COMMON, [1, 1],
                 "BOMB", "Throws the bomb in the vicinity.", false
             ))
         }
@@ -4120,7 +5155,7 @@ let equipmentshop_upgrades = [
                     candidates, get_seeded_randomiser(`PAINT-${upgrade_count}`)
                 )[1];
 
-                p.add_equipment_item(makepaintitem(picked));
+                p.try_add_equipment_item(makepaintitem(picked));
             }
         }
     ),
@@ -4134,9 +5169,9 @@ let equipmentshop_upgrades = [
                 p.has_upgrade_by_id("pc-basictools")
             ]
         }, true, false, (p, n) => {
-            p.add_equipment_item(new EquipmentItem(
+            p.try_add_equipment_item(new EquipmentItem(
                 "regenerator", "Regenerator", "Returns some empty tiles in the vicinity to their natural state. Won't affect tiles with features (like torches) on them.",
-                "regenerator", n, true, ItemRarity.UNCOMMON,
+                "regenerator", n, true, ItemRarity.UNCOMMON, [1, 1],
                 "REGENERATOR", "Activates the regenerator around yourself.", false
             ))
         }
@@ -4166,14 +5201,45 @@ function generate_around_player() {
 }
 
 function input_handler(n) {
-    if (keys_pressed_this_frame["KeyM"]) {
-        add_message(null, "Makin test object");
-        default_mine.spawn_object(new ObjSmallBomb(player), player.position);
+    if (keys_pressed_this_frame["KeyK"]) {
+        let p = player;
+        p.mine.spawn_object(new ObjSmallBomb(p), p.position);
+    }
+
+    if (keys_pressed_this_frame["KeyM"]) {        
+        let affixes = [];
+        let n = random_int(0, 3);
+        let m = random_int(0, 2);
+        for (let i=0; i<n; i++) {
+            affixes.push([
+                random_from_array([
+                    ["PREFIX_DAMAGE_FLAT"],
+                    ["SUFFIX_DAMAGE_FLAT", "SUFFIX_ATK_SPEED"]
+                ][m]), random_int(10, 100)
+            ]);
+
+            m = 1 - m;
+        }
+
+        let equip_item = new EquipmentItem(
+            "debugtestitem", "debugtestitem", "Body equipment item",
+            `${player.equipped_items[EquipSlot.BODY]?.sprite == "placeholder_body" ? "placeholder_hat" : "placeholder_body"}`,
+            1, false, ItemRarity.ANCIENT, [2, 3],
+            null, "", false, EquipSlot.BODY,
+            ["BASE_DAMAGE_FLAT", random_int(25, 100)], affixes
+        )
+
+        if (player.try_add_equipment_item(equip_item)) {
+            add_message(null, "Say hello to your new body");
+        } else {
+            add_message(null, "inventory full", Colour.red);
+        }
     }
 
     if (keys_pressed_this_frame["KeyN"]) {
-        add_message(null, "Makin splort object");
-        default_mine.spawn_object(new ObjPaintSplatter(player, TileResource.CHALCOPYRITE, 7, 4), player.position);
+        add_message(null, "Cleared equipment inventory", Colour.red);
+        player.equipment_inventory = {};
+        player.equip_inventory_changed = true;
     }
 
     if (keys_pressed_this_frame["KeyR"]) {
@@ -4293,9 +5359,9 @@ let equipment_inventory_window = null;
 let showing_equip_inventory_window = false;
 function check_equipment_window() {
     if (showing_equip_inventory_window)
-        return true;
+        return 1;
 
-    if (Object.keys(player.equipment_inventory).length === 0 && !player.has_upgrade_by_id("pcx2-darkness-darker"))
+    if (Object.keys(player.equipment_inventory).length === 0 && !player.has_upgrade_by_id("pcx2-darkness-darker") && !player.has_upgrade_by_id("pc-basictools"))
         return false;
 
     showing_equip_inventory_window = true;
@@ -4304,29 +5370,64 @@ function check_equipment_window() {
     document.querySelector(".select-bar.main-select-bar").style.setProperty("--num-cols", 4);
 
     // equipment_inventory_window = spawn_window("minimise-only", "Equipment");
+    let equip_grid_view = document.querySelector(".templates .equipment-inventory-view").cloneNode(true);
     document.querySelector(".equipment-menu-content .equipment-items").append(
-        document.querySelector(".templates .equipment-inventory-view").cloneNode(true)
+        equip_grid_view
     )
 
-    document.querySelector(".equipment-menu-content .equipment-inventory-items").addEventListener("click", e => {
-        player.equipment_selected_item_id = -1;
-        player.equip_inventory_changed = true;
-    });
+    // Add the grid items as necessary
+    let clone = equip_grid_view.querySelector(".equipment-inventory-gridback.template");
+    for (let x=0; x<PLAYER_MAX_INVENTORY_SIZE_X; x++) {
+        let li = [];
+        equipment_griditems.push(li);
 
-    document.querySelector(".equipment-inventory-view .actionbuttons-subrow.use .use1button").addEventListener("click", e => {
+        for (let y=0; y<PLAYER_MAX_INVENTORY_SIZE_Y; y++) {
+            let c = clone.cloneNode(true);
+
+            c.style.gridColumn = x + 1;
+            c.style.gridRow = y + 1;
+
+            c.classList.remove("template");
+        
+            equip_grid_view.querySelector(".equipment-inventory-grid").append(c);
+
+            li.push(c);
+        }
+    }
+
+    equip_grid_view.querySelector(".equipment-inventory-grid").style.gridTemplateColumns = `repeat(${PLAYER_MAX_INVENTORY_SIZE_X}, var(--itemsize))`;
+    equip_grid_view.querySelector(".equipment-inventory-grid").style.gridTemplateRows = `repeat(${PLAYER_MAX_INVENTORY_SIZE_Y}, var(--itemsize))`;
+
+    equip_grid_view.querySelector(".equipment-inventory-items-grid").style.gridTemplateColumns = `repeat(${PLAYER_MAX_INVENTORY_SIZE_X}, var(--itemsize))`;
+    equip_grid_view.querySelector(".equipment-inventory-items-grid").style.gridTemplateRows = `repeat(${PLAYER_MAX_INVENTORY_SIZE_Y}, var(--itemsize))`;
+
+    // document.querySelector(".equipment-menu-content .equipment-inventory-items").addEventListener("click", e => {
+    //     player.equipment_selected_item_id = -1;
+    //     player.equip_inventory_changed = true;
+    // });
+
+    /*
+    document.querySelector(".equipment-inventory-selected-item .actionbuttons-subrow.use .use1button").addEventListener("click", e => {
         player.use_equipment_item_by_id(player.equipment_selected_item_id, 1);
     })
 
-    document.querySelector(".equipment-inventory-view .actionbuttons-subrow.use .usemaxbutton").addEventListener("click", e => {
+    document.querySelector(".equipment-inventory-selected-item .actionbuttons-subrow.use .usemaxbutton").addEventListener("click", e => {
         player.use_equipment_item_by_id(player.equipment_selected_item_id, Number.POSITIVE_INFINITY);
     })
 
+    document.querySelector(".equipment-inventory-selected-item .actionbuttons-subrow.equip .equipbutton").addEventListener("click", e => {
+        player.equip_item_by_id(player.equipment_selected_item_id);
+        player.equipment_selected_item_id = -1;
+    })
+    */
+
     document.querySelector(".equip-item-quickslot1").classList.remove("nodisplay");
     document.querySelector(".equip-item-quickslot1").addEventListener("click", e => {
-        player.use_equipment_item_by_id(player.equipment_selected_item_id, 1);
-    })
+        equipitem_try_use(player, player.get_equipment_item_by_id(player.equipment_selected_item_id));
+        // player.use_equipment_item_by_id(player.equipment_selected_item_id, 1);
+    });
 
-    return true;
+    return 2;
 }
 
 let help_window = null;
@@ -4495,6 +5596,49 @@ handlers.game_postload_fn = () => {
         el.innerHTML = `<span>${[...el.textContent].join("</span><span>")}</span>`;
     });
 
+    document.addEventListener("mousemove", e => {
+        mouse_x = e.clientX;
+        mouse_y = e.clientY;
+
+        equipitem_dnd_move();
+        equipitem_move_hover_popup();
+        equipitem_targeter_move();
+    });
+
+    crosshair = document.querySelector(".crosshair");
+    crosshair.addEventListener("contextmenu", e => {
+        e.preventDefault();
+        return false;
+    })
+
+    crosshair.addEventListener("mousedown", e => {
+        
+    });
+
+    crosshair.addEventListener("mouseup", e => {
+        // use item
+        if (e.button === 0) {
+            // TODO position
+            let game_container_rect = document.querySelector("#game-container").getBoundingClientRect();
+            if (mouse_x >= game_container_rect.left &&
+                mouse_x < game_container_rect.right &&
+                mouse_y >= game_container_rect.top &&
+                mouse_y < game_container_rect.bottom
+            ) {
+                let worldpos = scaling.stwp(new Vector2(
+                    mouse_x - game_container_rect.left,
+                    mouse_y - game_container_rect.top
+                ));
+
+                player.use_equipment_item(selected_use_equip_item, 1, worldpos);
+            }
+        }
+
+        equipitem_cancel_use();
+        equipitem_targeter_move();
+        player.equip_inventory_changed = true;
+    });
+
     // setTimeout(_ => item_gain_displays.set(Item.CHALCOPYRITE, {
     //     amount: 32,
     //     spawn_time: Date.now()
@@ -4560,6 +5704,9 @@ handlers.render_fn = () => {
     if (player.consume_change("currencies")) {
         render_ui_currencies(player);
         render_ui_powercube_buttons(player, powercube_choices);
+
+        render_show_hide_tabs(player);
+
         player.upgrades_changed = true;
     }
 
@@ -4570,6 +5717,10 @@ handlers.render_fn = () => {
 
         render_ui_powercube_buttons(player, powercube_choices);
         render_ui_powercube_choices(player, powercube_choices);
+
+        if (check_equipment_window() == 2) {
+            player.equip_inventory_changed = true;
+        }
     }
 
     if (player.consume_change("stats")) {

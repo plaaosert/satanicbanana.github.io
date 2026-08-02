@@ -161,7 +161,7 @@
                 </div>
 
                 <div class="equipment equipment-supercontainer flex-rows">
-                    <span>All equipment items (including shop items and buy counts) do not reset on collapse.</span><br>
+                    <span>All equipment items (including shop items and buy costs) do not reset on collapse.</span><br>
 
                     <div class="select-bar equipment-select-bar">
                         <span class="select-bar-button equipment-items selected">♐ Items</span>
@@ -170,7 +170,30 @@
 
                     <div class="equipment-menu-content sidebar-menu-content">
                         <div class="equipment-items">
-                            
+                            <div class="equipped-view nodisplay">
+                                <!--
+                                  # H R
+                                  T B H
+                                  # L #
+                                -->
+                                <div class="equipment-row">
+                                    <div class="equipment-item blank"></div>
+                                    <div class="equipment-item head"></div>
+                                    <div class="equipment-item ring"></div>
+                                </div>
+                                <div class="equipment-row">
+                                    <div class="equipment-item tool"></div>
+                                    <div class="equipment-item body">
+                                        <img src="assets/img/sprites/items/placeholder_body.png">
+                                    </div>
+                                    <div class="equipment-item hand"></div>
+                                </div>
+                                <div class="equipment-row">
+                                    <div class="equipment-item blank"></div>
+                                    <div class="equipment-item legs"></div>
+                                    <div class="equipment-item blank"></div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="equipment-shop">
@@ -223,41 +246,23 @@
 
     <div class="templates nodisplay">
         <div class="equipment-inventory-view">
-            <div class="equipment-inventory-items">
-                <div class="equipment-inventory-item template">
-                    <img class="item-icon" src="assets/img/icons/unknown.png">
-                    <span class="itemname">Item</span>
-                    <span class="iteminfo">x34,520</span> <!-- Depends on what the item is. Quantity if stackable, equip slot if equippable, else "-" -->
-                </div>
-            </div>
-            <div class="equipment-inventory-selected-item flex-rows">
-                <div class="equipment-inventory-selected-noitem nodisplay">
-                    <span>Select an item to view its info.</span>
-                </div>
-                <div class="equipment-inventory-selected-item-info">
-                    <div class="flex-cols item-basic-info">
-                        <img class="item-bigicon" src="assets/img/icons/unknown.png">
-                        <div class="flex-rows">
-                            <span class="itemname">Item</span>
-                            <span class="itemrarity" style="color: rgba(170, 68, 255, 1)">Mythical</span>
-                            <span class="itemquantity">x34,520</span>
-                        </div>
+            <div class="equipment-inventory-gridcontainer" style="--itemsize: 48px">
+                <div class="equipment-inventory-grid">
+                    <div class="equipment-inventory-gridback template">
+
                     </div>
-                    <span class="itemdesc">This is an item description that tells you what the item is. This is usually flavour text.</span>
-                    <span class="item-usedesc-container"><span class="useheader">Use:</span><span class="item-usedesc">This is a description of what the item does when used. Will be hidden if there isn't a use.</span></span>
-                    <span class="item-equipdesc">This is a description of what the item does when equipped. Will be hidden if it can't be equipped.</span>
-                    <div class="equipment-actionbuttons">
-                        <div class="flex-cols actionbuttons-subrow use">
-                            <span class="inline-button use1button">Use 1</span>
-                            <span class="inline-button usemaxbutton">Use all (<span class="usemaxcnt"></span>34,520)</span>
-                        </div>
-                        <div class="flex-cols actionbuttons-subrow equip">
-                            <span class="inline-button use1button">Equip</span>
-                        </div>
-                        <div class="flex-cols actionbuttons-subrow sell">
-                            <span class="inline-button sell1button">Sell 1</span>
-                            <span class="inline-button sellmaxbutton">Sell all (<span class="sellmaxcnt"></span>34,520)</span>
-                        </div>
+                </div>
+
+                <div class="equipment-inventory-items-grid">
+                    <div class="equipment-inventory-griditem template" draggable="false">
+                        <img class="item-icon" src="assets/img/icons/unknown.png" draggable="false">
+                        <p class="item-quant">1</p>
+                    </div>
+
+                    <div class="equipment-inventory-item template">
+                        <img class="item-icon" src="assets/img/icons/unknown.png">
+                        <span class="itemname">Item</span>
+                        <span class="iteminfo">x34,520</span> <!-- Depends on what the item is. Quantity if stackable, equip slot if equippable, else "-" -->
                     </div>
                 </div>
             </div>
@@ -377,6 +382,50 @@
         <span class="inline-button" onclick="document.querySelector('.helptext').classList.add('nodisplay')">Hide help</span>
     </div>
 
+    <div class="crosshair nodisplay">
+        <img src="assets/img/icons/crosshair.png">
+    </div>
+
+    <div class="popups-container">
+        <div class="popup dnd-item template">
+            <img src="assets/img/icons/unknown.png">
+        </div>
+
+        <div class="popup equipment-inventory-selected-item flex-rows nodisplay">
+            <div class="equipment-inventory-selected-noitem nodisplay">
+                <span>Select an item to view its info.</span>
+            </div>
+            <div class="equipment-inventory-selected-item-info">
+                <div class="flex-cols item-basic-info">
+                    <img class="item-bigicon" src="assets/img/icons/unknown.png">
+                    <div class="flex-rows">
+                        <span class="itemname">Item</span>
+                        <span class="itemrarity" style="color: rgba(170, 68, 255, 1)">Mythical</span>
+                        <span class="itemquantity">x34,520</span>
+                    </div>
+                </div>
+                <span class="itemdesc">This is an item description that tells you what the item is. This is usually flavour text.</span>
+                <span class="item-usedesc-container"><span class="useheader">Use:</span><span class="item-usedesc">This is a description of what the item does when used. Will be hidden if there isn't a use.</span></span>
+                <span class="item-equipdesc">This is a description of what the item does when equipped. Will be hidden if it can't be equipped.</span>
+                <!--
+                <div class="equipment-actionbuttons">
+                    <div class="flex-cols actionbuttons-subrow use">
+                        <span class="inline-button use1button">Use 1</span>
+                        <span class="inline-button usemaxbutton">Use all (<span class="usemaxcnt"></span>34,520)</span>
+                    </div>
+                    <div class="flex-cols actionbuttons-subrow equip">
+                        <span class="inline-button equipbutton">Equip</span>
+                    </div>
+                    <div class="flex-cols actionbuttons-subrow sell">
+                        <span class="inline-button sell1button">Sell 1</span>
+                        <span class="inline-button sellmaxbutton">Sell all (<span class="sellmaxcnt"></span>34,520)</span>
+                    </div>
+                </div>
+                -->
+            </div>
+        </div>
+    </div>
+
 	<div class="bottombar" id="normal-bottombar" style="display: none;">
 		<p class="left-text" style="font-size: 3vmin; bottom: -8px">plorp v1.0 | plorp<br>
             <!--
@@ -400,7 +449,7 @@
     <script src="textconstants.js?v=04"></script>
     <script src="windowmanager.js?v=03"></script>
 
-    <script src="plorp.js?v=15"></script>
+    <script src="plorp.js?v=16"></script>
 
 	<script src="../shared/js/playtime.js?v=00"></script>
 </body>

@@ -17,6 +17,12 @@ let audios_list = [
     ["block_destroy3", "block_destroy3.wav"],
     ["block_destroy4", "block_destroy4.wav"],
 
+    ["pickup1", "pickup1.wav"],
+    ["pickup2", "pickup2.wav"],
+    ["pickup3", "pickup3.wav"],
+    ["pickup4", "pickup4.wav"],
+    ["pickup5", "pickup5.wav"],
+
     ["block_destroy_reverse", "block_destroy_reverse.mp3?v=01"],
 
     ["bomb_beep", "bomb_beep.wav"],
