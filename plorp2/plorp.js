@@ -3742,7 +3742,7 @@ function render_ui_playerstats(player) {
         e.querySelector(".player-lightlevel").parentElement.classList.add("nodisplay");
     } else {
         e.querySelector(".player-lightlevel").parentElement.classList.remove("nodisplay");
-        e.querySelector(".player-lightlevel").textContent = `${player.stats.lightlevel.toFixed(0)}ti`;
+        e.querySelector(".player-lightlevel").textContent = `${player.stats.lightlevel.toFixed(1)}ti`;
     }
 
     if (!(player.stats.lightlevel_enabled && player.has_upgrade_by_id("pcx2-darkness-darker"))) {
