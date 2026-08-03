@@ -816,7 +816,7 @@ class Colour {
         this.r = r;
         this.g = g;
         this.b = b;
-        this.a = a ? a : 255;
+        this.a = a ?? 255;
     
         this.data = Array(4);
         this.get_data();
