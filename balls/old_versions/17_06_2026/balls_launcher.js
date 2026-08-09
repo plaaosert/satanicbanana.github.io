@@ -594,8 +594,6 @@ function decompress_replay(replay) {
 } 
 
 function exit_battle(save_replay=true) {
-    triggered_game_end_mus = false;
-    
     if (!board)
         return;
 
@@ -1043,17 +1041,7 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
 
         // cache the music if not muted
         if (!muted && starting_fullpause_timeout > 1) {
-            if (AERO_BACKGROUND == AERO_BACKGROUNDS.MACINTOSH) {
-                let index = random_int(0, 3, get_seeded_randomiser(board.random_seed));
-                // index = 1;
-                prepare_lazy_audio(`upusen_${index+1}`);
-            } else if (AERO_BACKGROUND == AERO_BACKGROUNDS.VISTA) {
-                let index = random_int(0, 4, get_seeded_randomiser(board.random_seed));
-                // index = 1;
-                prepare_lazy_audio(`mm_${index+1}`);
-            } else {
-                prepare_lazy_audio(`2048_${random_int(0, 13, get_seeded_randomiser(board.random_seed))+1}`);
-            }
+            prepare_lazy_audio(`2048_${random_int(0, 13, get_seeded_randomiser(board.random_seed))+1}`);
         }
 
         game_paused = false;
@@ -2509,7 +2497,7 @@ function layout_balls_list(canvas, ctx, weapon_layer_ctx, debug_layer_ctx, list,
     weapon_layer_ctx.fill();
     weapon_layer_ctx.closePath();
 
-    let balls_per_row = 6;
+    let balls_per_row = 5;
     
     let boardsiz = override_boardsiz ?? map_configs.S.size
 
@@ -2532,26 +2520,14 @@ function layout_balls_list(canvas, ctx, weapon_layer_ctx, debug_layer_ctx, list,
         debug_layer_ctx.textAlign = "center";
         debug_layer_ctx.textBaseline = "middle";
         
-        // write_pp_bordered_text(
-        //     debug_layer_ctx,
-        //     `${ball.name}`,
-        //     spos.x, spos.y + (800 * l_scaling.true_zoom_level), ball.get_current_desc_col().css(), 
-        //     CANVAS_FONTS, 18,
-        //     false, 2, ball.get_current_border_col().css()
-        // )
+        write_pp_bordered_text(
+            debug_layer_ctx,
+            `${ball.name}`,
+            spos.x, spos.y + (800 * l_scaling.true_zoom_level), ball.get_current_desc_col().css(), 
+            CANVAS_FONTS, 18,
+            false, 2, ball.get_current_border_col().css()
+        )
     }
-}
-
-function render_promo_balls_graphic(balls, levels=0) {
-    document.querySelector(".fullscreen-canvases").style.display = "";
-
-    layout_balls_list(
-        document.querySelector("#fullscreen_canvas1"),
-        document.querySelector("#fullscreen_canvas2").getContext("2d"),
-        document.querySelector("#fullscreen_canvas1").getContext("2d"), 
-        document.querySelector("#fullscreen_canvas3").getContext("2d"),
-        balls, levels, BOARD_SIZE * 3
-    ) 
 }
 
 function is_valid_viewport() {
@@ -3003,12 +2979,11 @@ document.addEventListener("DOMContentLoaded", function() {
     randomise_ball_info("ball1", "random-ball");
     randomise_ball_info("ball2", "random-ball");
 
-    selected_ball_info['ball1'].name = "Khopesh";
-    selected_ball_info['ball2'].name = "Super Dummy";
-    // STARTING_HP = 10000;
-    selected_ball_info['ball2'].level = 99;
+    // selected_ball_info['ball1'].name = "Super Dummy"
+    // selected_ball_info['ball2'].name = "Chakram"
+    // selected_ball_info['ball1'].level = 99;
 
-    document.querySelector("#ultimates_checkbox").checked = false;
+    // document.querySelector("#ultimates_checkbox").checked = true;
 
     // force ball in slot 1 and slot 2
     // selected_ball_info.ball1.name = "Dummy";

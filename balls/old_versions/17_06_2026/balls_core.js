@@ -1,8 +1,8 @@
 game_id = "balls";
 
-const FILES_PREFIX = "";
+const FILES_PREFIX = "../../";
 
-const GAME_VERSION = "24/06/2026";
+const GAME_VERSION = "17/06/2026";
 
 const AILMENT_CHARS = "➴☣♨";
 
@@ -27,23 +27,13 @@ const layer_names = [
 let imgs = {};
 
 const local = window.location.href.startsWith("file://") || window.location.href.startsWith("http://localhost");
-const alternate_stats_rendering_mode = true;
+const alternate_stats_rendering_mode = local;
 const show_playingaround_warning = false;
 
 const prerender_canvas = document.getElementById("hidden-prerender-canvas");
 const prerender_ctx = prerender_canvas.getContext("2d");
 
 const PARTICLE_SIZE_MULTIPLIER = 16;
-
-const COMBO_TIMEOUT = 2;
-const COMBO_LERP_IN_TIME = 0.2;
-const COMBO_LERP_OUT_TIME = 0.2;
-const COMBO_STARTOUT_TIME = COMBO_TIMEOUT - COMBO_LERP_OUT_TIME;
-
-const COMBO_TIER_REQ = 8;
-
-const COMBO_HITCOUNT_PULSE_TIME = 0.5;
-const COMBO_HITCOUNT_PULSE_SIZE = 0.75;
 
 const CANVAS_FONTS = "MS Gothic, terminus, Roboto Mono, monospace";
 const sizedown_lookup = {
@@ -73,8 +63,6 @@ let camera_zoom_lerp_intens = 1;
 
 let camera_operation_timeout_max = 0.001;
 let camera_operation_timeout = 0;
-
-let last_death_sound_cooldown = 0;
 
 let materials2sprites = {
     "neutral": ["Neutral", "wht", "#ccc"],
@@ -116,7 +104,6 @@ let fully_loaded = false;
 
 let ending_game_timer_max = 200;
 let ending_game_timer = ending_game_timer_max;
-let triggered_game_end_mus = false;
 
 let cutscene_time_stop_dur = 0;
 
@@ -203,9 +190,6 @@ let BALL_RENDERING_METHOD = BALL_RENDERING_METHODS.VECTOR;
 let AERO_LIGHTING_CONFIG = AERO_LIGHTING_CONFIGS.VISTA;
 let AERO_BACKGROUND = AERO_BACKGROUNDS.NONE;
 let pixelate_canvas = true;
-let show_combo_info = true;
-let pixelate_combo_counter = false;
-let center_combo_hitcount = false;
 
 const BALL_STATS_DISPLAY_LEVELS = {
     FULL: "FULL",
@@ -645,9 +629,6 @@ const entity_sprites = new Map([
     ["axe_ancient", 1, "weapon/"],
 
     ["shotgun", 1, "weapon/"],
-    ["shotgun_ult_subbullet", 1, "weapon/"],
-    ["shotgun_ult_bullet", 1, "weapon/"],
-    ["shotgun_ult_explosion", 14, "etc/shotgun_ult_explosion/"],
 
     ["spear", 1, "weapon/"],
     ["spear_projectile", 1, "weapon/"],
@@ -956,7 +937,6 @@ async function load_audio_from_url(path, lazy=false) {
 }
 
 let audios_list = [
-    ["dink3", "snd/dink3.mp3"],
     // ultrakill
     ["parry", 'snd/parry.mp3'],
     ["parry2", 'snd/parry2.mp3'],
@@ -1151,10 +1131,7 @@ let audios_list = [
     // "Lightning 2" [slightly edited] and "Lightning 4"
     ["lightningbolt2", "snd/lightningbolt2.mp3"],
     ["lightningbolt4", "snd/lightningbolt4.mp3"],
-    // "Tighten 2" and "Dark magic"
-    ["darkmagic", "snd/darkmagic.mp3"],
-    ["tighten2", "snd/tighten2.mp3"],
-    
+
     // Super Smash Bros. Ultimate: se_item_genesis_genesis.wav + se_item_smashball.wav
     ["ultimate_activate", "snd/ultimate_activate.mp3"],
 
@@ -1173,15 +1150,7 @@ let audios_list = [
     ["flash-bang-sfx", "snd/flash-bang-sfx.mp3"],
 
     // https://pixabay.com/sound-effects/film-special-effects-heartbeat-loud-242421/
-    ["heartbeat", "snd/heartbeat.mp3"],
-
-    // Jet Set Radio (Orchestra hit)
-    ["jsr_hit_1", "snd/jsr_hit_1.mp3"],
-    ["jsr_hit_2", "snd/jsr_hit_2.mp3"],
-    ["jsr_hit_3", "snd/jsr_hit_3.mp3"],
-    ["jsr_hit_4", "snd/jsr_hit_4.mp3"],
-    ["jsr_hit_5", "snd/jsr_hit_5.mp3"],
-    ["jsr_hit_6", "snd/jsr_hit_6.mp3"],
+    ["heartbeat", "snd/heartbeat.mp3"]
 ]
 
 // buh
@@ -1200,10 +1169,6 @@ let titles = [
     "Alice"
 ]
 
-let titles2 = [
-    "Track 5", "Track 7", "Track 9", "Track 11"
-]
-
 if (new URLSearchParams(window.location.search).get("nomusic") !== "true") {
     // upusen https://upusen.bandcamp.com/
     audios_list.push(   
@@ -1214,11 +1179,6 @@ if (new URLSearchParams(window.location.search).get("nomusic") !== "true") {
     
     for (let i=1; i<=13; i++) {
         audios_list.push([`2048_${i}`, `https://scrimblo.foundation/uploads/2048_${i}.mp3`, titles[i], "2048 (3DS) -- Zbigniew Siatecki", true]);
-    }
-
-    for (let i=1; i<=4; i++) {
-        audios_list.push([`mm_${i}`, `https://scrimblo.foundation/uploads/mm_${i}.mp3`, titles2[i-1], "Mechanic Master (DS)", true]);
-        audios_list.push([`mm_${i}e`, `https://scrimblo.foundation/uploads/mm_${i}e.mp3`, titles2[i-1] + " (Win)", "Mechanic Master (DS)", false]);
     }
 }
 
@@ -1279,8 +1239,6 @@ async function play_music(name, gain=null) {
 
     let played_music = await play_audio(name, gain);
     if (played_music !== null) {
-        played_music.obj.source.loop = true;
-
         music_audio = [played_music.obj, audio.get(name)[1], audio.get(name)[2], name];
 
         document.querySelector("#loading_prompt").textContent = `♪ - ${music_audio[1]} - ${music_audio[2]}`
@@ -2580,8 +2538,6 @@ class Board {
         this.ultimates_paused = false;
         this.ultimate_global_cooldown_max = 2;
         this.ultimate_global_cooldown = 0;
-
-        this.combos = {};
     }
 
     trigger_ultimates_cooldown() {
@@ -2604,77 +2560,7 @@ class Board {
         }, 0)
     }
 
-    get_combo_data(by) {
-        while (!by.show_stats && by.parent) {
-            // Try to find the highest parent to give the combo to
-            by = by.parent;
-        }
-
-        let combo_entry = this.combos[by.id];
-        if (this.duration - combo_entry?.last_hit > COMBO_TIMEOUT) {
-            combo_entry = null;
-        }
-
-        if (!combo_entry) {
-            combo_entry = {
-                ballid: by.id,
-                hits: 0,
-                damage: 0,
-                ailment: {
-                    rupture: 0,
-                    poison: 0,
-                    burn: 0,
-                },
-                start_time: this.duration,
-                last_hit: this.duration,
-                last_real_hit: this.duration,
-                last_tier_up: this.duration,
-                tier: 0,
-            };
-        }
-
-        return combo_entry;
-    }
-
-    add_combo_hit(by) {
-        let combo_entry = this.get_combo_data(by);
-
-        let prev_combo_tier = Math.floor(combo_entry.hits / COMBO_TIER_REQ);
-        combo_entry.hits++;
-        let new_combo_tier = Math.floor(combo_entry.hits / COMBO_TIER_REQ);
-        if (new_combo_tier > prev_combo_tier && new_combo_tier <= 6) {
-            play_audio(`jsr_hit_${new_combo_tier}`, 0.3);
-            play_audio("zol", 0.3);
-            combo_entry.last_tier_up = this.duration;
-            combo_entry.tier = new_combo_tier;
-        }
-
-        combo_entry.last_hit = this.duration;
-        combo_entry.last_real_hit = this.duration;
-
-        this.combos[combo_entry.ballid] = combo_entry;
-    }
-
-    add_combo_damage(by, amt) {
-        let combo_entry = this.get_combo_data(by);
-
-        combo_entry.damage += amt;
-        combo_entry.last_hit = this.duration;
-
-        this.combos[combo_entry.ballid] = combo_entry;
-    }
-
-    add_combo_ailment(by, typ, amt) {
-        let combo_entry = this.get_combo_data(by);
-
-        combo_entry.ailment[typ] += amt;
-        combo_entry.last_hit = this.duration;
-
-        this.combos[combo_entry.ballid] = combo_entry;
-    }
-
     register_hit(by, on) {
-        this.add_combo_hit(by);
         this.time_since_hit = 0;
     }
 
@@ -2692,8 +2578,6 @@ class Board {
         if (!on.show_stats) {
             return; // dont care about adds
         }
-
-        this.add_combo_damage(by, amt);
 
         let proportion_missing = 1 - (on.hp / on.max_hp);
         let proportion_other = proportion_missing;
@@ -2769,8 +2653,6 @@ class Board {
     }
 
     register_rupture(by, on, amt) {
-        this.add_combo_ailment(by, "rupture", amt);
-
         if (make_damage_numbers && by instanceof Ball && amt > 0.15 && on.show_stats) {
             let size = 14;
             if (amt >= 8) {
@@ -2792,8 +2674,6 @@ class Board {
     }
 
     register_poison(by, on, amt, dur) {
-        this.add_combo_ailment(by, "poison", amt);
-
         if (make_damage_numbers && by instanceof Ball && amt > 0.15 && dur > 0.15 && on.show_stats) {
             let size = 14;
             let final_amt = amt * dur;
@@ -2816,8 +2696,6 @@ class Board {
     }
 
     register_burn(by, on, amt) {
-        this.add_combo_ailment(by, "burn", amt);
-
         if (make_damage_numbers && by instanceof Ball && amt > 0.15 && on.show_stats) {
             let size = 14;
             if (amt >= 1) {
@@ -3511,10 +3389,7 @@ function handle_resize(event) {
 }
 
 function render_powerup_info(board) {
-    // Piggybacks on combo display, so don't clear ui4 here
-    if (!show_combo_info) {
-        layers.ui4.ctx.clearRect(0, 0, canvas_width, canvas_height);
-    }
+    layers.ui4.ctx.clearRect(0, 0, canvas_width, canvas_height);
 
     if (ball_bonuses_display_level == BALL_STATS_DISPLAY_LEVELS.NONE) {
         return;
@@ -3571,224 +3446,6 @@ function render_powerup_info(board) {
             CANVAS_FONTS, 12, false, 2, "black"
         );
     }
-}
-
-/**
- * 
- * @param {Board} board 
- */
-function render_combo_info(board) {
-    if (!show_combo_info)
-        return;
-
-    layers.ui4.ctx.clearRect(0, 0, canvas_width, canvas_height);
-
-    // Location of combo visualiser is the display order L/R/L/R
-    // Ignore non-show_stats balls
-
-    let combo_balls = board.balls.filter(b => b.show_stats).map(b => {
-        return [
-            b,
-            board.combos[b.id],
-        ]
-    }).sort(b => b.spawned_index);
-
-    let yper = 128;
-    if (center_combo_hitcount) {
-        yper += 32;
-    }
-
-    let yoffset = 96;
-    if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID && local && show_playingaround_warning) {
-        yoffset += 48;
-    }
-
-    let pixelfont = pixelate_combo_counter;
-    let font = CANVAS_FONTS;
-    if (pixelfont) {
-        font = "fixedsys, " + CANVAS_FONTS;;
-        yoffset -= 16;
-    }
-
-    combo_balls.forEach(bd => {
-        let ball = bd[0];
-        let combo_data = bd[1];
-        if (!combo_data)
-            return;
-
-        if (board.duration > combo_data.last_hit + COMBO_TIMEOUT)
-            return;
-
-        let x = ball.spawned_index % 2;
-        let y = Math.floor(ball.spawned_index / 2);
-
-        let ypos = yoffset + (y * yper);
-
-        // If start_time < COMBO_LERP_IN_TIME, lerp from outside to in
-        // If last_hit > COMBO_TIMEOUT - COMBO_LERP_OUT_TIME, lerp from inside to out
-        let xbase = x == 0 ? 0 : canvas_width;
-        let xoff = 80;
-
-        let lerp_amt = 1;
-        let time_since_hit = board.duration - combo_data.last_hit;
-        let time_since_real_hit = board.duration - combo_data.last_real_hit;
-        let time_since_start = board.duration - combo_data.start_time;
-        if (time_since_start < COMBO_LERP_IN_TIME) {
-            lerp_amt = time_since_start / COMBO_LERP_IN_TIME;
-        } else if (time_since_hit > COMBO_STARTOUT_TIME) {
-            let timeleft = time_since_hit - COMBO_STARTOUT_TIME;
-            lerp_amt = 1 - (timeleft / COMBO_LERP_OUT_TIME);
-        }
-
-        let xpos = xbase + ((xoff * (x == 0 ? 1 : -1)) * lerp_amt);
-
-        let hits_size = 96;
-        let original_hits_size = hits_size;
-
-        let sizemul_factor = 1 - (Math.min(time_since_real_hit, COMBO_HITCOUNT_PULSE_TIME) / COMBO_HITCOUNT_PULSE_TIME); 
-        hits_size_mul = 1 + (COMBO_HITCOUNT_PULSE_SIZE * Math.pow(sizemul_factor, 2));
-        hits_size *= hits_size_mul;
-
-        let original_alpha = layers.ui4.ctx.globalAlpha;
-        layers.ui4.ctx.globalAlpha = lerp_amt;
-
-        /*
-
-        Combo levels:
-        0 - nothing
-        1 - flash white on the moment of hit (all levels have this effect)
-        2 - lerp bordercol to closer to ball colour
-        3 - "HITS" shakes
-        4 - "HITS" shakes more
-        5 - "HITS" waves up and down instead of shaking
-        6 - rainbow colour
-
-        */
-
-        let basecol = ball.get_current_desc_col();
-        let bordercol = ball.get_current_border_col();
-
-        let time_since_tier_up = board.duration - combo_data.last_tier_up;
-
-        let additional_off = center_combo_hitcount ? 32 : 0;
-
-        if (combo_data.tier >= 2) {
-            bordercol = bordercol.lerp(basecol, 0.35);
-        }
-
-        if (combo_data.tier >= 6) {
-            let hsv_basecol = rgbToHsv(basecol.r, basecol.g, basecol.b);
-            let newcol = new Colour(...hsvToRgb(
-                (hsv_basecol[0] + (board.duration * 0.5)) % 256,
-                hsv_basecol[1], hsv_basecol[2]
-            ));
-
-            basecol = newcol;
-
-            ypos += (Math.sin((board.duration * 2) + ball.spawned_index) * 10)
-        }
-
-        if (combo_data.tier > 0 && combo_data.tier < 6) {
-            basecol = basecol.lerp(Colour.white, 1 * (1 - (Math.min(time_since_tier_up, 1.25) / 1.25)));
-            bordercol = bordercol.lerp(Colour.white, 0.8 * (1 - (Math.min(time_since_tier_up, 1.25) / 1.25)));
-        }
-
-        write_pp_bordered_text(
-            layers.ui4.ctx, `${combo_data.hits}`,
-            xpos, ypos + (original_hits_size * hits_size_mul * 0.25), basecol.css(),
-            font, hits_size, center_combo_hitcount, 2,
-            bordercol.css(), null, false,
-            x == 1
-        );
-
-        if (combo_data.tier >= 3) {
-            let t = Math.floor(board.duration * 30);
-            let rand = get_seeded_randomiser(`${ball.spawned_index}:${t}`);
-            
-            let st = combo_data.hits == 1 ? "hit" : "hits";
-            let sx = 12 * st.length * 0.5;
-            for (let i=0; i<st.length; i++) {
-                let off = random_on_circle(random_float(0, combo_data.tier >= 4 ? 3 : 2, rand), rand);
-                if (combo_data.tier >= 5) {
-                    off = new Vector2(
-                        0, -4 + (Math.sin((board.duration * 3) + ball.spawned_index + i) * 5)
-                    );
-                }
-
-                write_pp_bordered_text(
-                    layers.ui4.ctx, st[i],
-                    xpos - sx + ((i+0.5) * 12) + off.x, ypos + 16 + additional_off + off.y, basecol.css(),
-                    font, 24, true, 3,
-                    bordercol.css(),
-                );
-            }
-        } else {
-            write_pp_bordered_text(
-                layers.ui4.ctx, combo_data.hits == 1 ? "hit" : "hits",
-                xpos, ypos + 16 + additional_off, basecol.css(),
-                font, 24, true, 2,
-                bordercol.css(),
-            );
-        }
-
-        let hit_timeleft = COMBO_TIMEOUT - time_since_hit;
-        let barsize = 24;
-        let solidbars = Math.floor((barsize * hit_timeleft) / COMBO_TIMEOUT);
-        let emptybars = barsize - solidbars;
-        let text = "";
-        if (x == 1)
-            text = `${" ".repeat(emptybars)}${"█".repeat(solidbars)}`;
-        else
-            text = `${"█".repeat(solidbars)}${" ".repeat(emptybars)}`;
-
-        if (center_combo_hitcount) {
-            text = "█".repeat(solidbars);
-        }
-
-        write_pp_bordered_text(
-            layers.ui4.ctx, text,
-            xpos - (-(center_combo_hitcount ? 0 : 4) * (x == 0 ? 1 : -1)), ypos + 32 + additional_off, basecol.css(),
-            font, 8, true, 2,
-            bordercol.css()
-        );
-
-        write_pp_bordered_text(
-            layers.ui4.ctx, `✷ ${combo_data.damage.toFixed(0)}`,
-            xpos, ypos + 48 + additional_off, basecol.css(),
-            font, 16, true, 1,
-            bordercol.css(),
-        );
-
-        for (let i=0; i<3; i++) {
-            let key = ["rupture", "poison", "burn"][i];
-            let amt = combo_data.ailment[key] ?? 0;
-            if (!(amt > 0))
-                continue;
-
-            let ailment_xoff = 44 * (i - 1);
-        
-            write_pp_bordered_text(
-                layers.ui4.ctx, `${AILMENT_CHARS[i]} ${amt.toFixed(1)}`,
-                xpos + ailment_xoff, ypos + 64 + additional_off, basecol.css(),
-                font, 12, true, 1,
-                bordercol.css(),
-            );
-        }
-
-        // for (let i=0; i<4; i++) {
-        //     let hits_xoff = 0;
-        //     let hits_yoff = -20 * (i - 1);
-
-        //     write_pp_bordered_text(
-        //         layers.ui4.ctx, "STIH"[i],
-        //         xpos + hits_xoff, ypos + hits_yoff, ball.get_current_desc_col().css(),
-        //         font, 20, true, 2,
-        //         bordercol.css(),
-        //     );
-        // }
-
-        layers.ui4.ctx.globalAlpha = original_alpha;
-    })
 }
 
 function render_watermark() {
@@ -5118,11 +4775,6 @@ function render_postopening(board) {
                 let index = random_int(0, gains.length, get_seeded_randomiser(board.random_seed));
                 // index = 1;
                 play_music(`upusen_${index+1}`, gains[index]);
-            } else if (AERO_BACKGROUND == AERO_BACKGROUNDS.VISTA) {
-                let gains = [0.25, 0.15, 0.15, 0.15];
-                let index = random_int(0, gains.length, get_seeded_randomiser(board.random_seed));
-                // index = 1;
-                play_music(`mm_${index+1}`, gains[index]);
             } else {
                 play_music(`2048_${random_int(0, 13, get_seeded_randomiser(board.random_seed))+1}`, 0.2);
             }
@@ -5303,7 +4955,6 @@ function game_loop() {
                 render_watermark();  // new year uses watermark code to fade it so need to rerun it during games
         }
 
-        render_combo_info(board);
         if (board.powerups_enabled)
             render_powerup_info(board);
 
@@ -5323,8 +4974,6 @@ function game_loop() {
     audio_playing = audio_playing.filter(audio => !audio.ended);
     
     if (board) {
-        last_death_sound_cooldown -= delta_time / 1000;
-
         let game_delta_time = delta_time;
         let speed_mult = game_speed_mult;
         game_fps_catchup_modifier = 1;
@@ -6038,23 +5687,7 @@ function game_loop() {
 
                 if (ending_game_timer <= 0) {
                     // this means if _max is >0, there will always be at least one frame of "grace period"
-                    if (!triggered_game_end_mus) {
-                        if (music_audio[3].startsWith("mm_")) {
-                            let maud = music_audio[3];
-
-                            // stop_music();
-                            let gains = [0.25, 0.15, 0.15, 0.15];
-                            let musicid = Number.parseInt(maud[3])-1;
-                            fade_out_audio(music_audio[0].source, gains[musicid], 0.3);
-
-                            board.set_cutscene_timer(new Timer(b => {
-                                play_audio(maud + "e", gains[musicid] + 0.05);
-                            }, 0.6))
-                        }
-                    }
-                    
                     ending_game = true;
-                    triggered_game_end_mus = true;
                 }
                 ending_game_timer -= game_delta_time;
             } else {

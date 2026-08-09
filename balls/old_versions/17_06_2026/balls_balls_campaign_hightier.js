@@ -624,7 +624,6 @@ class KhopeshBall extends WeaponBall {
             this.clone_level + 1
         );
 
-        new_ball.parent = this;
         new_ball.opacity = 0;
         new_ball.gets_hit = false;
         new_ball.takes_damage = false;
