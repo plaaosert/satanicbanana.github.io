@@ -92,7 +92,7 @@ const ANIMATION_STANDARD_DATA = {
     translocator: {
         keyframes: [
             {frame: 0, snd: "kiblast"},
-            {frame: 0, snd: "translocator_dodge", gain: 0.2},
+            {frame: 0, snd: "translocator_dodge", gain: 0.15},
             {frame: 1, snd: "eyebeam_fire"},
             {frame: 4, display: true},
         ],
@@ -102,7 +102,7 @@ const ANIMATION_STANDARD_DATA = {
 
     bolt: {
         keyframes: [
-            {frame: 3, snd: "lightningbolt4", gain: 0.375},
+            {frame: 3, snd: "lightningbolt4", gain: 0.35},
             {frame: 7, display: true},
         ],
         size_mult: 1.25,

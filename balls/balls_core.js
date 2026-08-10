@@ -35,7 +35,7 @@ const prerender_ctx = prerender_canvas.getContext("2d");
 
 const PARTICLE_SIZE_MULTIPLIER = 16;
 
-const COMBO_TIMEOUT = 2;
+const COMBO_TIMEOUT = 2.5;
 const COMBO_LERP_IN_TIME = 0.2;
 const COMBO_LERP_OUT_TIME = 0.2;
 const COMBO_STARTOUT_TIME = COMBO_TIMEOUT - COMBO_LERP_OUT_TIME;
@@ -1200,8 +1200,22 @@ let titles = [
     "Alice"
 ]
 
+let allowed_2048_songs = [
+    1, 2, 3, 4, 
+    5, 6,
+    10
+]
+
 let titles2 = [
     "Track 5", "Track 7", "Track 9", "Track 11"
+]
+
+let dnb_info = [
+    ["rollcage_track3.mp3?v=01", "Track 3", "Rollcage -- Martin Sommerville", 0.1],
+    ["ut99_foregone_destruction_cut.mp3?v=00", "Foregone Destruction", "Unreal Tournament -- Michiel van den Bos", 0.1],
+    ["wipeout3_icaras_dj_sasha_cut.mp3?v=00", "Icaras", "Wipeout 3 -- DJ Sasha", 0.075],
+    ["devil_dice_liquid_the_blue.mp3?v=00", "Liquid the Blue", "XI (Devil Dice) -- Kemmei Adachi", 0.1],
+    ["tetris_splash_insanely_fast.mp3?v=02", "Insanely Fast", "Tetris Splash -- Brian DiLucente", 0.1],
 ]
 
 if (new URLSearchParams(window.location.search).get("nomusic") !== "true") {
@@ -1212,13 +1226,29 @@ if (new URLSearchParams(window.location.search).get("nomusic") !== "true") {
         ["upusen_3", "https://scrimblo.foundation/uploads/upusen_not_good.mp3", "Not Good", "upusen"],
     );
     
-    for (let i=1; i<=13; i++) {
+    allowed_2048_songs.forEach(i => {
         audios_list.push([`2048_${i}`, `https://scrimblo.foundation/uploads/2048_${i}.mp3`, titles[i], "2048 (3DS) -- Zbigniew Siatecki", true]);
-    }
+    })
+
+    // for (let i=1; i<=13; i++) {
+    //     audios_list.push([`2048_${i}`, `https://scrimblo.foundation/uploads/2048_${i}.mp3`, titles[i], "2048 (3DS) -- Zbigniew Siatecki", true]);
+    // }
 
     for (let i=1; i<=4; i++) {
         audios_list.push([`mm_${i}`, `https://scrimblo.foundation/uploads/mm_${i}.mp3`, titles2[i-1], "Mechanic Master (DS)", true]);
         audios_list.push([`mm_${i}e`, `https://scrimblo.foundation/uploads/mm_${i}e.mp3`, titles2[i-1] + " (Win)", "Mechanic Master (DS)", false]);
+    }
+
+    for (let i=0; i<5; i++) {
+        audios_list.push(
+            [
+                `dnb_${i}`,
+                `https://scrimblo.foundation/uploads/${dnb_info[i][0]}`,
+                dnb_info[i][1],
+                dnb_info[i][2],
+                true
+            ]
+        );
     }
 }
 
@@ -2643,8 +2673,8 @@ class Board {
         combo_entry.hits++;
         let new_combo_tier = Math.floor(combo_entry.hits / COMBO_TIER_REQ);
         if (new_combo_tier > prev_combo_tier && new_combo_tier <= 6) {
-            play_audio(`jsr_hit_${new_combo_tier}`, 0.3);
-            play_audio("zol", 0.3);
+            play_audio(`jsr_hit_${new_combo_tier}`, 0.22);
+            play_audio("zol", 0.22);
             combo_entry.last_tier_up = this.duration;
             combo_entry.tier = new_combo_tier;
         }
@@ -4893,7 +4923,7 @@ function render_opening(board, time_delta) {
         let frame = board.balls[i].entry_animation_keyframes[cur_anim_snd];
         while (frame && p.cur_frame >= frame.frame) {
             if (frame.snd) {
-                play_audio(frame.snd, frame.gain ?? 0.04);
+                play_audio(frame.snd, frame.gain ?? 0.03);
             }
 
             if (frame.display !== undefined) {
@@ -5119,12 +5149,17 @@ function render_postopening(board) {
                 // index = 1;
                 play_music(`upusen_${index+1}`, gains[index]);
             } else if (AERO_BACKGROUND == AERO_BACKGROUNDS.VISTA) {
-                let gains = [0.25, 0.15, 0.15, 0.15];
+                let gains = [0.2, 0.15, 0.11, 0.125];
                 let index = random_int(0, gains.length, get_seeded_randomiser(board.random_seed));
                 // index = 1;
                 play_music(`mm_${index+1}`, gains[index]);
+            } else if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID) {
+                let idx = random_int(0, dnb_info.length, get_seeded_randomiser(board.random_seed));
+                play_music(
+                    `dnb_${idx}`, dnb_info[idx][3]
+                );
             } else {
-                play_music(`2048_${random_int(0, 13, get_seeded_randomiser(board.random_seed))+1}`, 0.2);
+                play_music(`2048_${seeded_random_from_array(allowed_2048_songs, get_seeded_randomiser(board.random_seed))}`, 0.2);
             }
             
         } else {
@@ -5764,10 +5799,10 @@ function game_loop() {
                                             if (impact_sounds < 4) {
                                                 if (result.dmg >= 8) {
                                                     impact_sounds++;
-                                                    play_audio("impact_heavy");
+                                                    play_audio("impact_heavy", 0.09);
                                                 } else {
                                                     impact_sounds++;
-                                                    play_audio("impact");
+                                                    play_audio("impact", 0.09);
                                                 }
                                             }
                                         } else {
@@ -5856,10 +5891,10 @@ function game_loop() {
                                         if (impact_sounds < 4) {
                                             if (result.dmg >= 8) {
                                                 impact_sounds++;
-                                                play_audio("impact_heavy");
+                                                play_audio("impact_heavy", 0.09);
                                             } else {
                                                 impact_sounds++;
-                                                play_audio("impact");
+                                                play_audio("impact", 0.09);
                                             }
                                         }
                                     } else {
@@ -6043,7 +6078,7 @@ function game_loop() {
                             let maud = music_audio[3];
 
                             // stop_music();
-                            let gains = [0.25, 0.15, 0.15, 0.15];
+                            let gains = [0.2, 0.15, 0.11, 0.125];
                             let musicid = Number.parseInt(maud[3])-1;
                             fade_out_audio(music_audio[0].source, gains[musicid], 0.3);
 

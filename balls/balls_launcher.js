@@ -1051,8 +1051,11 @@ function start_game(framespeed, seed, cols, positions, ball_classes, ball_levels
                 let index = random_int(0, 4, get_seeded_randomiser(board.random_seed));
                 // index = 1;
                 prepare_lazy_audio(`mm_${index+1}`);
+            } else if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID) {
+                let idx = random_int(0, dnb_info.length, get_seeded_randomiser(board.random_seed));
+                prepare_lazy_audio(`dnb_${idx}`);
             } else {
-                prepare_lazy_audio(`2048_${random_int(0, 13, get_seeded_randomiser(board.random_seed))+1}`);
+                prepare_lazy_audio(`2048_${seeded_random_from_array(allowed_2048_songs, get_seeded_randomiser(board.random_seed))}`);
             }
         }
 
