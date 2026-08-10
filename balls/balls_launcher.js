@@ -3003,12 +3003,12 @@ document.addEventListener("DOMContentLoaded", function() {
     randomise_ball_info("ball1", "random-ball");
     randomise_ball_info("ball2", "random-ball");
 
-    selected_ball_info['ball1'].name = "Khopesh";
-    selected_ball_info['ball2'].name = "Super Dummy";
+    // selected_ball_info['ball1'].name = "Khopesh";
+    // selected_ball_info['ball2'].name = "Super Dummy";
     // STARTING_HP = 10000;
-    selected_ball_info['ball2'].level = 99;
+    // selected_ball_info['ball2'].level = 99;
 
-    document.querySelector("#ultimates_checkbox").checked = false;
+    // document.querySelector("#ultimates_checkbox").checked = false;
 
     // force ball in slot 1 and slot 2
     // selected_ball_info.ball1.name = "Dummy";
