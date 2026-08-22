@@ -492,6 +492,14 @@ const entity_sprites = new Map([
     ["railgun_point", 1, "etc/"],
 
     // weapons
+    ["unarmed_comet_form", 4, "weapon/unarmed/comet/"],
+    ["unarmed_comet_remain", 3, "weapon/unarmed/comet/"],
+    ["unarmed_comet_impact", 8, "weapon/unarmed/comet/"],
+    ["unarmed_glitch", 8, "weapon/unarmed/glitch1/"],
+    ["unarmed_execute", 14, "weapon/unarmed/execute/"],
+    ["unarmed_execute_bg", 1, "weapon/unarmed/execute/"],
+    ["unarmed_execute_bg2", 1, "weapon/unarmed/execute/"],
+
     ["SORD", 1, "weapon/"],
     ["SORD2", 1, "weapon/"],
     ["SORD_lightning", 1, "weapon/"],
@@ -655,12 +663,36 @@ const entity_sprites = new Map([
     ["rosary", 1, "weapon/"],
     ["rosary_halo", 1, "weapon/"],
     ["healing_burst", 11, "healing_burst/"],
+    ["magicbullet", 11, "additional2/mahou/"],
+    ["rosary_glitch_portal", 17, "weapon/rosary_glitch_portal/"],
 
     ["fishing_rod", 1, "weapon/"],
     ["fishing_rod_thrown", 1, "weapon/"],
     ["fishing_rod_hook", 1, "weapon/"],
     ["fishing_rod_club", 1, "weapon/"],
-    
+    ["fishingrod_reel", 62, "weapon/fishingrod_reel/"],
+
+    // Fish
+    ["anomalocaris", 1, "fish/"],
+    ["breadpuff", 1, "fish/"],
+    ["depthfish", 1, "fish/"],
+    ["eyeball", 1, "fish/"],
+    ["generic_fish", 1, "fish/"],
+    ["gold_koi", 1, "fish/"],
+    ["goldfish_cracker", 1, "fish/"],
+    ["koi", 1, "fish/"],
+    ["limetail", 1, "fish/"],
+    ["lumpfish", 1, "fish/"],
+    ["mana_guppy", 1, "fish/"],
+    ["marlin", 1, "fish/"],
+    ["mechafish", 1, "fish/"],
+    ["salmon", 1, "fish/"],
+    ["shaded_eel", 1, "fish/"],
+    ["snorbler", 1, "fish/"],
+    ["spikefin", 1, "fish/"],
+    ["tiny_fish", 1, "fish/"],
+    ["weird_eel", 1, "fish/"],
+
     ["frying_pan", 1, "weapon/"],
     ["frying_pan_r", 1, "weapon/"],
 
@@ -956,7 +988,14 @@ async function load_audio_from_url(path, lazy=false) {
 }
 
 let audios_list = [
+    // Mine
+    ["blinkin", "snd/blinkin.mp3"],
+    ["blinkout", "snd/blinkout.mp3"],
+
     ["dink3", "snd/dink3.mp3"],
+    ["unarmed_aura", "snd/unarmed_aura.mp3"],
+    ["unarmed_aura_2", "snd/unarmed_aura_2.mp3"],
+    
     // ultrakill
     ["parry", 'snd/parry.mp3'],
     ["parry2", 'snd/parry2.mp3'],
@@ -1069,6 +1108,10 @@ let audios_list = [
     // Wario Land 4
     ["FullHealthItemA", "snd/FullHealthItem_A.wav"],
 
+    // Minecraft
+    ["fishrod_cast", "snd/fishrod_cast.mp3"],
+    ["fishrod_reelin", "snd/fishrod_reelin.mp3"],
+
     // TF2 - Frying Pan
     ["frying_pan0", "snd/melee_frying_pan_01.wav"],
     ["frying_pan1", "snd/melee_frying_pan_02.wav"],
@@ -1130,6 +1173,8 @@ let audios_list = [
     ["big_punch", "snd/big_punch.mp3"],
     ["slow_motion_stop", "snd/slow_motion_stop.mp3"],
     ["special_move_hit", "snd/special_move_hit.mp3"],
+    // Edited version of 剣で斬る1 from this page
+    ["spear_summon", "snd/spear_summon.mp3"],
 
     // https://pixabay.com/sound-effects/nature-earth-rumble-6953/
     ["earthquake2", "snd/earthquake2.mp3"],
@@ -1154,6 +1199,9 @@ let audios_list = [
     // "Tighten 2" and "Dark magic"
     ["darkmagic", "snd/darkmagic.mp3"],
     ["tighten2", "snd/tighten2.mp3"],
+    // "Fire Magic" 1 and 2
+    ["firemagic1", "snd/firemagic1.mp3"],
+    ["firemagic2", "snd/firemagic2.mp3"],
     
     // Super Smash Bros. Ultimate: se_item_genesis_genesis.wav + se_item_smashball.wav
     ["ultimate_activate", "snd/ultimate_activate.mp3"],
@@ -1212,7 +1260,7 @@ let titles2 = [
 
 let dnb_info = [
     ["rollcage_track3.mp3?v=01", "Track 3", "Rollcage -- Martin Sommerville", 0.1],
-    ["ut99_foregone_destruction_cut.mp3?v=00", "Foregone Destruction", "Unreal Tournament -- Michiel van den Bos", 0.1],
+    ["ut99_foregone_destruction_cut.mp3?v=00", "Foregone Destruction", "Unreal Tournament -- Michiel van den Bos", 0.125],
     ["wipeout3_icaras_dj_sasha_cut.mp3?v=00", "Icaras", "Wipeout 3 -- DJ Sasha", 0.075],
     ["devil_dice_liquid_the_blue.mp3?v=00", "Liquid the Blue", "XI (Devil Dice) -- Kemmei Adachi", 0.1],
     ["tetris_splash_insanely_fast.mp3?v=02", "Insanely Fast", "Tetris Splash -- Brian DiLucente", 0.1],
@@ -1223,7 +1271,7 @@ if (new URLSearchParams(window.location.search).get("nomusic") !== "true") {
     audios_list.push(   
         ["upusen_1", "https://scrimblo.foundation/uploads/bad_customer.mp3", "Bad customers", "upusen"],
         ["upusen_2", "https://scrimblo.foundation/uploads/upusen_2.mp3", "Wednesday Is Almost Friday", "upusen"],
-        ["upusen_3", "https://scrimblo.foundation/uploads/upusen_not_good.mp3", "Not Good", "upusen"],
+        ["upusen_3", "https://scrimblo.foundation/uploads/upusen_mountainCUT.mp3", "mountain", "upusen"],
     );
     
     allowed_2048_songs.forEach(i => {
@@ -1536,6 +1584,31 @@ class ParticleComponent {
 
     pass_time(particle, time_delta) {
         // blank
+    }
+}
+
+class MovingParticleComponent extends ParticleComponent {
+    constructor(board, velocity) {
+        super(board);
+        this.velocity = velocity;
+    }
+
+    pass_time(particle, time_delta) {
+        particle.position = particle.position.add(this.velocity.mul(time_delta));
+    }
+}
+
+class GravityParticleComponent extends ParticleComponent {
+    constructor(board, movingparticlecomponent, gravity) {
+        super(board);
+        this.movingparticlecomponent = movingparticlecomponent;
+        this.gravity = gravity;
+    }
+
+    pass_time(particle, time_delta) {
+        this.movingparticlecomponent.velocity = this.movingparticlecomponent.velocity.add(
+            this.gravity.mul(time_delta)
+        );
     }
 }
 
@@ -3263,6 +3336,7 @@ class Ball {
         this.ignore_ball_collisions = false;
         this.affected_by_gravity = true;
         this.moves = true;
+        this.ignore_normal_movement = false;
 
         this.spawned_index = -1;
     }
@@ -3631,6 +3705,10 @@ function render_combo_info(board) {
     let yoffset = 96;
     if (AERO_BACKGROUND == AERO_BACKGROUNDS.PARALLAX_GRID && local && show_playingaround_warning) {
         yoffset += 48;
+    }
+
+    if (board.powerups_enabled) {
+        yoffset += 128;
     }
 
     let pixelfont = pixelate_combo_counter;
@@ -4579,51 +4657,53 @@ function render_canvas_ball(canvas, ctx, weapon_layer_ctx, debug_layer_ctx, ball
     // now draw the weapons
     // weapon needs to be drawn at an offset from the ball (radius to the right)
     // with that offset rotated by the angle as well
-    ball.weapon_data.forEach((weapon, index) => {
-        if (weapon.size_multiplier <= 0 || !weapon.display) {
-            return;
-        }
+    if (!ball.hide_weapon_rendering) {
+        ball.weapon_data.forEach((weapon, index) => {
+            if (weapon.size_multiplier <= 0 || !weapon.display) {
+                return;
+            }
 
-        let offset = ball.get_weapon_offset(index);
+            let offset = ball.get_weapon_offset(index);
 
-        let siz = weapon.size_multiplier * scaling.true_zoom_level * 128;
-        let pos = scaling.wtsp(ball_pos.add(offset));
+            let siz = weapon.size_multiplier * scaling.true_zoom_level * 128;
+            let pos = scaling.wtsp(ball_pos.add(offset));
 
-        let original_weapon_alpha = weapon_layer_ctx.globalAlpha;
-        weapon_layer_ctx.globalAlpha = ball.opacity * (ball.weapon_opacity ?? 1);
+            let original_weapon_alpha = weapon_layer_ctx.globalAlpha;
+            weapon_layer_ctx.globalAlpha = ball.opacity * (ball.weapon_opacity ?? 1);
 
-        if (weapon.sprite) {
-            write_rotated_image(layers.fg3.canvas, weapon_layer_ctx, pos.x, pos.y, entity_sprites.get(weapon.sprite)[weapon.frame], siz, siz, weapon.angle);
-        }
+            if (weapon.sprite) {
+                write_rotated_image(layers.fg3.canvas, weapon_layer_ctx, pos.x, pos.y, entity_sprites.get(weapon.sprite)[weapon.frame], siz, siz, weapon.angle);
+            }
 
-        if (render_collision_boxes) {
-            // render the collision boxes on debug_back as green circles
-            // collision boxes are based on the original 128x128 sizing
-            // so get the offset, then add the collision pos offset, then draw that
-            let hitboxes_offsets = ball.get_hitboxes_offsets(index);
-            weapon.hitboxes.forEach((hitbox, index) => {
-                let hitbox_offset = offset.add(hitboxes_offsets[index]);
+            if (render_collision_boxes) {
+                // render the collision boxes on debug_back as green circles
+                // collision boxes are based on the original 128x128 sizing
+                // so get the offset, then add the collision pos offset, then draw that
+                let hitboxes_offsets = ball.get_hitboxes_offsets(index);
+                weapon.hitboxes.forEach((hitbox, index) => {
+                    let hitbox_offset = offset.add(hitboxes_offsets[index]);
 
-                let hitbox_screen_pos = scaling.wtsp(ball_pos.add(hitbox_offset));
-                let w2 = w / 8;
+                    let hitbox_screen_pos = scaling.wtsp(ball_pos.add(hitbox_offset));
+                    let w2 = w / 8;
 
-                debug_layer_ctx.beginPath();
-                debug_layer_ctx.arc(
-                    hitbox_screen_pos.x, hitbox_screen_pos.y, 
-                    Math.max(0, (hitbox.radius * weapon.size_multiplier * scaling.true_zoom_level) - (w2/2)),
-                    0, 2 * Math.PI, false
-                );
-                debug_layer_ctx.fillStyle = new Colour(0, 255, 0, 128).css();
-                debug_layer_ctx.fill();
-                debug_layer_ctx.lineWidth = w2;
-                debug_layer_ctx.strokeStyle = new Colour(0, 255, 0, 255).css();
-                debug_layer_ctx.stroke();
-                debug_layer_ctx.closePath();
-            })
-        }
+                    debug_layer_ctx.beginPath();
+                    debug_layer_ctx.arc(
+                        hitbox_screen_pos.x, hitbox_screen_pos.y, 
+                        Math.max(0, (hitbox.radius * weapon.size_multiplier * scaling.true_zoom_level) - (w2/2)),
+                        0, 2 * Math.PI, false
+                    );
+                    debug_layer_ctx.fillStyle = new Colour(0, 255, 0, 128).css();
+                    debug_layer_ctx.fill();
+                    debug_layer_ctx.lineWidth = w2;
+                    debug_layer_ctx.strokeStyle = new Colour(0, 255, 0, 255).css();
+                    debug_layer_ctx.stroke();
+                    debug_layer_ctx.closePath();
+                })
+            }
 
-        weapon_layer_ctx.globalAlpha = original_weapon_alpha;
-    })
+            weapon_layer_ctx.globalAlpha = original_weapon_alpha;
+        })
+    }
 
     ctx.globalAlpha = original_alpha;
     scaling = old_scaling;
@@ -5144,7 +5224,7 @@ function render_postopening(board) {
 
         if (!board.balls.some(b => b.START_MUSIC)) {
             if (AERO_BACKGROUND == AERO_BACKGROUNDS.MACINTOSH) {
-                let gains = [0.1, 0.1, 0.1];
+                let gains = [0.1, 0.1, 0.16];
                 let index = random_int(0, gains.length, get_seeded_randomiser(board.random_seed));
                 // index = 1;
                 play_music(`upusen_${index+1}`, gains[index]);
@@ -5307,7 +5387,6 @@ function game_loop() {
 
     if (board && render) {
         if (need_stwp_recache) {
-            
             get_wtsp_stwp();
             if (BALL_RENDERING_METHOD != BALL_RENDERING_METHODS.VECTOR) {
                 board.balls.forEach(ball => ball.setup_aero_light_lookup_table());
@@ -5446,9 +5525,11 @@ function game_loop() {
                 times = 0;
                 time_stopped = true;
 
-                board.timers_step(game_delta_time / 1000, true)
-
-                board.duration_plus_cutscenes += game_delta_time / 1000;
+                if (board)
+                    board.timers_step(game_delta_time / 1000, true)
+                
+                if (board)
+                    board.duration_plus_cutscenes += game_delta_time / 1000;
             }
 
             for (let i=0; i<times; i++) {
@@ -6010,7 +6091,8 @@ function game_loop() {
                 }
             }
 
-            board.particles_step(game_delta_time, time_stopped);
+            if (board)
+                board.particles_step(game_delta_time, time_stopped);
             
             // mysterious powers
             // ....
@@ -6073,7 +6155,7 @@ function game_loop() {
 
                 if (ending_game_timer <= 0) {
                     // this means if _max is >0, there will always be at least one frame of "grace period"
-                    if (!triggered_game_end_mus) {
+                    if (music_audio && music_audio[3] && !triggered_game_end_mus) {
                         if (music_audio[3].startsWith("mm_")) {
                             let maud = music_audio[3];
 
@@ -6091,9 +6173,13 @@ function game_loop() {
                     ending_game = true;
                     triggered_game_end_mus = true;
                 }
-                ending_game_timer -= game_delta_time;
+
+                if (cutscene_time_stop_dur <= 0)
+                    ending_game_timer -= game_delta_time;
             } else {
-                board.ultimates_paused = false;
+                if (board)
+                    board.ultimates_paused = false;
+                
                 ending_game_timer = ending_game_timer_max;
             }
 
