@@ -4611,30 +4611,32 @@ function render_canvas_ball(canvas, ctx, weapon_layer_ctx, debug_layer_ctx, ball
         }
 
         case BALL_RENDERING_METHODS.AERO: {
-            let draw_pos = scaling.wtsp(ball_pos.sub(new Vector2(ball.radius, ball.radius)));
+            if (ball.aero_canvases) {
+                let draw_pos = scaling.wtsp(ball_pos.sub(new Vector2(ball.radius, ball.radius)));
 
-            ctx.drawImage(
-                ball.aero_canvases[ball_canvas_idx],
-                draw_pos.x,
-                draw_pos.y
-            )
+                ctx.drawImage(
+                    ball.aero_canvases[ball_canvas_idx],
+                    draw_pos.x,
+                    draw_pos.y
+                )
 
-            if (render_hp) {
-                let hp = Math.max(0, ball.hp);
+                if (render_hp) {
+                    let hp = Math.max(0, ball.hp);
 
-                let original_text_alpha = ctx.globalAlpha;
-                ctx.globalAlpha = ball.opacity;
+                    let original_text_alpha = ctx.globalAlpha;
+                    ctx.globalAlpha = ball.opacity;
 
-                ctx.fillStyle = "white";
-                ctx.font = `22px ${CANVAS_FONTS}`;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillText(Math.ceil(hp), ball_screen_pos.x-1.5, ball_screen_pos.y-1.5);
-                ctx.fillText(Math.ceil(hp), ball_screen_pos.x+1.5, ball_screen_pos.y-1.5);
-                ctx.fillText(Math.ceil(hp), ball_screen_pos.x-1.5, ball_screen_pos.y+1.5);
-                ctx.fillText(Math.ceil(hp), ball_screen_pos.x+1.5, ball_screen_pos.y+1.5);
-            
-                ctx.globalAlpha = original_text_alpha;
+                    ctx.fillStyle = "white";
+                    ctx.font = `22px ${CANVAS_FONTS}`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(Math.ceil(hp), ball_screen_pos.x-1.5, ball_screen_pos.y-1.5);
+                    ctx.fillText(Math.ceil(hp), ball_screen_pos.x+1.5, ball_screen_pos.y-1.5);
+                    ctx.fillText(Math.ceil(hp), ball_screen_pos.x-1.5, ball_screen_pos.y+1.5);
+                    ctx.fillText(Math.ceil(hp), ball_screen_pos.x+1.5, ball_screen_pos.y+1.5);
+                
+                    ctx.globalAlpha = original_text_alpha;
+                }
             }
 
             break;
