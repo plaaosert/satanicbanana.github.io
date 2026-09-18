@@ -782,6 +782,10 @@ const entity_sprites = new Map([
     ["drill_mound", 4, "drill_mound/"],
     ["drill_mound_form", 4, "drill_mound/form/"],
 
+    ["drill_squash1", 1, "weapon/"],
+    ["drill_squash2", 1, "weapon/"],
+    ["drill_squash3", 1, "weapon/"],
+
     ["wrench", 1, "weapon/"],
 
     ["wrench_turret_gun1", 1, "weapon/"],
@@ -791,6 +795,10 @@ const entity_sprites = new Map([
     ["wrench_turret_gun5", 1, "weapon/"],
 
     ["shiv", 1, "weapon/"],
+
+    ["cutlass", 1, "weapon/"],
+
+    ["laserpointer", 1, "weapon/"],
 
     ["flamethrower", 1, "weapon/"],
     ["flamethrower_charge", 5, "weapon/flamethrower/"],
@@ -1150,6 +1158,8 @@ let audios_list = [
     // Edited together: "54Idk" + "A3Zap" [Final Fantasy 6 - SNES]
     ["translocator_dodge", "snd/translocator_dodge.mp3"],
 
+    ["translocator_glitch", "snd/translocator_glitch.mp3"],
+
     // Edited:
     // https://pixabay.com/sound-effects/city-demolition-excavator-with-wrecking-ball-22250/
     // https://pixabay.com/sound-effects/film-special-effects-drill-sound-effect-429794/
@@ -1230,6 +1240,14 @@ let audios_list = [
     ["jsr_hit_4", "snd/jsr_hit_4.mp3"],
     ["jsr_hit_5", "snd/jsr_hit_5.mp3"],
     ["jsr_hit_6", "snd/jsr_hit_6.mp3"],
+
+    // https://pixabay.com/sound-effects/film-special-effects-coins-jingling-energetically-275749/
+    ["coin_jingle_1", "snd/coin_jingle_1.mp3"],
+    ["coin_jingle_2", "snd/coin_jingle_2.mp3"],
+    ["coin_jingle_3", "snd/coin_jingle_3.mp3"],
+
+    // Tada (logoff sound) - Microsoft Windows
+    ["tada", "snd/tada.mp3"],
 ]
 
 // buh
@@ -1398,7 +1416,7 @@ function play_audio_data(buffer_content, gain=null, time_limit_inconsistent_use_
     return {idx: audio_playing.length - 1, obj: obj};
 }
 
-async function play_audio(name, gain=null, pitch_mod=null) {
+async function play_audio(name, gain=null, time_limit_inconsistent_use_sparingly=null) {
     // this may end up needing to fetch the audio data if it isn't preloaded
     // in that case, finish loading and set up the promise to play once decoded
     if (muted)
@@ -1414,7 +1432,7 @@ async function play_audio(name, gain=null, pitch_mod=null) {
         }
 
         if (!audio_content[3]) {
-            data = play_audio_data(audio_content[0], gain, pitch_mod);
+            data = play_audio_data(audio_content[0], gain, time_limit_inconsistent_use_sparingly);
         } else {
             // for some reason it didn't load. log and don't play
             console.log(`Audio ${name} didn't load on demand for some reason`);
@@ -1609,6 +1627,32 @@ class GravityParticleComponent extends ParticleComponent {
         this.movingparticlecomponent.velocity = this.movingparticlecomponent.velocity.add(
             this.gravity.mul(time_delta)
         );
+    }
+}
+
+class AirDragParticleComponent extends ParticleComponent {
+    constructor(board, movingparticlecomponent, drag_amt) {
+        super(board);
+        this.movingparticlecomponent = movingparticlecomponent;
+        this.drag_amt = drag_amt;
+    }
+
+    pass_time(particle, time_delta) {
+        this.movingparticlecomponent.velocity = this.movingparticlecomponent.velocity.mul(
+            1 - Math.pow(this.drag_amt, time_delta * 100)
+        );
+    }
+}
+
+class SizeLerpParticleComponent extends ParticleComponent {
+    constructor(board, lerp_amt, size_to) {
+        super(board);
+        this.lerp_amt = lerp_amt;
+        this.size_to = size_to * PARTICLE_SIZE_MULTIPLIER;
+    }
+
+    pass_time(particle, time_delta) {
+        particle.size = lerp(particle.size, this.size_to, 1 - Math.pow(this.lerp_amt, time_delta * 100));
     }
 }
 
@@ -4936,9 +4980,64 @@ function render_descriptions(board) {
             if (!reduced)
                 ball.render_stats(canvas, ctx, l[0], l[1] + 12 + 12 + 16, sizedown);
 
-            if (reduced && alternate_stats_rendering_mode)
+            if (reduced && alternate_stats_rendering_mode) {
                 ball.render_reduced_stats(canvas, ctx, l[0], l[1] + 12 + 12 + 16, sizedown);
+            }
         })
+
+        if (alternate_stats_rendering_mode && filtered_balls.length == 2) {
+            // Experimental ult explainer text below while ball is ulting
+            if (cutscene_time_stop_dur > 0) {
+                // Ball which has the highest ult cooldown is ulting
+                let ulting_ball = board.balls.reduce((p, ball) => {
+                    if (ball.has_an_ultimate() && ball.ult_charge_cooldown > p[1]) {
+                        return [ball, ball.ult_charge_cooldown];
+                    }
+
+                    return p;
+                }, [null, 0])[0];
+
+                if (ulting_ball) {
+                    let l_base = layout[ulting_ball.spawned_index];
+
+                    if (!l_base)
+                        return;
+
+                    let l = [
+                        Math.round(l_base[0] + ulting_ball.desc_shake_offset[0]),
+                        Math.round(l_base[1] + ulting_ball.desc_shake_offset[1]),
+                    ];
+
+                    ctx.fillStyle = ulting_ball.get_current_desc_col().css();
+                    ctx.fillRect(
+                        l[0], l[1] + 128 - 12,
+                        200, 60 + 12
+                    );
+
+                    ctx.fillStyle = ulting_ball.get_current_border_col().css();
+                    ctx.fillRect(
+                        l[0] + 1, l[1] + 129 - 12,
+                        198, 58 + 12
+                    );
+
+                    let lines = wrap_canvas_lines(
+                        ctx, ulting_ball.ult_description,
+                        192 - 8 - 2
+                    );
+                    
+                    lines.forEach((line, i) => {
+                        write_pp_bordered_text(
+                            ctx,
+                            line,
+                            l[0] + 8,
+                            l[1] + 140 - 12 + (i * (sizedown ? 10 : 12)), ulting_ball.get_current_desc_col().css(),
+                            CANVAS_FONTS, sizedown ? 10 : 12,
+                            false, BALL_DESC_BORDER_SIZE, ulting_ball.get_current_border_col().css()
+                        )
+                    });
+                }
+            }
+        }
     }
 }
 
@@ -5005,7 +5104,7 @@ function render_opening(board, time_delta) {
         let frame = board.balls[i].entry_animation_keyframes[cur_anim_snd];
         while (frame && p.cur_frame >= frame.frame) {
             if (frame.snd) {
-                play_audio(frame.snd, frame.gain ?? 0.03);
+                play_audio(frame.snd, frame.gain ?? 0.02);
             }
 
             if (frame.display !== undefined) {
@@ -5227,7 +5326,7 @@ function render_postopening(board) {
         if (!board.balls.some(b => b.START_MUSIC)) {
             if (AERO_BACKGROUND == AERO_BACKGROUNDS.MACINTOSH) {
                 let gains = [0.1, 0.1, 0.16];
-                let index = random_int(0, gains.length, get_seeded_randomiser(board.random_seed));
+                let index = random_int(0, gains.length, get_seeded_randomiser(board.random_seed+1));
                 // index = 1;
                 play_music(`upusen_${index+1}`, gains[index]);
             } else if (AERO_BACKGROUND == AERO_BACKGROUNDS.VISTA) {
@@ -5953,8 +6052,9 @@ function game_loop() {
                                     let impact_position = ball.position.add(difference_vector.mul(distance_proportion * size_proportion));
 
                                     let particle = new Particle(
-                                        impact_position, 0, 2,
-                                        entity_sprites.get(projectile.hit_particles_override ?? "hit"), 16, 4, false
+                                        impact_position, 0, 2 * (projectile.hit_particles_override_sizemul ?? 1),
+                                        entity_sprites.get(projectile.hit_particles_override ?? "hit"),
+                                        16, 4, false
                                     )
 
                                     board.spawn_particle(particle, impact_position);

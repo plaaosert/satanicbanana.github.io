@@ -162,85 +162,330 @@ class ShivBall extends WeaponBall {
     }
 }
 
-class ShivProjectile extends InertiaRespectingStraightLineProjectile {
-    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel, bounces, sprite_suffix="") {
-        super(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
+class CutlassBall extends WeaponBall {
+    static ball_name = "Cutlass";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
     
-        this.sprite = "shiv" + sprite_suffix;
+        this.name = "Cutlass";
+        this.description_brief = "Has an innate chance to crit, dealing extra damage. Each hit gathers gold, which grants progressive bonuses as more is gathered.";
+        this.level_description = "Gains additional base crit chance and more gold on hit.";
+        this.max_level_description = "Parries provide some gold.";
         
-        this.stored_hitboxes = [
-            {pos: new Vector2(-8, 0), radius: 10},
-            {pos: new Vector2(8, 0), radius: 10},
+        this.quote = "Yarr... you werrrrn't no match forrr me!";
+
+        this.pronoun = PRONOUN.HE;
+        this.tagline = "Cutlass's lust for victory is matched only by his lust for gold, which he slakes through theft and piracy. With enough gold, the pirate world will respect him at last!";
+        this.description = "";
+        this.lore_description = "Cutlass was born during the golden age of piracy on Remnath, which happens to be right now. Piracy is in his family, in his soul; the only problem is that true pirates need lots and lots of treasure. Cutlass seeks to remedy this problem the only way he knows how: violence."
+        this.weapon_relationship = "Ahoy! Yerrr wantin' to know about my WEAPON, eh? Well, it be rrrrreal simple. I chop, it gatherrrs! Har har har har har!"
+        this.lore_origin = "Alrath"
+        this.lore_temperament = "Plucky"
+        this.lore_affiliation = "Alrath Super Pirate Squad"
+        this.lore_alignment = "red"
+        this.lore_birthday = "5th May"
+
+        this.default_colour = Colour.from_hex("#EFBF04")
+
+        this.tier = TIERS.B;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.BPLUS;
+        }
+
+        this.category = CATEGORIES.LOWTIER;
+        this.tags = [
+            TAGS.MELEE,
+            TAGS.BALANCED,
+            TAGS.SCALING,
+            TAGS.LEVELS_UP,
+            TAGS.CAN_AWAKEN,
         ];
 
-        this.set_hitboxes(this.stored_hitboxes);
+        this.weapon_data = [
+            new BallWeapon(0.9, "cutlass", [
+                {pos: new Vector2(100, 58), radius: 14},
+                {pos: new Vector2(80, 70), radius: 10},
+                {pos: new Vector2(64, 70), radius: 10},
+                {pos: new Vector2(48, 70), radius: 10},
+            ])
+        ];
 
-        this.bounces = bounces;
+        this.weapon_data[0].offset = new Vector2(-16, 0);
 
-        this.override_velocity = this.direction.mul(this.speed);
-        this.gravity = false;
+        this.max_hp = this.max_hp * (70 / 100);
+        this.hp = this.max_hp;
 
-        this.override_angle = this.direction.angle();
+        this.damage_base = 2
+        this.speed_base = 130
+
+        this.base_crit_chance = 0.1;
+        this.base_crit_mul = 2;
+        
+        this.dmg_to_gold = [7500, 12500];
+        this.gold_mul = 1 + (this.level * 0.01);
+
+        this.gold_on_parry = this.level >= AWAKEN_LEVEL ? 2500 : 0;
+
+        this.gold = 0;
+
+        // 1,000,000 gold is 100 hp (on avg)
+        this.gold_thresholds = [
+            // title, [dmg, speed, critchance, critdmg, heal/s], threshold
+            ["Rookie Pirate",         [1, 1, 1, 1, 0], Number.NEGATIVE_INFINITY],
+            ["Plucky Plunderer",      [1.5, 1.4, 1, 1, 0], 50000],
+            ["Treasure Hunter",       [2, 1.7, 1.25, 1, 0.2], 175000],
+            ["Infamous Extortionist", [2.5, 2, 1.5, 1.5, 0.5], 500000],
+            ["Terror of the Seas",    [3, 2.5, 2, 2, 2], 1000000],
+            ["The Greatest Pirate",   [4, 3.5, 3, 3, 4], 2000000],
+        ];
+
+        this.last_threshold = this.gold_thresholds[0];
+        this.update_gold_threshold();
+
+        this.heal_stored = 0;
     }
 
-    physics_step(time_delta) {
-        this.set_pos(this.position.add(this.override_velocity.mul(time_delta)));
+    update_gold_threshold() {
+        let lastname = this.last_threshold[0];
 
-        if (this.bounces > 0 && !this.board.in_bounds(this.position)) {
-            let bounced = false;
-            if (this.position.x <= 0 && this.override_velocity.x < 0) {
-                bounced = true;
-                this.override_velocity.x *= -1;
-            } else if (this.position.x >= this.board.size.x && this.override_velocity.x > 0) {
-                bounced = true;
-                this.override_velocity.x *= -1;
-            } else if (this.position.y <= 0 && this.override_velocity.y < 0) {
-                bounced = true;
-                this.override_velocity.y *= -1;
-            } else if (this.position.y >= this.board.size.y && this.override_velocity.y > 0) {
-                bounced = true;
-                this.override_velocity.y *= -1;
+        let set = false;
+        for (let i=0; i<this.gold_thresholds.length; i++) {
+            if (this.gold < this.gold_thresholds[i][2] && !set) {
+                this.cur_threshold = this.gold_thresholds[i - 1];
+                set = true;
+                break;
             }
-
-            if (bounced) {
-                this.bounces--;
-                this.set_dir(this.override_velocity.normalize());
-            }
         }
 
-        if (this.gravity) {
-            this.override_angle += deg2rad(360 * time_delta);
-            this.set_dir(Vector2.forward.rotate(this.override_angle));
+        if (!set)
+            this.cur_threshold = this.gold_thresholds[this.gold_thresholds.length - 1];
 
-            this.override_velocity = this.override_velocity.add(this.board.gravity.mul(time_delta));
+        this.last_threshold = this.cur_threshold;
+
+        this.damage = this.damage_base * this.cur_threshold[1][0];
+        this.speed = this.speed_base * this.cur_threshold[1][1];
+        this.critchance = this.base_crit_chance * this.cur_threshold[1][2];
+        this.critdmg = this.base_crit_mul * this.cur_threshold[1][3];
+        this.heal_per_second = this.cur_threshold[1][4];
+
+        if (lastname != this.cur_threshold[0]) {
+            play_audio("tada", 0.25);
+
+            this.board.spawn_particle(new TextParticle(
+                this.position.add(new Vector2(0, -768 - 200)), 1,
+                "[ RANK UP ]", this.get_current_desc_col(), this.board,
+                20, 3
+            ), this.position.add(new Vector2(0, -768 - 200))).add_component(new MovingParticleComponent(
+                this.board, new Vector2(0, -128)
+            )).add_component(new FadeOutParticleComponent(
+                this.board, 2.5, 1
+            ));
+
+            this.board.spawn_particle(new TextParticle(
+                this.position.add(new Vector2(0, -512 - 200)), 1,
+                `- ${this.cur_threshold[0]} -`, this.get_current_desc_col(), this.board,
+                14, 3
+            ), this.position.add(new Vector2(0, -512 - 200))).add_component(new MovingParticleComponent(
+                this.board, new Vector2(0, -128)
+            )).add_component(new FadeOutParticleComponent(
+                this.board, 2.5, 1
+            ));
         }
     }
 
-    try_jump_in_air() {
-        if (!this.gravity) {
-            this.active = true;
+    get_gold(amt, source_pos) {
+        if (amt <= 0)
+            return;
 
-            this.set_hitboxes([]);
-            this.bounces = 0;
-            this.gravity = true;
-            this.override_velocity = random_on_circle(3000, this.board.random).add(new Vector2(0, -8000));
+        let render_amt = Math.min(amt, 2e5);
+        for (let i=0; i<render_amt / 15000; i++) {
+            let index = random_int(1, 4, this.independent_random);
+            this.board.set_timer(new Timer(b => {
+                play_audio(`coin_jingle_${index}`, 0.2);
+            }, random_float(0, 0.25, this.independent_random)));
+        }
 
-            this.board.set_timer(new Timer(b => this.set_hitboxes(this.stored_hitboxes), 0.1));
-        } else {
-            this.active = false;
+        for (let i=0; i<render_amt/6000; i++) {
+            this.board.spawn_particle(new EnergyBurstParticle(
+                source_pos, 0.6, entity_sprites.get("railgun_point"), 0, 16, true,
+                25000, 120000, this, Colour.from_hex("#EFBF04"), 4, 2, 0, true
+            ), source_pos);
+
+            this.board.set_timer(new Timer(b => {
+                let p = this.board.spawn_particle(new Particle(
+                    this.position, deg2rad(random_int(0, 4, this.independent_random) * 90),
+                    random_float(0.8, 1.2, this.independent_random),
+                    entity_sprites.get("coin"), random_float(16, 24, this.independent_random),
+                    50, true
+                ), this.position);
+
+                let mpc = new MovingParticleComponent(
+                    this.board, random_on_circle(
+                        random_float(2000, 4000, this.independent_random),
+                        this.independent_random
+                    )
+                );
+
+                let gc = new GravityParticleComponent(
+                    this.board, mpc, this.board.gravity
+                );
+
+                p.add_component(mpc).add_component(gc);
+            }, random_float(0.1, 0.3, this.independent_random)));
+        }
+
+        this.board.spawn_particle(new TextParticle(
+            this.position.add(new Vector2(0, -512 - 200)), 1,
+            `+ ${amt.toLocaleString()} G`, this.get_current_desc_col(), this.board,
+            14, 1
+        ), this.position.add(new Vector2(0, -512 - 200))).add_component(new MovingParticleComponent(
+            this.board, new Vector2(0, -256)
+        )).add_component(new FadeOutParticleComponent(
+            this.board, 0.5, 1
+        ));
+
+        this.gold += amt;
+        this.update_gold_threshold();
+    }
+
+    weapon_step(board, time_delta) {
+        // rotate the weapon
+        this.rotate_weapon(0, this.speed * time_delta);
+
+        this.heal_stored += this.heal_per_second * time_delta;
+        if (this.heal_stored > 1) {
+            let heal = Math.floor(this.heal_stored);
+
+            this.gain_hp(heal, this);
+            this.heal_stored -= heal;
         }
     }
 
-    hit_other_projectile(other_projectile) {
-        this.try_jump_in_air();
+    parry_weapon(with_weapon_index, other_ball, other_weapon_id) {
+        super.parry_weapon(with_weapon_index, other_ball, other_weapon_id);
+        
+        this.get_gold(this.gold_on_parry, other_ball.position);
     }
 
-    get_parried(by) {
-        this.try_jump_in_air();
+    parry_projectile(with_weapon_index, projectile) {
+        super.parry_projectile(with_weapon_index, projectile);
+        
+        this.get_gold(this.gold_on_parry, projectile.position);
     }
 
-    hit_ball(ball, delta_time) {
-        this.try_jump_in_air();
+    hit_other(other, with_weapon_index) {
+        let dmg = this.damage;
+
+        if (this.board.random() < this.critchance) {
+            dmg *= this.critdmg;
+            play_audio("bloodyhit1", 0.125);
+        }
+
+        let result = super.hit_other(other, with_weapon_index, dmg);
+
+        let finaldmg = result?.dmg ?? 0;
+        if (finaldmg > 0) {
+            this.get_gold(
+                Math.round(random_float(...this.dmg_to_gold, this.board.random) * this.gold_mul) * finaldmg,
+                other.position
+            );
+        }
+
+        return result;
+    }
+
+    render_reduced_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `${this.cur_threshold[0]} (${this.gold.toLocaleString()} G)`
+        );
+        
+        let line = "";
+        let line2 = "";
+        let line3 = "";
+        if (this.cur_threshold[1][0] != 1) {
+            line += `dmg: ${this.cur_threshold[1][0]}x  `
+        }
+
+        if (this.cur_threshold[1][1] != 1) {
+            line += `spd: ${this.cur_threshold[1][1]}x  `
+        }
+
+        if (this.cur_threshold[1][2] != 1) {
+            line2 += `crit: ${this.cur_threshold[1][2]}x chance/${this.cur_threshold[1][3]}x dmg  `
+        }
+
+        if (this.cur_threshold[1][4] != 0) {
+            line3 += `heal: ${this.cur_threshold[1][4]}/s  `
+        }
+
+        this.write_desc_line(
+            line
+        )
+
+        this.write_desc_line(
+            line2
+        )
+
+        this.write_desc_line(
+            line3
+        )
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Damage: ${this.damage.toFixed(2)}`
+        )
+        this.write_desc_line(
+            `Rotation speed: ${this.speed.toFixed(0)} deg/s`
+        )
+        this.write_desc_line(
+            `Crit: ${(this.critchance * 100).toFixed(0)}% / ${this.critdmg}x`
+        )
+        if (this.level >= AWAKEN_LEVEL) {
+            this.write_desc_line(
+                `Gains ${this.gold_on_parry} gold on parry.`, true
+            )
+        }
+
+        this.write_desc_line(
+            `${this.cur_threshold[0]} (${this.gold.toLocaleString()} G)`
+        );
+
+        let line = "";
+        let line2 = "";
+        let line3 = "";
+        if (this.cur_threshold[1][0] != 1) {
+            line += `dmg: ${this.cur_threshold[1][0]}x  `
+        }
+
+        if (this.cur_threshold[1][1] != 1) {
+            line += `spd: ${this.cur_threshold[1][1]}x  `
+        }
+
+        if (this.cur_threshold[1][2] != 1) {
+            line2 += `crit: ${this.cur_threshold[1][2]}x chance/${this.cur_threshold[1][3]}x dmg  `
+        }
+
+        if (this.cur_threshold[1][4] != 0) {
+            line3 += `heal: ${this.cur_threshold[1][4]}/s  `
+        }
+
+        this.write_desc_line(
+            line
+        )
+
+        this.write_desc_line(
+            line2
+        )
+
+        this.write_desc_line(
+            line3
+        )
     }
 }
 
@@ -493,6 +738,408 @@ class BallBallBall extends WeaponBall {
     }
 }
 
+class LaserPointerBall extends WeaponBall {
+    static ball_name = "Laser Pointer";
+
+    constructor(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed) {
+        super(board, mass, radius, colour, bounce_factor, friction_factor, player, level, reversed);
+    
+        this.name = "Laser Pointer";
+        this.description_brief = "Constantly projects a narrow beam that applies burn. Hitting with the beam charges up a reflecting laser blast.";
+        this.level_description = "Increases charge speed.";
+        this.max_level_description = "Shoots two charged blasts at once.";
+
+        this.quote = "Pew! Pew! Pew pew pew!";
+
+        this.pronoun = PRONOUN.SHE;
+        this.tagline = "Burns targets with her probably-illegal laser, then finishes the job with a definitely-illegal blast.";
+        this.description = ""
+        this.lore_description = "One of Railgun's most devoted fans, Laser Pointer can't quite replicate her tech but has settled for a similarly destructive alternative. After tethering to a laser pointer which she definitely should not have owned, she does her most earnest impression of Railgun's showballship - not quite there, but she's got the spirit!"
+        this.weapon_relationship = "Oh my gosh, like, did you see Railgun last night?! She had me BLASTING on that triple-hit! I think I need to win my next bout or my prize money won't cover the repairs..."
+        this.lore_origin = "Center Plane City"
+        this.lore_temperament = "Curious"
+        this.lore_affiliation = "The Grand Arena"
+        this.lore_alignment = "green"
+        this.lore_birthday = "4th Feb"
+
+        this.default_colour = Colour.from_hex("#FF5454")
+
+        this.tier = TIERS.B;
+        if (level >= AWAKEN_LEVEL) {
+            this.tier = TIERS.BPLUS;
+        }
+
+        this.category = CATEGORIES.LOWTIER;
+        this.tags = [
+            TAGS.RANGED,
+            TAGS.OFFENSIVE,
+            TAGS.HITSCAN,
+            TAGS.LEVELS_UP,
+            TAGS.CAN_AWAKEN,
+        ];
+
+        this.weapon_data = [
+            new BallWeapon(1, "laserpointer", [
+                {pos: new Vector2(20, 64), radius: 4},
+                {pos: new Vector2(24, 64), radius: 4},
+                {pos: new Vector2(28, 64), radius: 4},
+                {pos: new Vector2(32, 64), radius: 4},
+                {pos: new Vector2(36, 64), radius: 4},
+            ])
+        ];
+
+        this.firing_offsets = [
+            new Vector2(64, 0)
+        ]
+
+        this.max_hp = this.max_hp * (60 / 100);
+        this.hp = this.max_hp;
+
+        this.speed = 100;
+
+        this.laser_burn_per_second = 10;
+        this.laser_charge_per_second = 80;
+        this.max_charge = 10 - (this.level * 0.02);
+        this.charge = 0;
+
+        this.laser_proj = null;
+        this.laser_proj_cooldown = 0;
+
+        this.blast_damage = 6;
+        this.blast_reflects = 10;
+    }
+
+    get_firing_offset() {
+        return this.firing_offsets[0].mul(this.weapon_data[0].size_multiplier).rotate(this.weapon_data[0].angle);
+    }
+
+    get_charge(amt) {
+        let last_charge = this.charge;
+        this.charge += amt;
+
+        let p = 0.5;
+        if (Math.floor(last_charge / p) < Math.floor(this.charge / p)) {
+            let rev_sprites = entity_sprites.get("superflash3").toReversed();
+
+            for (let i=0; i<last_charge/p; i++) {
+                this.board.set_timer(new Timer(b => {
+                    let pos = this.position;
+                    this.board.spawn_particle(new Particle(
+                        pos, random_float(0, Math.PI * 2, this.independent_random), 3,
+                        rev_sprites,
+                        random_float(16, 24, this.independent_random), 800
+                    ), pos).add_component(new OverlayBallParticleComponent(
+                        this.board, this
+                    ));
+                }, random_float(0.15, 0.3, this.independent_random)));
+            }
+        }
+    }
+
+    weapon_step(board, time_delta) {
+        // rotate the weapon
+        this.rotate_weapon(0, this.speed * time_delta);
+        
+        this.laser_proj_cooldown -= time_delta;
+        if ((!this.laser_proj || !this.laser_proj.active || this.laser_proj.lifetime > this.laser_proj.duration) && this.laser_proj_cooldown <= 0) {
+            let p = this.get_firing_offset();
+            this.laser_proj = this.board.spawn_projectile(new LaserPointerPersistentProjectile(
+                this.board, this, 0, p, 0, p
+            ), p);
+        }
+
+        if (this.charge >= this.max_charge) {
+            this.laser_proj.lifetime = 0;
+            this.laser_proj.active_duration = 0.02;
+            this.laser_proj.duration = 0.25;
+            
+            let deg = this.level >= AWAKEN_LEVEL ? deg2rad(10) : 0;
+
+            for (let i=0; i<(this.level >= AWAKEN_LEVEL ? 2 : 1); i++) {
+                let deg_rot = this.weapon_data[0].angle + (deg * (i == 0 ? -1 : 1));
+
+                let spos = this.position.add(this.get_firing_offset());
+                let tpos = spos.add(new Vector2(10000, 0).rotate(deg_rot));
+                
+                this.board.spawn_projectile(new LaserPointerBlastProjectile(
+                    this.board, this, 1, spos, this.blast_damage, tpos, this.blast_reflects
+                ), spos);
+            }
+            play_audio("explosion_1", 0.15);
+
+            this.laser_proj_cooldown = 1;
+            this.charge = 0;
+        }
+    }
+
+    hit_other_with_projectile(other, with_projectile) {
+        let result = super.hit_other_with_projectile(other, with_projectile);
+
+        if (with_projectile.source_weapon_index != 999) {
+            if (with_projectile instanceof LaserPointerPersistentProjectile) {
+                other.apply_invuln(0, true);
+                
+                other.hitstop = 0;
+                this.hitstop = 0;
+
+                result.mute = true;
+            }
+        }
+
+        if (with_projectile.source_weapon_index == 0) {
+            other.apply_invuln(0.015, true);
+
+            if (this.independent_random() < 1) {
+                for (let i=0; i<1; i++) {
+                    this.board.spawn_particle(new EnergyBurstParticle(
+                        other.position, 0.6, entity_sprites.get("railgun_point"), 0, 16, true,
+                        25000, 120000, this, new Colour(255, 84, 84, 255), 4, 2, 0, true
+                    ), other.position)
+                }
+            }
+        }
+
+        return result;
+    }
+
+    render_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            "Fires a laser to charge a reflecting blast."
+        );
+
+        this.write_desc_line(
+            `Rotation speed: ${this.speed} deg/s`
+        );
+
+        this.write_desc_line(
+            `Laser burn/s: ${this.laser_burn_per_second}`
+        );
+
+        this.write_desc_line(
+            `Laser charge/s: ${this.laser_charge_per_second}`
+        );
+
+        let llen = 40;
+        let blen = llen - 2;
+
+        let segs = Math.floor(Math.min(1, (this.charge / this.max_charge)) * blen);
+        let segs2 = blen - segs;
+        this.write_desc_line(
+            `[${"#".repeat(segs)}${" ".repeat(segs2)}]`
+        );
+
+        let text = `${this.charge.toFixed(2)} / ${this.max_charge.toFixed(2)}`;
+        let lpad = Math.floor((llen - text.length) / 2);
+        let rpad = llen - text.length - lpad;
+        this.write_desc_line(
+            `${" ".repeat(lpad)}${text}${" ".repeat(rpad)}`
+        );
+    }
+}
+
+class ShivProjectile extends InertiaRespectingStraightLineProjectile {
+    constructor(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel, bounces, sprite_suffix="") {
+        super(board, source, source_weapon_index, position, damage, size, direction, speed, inertia_vel);
+    
+        this.sprite = "shiv" + sprite_suffix;
+        
+        this.stored_hitboxes = [
+            {pos: new Vector2(-8, 0), radius: 10},
+            {pos: new Vector2(8, 0), radius: 10},
+        ];
+
+        this.set_hitboxes(this.stored_hitboxes);
+
+        this.bounces = bounces;
+
+        this.override_velocity = this.direction.mul(this.speed);
+        this.gravity = false;
+
+        this.override_angle = this.direction.angle();
+    }
+
+    physics_step(time_delta) {
+        this.set_pos(this.position.add(this.override_velocity.mul(time_delta)));
+
+        if (this.bounces > 0 && !this.board.in_bounds(this.position)) {
+            let bounced = false;
+            if (this.position.x <= 0 && this.override_velocity.x < 0) {
+                bounced = true;
+                this.override_velocity.x *= -1;
+            } else if (this.position.x >= this.board.size.x && this.override_velocity.x > 0) {
+                bounced = true;
+                this.override_velocity.x *= -1;
+            } else if (this.position.y <= 0 && this.override_velocity.y < 0) {
+                bounced = true;
+                this.override_velocity.y *= -1;
+            } else if (this.position.y >= this.board.size.y && this.override_velocity.y > 0) {
+                bounced = true;
+                this.override_velocity.y *= -1;
+            }
+
+            if (bounced) {
+                this.bounces--;
+                this.set_dir(this.override_velocity.normalize());
+            }
+        }
+
+        if (this.gravity) {
+            this.override_angle += deg2rad(360 * time_delta);
+            this.set_dir(Vector2.forward.rotate(this.override_angle));
+
+            this.override_velocity = this.override_velocity.add(this.board.gravity.mul(time_delta));
+        }
+    }
+
+    try_jump_in_air() {
+        if (!this.gravity) {
+            this.active = true;
+
+            this.set_hitboxes([]);
+            this.bounces = 0;
+            this.gravity = true;
+            this.override_velocity = random_on_circle(3000, this.board.random).add(new Vector2(0, -8000));
+
+            this.board.set_timer(new Timer(b => this.set_hitboxes(this.stored_hitboxes), 0.1));
+        } else {
+            this.active = false;
+        }
+    }
+
+    hit_other_projectile(other_projectile) {
+        this.try_jump_in_air();
+    }
+
+    get_parried(by) {
+        this.try_jump_in_air();
+    }
+
+    hit_ball(ball, delta_time) {
+        this.try_jump_in_air();
+    }
+}
+
+class LaserPointerPersistentProjectile extends HitscanProjectile {
+    constructor(board, source, source_weapon_index, position, damage, target_position) {
+        super(board, source, source_weapon_index, position, damage, target_position);
+
+        this.max_width = 8;
+        this.sprite_colour = "red";
+    
+        this.parriable = false;
+        this.active_duration = Number.POSITIVE_INFINITY;
+        this.duration = Number.POSITIVE_INFINITY;
+        this.create_multiple_hitboxes = true;
+
+        this.hit_particles_override = "hit_fire";
+
+        this.playing_noise = true;
+    }
+
+    physics_step(time_delta) {
+        let ipos = this.source.position.add(this.source.get_firing_offset());
+        let tpos = ipos.add(new Vector2(10000, 0).rotate(this.source.weapon_data[0].angle));
+        
+        this.set_pos(ipos);
+        this.target_position = tpos;
+
+        if (this.source.hp <= 0) {
+            this.active = false;
+        }
+
+        super.physics_step(time_delta);
+    }
+
+    hit_other_projectile(other_projectile) {
+        this.active = true;
+    }
+
+    get_parried(by) {
+        this.active = true;
+    }
+
+    hit_ball(ball, delta_time) {
+        this.active = true;
+
+        this.source.apply_burn(ball, this.source.laser_burn_per_second * delta_time);
+        
+        this.board.set_timer(new Timer(b => {
+            this.source.get_charge(this.source.laser_charge_per_second * delta_time);
+        }, 0.2));
+
+        if (this.playing_noise)
+            play_audio("noise", 0.05);
+    }
+}
+
+class LaserPointerBlastProjectile extends HitscanProjectile {
+    constructor(board, source, source_weapon_index, position, damage, target_position, hits_left) {
+        super(board, source, source_weapon_index, position, damage, target_position);
+
+        this.max_width = 32;
+
+        this.sprite_colour1 = "#ff4488";
+        this.sprite_colour2 = "#ff4488";
+
+        this.sprite_colour = this.sprite_colour1;
+
+        this.hit_particles_override = "explosion_small";
+        this.hit_particles_override_sizemul = 0.25;
+
+        this.hits_left = hits_left;
+        this.hit_delay = 0.075;
+        this.spawned_child = false;
+
+        this.stop_at_border = true;
+
+        this.initial_offsets = null;
+        this.initial_radius = 0;
+    }
+
+    physics_step(time_delta) {
+        this.sprite_colour = this.hits_left > 0 && !this.spawned_child ? this.sprite_colour1 : this.sprite_colour2;
+
+        if (this.hits_left > 0) {
+            this.hit_delay -= time_delta;
+            if (this.hit_delay <= 0) {
+                this.spawned_child = true;
+                this.hit_delay = Number.POSITIVE_INFINITY;
+
+                let offsets = this.initial_offsets;
+                let spos = offsets[offsets.length-1].add(this.position);
+
+                let newvec = this.target_position.sub(this.position);
+                
+                // Reverse the position closer to the bounds
+                let x_bound_dist = Math.min(spos.x, this.board.size.x - spos.x);
+                let y_bound_dist = Math.min(spos.y, this.board.size.y - spos.y);
+
+                if (x_bound_dist <= y_bound_dist) {
+                    newvec.x *= -1;
+                } else {
+                    newvec.y *= -1;
+                }
+
+                let tpos = spos.add(newvec.mul(2));
+                this.board.spawn_projectile(new LaserPointerBlastProjectile(
+                    this.board, this.source, 1, spos,
+                    this.source.blast_damage, tpos, this.hits_left - 1
+                ), spos);
+                play_audio("explosion_1", 0.075);
+            }
+        }
+
+        super.physics_step(time_delta);
+
+        if (!this.initial_offsets && this.get_hitboxes_offsets().length > 0) {
+            this.initial_offsets = this.get_hitboxes_offsets();
+            this.initial_radius = this.hitboxes[0].radius;
+        }
+    }
+}
+
 let campaign_low_tier_selectable_balls = [
-    ShivBall, BallBall
+    ShivBall, BallBall, CutlassBall, LaserPointerBall
 ]

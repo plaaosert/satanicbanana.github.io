@@ -519,8 +519,23 @@ class BallLightningBall extends WeaponBall {
 
         if (this.level >= AWAKEN_LEVEL) {
             this.write_desc_line(
-                `Extra ball lightnings can create even more!`,
+                `Extra ball lightnings create even more!`,
                 true
+            )
+        }
+    }
+
+    render_reduced_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        this.write_desc_line(
+            `Constantly fires chain lightning.`
+        )
+
+        if (this.level >= AWAKEN_LEVEL) {
+            this.write_desc_line(
+                `Extra ball lightnings create even more!`,
+                true, 10
             )
         }
     }

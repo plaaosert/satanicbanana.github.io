@@ -2570,6 +2570,10 @@ function get_random_standard_ball() {
     return random_from_array(selectable_balls_for_random);
 }
 
+function get_random_standard_ball_with_ult() {
+    return random_from_array(selectable_balls_for_random.slice(0, -4));
+}
+
 function set_selected_ball_info(index, attr, val) {
     selected_ball_info[`ball${index+1}`][attr] = val;
 }
@@ -3007,11 +3011,11 @@ document.addEventListener("DOMContentLoaded", function() {
     randomise_ball_info("ball2", "random-ball");
 
     if (local && true) {
-        selected_ball_info['ball1'].name = "Frying Pan";
-        selected_ball_info['ball2'].name = "Super Dummy";
+        selected_ball_info['ball1'].name = "Drill";
+        selected_ball_info['ball2'].name = "Wrench";
         // STARTING_HP = 10000;
         // selected_ball_info['ball1'].level = 99;
-        selected_ball_info['ball2'].level = 99;
+        // selected_ball_info['ball2'].level = 99;
 
         document.querySelector("#ultimates_checkbox").checked = true;
     }
@@ -3215,7 +3219,7 @@ let ball2_index = 0;
 let ball1_start_level = 1;
 let ball2_start_level = 1;
 
-let ball_index_max = 8;
+let ball_index_max = 19;
 
 let win_matrix = [];
 selectable_balls_for_random.forEach(_ => win_matrix.push(new Array(selectable_balls_for_random.length).fill(0)));

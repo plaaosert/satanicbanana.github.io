@@ -103,7 +103,7 @@ const ANIMATION_STANDARD_DATA = {
 
     bolt: {
         keyframes: [
-            {frame: 3, snd: "lightningbolt4", gain: 0.35},
+            {frame: 3, snd: "lightningbolt4", gain: 0.25},
             {frame: 7, display: true},
         ],
         size_mult: 1.25,
@@ -1482,9 +1482,10 @@ class WeaponBall extends Ball {
         return true;
     }
 
-    get_closest_real_enemy_and_distance(alt_pos=null) {
+    // TODO version bump and make this default to false
+    get_closest_real_enemy_and_distance(alt_pos=null, include_invuln=false) {
         let real_enemies = this.get_closest_enemy_and_distance(
-            b => b.show_stats && !b.skip_physics && b.display, alt_pos
+            b => b.show_stats && !b.skip_physics && b.display && (include_invuln || b.gets_hit), alt_pos
         );
 
         let all_enemies = this.get_closest_enemy_and_distance(
@@ -1628,7 +1629,7 @@ class WeaponBall extends Ball {
                     ))
                 }
 
-                particle.text_border_size = 3;
+                particle.text_border_size = 4;
                 particle.text_border_col = col.lerp(Colour.black, 0.8);
                 particle.alternative_layer = "text_main";
                 particle.shortcut_pp_text = true;
@@ -1760,18 +1761,23 @@ class WeaponBall extends Ball {
             0.00005,
             0.02 
         )
-
-        cutscene_time_stop_dur = cutscene_duration;
         
-        this.board.set_cutscene_timer(new Timer(b => {
-            reset_camera_targets();
-
-            this.resolve_ultimate(ult_variant);
-
-            this.ult_current_charge = 0;
-        }, cutscene_duration));
+        if (!this.controls_own_ult_cutscene) {
+            cutscene_time_stop_dur = cutscene_duration;
+            this.board.set_cutscene_timer(new Timer(b => {
+                this.finish_ultimate(ult_variant);
+            }, cutscene_duration));
+        }
 
         this.ultimate_animation(ult_variant);
+    }
+
+    finish_ultimate(variant) {
+        reset_camera_targets();
+
+        this.resolve_ultimate(variant);
+
+        this.ult_current_charge = 0;
     }
 
     hit_other(other, with_weapon_index, damage=0, round_up=true) {
@@ -2285,6 +2291,8 @@ class UnarmedBall extends WeaponBall {
 
             return target[1] >= Math.pow(this.radius * 8, 2);
         }
+
+        return false;
     }
 
     ultimate_animation(variant) {
@@ -4249,7 +4257,7 @@ class DaggerBall extends WeaponBall {
                     this.speed_base /= 1.9;
                     this.damage_base /= 1.45;
 
-                    console.log(attack_count, this.ult_attack_count_max)
+                    // console.log(attack_count, this.ult_attack_count_max)
                     if (attack_count >= this.ult_attack_count_max) {
                         play_audio("strongpunch");
                         this.speak([{
@@ -4311,7 +4319,7 @@ class DaggerBall extends WeaponBall {
                             }], 22, 3)
                         }
 
-                        console.log("stopping -", attack_count, this.ult_attack_count_max, res)
+                        // console.log("stopping -", attack_count, this.ult_attack_count_max, res)
                         return false;
                     }
                 }
@@ -4724,6 +4732,24 @@ class BowBall extends WeaponBall {
                 `Shoots an additional arrow every shot.`, true, 10
             )
         }
+    }
+
+    render_reduced_stats(canvas, ctx, x_anchor, y_anchor, sizedown) {
+        this.start_writing_desc(ctx, x_anchor, y_anchor, sizedown);
+
+        if (this.level >= AWAKEN_LEVEL) {
+            this.write_desc_line(
+                `Shoots an additional arrow every shot.`, true
+            )
+        } else {
+            this.write_desc_line(
+                `Gain more multishots and damage each hit.`
+            );
+        }
+
+        this.write_desc_line(
+            `Damage / multishots: ${this.proj_damage_base.toFixed(2)} / ${this.multishots_max}x`
+        );
     }
 }
 
@@ -11846,6 +11872,8 @@ class CardsBall extends WeaponBall {
         this.description_brief = "Draws random cards from a deck which rotate around as damaging projectiles. Hits with rotating cards speed up draws. Once five cards are drawn, evokes an effect based on the best poker hand in the set. Completing a Pair or Two Pair grants +1 luck permanently. Junk grants +2.";
         this.level_description = "Increases card draw and reshuffle speed. Every 25 levels allows another hand draw from the deck before shuffling.";
         this.max_level_description = "Starts with +8 luck.";
+        this.ult_description = "Plays a round of solo blackjack. Gains cumulative bonuses when approaching 21, but takes damage on bust!"
+        
         this.quote = "...Is this your card? Well, I suppose it doesn't matter now.";
 
         this.pronoun = PRONOUN.HE;
@@ -11875,6 +11903,20 @@ class CardsBall extends WeaponBall {
             TAGS.LEVELS_UP,
             TAGS.CAN_AWAKEN,
         ];
+
+        this.ult_cost = DEFAULT_ULT_COST * 0.7;
+        this.ult_line = [
+            {
+                text: "Let's see if I've still got it.",
+                initial_delay: 0,
+                delay_per_char: 0.03,
+                mods: {
+                    fading: true
+                }
+            },
+        ]
+        this.ult_cutscene_duration = 2;
+        this.controls_own_ult_cutscene = true;
 
         this.weapon_data = [
             new BallWeapon(1, "deck", [])
@@ -11957,12 +11999,460 @@ class CardsBall extends WeaponBall {
         this.straightflush_hits_delay = 0.1;
         this.straightflush_hits_dmg = 1;
         this.straightflush_finisher_dmg = 20;
+
+        this.ult_17_heal = 10;
+        this.ult_18_projcnt = 3;
+        this.ult_18_damage = this.pair_proj_damage;
+        this.ult_19_luckmul = 2;
+        this.ult_20_burn = 4;
+        this.ult_21_dmg_mul = 2;
+        this.ult_bust_burn = 4;
+        this.ult_bust_dmg = 20;
     }
 
     late_setup() {
         this.weapon_data[0].angle = !this.reversed ? 0 : Math.PI;
 
         super.late_setup();
+    }
+
+    ultimate_animation(variant) {
+        // Override cutscene duration
+        cutscene_time_stop_dur = 999;
+
+        // This is what would ordinarily happen at cutscene end
+        // this.finish_ultimate(variant);
+        let start_time = this.board.duration_plus_cutscenes;
+        let last_time = start_time;
+
+        let start_delay = 1.5;
+
+        let cards = [];
+        let cards_to_draw = 2;
+        let card_draw_cooldown_max = 0.2;
+        let card_draw_cooldown = 0;
+        let sum = 0;
+
+        let sum_particle = null;
+
+        let wait_cd_max = [1.2, 1.3];
+        let wait_cd = 0;
+        let wait_dialogue_txtlist = null;
+        let wait_dialogue_line = 0;
+        let wait_hit = false;
+
+        // Hits always on <=16 without dialogue.
+        // This is for <=16 (first item), and 17+.
+        // First list is if hitting.
+        // Second list is if standing.
+        let wait_dialogue = [
+            [
+                [
+                    ["Hit."],
+                    ["Hit."],
+                    ["You kidding?", "Hit me."],
+                ], [],
+            ],
+
+            // 17
+            [
+                [
+                    ["Easy odds.", "Hit."],
+                    ["Ugh.", "Hit."],
+                ],
+                [
+                    ["Something's not right.", "I'm out."],
+                    ["Not this time.", "Stand."],
+                ],
+            ],
+
+            // 18
+            [
+                [
+                    ["I'll try.", "Hit."],
+                    ["Ugh.", "Hit."],
+                ],
+                [
+                    ["I'm good.", "Stand."],
+                    ["Not feeling it.", "Stand."],
+                ],
+            ],
+            
+            // 19
+            [
+                [
+                    ["Heart of the cards... or something.", "Hit."],
+                    ["Looking promising...!", "Hit."],
+                ],
+                [
+                    ["I'll take it.", "Stand."],
+                    ["Nineteen's not that bad.", "Stand."],
+                ],
+            ],
+
+            // 20
+            [
+                [
+                    ["Let's prove myself wrong.", "Hit."],
+                    ["I'm lucky enough.", "Hit."],
+                ],
+                [
+                    ["It's OK.", "Stand."],
+                    ["Maybe next time.", "Stand."],
+                ],
+            ]
+        ]
+
+        let blackjack_dialogue = [
+            "Thought I'd really prove myself wrong that time.",
+            "Well, what did I expect?",
+            "Hooray.",
+            "Maybe this isn't really for me.",
+        ];
+
+        let blackjack_instant_dialogue = [
+            "I don't know what I expected.",
+            "Should I act shocked?",
+        ]
+
+        let bust_dialogue = [
+            "I... I lost...? Finally!",
+            "YES! I knew I'd be right!",
+            "Not so lucky anymore, am I?!",
+            "This \"losing\" thing is fun!",
+        ];
+
+        this.board.set_cutscene_timer(new Timer(b => {
+            play_audio("cardshuffle", 0.3);
+        }, 0.5))
+
+        this.board.set_cutscene_timer(new Timer(b => {
+            let t = this.board.duration_plus_cutscenes - start_time;
+            let delta_time = t - last_time;
+            last_time = t;
+
+            if (t < start_delay) {
+                return true;
+            }
+
+            card_draw_cooldown -= delta_time;
+            while (cards_to_draw > 0 && card_draw_cooldown <= 0) {
+                wait_cd = random_int(...wait_cd_max, this.board.random);
+                wait_dialogue_line = 0;
+
+                cards_to_draw--;
+                card_draw_cooldown += card_draw_cooldown_max;
+
+                if (cards.length == 0) {
+                    let p = this.position.add(this.get_weapon_offset(0).mul(0.5)).add(new Vector2(-1350, -1200));
+                    sum_particle = new TextParticle(
+                        p, 1, "0", this.get_current_desc_col(), this.board, 32, 999
+                    )
+
+                    this.board.spawn_particle(sum_particle, p);
+                }
+
+                let card_index = null;
+                while (!card_index || cards.some(c => c[0] == card_index)) {
+                    card_index = random_int(4, 56, this.board.random);
+                }
+
+                let pos = this.position.add(this.get_weapon_offset(0).mul(0.5));
+                let card_particle = this.board.spawn_particle(new Particle(
+                    pos, 0, 0, [entity_sprites.get("playingcard")[card_index]],
+                    0, 999, true
+                ), pos);
+
+                let movingparticlecomponent = new MovingParticleComponent(
+                    this.board, new Vector2(-20000 + (6000 * (cards.length + 1)), -40000)
+                );
+
+                card_particle.add_component(movingparticlecomponent).add_component(
+                    new AirDragParticleComponent(
+                        this.board, movingparticlecomponent, 0.1
+                    )
+                ).add_component(new SizeLerpParticleComponent(
+                    this.board, 0.7, 1.75
+                )).time_locked = false;
+
+                cards.push(
+                    // card index, particle
+                    [card_index, card_particle]
+                );
+
+                play_audio(`card${random_int(1, 8, this.independent_random)}`);
+
+                sum = 0;
+                let permitted_reductions = 0;
+                cards.forEach(c => {
+                    let rank = ((c[0] - 4) % 13) + 1;
+                    let value = rank == 1 ? 11 : Math.min(10, rank);
+                    if (rank == 1)
+                        permitted_reductions++;
+
+                    sum += value;
+                });
+
+                while (sum > 21 && permitted_reductions > 0) {
+                    permitted_reductions--;
+                    sum -= 10;
+                }
+
+                sum_particle.sprites = [sum.toString()]
+            }
+
+            wait_cd -= delta_time;
+
+            // If 21 or bust, end here
+            if (sum >= 21 && wait_cd <= 0) {
+                let resolution_wait_time = 2;
+                let sources = [];
+                if (sum == 21) {
+                    this.speak([{
+                        text: seeded_random_from_array(cards.length <= 2 ? blackjack_instant_dialogue : blackjack_dialogue, this.independent_random),
+                        initial_delay: 0,
+                        delay_per_char: 0.03,
+                        mods: {fading: true}
+                    }], 22, 2, 0);
+                } else {
+                    let txt = seeded_random_from_array(bust_dialogue, this.board.random);
+                    this.speak([{
+                        text: txt,
+                        initial_delay: 0,
+                        delay_per_char: 0.07,
+                    }], 22, 0.07 * txt.length, 0);
+                    resolution_wait_time = 0.07 * txt.length;
+
+                    this.board.set_cutscene_timer(new Timer(b => {
+                        play_audio("holy1", 0.2, 3).then(o => sources.push(o.obj.source));
+                        play_audio("holy2", 0.2, 3).then(o => sources.push(o.obj.source));
+                    }, resolution_wait_time - 2));
+                }
+
+                this.board.set_cutscene_timer(new Timer(b => {
+                    this.resolve_blackjack_effects(variant, sum_particle, cards, sum, sources);
+                }, resolution_wait_time));
+
+                return false;
+            }
+
+            if (wait_cd <= 0) {
+                let dialogue = wait_dialogue[Math.max(16, sum) - 16];
+
+                if (wait_dialogue_line == 0) {
+                    let chance_to_hit = Math.pow(0.5, Math.max(16, sum) - 16);
+                    if (this.board.random() < chance_to_hit) {
+                        wait_hit = true;
+                    } else {
+                        wait_hit = false;
+                    }
+                }
+
+                if (wait_dialogue_line == 0) {
+                    if (wait_hit) {
+                        wait_dialogue_txtlist = seeded_random_from_array(dialogue[0], this.board.random);
+                    } else {
+                        wait_dialogue_txtlist = seeded_random_from_array(dialogue[1], this.board.random);
+                    }
+                }
+
+                let txtlines = wait_dialogue_txtlist;
+                if (wait_dialogue_line < txtlines.length) {
+                    let text = txtlines[wait_dialogue_line];
+                    let dpc = 0.03;
+                    let dpl = 0.2;
+                    let final_delay = 0.4;
+                    let total_delay_after = txtlines.slice(wait_dialogue_line).reduce((p, c) => {
+                        return p + (c.length * dpc) + dpl
+                    }, 0) + final_delay;
+
+                    this.speak([{
+                        text: text,
+                        initial_delay: 0,
+                        delay_per_char: 0.03,
+                        mods: {fading: true}
+                    }], 22, total_delay_after, 0 + wait_dialogue_line);
+
+                    wait_cd += dpl + (text.length * dpc);
+                    wait_dialogue_line++;
+
+                    if (wait_dialogue_line >= txtlines.length) {
+                        wait_cd += final_delay;
+                    }
+                } else {
+                    // If hit, return to loop,
+                    // if stand, send to resolution
+                    if (wait_hit) {
+                        cards_to_draw++;
+                    } else {
+                        this.resolve_blackjack_effects(variant, sum_particle, cards, sum);
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }, 0.01, true));
+    }
+
+    make_generic_burst_particles(position, target, colour, count) {
+        for (let i=0; i<count; i++) {
+            this.board.spawn_particle(new EnergyBurstParticle(
+                position, 0.4, entity_sprites.get("railgun_point"), 0, 16, true,
+                random_float(15000, 25000, this.independent_random), 120000, target,
+                colour, 4, 2, 0, true
+            ), position)
+        }
+    }
+
+    show_bonus_display(text, index) {
+        let pos2 = this.position.add(new Vector2(0, (this.radius * 1.5) + (256 * index)));
+
+        this.board.spawn_particle(new FadingFollowingTextParticle(
+            pos2, 1, text,
+            this.get_current_col(), this.board, 16, 4,
+            this
+        ), pos2);
+    }
+
+    resolve_blackjack_effects(variant, txtpart, cards, sum, sources=null) {
+        txtpart.lifetime = 99999;
+        cards.forEach(c => {
+            c[1].duration = c[1].lifetime + 0.2;
+            c[1].add_component(new FadeOutParticleComponent(this.board, c[1].lifetime, 1));
+        });
+        
+        let deckpos = this.position.add(this.get_weapon_offset(0).mul(0.5));
+
+        if (sum > 21) {
+            let opos = this.position;
+            this.make_generic_burst_particles(deckpos, this, Colour.red, 32);
+            this.board.set_timer(new Timer(b => {
+                if (sources) {
+                    sources.forEach(s => s.stop());
+                }
+                
+                play_audio("wall_smash", 0.1);
+                play_audio("explosion2", 0.3);
+                play_audio("lightningbolt4", 0.3);
+
+                this.board.spawn_particle(new Particle(
+                    this.position, 0, 2, entity_sprites.get("explosion_grenade"),
+                    12, 50
+                ), this.position);
+
+                this.hit_other(this, 998, this.ult_bust_dmg);
+                this.apply_burn(this, this.ult_bust_burn, "");
+
+                this.apply_hitstop(BASE_HITSTOP_TIME * 2);
+                this.set_velocity(opos.sub(this.position).normalize().mul(10000));
+            }, 0.2));
+        } else {
+            if (sum >= 17) {
+                this.make_generic_burst_particles(deckpos, this, Colour.green, 4);
+                this.board.set_timer(new Timer(b => {
+                    this.gain_hp(this.ult_17_heal, this);
+                    play_audio("jump");
+                    
+                    this.show_bonus_display(`Heal +${this.ult_17_heal} HP`, 0);
+                }, 0.2));
+            }
+
+            if (sum >= 18) {
+                this.make_generic_burst_particles(deckpos, this, Colour.from_hex("#cccc00"), 3);
+                this.board.set_timer(new Timer(b => {
+                    for (let i=0; i<this.ult_18_projcnt; i++) {
+                        let proj = new CardsCardBouncingProjectile(
+                            this.board, this, 0, this.cardsiz, this.ult_18_damage,
+                            0, random_on_circle(1, this.board.random),
+                            this.pair_proj_speed
+                        );
+
+                        this.board.spawn_projectile(
+                            proj, this.position
+                        );
+                    }
+
+                    play_audio("evoke", 0.2);
+
+                    this.show_bonus_display(`Fire ${this.ult_18_projcnt} Pair projectiles`, 1);
+                }, 0.2));
+            }
+
+            if (sum >= 19) {
+                this.make_generic_burst_particles(deckpos, this, Colour.from_hex("#00ccff"), 4);
+                this.board.set_timer(new Timer(b => {
+                    this.luck_lookahead_amt *= this.ult_19_luckmul;
+                    play_audio("BlueMagic");
+
+                    this.show_bonus_display(`x${this.ult_19_luckmul} luck`, 2);
+                }, 0.2));
+            }
+
+            if (sum >= 20) {
+                this.board.balls.forEach(ball => {
+                    if (!ball.allied_with(this) && !ball.skip_physics) {
+                        this.make_generic_burst_particles(deckpos, ball, Colour.red, 4);
+                        this.board.set_timer(new Timer(b => {
+                            for (let i=0; i<64; i++) {
+                                this.board.spawn_particle(new AilmentParticle(
+                                    ball.position, random_float(0, Math.PI * 2, this.independent_random),
+                                    0.2, entity_sprites.get("burn"), random_float(0.6, 1.2, this.independent_random)
+                                ), ball.position).add_component(
+                                    new MovingParticleComponent(this.board, random_on_circle(
+                                        random_float(1600, 6400, this.independent_random),
+                                        this.independent_random
+                                    ))
+                                );
+                            }
+                            
+                            this.apply_burn(ball, this.ult_20_burn);
+                        }, 0.2));
+                    }
+                });
+
+                this.board.set_timer(new Timer(b => {
+                    play_audio("firemagic1", 0.2);
+                    play_audio("firemagic2", 0.2);
+
+                    this.show_bonus_display(`${this.ult_20_burn} burn to all enemies`, 3);
+                }, 0.2));
+            }
+
+            if (sum >= 21) {
+                this.make_generic_burst_particles(deckpos, this, Colour.white, 12);
+
+                this.board.set_timer(new Timer(b => {
+                    play_audio("WINNER", 0.075);
+                    play_audio("EsperRoar", 0.2);
+
+                    this.temp_stat_modifiers.damage_bonus *= this.ult_21_dmg_mul;
+
+                    let particles_angle_diff = deg2rad(22.5);
+                    let dur = 9999999;
+                    let num = 3;
+
+                    for (let i=num-1; i>=0; i--) {
+                        let pos = this.position;
+                        let part = new OrbitingParticle(
+                            pos, 0, 2 * ((num-i)/num), entity_sprites.get("powerup_enhancement_star"),
+                            0, dur, false, this, Math.PI * 2, 1.5, particles_angle_diff * i
+                        )
+
+                        board.spawn_particle(part, pos);
+                    }
+
+                    this.show_bonus_display(`Damage x${this.ult_21_dmg_mul} permanently`, 4);
+                }, 0.2));
+            }
+        }
+
+        this.finish_ultimate(variant);
+        cutscene_time_stop_dur = 0;
+    }
+
+    resolve_ultimate(variant) {
+        this.ult_active_time = this.ult_max_active_time;
     }
 
     hit_other_with_projectile(other, with_projectile) {
@@ -12946,6 +13436,8 @@ class TranslocatorBall extends WeaponBall {
         this.description_brief = "Throws a teleportation device, then teleports to it after a short delay, or when it takes damage. Teleporting into an enemy deals heavy damage. Able to dodge attacks on a cooldown, warping behind the attacker and throwing knives.";
         this.level_description = "Reduces the cooldowns of teleportation and dodging.";
         this.max_level_description = "Throws a fan of knives after teleporting.";
+        this.ult_description = "Overcharges the translocator to work at incredible speeds. While overcharged, dodge cooldown is near-instant and each teleport also triggers a volley of knives."
+        
         this.quote = "i] ;fIfeel a lllit'le b@it   uhhhhhh  =2]wooozy/.,";
 
         this.pronoun = PRONOUN.SHE;
@@ -12980,6 +13472,24 @@ class TranslocatorBall extends WeaponBall {
         this.entry_animation_offset = ANIMATION_STANDARD_DATA[this.entry_animation].offset;
         this.entry_animation_keyframes = ANIMATION_STANDARD_DATA[this.entry_animation].keyframes;
         this.entry_animation_size_mult = ANIMATION_STANDARD_DATA[this.entry_animation].size_mult;
+
+        this.ult_cost = DEFAULT_ULT_COST * 0.7;
+        this.ult_line = [
+            {
+                text: "uo;h  h    - wh   whats g",
+                initial_delay: 0,
+                delay_per_char: 0.05,
+            },
+            {
+                text: "Enemy. I will make this quick.",
+                initial_delay: 1,
+                delay_per_char: 0.04,
+                mods: {
+                    newline: true
+                }
+            },
+        ]
+        this.ult_cutscene_duration = 4;
 
         this.translocator_weapon = new BallWeapon(1, "translocator_weapon", [
             
@@ -13016,11 +13526,135 @@ class TranslocatorBall extends WeaponBall {
         this.knife_velocity_range = [10000, 17000];
 
         this.awaken_knife_count = 24;
+
+        this.ult_dodge_cooldown_max = 0.1;
+        this.ult_knives = [4, 7];
+
+        this.ult_duration_max = 5;
+        this.ult_duration = 0;
+        this.ult_particles_delay = 0;
+        this.ult_particles_delay_max = 0.05;
+        this.ult_speed_mul = 3;
+    }
+
+    ultimate_animation(variant) {
+        let nsprites = random_shuffle([...entity_sprites.get("teleport_exit")], this.independent_random);
+
+        this.board.set_cutscene_timer(new Timer(b => {
+            this.board.spawn_particle(new Particle(
+                this.position, 0, 2, nsprites, 12, 50
+            ), this.position).time_locked = false;
+            play_audio("translocator_glitch", 0.5);
+
+            for (let i=0; i<125; i++) {
+                this.board.set_cutscene_timer(new Timer(b => {
+                    let to_position = this.position.add(random_on_circle(random_float(1000, 4000, this.independent_random), this.independent_random));
+                    this.board.spawn_particle(new EnergyBurstParticle(
+                        this.position, 0.4, entity_sprites.get("railgun_point"), 0, 16, true,
+                        random_float(15000, 25000, this.independent_random), 180000, {
+                            position: to_position.copy(),
+                            radius: this.radius * 0.5,
+                            board: this.board,
+                        },
+                        new Colour(18, 175, 175, 255), 4, 3, 0, true
+                    ), this.position).time_locked = false;
+                }, i / 100));
+            }
+        }, 1));
+
+        let glitch_targets = this.board.balls.filter(b => b.display);
+        let original_colours = this.board.balls.map(b => b.colour);
+
+        this.board.set_cutscene_timer(new Timer(b => {
+            glitch_targets.forEach((ball, i) => {
+                ball.display = true;
+                ball.set_colour(original_colours[i]);
+            });
+        }, 2.1));
+
+        for (let i=0; i<64; i++) {
+            this.board.set_cutscene_timer(new Timer(b => {
+                glitch_targets.forEach(ball => {
+                    if (ball.id != this.id && this.independent_random < 0.9) {
+                        return;
+                    }
+
+                    let mode = random_int(0, 5, this.independent_random);
+                    if (mode == 0) {
+                        ball.display = true;
+                    } else if (mode == 1) {
+                        ball.display = false;
+                    } else if (mode == 2) {
+                        ball.display = false;
+                    } else if (mode == 3) {
+                        ball.display = false;
+                        let ppos = ball.position.add(random_on_circle(
+                            this.independent_random() < 1 ? (
+                                Math.pow(random_float(0, 1, this.independent_random), 2) * 512
+                            ) : (
+                                0
+                            ), this.independent_random
+                        ));
+
+                        let part = this.board.spawn_particle(new Particle(
+                            ppos, 0, 1,
+                            [entity_sprites.get("unarmed_glitch")[random_int(0, 8, this.independent_random)]],
+                            0, random_float(0.02, 0.2, this.independent_random), true
+                        ), ppos);
+
+                        part.time_locked = false;
+                        part.opacity = random_float(0.2, 0.6, this.independent_random);
+                    } else if (mode >= 4) {
+                        ball.set_colour(
+                            new Colour(
+                                random_int(0, 256, this.independent_random),
+                                random_int(0, 256, this.independent_random),
+                                random_int(0, 256, this.independent_random),
+                                255
+                            )
+                        )
+                    }
+                });
+            }, random_float(1.05, 2, this.independent_random)));
+        }
+    }
+
+    resolve_ultimate(variant) {
+        this.ult_duration = this.ult_duration_max;
+        this.teleport_delay_max /= this.ult_speed_mul;
+        this.teleport_throw_cooldown_max /= this.ult_speed_mul * 2;
+        this.teleport_throw_cooldown = this.teleport_throw_cooldown_max;
     }
 
     weapon_step(board, time_delta) {
         // rotate the weapon
         this.dodge_cooldown -= time_delta;
+        if (this.ult_duration > 0) {
+            this.ult_duration -= time_delta;
+            // if we're now back to disabled then revert
+            if (this.ult_duration <= 0) {
+                this.teleport_delay_max *= this.ult_speed_mul;
+                this.teleport_throw_cooldown_max *= this.ult_speed_mul * 2;
+            }
+
+            this.dodge_cooldown = Math.min(this.ult_dodge_cooldown_max, this.dodge_cooldown);
+        
+            this.ult_particle_delay -= time_delta;
+            while (this.ult_particle_delay <= 0) {
+                this.ult_particle_delay += this.ult_particle_delay_max;
+                
+                let to_position = this.position.add(random_on_circle(random_float(256, 800, this.independent_random), this.independent_random));
+                this.board.spawn_particle(new EnergyBurstParticle(
+                    this.position, 0.4, entity_sprites.get("railgun_point"), 0, 16, true,
+                    random_float(15000, 25000, this.independent_random), 180000, {
+                        position: to_position.copy(),
+                        radius: this.radius * 0.5,
+                        board: this.board,
+                    },
+                    new Colour(18, 175, 175, 255), 4, 3, 0, true
+                ), this.position);
+            }
+        }
 
         if (this.weapon_data.length > 0) {
             // either knives or translocator
@@ -13042,6 +13676,46 @@ class TranslocatorBall extends WeaponBall {
             // translocator thrown
             // handled in child
         }
+    }
+
+    throw_knives(num, other=null) {
+        if (!other) {
+            // acquire a target
+            other = this.get_closest_real_enemy_and_distance()[0];
+        }
+
+        // if still no, return
+        if (!other) {
+            return;
+        }
+
+        let cnt = 0;
+        let delay = 0;
+        let ball = this;
+        this.board.set_timer(new Timer(b => {
+            delay++;
+            if (delay < ball.knife_delay_count) {
+                return true;
+            }
+
+            cnt++;
+            if (cnt < num) {
+                let target_vector = other.position.sub(ball.position).normalize();
+                target_vector = target_vector.rotate(
+                    random_float(-ball.knife_spread, ball.knife_spread, b.random)
+                );
+
+                b.spawn_projectile(new TranslocatorKnifeProjectile(
+                    b, ball, 0, ball.position, ball.knife_damage,
+                    0.75, target_vector, random_float(...ball.knife_velocity_range, b.random),
+                    Vector2.zero
+                ), ball.position)
+                
+                return true;
+            }
+
+            return false;
+        }, this.knife_delay, true));
     }
 
     execute_teleport(to_position) {
@@ -13129,6 +13803,10 @@ class TranslocatorBall extends WeaponBall {
 
         this.apply_invuln(BALL_INVULN_DURATION);
         play_audio("translocator2", 0.275);
+
+        if (this.ult_duration > 0) {
+            this.throw_knives(random_int(...this.ult_knives, this.board.random));
+        }
     }
 
     throw_translocator() {
@@ -13207,33 +13885,7 @@ class TranslocatorBall extends WeaponBall {
                 this.translocator_obj.lifetime -= 0.5;
             }
 
-            let cnt = 0;
-            let delay = 0;
-            let ball = this;
-            this.board.set_timer(new Timer(b => {
-                delay++;
-                if (delay < ball.knife_delay_count) {
-                    return true;
-                }
-
-                cnt++;
-                if (cnt < ball.knife_count) {
-                    let target_vector = other.position.sub(ball.position).normalize();
-                    target_vector = target_vector.rotate(
-                        random_float(-ball.knife_spread, ball.knife_spread, b.random)
-                    );
-
-                    b.spawn_projectile(new TranslocatorKnifeProjectile(
-                        b, ball, 0, ball.position, ball.knife_damage,
-                        0.75, target_vector, random_float(...ball.knife_velocity_range, b.random),
-                        Vector2.zero
-                    ), ball.position)
-                    
-                    return true;
-                }
-
-                return false;
-            }, this.knife_delay, true));
+            this.throw_knives(this.knife_count, other);
 
             return false;
         }
@@ -13377,6 +14029,8 @@ class DrillBall extends WeaponBall {
         this.description_brief = "Perodically dashes with the drill, making it do rapid damage based on movement speed. If impacting a wall at high speed, burrows into it for a time, avoiding all attacks, before dashing out for boosted speed and damage.";
         this.level_description = "Increases the damage of the drill while dashing and reduces dash cooldown slightly.";
         this.max_level_description = "Burrowing has no cooldown but lasts for half the time.";
+        this.ult_description = "Overcharges the drill to extreme levels, performing a devastating finishing strike on the nearest enemy. After the attack, the drill is permanently destroyed(!)";
+
         this.quote = "If there's a wall in my way, I'll smash it down!\nIf there's no path forward, I'll carve one myself!!\nJust who the hell do you think I am?!";
 
         this.pronoun = PRONOUN.HE;
@@ -13404,6 +14058,21 @@ class DrillBall extends WeaponBall {
             TAGS.LEVELS_UP,
             TAGS.CAN_AWAKEN,
         ];
+
+        this.ult_cost = DEFAULT_ULT_COST * 1.2;
+        this.ult_line = [
+            {
+                text: "This ball's magma burns with flames!",
+                initial_delay: 0,
+                delay_per_char: 0.03,
+                mods: {
+                    fading: true,
+                    shaking: true
+                }
+            },
+        ]
+        this.ult_cutscene_duration = 2;
+        this.controls_own_ult_cutscene = true;
 
         this.weapon_data = [
             new BallWeapon(0.6, "drill", [
@@ -13477,6 +14146,203 @@ class DrillBall extends WeaponBall {
         this.linked_particle = null;
 
         this.sound_source = null;
+
+        this.ult_dash_duration_max = 3;
+        this.ulted = false;
+
+        this.ult_explosion_delay = 0;
+        this.ult_explosion_delay_max = 0.1;
+
+        this.ult_spoke_final = false;
+
+        this.ult_dash_start = 0;
+    }
+
+    ultimate_animation(variant) {
+        // Override cutscene duration
+        cutscene_time_stop_dur = 999;
+
+        let start_time = this.board.duration_plus_cutscenes;
+        let last_time = start_time;
+
+        let start_delay = 2;
+
+        let line_delay = 0;
+        let line_index = 0;
+
+        let delay = 0.04;
+        let lines = [
+            ["Finishing Move:", 1],
+            ["Super Weapon Ball...", 1.65],
+            ["HYPER", 0.9],
+            ["DRILL", 1.1],
+            ["BREAKER!!!", 2],
+        ]
+
+        let target = this.get_closest_real_enemy_and_distance(null, false);
+        if (!target[0]) {
+            // short circuit
+            cutscene_time_stop_dur = 0;
+            this.finish_ultimate(variant);
+            return;
+        }
+
+        let targetball = target[0];
+        let targetdist = Math.sqrt(target[1]);
+
+        let target_vector = targetball.position.sub(this.position);
+        let target_position = targetball.position.add(
+            target_vector.div(targetdist).mul(-5000)
+        );
+
+        let target_rotation = target_vector.angle();
+
+        let lerps_delay = 2;
+
+        let grow_delay = 4;
+        let grow_stage = 0;
+        let grow_max = 6;
+        let grow_per_normal = 0.05;
+        let grow_per_pause = 0.2;
+        let grow_wait = 0;
+        
+        let initial_size = this.weapon_data[0].size_multiplier;
+
+        let spinstart = 6.2;
+        let spinwait = 0;
+        let spindelaymax = 0.01;
+        let spinframe = 0;
+
+        let end = 7.7;
+
+        this.board.set_cutscene_timer(new Timer(b => {
+            let t = this.board.duration_plus_cutscenes - start_time;
+            let delta_time = t - last_time;
+            last_time = t;
+
+            if (t < start_delay) {
+                return true;
+            }
+
+            line_delay -= delta_time;
+            if (line_delay <= 0) {
+                line_delay += lines[line_index][1] + 0.25;
+
+                this.speak([{
+                    text: lines[line_index][0],
+                    initial_delay: 0,
+                    delay_per_char: delay,
+                    mods: {
+                        fading: true,
+                        shaking: true
+                    }
+                }], 22, lines[line_index][1], 0);
+
+                delay += 0.02;
+
+                line_index++;
+            }
+
+            if (t >= lerps_delay) {
+                this.set_pos(this.position.lerp(
+                    target_position, 1 - Math.pow(0.025, delta_time)
+                ));
+
+                this.weapon_data[0].angle = lerp(
+                    this.weapon_data[0].angle,
+                    target_rotation, 1 - Math.pow(0.025, delta_time)
+                );
+
+                this.create_self_afterimage().time_locked = false;
+                this.create_weapon_afterimage(0).time_locked = false;
+
+                set_camera_targets(
+                    this.position,
+                    this.board.map_config.initial_zoom_level * 1,
+                    0.00005,
+                    0.02 
+                )
+
+                this.cache_weapon_offsets();
+                this.cache_hitboxes_offsets();
+            }
+
+            if (t >= grow_delay) {
+                grow_wait -= delta_time;
+                while (grow_wait <= 0) {
+                    grow_stage++;
+                    grow_stage = Math.min(grow_stage, grow_max);
+
+                    if (grow_stage == 3) {
+                        grow_wait += grow_per_pause;
+                    } else {
+                        grow_wait += grow_per_normal;
+                    }
+                }
+            
+                let spritestage = 3 - Math.abs(grow_stage - 3);
+
+                this.weapon_data[0].sprite = spritestage == 0 ? "drill" : `drill_squash${spritestage}`;
+            
+                // We always want to keep the drill equivalent size, so:
+                // 1x
+                // 1.3333x
+                // 2x
+                // 4x
+                let sizemul = 16 / (128 - (spritestage * 32));
+                let basemul = grow_stage * 0.5;
+
+                this.weapon_data[0].size_multiplier = initial_size * (sizemul + basemul);
+                this.weapon_data[0].offset.x = 8 + (2 * (3 - spritestage));
+                
+                this.cache_weapon_offsets();
+                this.cache_hitboxes_offsets();
+            }
+
+            if (t > spinstart) {
+                spinwait -= delta_time;
+                while (spinwait <= 0) {
+                    spinwait += spindelaymax;
+
+                    spinframe = (spinframe + 1) % 3;
+
+                    if (spinframe == 0)
+                        play_audio("drill_dash", 0.05);
+                }
+
+                this.weapon_data[0].sprite = `drilldash${spinframe+1}`;
+            }
+
+            if (t > end) {
+                cutscene_time_stop_dur = 0;
+                this.finish_ultimate(variant);
+                return false;
+            }
+
+            return true;
+        }, 0.01, true));
+    }
+
+    resolve_ultimate() {
+        play_audio("drill_dash", 0.3);
+        play_audio("lightningbolt4", 0.3);
+        play_audio("holy1", 0.15, 3);
+        play_audio("holy2", 0.15, 3);
+
+        this.weapon_data[0].unparriable = true;
+
+        this.ulted = true;
+        this.dash_duration = this.ult_dash_duration_max;
+        this.ult_dash_start = this.board.duration;
+
+        this.board.ultimate_global_cooldown = 8;
+
+        this.rapidfire_time = 999;
+
+        this.ignore_bounds_checking = true;
+
+        this.ignore_ball_collisions = true;
+        this.gets_hit = false;
     }
 
     sparks_animation() {
@@ -13536,7 +14402,20 @@ class DrillBall extends WeaponBall {
         }
     }
 
+    check_ultimate() {
+        if (super.check_ultimate()) {
+            // we need to be not dashing and not burrowing
+            return this.weapon_data.length > 0 && this.burrow_duration <= 0 && this.dash_duration <= 0;
+        }
+
+        return false;
+    }
+
     weapon_step(board, time_delta) {
+        if (this.weapon_data.length <= 0) {
+            return;
+        }
+
         // check if a point in front of the ball is OOB - if it is, get your ass burrowing
         this.rapidfire_time -= time_delta;
         if (this.rapidfire_time > 0) {
@@ -13554,7 +14433,7 @@ class DrillBall extends WeaponBall {
             this.temp_dmg_mult = 1;
         }
 
-        if (this.burrow_duration <= 0 && this.burrow_cooldown <= 0 && this.velocity.sqr_magnitude() > Math.pow(8000, 2)) {            
+        if (!this.ulted && this.burrow_duration <= 0 && this.burrow_cooldown <= 0 && this.velocity.sqr_magnitude() > Math.pow(8000, 2)) {            
             let check_pos = this.position.add(this.get_weapon_offset(0).mul(0.9));
             // this.board.spawn_particle(new Particle(check_pos, 0, 0.4, entity_sprites.get("red"), 36, 1, true), check_pos);
 
@@ -13643,16 +14522,97 @@ class DrillBall extends WeaponBall {
                     play_audio("drill_dash", 0.15);
                 }
             } else {
-                this.dash_duration -= time_delta;
-                let factor = Math.min(1, Math.max(0, (this.dash_duration_max - this.dash_duration) * 4));
-                this.set_velocity(
-                    new Vector2(this.dash_velocity * factor, 0).rotate(
-                        this.weapon_data[0].angle
+                if (!this.ulted) {
+                    this.dash_duration -= time_delta;
+                    let factor = Math.min(1, Math.max(0, (this.dash_duration_max - this.dash_duration) * 4));
+                    this.set_velocity(
+                        new Vector2(this.dash_velocity * factor, 0).rotate(
+                            this.weapon_data[0].angle
+                        )
+                    );
+                } else {
+                    this.dash_duration = this.ult_dash_duration_max - (this.board.duration - this.ult_dash_start);
+                    if (this.ignore_bounds_checking && this.board.in_bounds_with_radius(this.position, this.radius)) {
+                        this.ignore_bounds_checking = false;
+                    }
+
+                    let expl_speed = Math.pow(1 - (this.dash_duration / this.ult_dash_duration_max), 4) * 500;
+                    this.ult_explosion_delay -= expl_speed * time_delta;
+                    while (this.ult_explosion_delay <= 0) {
+                        this.ult_explosion_delay += this.ult_explosion_delay_max;
+
+                        let hitbox_index = random_int(0, this.weapon_data[0].hitboxes.length, this.independent_random);
+                        let pos = this.position.add(
+                            this.get_weapon_offset(0)
+                        ).add(
+                            this.get_hitboxes_offsets(0)[hitbox_index]
+                        ).add(
+                            random_on_circle(
+                                random_float(0, this.weapon_data[0].hitboxes[hitbox_index].radius * this.weapon_data[0].size_multiplier, this.independent_random),
+                                this.independent_random
+                            )
+                        );
+
+                        this.board.spawn_particle(new Particle(
+                            pos, 0, random_float(0.25, 0.75, this.independent_random),
+                            entity_sprites.get("explosion_small"),
+                            random_float(10, 16, this.independent_random), 10
+                        ), pos);
+                    }
+
+                    this.dash_duration -= time_delta;
+                    let factor = Math.min(1, Math.max(0, (this.ult_dash_duration_max - this.dash_duration) * 4));
+                    this.set_velocity(
+                        new Vector2(this.dash_velocity * factor, 0).rotate(
+                            this.weapon_data[0].angle
+                        )
+                    );
+
+                    set_camera_targets(
+                        this.position,
+                        this.board.map_config.initial_zoom_level * 1,
+                        0.00005,
+                        0.02 
                     )
-                );
+                }
             }
-        } 
+        }
         
+        if (this.dash_duration <= 0.4 && this.ulted && !this.ult_spoke_final) {
+            this.ult_spoke_final = true;
+
+            this.speak([{
+                text: "No..!",
+                initial_delay: 0,
+                delay_per_char: 0.03,
+                mods: {
+                    shaking: true
+                }
+            }], 22, 0.4, -4);
+        }
+
+        if (this.dash_duration <= 0 && this.ulted) {
+            this.ulted = false;
+            let pos = this.position.add(this.get_weapon_offset(0).mul(0.75));
+            this.board.spawn_particle(new Particle(
+                pos, 0, 4, entity_sprites.get("explosion"),
+                12, 10
+            ), pos);
+
+            play_audio("explosion", 0.2);
+            play_audio("wall_smash");
+            this.board.set_timer(new Timer(b => {
+                this.weapon_data = [];
+                this.ignore_ball_collisions = false;
+                this.gets_hit = true;
+            }, 0.02));
+
+            this.burrow_cooldown = 1;
+
+            reset_camera_targets();
+            return;
+        }
+
         if (this.burrow_duration > 0) {
             let clearance = this.radius + 64;
 
@@ -13775,6 +14735,9 @@ class DrillBall extends WeaponBall {
         // finally make sure damage is correct
         this.damage = this.damage_base + (this.damage_per_speed * this.velocity.magnitude());
         this.damage *= this.temp_dmg_mult;
+
+        if (this.ulted)
+            this.damage *= 0.6;
     }
 
     hit_other(other, with_weapon_index) {
@@ -13886,6 +14849,8 @@ class WrenchBall extends WeaponBall {
         this.description_brief = "Successfully hitting enemies with the wrench grants metal. Metal is consumed to build turrets which automatically shoot, or to upgrade existing turrets.";
         this.level_description = "Increases metal gain on hit.";
         this.max_level_description = "Damage from turrets also contributes a reduced amount of metal.";
+        this.ult_description = "Rapidly builds and upgrades more turrets for free, ignoring the normal build order.";
+        
         this.quote = "Dispenser? Never heard of anythin' like that.\nYa sure yer not confusin' me for someone else?";
 
         this.pronoun = PRONOUN.HE;
@@ -13905,6 +14870,33 @@ class WrenchBall extends WeaponBall {
         if (level >= AWAKEN_LEVEL) {
             this.tier = TIERS.APLUS;
         }
+
+        this.ult_cost = DEFAULT_ULT_COST * 0.2;
+        this.ult_line = [
+            {
+                text: "Whoo! ",
+                initial_delay: 0,
+                delay_per_char: 0.04,
+                mods: {
+                }
+            },
+            {
+                text: "Yer sure doin' a number on me!",
+                initial_delay: 0.2,
+                delay_per_char: 0.04,
+                mods: {
+                }
+            },
+            {
+                text: "Want a few more toys?",
+                initial_delay: 0.6,
+                delay_per_char: 0.05,
+                mods: {
+                    newline: true
+                }
+            },
+        ]
+        this.ult_cutscene_duration = 4;
 
         this.category = CATEGORIES.STANDARD;
         this.tags = [
@@ -13941,6 +14933,23 @@ class WrenchBall extends WeaponBall {
         this.metal_threshold_growth = 5;
 
         this.children = [];
+
+        this.ult_new_turrets = 3;
+        this.ult_turret_upgrades = 4;
+    }
+
+    resolve_ultimate() {
+        for (let i=0; i<this.ult_new_turrets; i++) {
+            this.board.set_timer(new Timer(b => {
+                this.build_turret();
+            }, i * 0.1));
+        }
+
+        for (let i=0; i<this.ult_turret_upgrades; i++) {
+            this.board.set_timer(new Timer(b => {
+                this.upgrade_turret();
+            }, 0.2 + (i * 0.05)));
+        }
     }
 
     gain_metal(amt) {
@@ -13948,6 +14957,80 @@ class WrenchBall extends WeaponBall {
         this.check_metal_thresholds();
 
         play_audio("wrench_metal");
+    }
+
+    build_turret() {
+        let particle_spawn_pos = this.position.add(
+            this.get_weapon_offset(0)
+        ).add(
+            this.get_hitboxes_offsets(0)[3]
+        )
+
+        // build turret
+        // pick a location and spawn the turret there
+        let turret_pos = this.position;
+        while (this.board.balls.some(ball => ball.position.sqr_distance(turret_pos) <= Math.pow(ball.radius + (this.radius * 0.5), 2))) {
+            turret_pos = new Vector2(
+                this.board.size.x * random_float(0.2, 0.8, this.board.random),
+                this.board.size.y * random_float(0.2, 0.8, this.board.random),
+            )
+        }
+
+        let new_ball = new WrenchTurretLv1Ball(
+            this.board, this.radius * 0.4, this.colour,
+            this.bounce_factor, this.friction_factor, this.player,
+            this.level, this.reversed
+        )
+
+        new_ball.position = turret_pos;
+        new_ball.parent = this;
+        this.children.push(new_ball);
+
+        for (let i=0; i<8; i++) {
+            this.board.spawn_particle(new EnergyBurstParticle(
+                particle_spawn_pos, 0.6, entity_sprites.get("powerup_burst_white"), 0, 16, true,
+                25000, 120000, new_ball, new Colour(128, 128, 128, 255), 4, 2, 0, true
+            ), particle_spawn_pos)
+        }
+
+        this.board.set_timer(new Timer(b => {
+            b.spawn_ball(new_ball, turret_pos)
+            play_audio("wrench_build", 0.2);
+        }, 0.2))
+    }
+
+    upgrade_turret() {
+        let particle_spawn_pos = this.position.add(
+            this.get_weapon_offset(0)
+        ).add(
+            this.get_hitboxes_offsets(0)[3]
+        )
+
+        // upgrade turret
+        let closest = this.children.reduce((p, c) => {
+            let dist = this.position.sqr_distance(c.position);
+            if (c.player.id == this.player.id && c.upgradable && dist < p[1]) {
+                return [c, dist];
+            } else {
+                return p;
+            }
+        }, [null, Number.POSITIVE_INFINITY]);
+
+        if (closest[0]) {
+            closest[0].upgradable = false;
+
+            for (let i=0; i<8; i++) {
+                this.board.spawn_particle(new EnergyBurstParticle(
+                    particle_spawn_pos, 0.6, entity_sprites.get("powerup_burst_white"), 0, 16, true,
+                    25000, 120000, closest[0], new Colour(128, 128, 128, 255), 4, 2, 0, true
+                ), particle_spawn_pos)
+            }
+
+            this.board.set_timer(new Timer(b => {
+                closest[0].upgrade();
+                play_audio("wrench_upgrade", 0.2);
+            }, 0.2))
+        }
     }
 
     check_metal_thresholds() {
@@ -13958,70 +15041,10 @@ class WrenchBall extends WeaponBall {
             let action = WrenchBall.build_order[this.build_times];
             this.build_times++;
 
-            let particle_spawn_pos = this.position.add(
-                this.get_weapon_offset(0)
-            ).add(
-                this.get_hitboxes_offsets(0)[3]
-            )
-
             if (action == 0) {
-                // build turret
-                // pick a location and spawn the turret there
-                let turret_pos = this.position;
-                while (this.board.balls.some(ball => ball.position.sqr_distance(turret_pos) <= Math.pow(ball.radius + (this.radius * 0.5), 2))) {
-                    turret_pos = new Vector2(
-                        this.board.size.x * random_float(0.2, 0.8, this.board.random),
-                        this.board.size.y * random_float(0.2, 0.8, this.board.random),
-                    )
-                }
-
-                let new_ball = new WrenchTurretLv1Ball(
-                    this.board, this.radius * 0.4, this.colour,
-                    this.bounce_factor, this.friction_factor, this.player,
-                    this.level, this.reversed
-                )
-
-                new_ball.position = turret_pos;
-                new_ball.parent = this;
-                this.children.push(new_ball);
-
-                for (let i=0; i<8; i++) {
-                    this.board.spawn_particle(new EnergyBurstParticle(
-                        particle_spawn_pos, 0.6, entity_sprites.get("powerup_burst_white"), 0, 16, true,
-                        25000, 120000, new_ball, new Colour(128, 128, 128, 255), 4, 2, 0, true
-                    ), particle_spawn_pos)
-                }
-
-                this.board.set_timer(new Timer(b => {
-                    b.spawn_ball(new_ball, turret_pos)
-                    play_audio("wrench_build", 0.2);
-                }, 0.2))
+                this.build_turret();
             } else {
-                // upgrade turret
-                let closest = this.children.reduce((p, c) => {
-                    let dist = this.position.sqr_distance(c.position);
-                    if (c.player.id == this.player.id && c.upgradable && dist < p[1]) {
-                        return [c, dist];
-                    } else {
-                        return p;
-                    }
-                }, [null, Number.POSITIVE_INFINITY]);
-
-                if (closest[0]) {
-                    closest[0].upgradable = false;
-
-                    for (let i=0; i<8; i++) {
-                        this.board.spawn_particle(new EnergyBurstParticle(
-                            particle_spawn_pos, 0.6, entity_sprites.get("powerup_burst_white"), 0, 16, true,
-                            25000, 120000, closest[0], new Colour(128, 128, 128, 255), 4, 2, 0, true
-                        ), particle_spawn_pos)
-                    }
-
-                    this.board.set_timer(new Timer(b => {
-                        closest[0].upgrade();
-                        play_audio("wrench_upgrade", 0.2);
-                    }, 0.2))
-                }
+                this.upgrade_turret();
             }
         }
     }
@@ -14601,6 +15624,10 @@ class HitscanProjectile extends Projectile {
         this.hitboxes = [];
     
         this.nullified = false;
+
+        // Stops making hitboxes once it goes OOB.
+        // Disable for performance if not needed.
+        this.stop_at_border = false;
     }
 
     physics_step(time_delta) {
@@ -14636,6 +15663,9 @@ class HitscanProjectile extends Projectile {
             return null;
         }
 
+        // recalculate bearing
+        this.bearing = this.target_position.sub(this.position).normalize();
+
         let dist = this.target_position.distance(this.position);
         let half_r = this.max_width / 2;
 
@@ -14649,6 +15679,14 @@ class HitscanProjectile extends Projectile {
             hitboxes.push({pos: offset, radius: half_r});
             cur_pos = cur_pos.add(scaled_bearing);
             offset = offset.add(scaled_bearing);
+
+            if (this.stop_at_border) {
+                let realpos = this.position.add(offset.mul(this.size));
+                if (!this.board.in_bounds_with_radius(realpos, -half_r)) {
+                    hitboxes.push({pos: offset, radius: half_r});
+                    return hitboxes;
+                }
+            }
         }
 
         hitboxes.push({pos: offset, radius: half_r});
@@ -14674,7 +15712,7 @@ class HitscanProjectile extends Projectile {
         this.target_position = pos;
         this.set_hitboxes(this.create_hitboxes(true));
 
-        // console.log("collided wall as hitscan")
+        console.log("collided wall as hitscan")
     }
 }
 
@@ -15387,7 +16425,10 @@ class ChakramProjectile extends Projectile {
             this.active = false;
             this.source.mode = "idle";
             this.source.reset_weapons();
-            this.source.weapon_data[0].angle = this.cur_angle;
+
+            if (this.source.weapon_data[0])
+                this.source.weapon_data[0].angle = this.cur_angle;
+
             this.source.cache_weapon_offsets();
             this.source.cache_hitboxes_offsets();
         }
