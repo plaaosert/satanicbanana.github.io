@@ -26,6 +26,13 @@
     font-style: normal;
 }
 
+@font-face {
+    font-family: "fixedsys";
+    src: url("https://plaao.net/shared/fonts/FSEX302.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
 html {
     touch-action: manipulation;
 }

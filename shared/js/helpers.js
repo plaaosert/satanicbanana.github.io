@@ -386,6 +386,14 @@ function try_parse_int(str, if_fail=null) {
     }
 }
 
+function to_fixed_trimmed(number, precision) {
+    let st = number.toFixed(precision);
+
+    st = st.replace(/\.0+$/g, "");
+
+    return st;
+}
+
 /*
 
   Vectors
